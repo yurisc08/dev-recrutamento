@@ -30,6 +30,21 @@ const IDB_STORE = 'modelos';
 const SHELL_SRC = "__SHELL__";
 const podeExportarFerramenta = SHELL_SRC.length > 2000;
 
+/* ---------------- ícones ----------------
+   SVG em vez de caracteres tipo ▤ ou ⇄: os glifos geométricos faltam em
+   várias fontes do Windows e apareciam como quadradinhos vazios.
+--------------------------------------------------------------------- */
+const SVG = (d, extra) => `<svg class="ico${extra ? ' ' + extra : ''}" viewBox="0 0 20 20" aria-hidden="true">${d}</svg>`;
+const ICONES = {
+  subir: SVG('<path d="M10 15.5V4.9M5.6 9.3 10 4.9l4.4 4.4"/>'),
+  descer: SVG('<path d="M10 4.5v10.6M14.4 10.7 10 15.1l-4.4-4.4"/>'),
+  seta: SVG('<path d="M7.6 4.4 13.2 10l-5.6 5.6"/>'),
+  mapear: '<path d="M3 6.6h10.2M10.6 3.9l2.7 2.7-2.7 2.7M17 13.4H6.8M9.4 10.7l-2.7 2.7 2.7 2.7"/>',
+  documento: '<path d="M11.4 2.4H5.6a1.6 1.6 0 0 0-1.6 1.6v12a1.6 1.6 0 0 0 1.6 1.6h8.8a1.6 1.6 0 0 0 1.6-1.6V7z"/><path d="M11.4 2.4V7H16"/>',
+  caixa: '<path d="M17 10v5.5a1.5 1.5 0 0 1-1.5 1.5h-11A1.5 1.5 0 0 1 3 15.5V10M13.4 5.9 10 2.5 6.6 5.9M10 2.5v10.2"/>'
+};
+const ICONE_GRANDE = d => `<svg class="big" viewBox="0 0 20 20" aria-hidden="true">${d}</svg>`;
+
 /* ---------------- utilidades ---------------- */
 const $ = id => document.getElementById(id);
 const qsa = (s, r) => [...(r || document).querySelectorAll(s)];
@@ -917,7 +932,7 @@ function renderDashboard() {
     <div class="issue" data-goto="${it.view}">
       <span class="tag ${it.ok ? 'ok' : 'warn'}">${it.ok ? 'OK' : 'Atenção'}</span>
       <span class="il"><b>${esc(it.label)}</b><br><span style="color:var(--muted)">${esc(it.detalhe)}</span></span>
-      <span style="color:var(--muted)">›</span>
+      <span class="chev">${ICONES.seta}</span>
     </div>`).join('');
 
   $('navBase').textContent = state.rows.length ? state.rows.length.toLocaleString('pt-BR') : '—';
@@ -989,8 +1004,8 @@ function renderModelos() {
           <p class="desc mono" style="margin-top:6px">${esc(m.arquivo || '—')}</p>
         </div>
         <div class="head-actions">
-          <button class="btn ghost sm" data-mover="${m.id}" data-dir="-1" ${i === 0 ? 'disabled' : ''} title="Subir">↑</button>
-          <button class="btn ghost sm" data-mover="${m.id}" data-dir="1" ${i === state.modelos.length - 1 ? 'disabled' : ''} title="Descer">↓</button>
+          <button class="btn ghost sm" data-mover="${m.id}" data-dir="-1" ${i === 0 ? 'disabled' : ''} title="Subir">${ICONES.subir}</button>
+          <button class="btn ghost sm" data-mover="${m.id}" data-dir="1" ${i === state.modelos.length - 1 ? 'disabled' : ''} title="Descer">${ICONES.descer}</button>
           <button class="btn sec sm" data-mapear="${m.id}" ${semArquivo ? 'disabled' : ''}>Mapear campos</button>
           <button class="btn ghost sm" data-remover="${m.id}" ${state.modelos.length < 2 ? 'disabled' : ''}>Remover</button>
         </div>
@@ -1068,7 +1083,7 @@ function renderMapping() {
 
   const host = $('docTables');
   if (!modelo || !modelo.scan) {
-    host.innerHTML = '<div class="card"><div class="empty-state"><span class="big">▣</span><h3>Modelo sem arquivo</h3>Carregue o .docx na tela Modelos Word.</div></div>';
+    host.innerHTML = '<div class="card"><div class="empty-state">' + ICONE_GRANDE(ICONES.documento) + '<h3>Modelo sem arquivo</h3>Carregue o .docx na tela Modelos Word.</div></div>';
     $('mapCount').textContent = '—';
     renderInspector();
     return;
@@ -1152,7 +1167,7 @@ function renderInspector() {
   if (!cell) {
     $('inspTitle').textContent = 'Nenhuma célula selecionada';
     $('inspCrumb').textContent = 'Escolha uma célula na estrutura ao lado.';
-    body.innerHTML = '<div class="insp-empty"><span class="big">⇄</span>Selecione uma célula do documento para definir qual coluna da planilha vai preenchê-la.</div>';
+    body.innerHTML = '<div class="insp-empty">' + ICONE_GRANDE(ICONES.mapear) + 'Selecione uma célula do documento para definir qual coluna da planilha vai preenchê-la.</div>';
     return;
   }
   const modelo = modeloAtivo();
@@ -1437,7 +1452,7 @@ function renderDistribuir() {
       <button class="btn sec sm" data-load-profile="${esc(n)}">Carregar</button>
       <button class="btn ghost sm" data-del-profile="${esc(n)}">Excluir</button>
     </div>`).join('')
-    : '<div class="empty-state"><span class="big">▥</span><h3>Nenhum perfil salvo</h3>Configure e salve com um nome para reutilizar depois.</div>';
+    : '<div class="empty-state">' + ICONE_GRANDE(ICONES.caixa) + '<h3>Nenhum perfil salvo</h3>Configure e salve com um nome para reutilizar depois.</div>';
 
   const box = $('exportInfo');
   if (!podeExportarFerramenta) {
