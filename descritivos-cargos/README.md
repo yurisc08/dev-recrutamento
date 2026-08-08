@@ -7,34 +7,38 @@ Sem nuvem, sem conta em serviço nenhum e **sem nenhuma dependência**: só o No
 O formulário, as validações e o documento final seguem o modelo
 **MAPA DE CARREIRA**, declarado em um único lugar: `shared/model.js`.
 
-## Dois jeitos de usar
+## Como abrir
 
-### 1. Só abrir o `index.html` (modo local)
+**Extraia o zip primeiro.** Abrir arquivos de dentro do zip, pelo visualizador do
+Windows, não funciona: o navegador enxerga só um arquivo solto.
 
-Extraia a pasta e dê **duplo clique no `index.html`**. Funciona sem instalar
-nada, sem Node e sem internet — a ferramenta inteira está dentro desse arquivo.
+### O jeito recomendado: `abrir.bat`
 
-Use para conhecer o fluxo, demonstrar para a equipe ou preencher sozinho. Neste
-modo os dados ficam **no navegador daquela máquina** e os e-mails são preparados
-no seu cliente de e-mail (Outlook, Gmail…) pelo botão *Preparar e-mail*.
+Duplo clique em **`abrir.bat`** (Windows) ou `./abrir.sh` (Linux/macOS). Ele
+sobe o servidor e abre o navegador em <http://localhost:3000>. Deixe a janela
+preta aberta enquanto estiver usando; fechá-la desliga o servidor.
 
-> Extraia o zip antes. Abrir o `index.html` de dentro do zip, pelo visualizador
-> do Windows, costuma dar erro.
+Precisa do **Node.js 18 ou mais novo** — se não tiver, baixe a versão LTS em
+<https://nodejs.org> (instalação padrão, tudo "avançar"). Não existe
+`npm install`: o servidor usa só o que já vem com o Node.
 
-### 2. Rodando o servidor (modo compartilhado)
+Assim os dados ficam gravados em `data/` e o fluxo funciona **entre pessoas**:
+C&R cadastra na máquina dela e o gestor abre da dele, pelo IP da máquina que
+está rodando (`http://192.168.0.42:3000`, por exemplo — descubra o seu com
+`ipconfig`).
 
-Para o fluxo funcionar **entre pessoas** — C&R cria na máquina dela, o gestor
-abre na dele — é preciso um servidor:
+### Para só dar uma olhada: duplo clique no `index.html`
 
-```bash
-cd descritivos-cargos
-npm start               # equivale a: node build.js && node server.js
-```
+A ferramenta inteira está dentro desse arquivo e funciona sem instalar nada.
+Serve para conhecer o fluxo e navegar pelas telas.
 
-Abra <http://localhost:3000>. Não tem `npm install`: o servidor usa só os
-módulos nativos do Node 18 ou mais novo (`node -v` para conferir).
+Aqui vale um aviso: **alguns navegadores não deixam arquivos abertos direto do
+disco guardarem dados** (o Edge costuma recusar, com um erro de "quota"). Nesse
+caso a ferramenta continua funcionando normalmente, mas o que você preencher
+**se perde ao recarregar a página** — e a própria tela avisa isso. Para valer,
+use o `abrir.bat`.
 
-A ferramenta detecta sozinha em qual modo está e avisa na tela.
+A ferramenta detecta sozinha em qual situação está e diz na tela.
 
 Para outras pessoas acessarem, elas usam o **IP da máquina que roda o servidor**
 — `http://192.168.0.42:3000`, por exemplo. Para descobrir esse IP:

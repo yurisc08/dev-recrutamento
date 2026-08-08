@@ -10,8 +10,9 @@
 
 const RemoteStore = {
   mode: 'server',
-  token: sessionStorage.getItem('dc_token') || null,
-  session: JSON.parse(sessionStorage.getItem('dc_session') || 'null'),
+  token: sessionData.getItem('dc_token') || null,
+  session: JSON.parse(sessionData.getItem('dc_session') || 'null'),
+  persistent: true,
   jobs: [],
   smtpReady: false,
 
@@ -42,8 +43,8 @@ const RemoteStore = {
   remember(data) {
     this.token = data.token;
     this.session = data.session;
-    sessionStorage.setItem('dc_token', data.token);
-    sessionStorage.setItem('dc_session', JSON.stringify(data.session));
+    sessionData.setItem('dc_token', data.token);
+    sessionData.setItem('dc_session', JSON.stringify(data.session));
     return data.session;
   },
 
@@ -51,8 +52,8 @@ const RemoteStore = {
     this.token = null;
     this.session = null;
     this.jobs = [];
-    sessionStorage.removeItem('dc_token');
-    sessionStorage.removeItem('dc_session');
+    sessionData.removeItem('dc_token');
+    sessionData.removeItem('dc_session');
   },
 
   /* Uma única porta: o código diz o papel de quem entrou. */

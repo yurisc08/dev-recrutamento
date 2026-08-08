@@ -14,20 +14,73 @@
  *     mensagem pronta no cliente de e-mail da pessoa).
  */
 
+/*
+ * Guardar dados no navegador nem sempre é possível: abrindo por file://, alguns
+ * navegadores (e o modo anônimo) recusam gravar e devolvem "exceeded the quota"
+ * já na primeira escrita. Em vez de quebrar, caímos para memória: a ferramenta
+ * funciona igual e a tela avisa que o preenchido se perde ao recarregar.
+ */
+function safeStorage(kind) {
+  const memory = new Map();
+  let persistent = false;
+
+  try {
+    const probe = '__dc_probe__';
+    window[kind].setItem(probe, '1');
+    window[kind].removeItem(probe);
+    persistent = true;
+  } catch {
+    persistent = false;
+  }
+
+  return {
+    get persistent() { return persistent; },
+
+    getItem(key) {
+      if (persistent) {
+        try { return window[kind].getItem(key); } catch { persistent = false; }
+      }
+      return memory.has(key) ? memory.get(key) : null;
+    },
+
+    setItem(key, value) {
+      memory.set(key, value);
+      if (!persistent) return;
+      try {
+        window[kind].setItem(key, value);
+      } catch {
+        // Cota estourou ou o navegador bloqueou: segue só em memória.
+        persistent = false;
+      }
+    },
+
+    removeItem(key) {
+      memory.delete(key);
+      if (!persistent) return;
+      try { window[kind].removeItem(key); } catch { persistent = false; }
+    }
+  };
+}
+
+const localData = safeStorage('localStorage');
+const sessionData = safeStorage('sessionStorage');
+
 const LocalStore = {
   KEY: 'dc_local_v3',
   mode: 'local',
   // Marca de sessão ativa: mantém a pessoa logada ao recarregar a página,
   // igual ao modo servidor.
-  token: sessionStorage.getItem('dc_local_session') ? 'local' : null,
-  session: JSON.parse(sessionStorage.getItem('dc_local_session') || 'null'),
+  token: sessionData.getItem('dc_local_session') ? 'local' : null,
+  session: JSON.parse(sessionData.getItem('dc_local_session') || 'null'),
+  /* Falso quando o navegador não deixa gravar: a tela avisa. */
+  get persistent() { return localData.persistent; },
   jobs: [],
   smtpReady: false,
 
   /* ------------------------------ Persistência --------------------------- */
   read() {
     try {
-      const stored = JSON.parse(localStorage.getItem(this.KEY));
+      const stored = JSON.parse(localData.getItem(this.KEY));
       if (!stored) throw new Error('vazio');
       stored.jobs = (stored.jobs || []).map(normalizeJob);
       stored.keys = stored.keys || seedKeys();
@@ -41,7 +94,7 @@ const LocalStore = {
   },
 
   write(data) {
-    localStorage.setItem(this.KEY, JSON.stringify(data));
+    localData.setItem(this.KEY, JSON.stringify(data));
     return data;
   },
 
@@ -61,7 +114,7 @@ const LocalStore = {
   remember(session) {
     this.token = 'local';
     this.session = session;
-    sessionStorage.setItem('dc_local_session', JSON.stringify(session));
+    sessionData.setItem('dc_local_session', JSON.stringify(session));
     return session;
   },
 
@@ -69,7 +122,7 @@ const LocalStore = {
     this.token = null;
     this.session = null;
     this.jobs = [];
-    sessionStorage.removeItem('dc_local_session');
+    sessionData.removeItem('dc_local_session');
   },
 
   /* Mesma porta única do modo servidor: chave administrativa primeiro,
@@ -280,7 +333,7 @@ const LocalStore = {
   },
 
   async reset() {
-    localStorage.removeItem(this.KEY);
+    localData.removeItem(this.KEY);
     this.read();
     await this.loadJobs();
   }

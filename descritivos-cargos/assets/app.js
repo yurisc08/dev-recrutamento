@@ -131,9 +131,12 @@ const ICONS = {
 function renderModeNote() {
   const note = $('#modeNote');
   if (!note) return;
-  note.innerHTML = API.mode === 'local'
+
+  if (API.mode !== 'local') return void (note.innerHTML = '');
+
+  note.innerHTML = API.persistent
     ? `<div class="banner warn"><b>Modo local.</b> Os dados ficam guardados neste navegador, nesta máquina, e os e-mails são preparados no seu cliente de e-mail. Para o fluxo funcionar entre pessoas, rode <code>node server.js</code> e acesse pelo endereço da máquina.</div>`
-    : '';
+    : `<div class="banner warn"><b>Modo de teste, sem gravação.</b> Este navegador não está deixando guardar dados em arquivos abertos direto do disco, então tudo funciona normalmente <b>mas se perde ao recarregar a página</b>. Para guardar de verdade, rode <code>node server.js</code> (ou o atalho <code>abrir.bat</code>) e acesse por <code>http://localhost:3000</code>.</div>`;
 }
 
 const NAV = {
@@ -925,6 +928,7 @@ if (API.token && API.session) {
 
 /* -------------------------- Aviso de modo no login ----------------------- */
 if (API.mode === 'local') {
-  $('#loginModeNote').innerHTML =
-    'Modo local: os dados ficam neste navegador. Para usar entre várias pessoas, rode <code>node server.js</code>.';
+  $('#loginModeNote').innerHTML = API.persistent
+    ? 'Modo local: os dados ficam neste navegador. Para usar entre várias pessoas, rode <code>node server.js</code>.'
+    : 'Modo de teste: este navegador não está guardando dados de arquivos abertos do disco — dá para navegar por tudo, mas o preenchido se perde ao recarregar. Para guardar, use o atalho <code>abrir.bat</code>.';
 }
