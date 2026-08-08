@@ -225,10 +225,10 @@ aprovador nunca edita conteúdo: apenas aprova ou devolve.
 
 | Tela | Quem vê | Para quê |
 | --- | --- | --- |
+| Fluxo | Aprovador e C&R | painel horizontal com uma coluna por etapa: mostra onde cada cargo parou, destaca a coluna que espera por você e tem busca por cargo, gestor ou código |
 | Meus descritivos | Responsável | preencher e enviar seus cargos |
 | Aprovações | Aprovador | aprovar ou devolver, com o descritivo inteiro à vista |
 | Validações | C&R | validação final |
-| Cargos | Aprovador e C&R | consulta |
 | Administração | C&R | criar cargo, buscar, filtrar por etapa, reenviar código, cancelar, exportar CSV |
 | Códigos de acesso | C&R | criar, copiar, trocar e revogar códigos de C&R e aprovadores |
 | Modelo | C&R | montar as seções e os campos do descritivo, e quem preenche cada um |

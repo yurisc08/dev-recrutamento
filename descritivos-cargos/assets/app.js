@@ -116,6 +116,7 @@ $('#logout').onclick = async () => {
 
 /* ============================== NAVEGAÇÃO ================================ */
 const ICONS = {
+  flow:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="6" width="5" height="12" rx="1.4"/><rect x="10" y="6" width="5" height="8" rx="1.4"/><rect x="17" y="6" width="4" height="5" rx="1.4"/></svg>',
   jobs:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 12h16M4 19h10"/></svg>',
   approvals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12.5l5 5L20 6.5"/></svg>',
   admin:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>',
@@ -142,18 +143,23 @@ function renderModeNote() {
 
 const NAV = {
   manager:  [{ view: 'jobs', label: 'Meus descritivos' }],
-  approver: [{ view: 'approvals', label: 'Aprovações' }, { view: 'jobs', label: 'Cargos' }],
+  approver: [
+    { view: 'flow', label: 'Fluxo' },
+    { view: 'approvals', label: 'Aprovações' }
+  ],
+  /* O painel do Fluxo já lista todos os cargos, com busca — não há uma aba
+   * "Cargos" separada para quem administra. */
   hr:       [
-    { view: 'approvals', label: 'Validações' },
-    { view: 'jobs', label: 'Cargos' },
+    { view: 'flow', label: 'Fluxo' },
+    { view: 'approvals', label: 'Aprovações' },
     { view: 'admin', label: 'Administração' },
-    { view: 'users', label: 'Códigos de acesso' },
+    { view: 'users', label: 'Códigos' },
     { view: 'model', label: 'Modelo' },
-    { view: 'config', label: 'Configurações' }
+    { view: 'config', label: 'Ajustes' }
   ]
 };
 
-const HOME = { manager: 'jobs', approver: 'approvals', hr: 'admin' };
+const HOME = { manager: 'jobs', approver: 'flow', hr: 'flow' };
 
 async function enter(view) {
   // O modelo vem antes dos cargos: o formulário inteiro depende dele.
@@ -180,6 +186,7 @@ function renderNav() {
 }
 
 const VIEWS = {
+  flow: flowView,
   jobs: jobsView,
   approvals: approvalsView,
   admin: adminView,
@@ -192,7 +199,7 @@ const VIEWS = {
 
 /* Telas de lista: podem ser redesenhadas a qualquer momento sem atrapalhar
  * ninguém. A tela do cargo fica de fora porque tem texto sendo digitado. */
-const LIST_VIEWS = ['jobs', 'approvals', 'admin'];
+const LIST_VIEWS = ['flow', 'jobs', 'approvals', 'admin'];
 
 function render() {
   $('#topActions').innerHTML = '';
@@ -274,11 +281,19 @@ function identificationId() {
 
 /* ---------------------------- Trilha do fluxo ---------------------------- */
 const FLOW_STEPS = [
-  { label: 'Preenchimento', stages: ['editing', 'returned'] },
-  { label: 'Aprovação',     stages: ['manager_review'] },
-  { label: 'Validação C&R', stages: ['hr_review'] },
-  { label: 'Aprovado',      stages: ['approved'] }
+  { label: 'Preenchimento do gestor', stages: ['editing', 'returned'] },
+  { label: 'Aprovação do aprovador',  stages: ['manager_review'] },
+  { label: 'Aprovação de C&R',        stages: ['hr_review'] },
+  { label: 'Aprovado',                stages: ['approved'] }
 ];
+
+/* Um cargo sem aprovador pula a etapa do meio: a trilha não mostra o que não
+ * vai acontecer. */
+function stepsFor(job) {
+  return String(job.approver || '').trim()
+    ? FLOW_STEPS
+    : FLOW_STEPS.filter(step => !step.stages.includes('manager_review'));
+}
 
 /* Mostra em que ponto do fluxo o cargo está — é o resumo visual da etapa. */
 function stepper(job) {
@@ -287,13 +302,83 @@ function stepper(job) {
       <small>Situação</small><b>Cargo cancelado — C&R pode reabrir</b></div></div>`;
   }
 
-  const current = FLOW_STEPS.findIndex(step => step.stages.includes(job.status));
-  return `<div class="stepper">${FLOW_STEPS.map((step, i) => {
+  const steps = stepsFor(job);
+  const current = steps.findIndex(step => step.stages.includes(job.status));
+  return `<div class="stepper">${steps.map((step, i) => {
     const done = job.status === 'approved' || i < current;
     const tone = done ? 'done' : i === current ? (job.status === 'returned' ? 'alert' : 'current') : '';
     const caption = done ? 'concluído' : i === current ? STAGES[job.status].label : 'a fazer';
     return `<div class="step ${tone}"><small>${caption}</small><b>${step.label}</b></div>`;
   }).join('')}</div>`;
+}
+
+/* ============================ VISÃO: FLUXO =============================== */
+/*
+ * O fluxo desenhado na horizontal, uma coluna por etapa: bate o olho e vê onde
+ * cada cargo parou e de quem se está esperando. É a tela inicial de C&R.
+ */
+const BOARD = [
+  { id: 'fill',     label: 'Preenchimento do gestor', stages: ['editing', 'returned'], owner: 'manager' },
+  { id: 'approver', label: 'Aprovação do aprovador',  stages: ['manager_review'],      owner: 'approver' },
+  { id: 'review',   label: 'Aprovação de C&R',        stages: ['hr_review'],           owner: 'hr' },
+  { id: 'done',     label: 'Aprovado',                stages: ['approved'],            owner: null }
+];
+
+const boardFilter = { term: '' };
+
+function flowView() {
+  if (session().role === 'manager') return show('jobs');
+
+  const canceled = API.jobs.filter(j => j.status === 'canceled');
+  const columns = canceled.length
+    ? [...BOARD, { id: 'canceled', label: 'Cancelado', stages: ['canceled'], owner: null }]
+    : BOARD;
+
+  $('#title').textContent = 'Fluxo';
+  $('#subtitle').textContent = `${API.jobs.length} cargo(s) no fluxo • ${API.pending().length} aguardando você`;
+  $('#topActions').innerHTML = session().role === 'hr'
+    ? `<button class="btn primary" data-action="new">Novo cargo</button>` : '';
+
+  $('#content').innerHTML = `
+    <div class="toolbar">
+      <input id="boardSearch" placeholder="Procurar cargo, gestor ou código" value="${esc(boardFilter.term)}">
+    </div>
+    <div class="board">${columns.map(column => renderColumn(column)).join('')}</div>`;
+
+  $('#boardSearch').oninput = e => {
+    boardFilter.term = e.target.value;
+    $$('.board-col').forEach((el, i) => {
+      el.outerHTML = renderColumn(columns[i]);
+    });
+  };
+}
+
+function renderColumn(column) {
+  const term = boardFilter.term.trim().toLowerCase();
+  const jobs = API.jobs
+    .filter(j => column.stages.includes(j.status))
+    .filter(j => !term || [j.name, j.manager, j.code, j.jobCode].some(v => String(v || '').toLowerCase().includes(term)));
+
+  const mine = column.owner === session().role && jobs.length > 0;
+
+  return `
+    <section class="board-col${mine ? ' mine' : ''}">
+      <header>
+        <b>${column.label}</b>
+        <span class="count">${jobs.length}</span>
+      </header>
+      ${mine && jobs.length ? '<p class="board-note">Sua ação é necessária</p>' : ''}
+      <div class="board-cards">
+        ${jobs.length ? jobs.map(job => `
+          <article class="board-card${job.status === 'returned' ? ' returned' : ''}" data-action="open" data-id="${job.id}" tabindex="0">
+            <b>${esc(job.name)}</b>
+            <p class="muted">${esc(job.manager)}</p>
+            ${job.status === 'returned' ? '<span class="tag late">Devolvido para correção</span>' : ''}
+            ${deadlineTag(job)}
+            ${column.id === 'fill' ? progressBar(job) : ''}
+          </article>`).join('') : '<p class="board-empty">—</p>'}
+      </div>
+    </section>`;
 }
 
 /* ============================ VISÃO: CARGOS ============================== */
