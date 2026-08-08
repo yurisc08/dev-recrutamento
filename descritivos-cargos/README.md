@@ -7,15 +7,34 @@ Sem nuvem, sem conta em serviço nenhum e **sem nenhuma dependência**: só o No
 O formulário, as validações e o documento final seguem o modelo
 **MAPA DE CARREIRA**, declarado em um único lugar: `shared/model.js`.
 
-## Como rodar
+## Dois jeitos de usar
+
+### 1. Só abrir o `index.html` (modo local)
+
+Extraia a pasta e dê **duplo clique no `index.html`**. Funciona sem instalar
+nada, sem Node e sem internet — a ferramenta inteira está dentro desse arquivo.
+
+Use para conhecer o fluxo, demonstrar para a equipe ou preencher sozinho. Neste
+modo os dados ficam **no navegador daquela máquina** e os e-mails são preparados
+no seu cliente de e-mail (Outlook, Gmail…) pelo botão *Preparar e-mail*.
+
+> Extraia o zip antes. Abrir o `index.html` de dentro do zip, pelo visualizador
+> do Windows, costuma dar erro.
+
+### 2. Rodando o servidor (modo compartilhado)
+
+Para o fluxo funcionar **entre pessoas** — C&R cria na máquina dela, o gestor
+abre na dele — é preciso um servidor:
 
 ```bash
 cd descritivos-cargos
-node server.js          # ou: npm start
+npm start               # equivale a: node build.js && node server.js
 ```
 
-Abra <http://localhost:3000>. Não tem `npm install`, não tem build.
-Precisa de Node 18 ou mais novo (`node -v` para conferir).
+Abra <http://localhost:3000>. Não tem `npm install`: o servidor usa só os
+módulos nativos do Node 18 ou mais novo (`node -v` para conferir).
+
+A ferramenta detecta sozinha em qual modo está e avisa na tela.
 
 Para outras pessoas acessarem, elas usam o **IP da máquina que roda o servidor**
 — `http://192.168.0.42:3000`, por exemplo. Para descobrir esse IP:
@@ -162,16 +181,24 @@ dela, o gestor abre da máquina dele e enxerga o mesmo cargo.
 
 | Arquivo | Responsabilidade |
 | --- | --- |
+| `index.html` | **Arquivo único gerado**, com tudo embutido — é o que se abre |
+| `build.js` | Gera o `index.html` a partir de `src/`, `assets/` e `shared/` |
+| `src/index.html` | Estrutura da página (fonte) |
 | `server.js` | Servidor HTTP e rotas da API |
 | `server/db.js` | Leitura e gravação atômica de `data/` |
 | `server/auth.js` | Hash de senha e sessões |
 | `server/mailer.js` | Cliente SMTP próprio (EHLO, STARTTLS, AUTH, DATA) |
 | `server/notify.js` | Textos dos avisos, disparo por etapa e cobrança de prazo |
 | `shared/model.js` | Seções, campos, papéis e etapas do modelo |
+| `shared/seed.js` | Dados de demonstração, usados pelos dois modos |
+| `assets/local-store.js` | Modo local: mesma interface da API, guardando no navegador |
 | `shared/flow.js` | Visibilidade, permissão de escrita e transições |
 | `assets/api.js` | Cliente da API; única camada do navegador que fala com o servidor |
 | `assets/app.js` | Interface |
 | `assets/styles.css` | Estilos e folha de impressão do documento |
+
+**Ao mexer no código, rode `node build.js`** (ou `npm start`, que já faz isso)
+para regenerar o `index.html` — é ele que o navegador abre.
 
 Os arquivos de `shared/` são carregados pelos dois lados — o navegador desenha a
 interface com as mesmas regras que o servidor aplica de verdade. Para incluir ou
@@ -181,6 +208,10 @@ formulário, validação, permissões, exportação e documento acompanham.
 ## Alcance desta versão
 
 Feita para rede interna, na escala de uma área de RH. O que ela assume:
+
+- **No modo local não há e-mail automático nem dados compartilhados**, e as
+  senhas dos usuários internos ficam no `localStorage` do navegador. É um modo
+  de demonstração e uso individual; para valer entre pessoas, use o servidor.
 
 - **HTTP, sem TLS.** Rede interna confiável. Para expor fora da empresa, ponha
   atrás de um proxy com HTTPS.

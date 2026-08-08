@@ -8,7 +8,8 @@
  * este arquivo só transporta.
  */
 
-const API = {
+const RemoteStore = {
+  mode: 'server',
   token: sessionStorage.getItem('dc_token') || null,
   session: JSON.parse(sessionStorage.getItem('dc_session') || 'null'),
   jobs: [],
@@ -153,3 +154,10 @@ const API = {
     await this.loadJobs();
   }
 };
+
+/*
+ * Escolha do modo, feita uma vez ao carregar:
+ *   file://  -> modo local, tudo no navegador (duplo clique no index.html)
+ *   http(s) -> modo servidor, dados compartilhados entre as pessoas
+ */
+const API = location.protocol === 'file:' ? LocalStore : RemoteStore;

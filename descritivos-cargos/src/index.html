@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Descritivos de Cargos</title>
+<!--ESTILOS-->
+</head>
+<body>
+
+<!-- ============================ LOGIN ============================ -->
+<section id="login" class="login">
+  <aside class="login-side">
+    <div>
+      <div class="logo">DC</div>
+      <h2>Descritivos de cargo, do rascunho à aprovação.</h2>
+      <p>Cada pessoa preenche a parte que é dela, o fluxo anda sozinho e o documento sai pronto no fim.</p>
+    </div>
+    <div class="steps-preview">
+      <div><span>1</span> C&amp;R cadastra o cargo e envia o código</div>
+      <div><span>2</span> O responsável preenche o conteúdo</div>
+      <div><span>3</span> O aprovador aprova ou devolve</div>
+      <div><span>4</span> C&amp;R valida e o MAPA DE CARREIRA fica pronto</div>
+    </div>
+    <small style="color:rgba(255,255,255,.55)">Modelo MAPA DE CARREIRA</small>
+  </aside>
+
+  <main class="login-main">
+    <div class="login-card">
+      <div id="managerLogin">
+        <h1>Acesse seus descritivos</h1>
+        <p class="lead">Informe o código recebido por e-mail. Não é necessário usuário nem senha.</p>
+        <div class="panel">
+          <div class="field">
+            <label for="accessCode">Código de acesso</label>
+            <input id="accessCode" placeholder="Ex.: DC-00001" autocomplete="off" spellcheck="false">
+          </div>
+          <button id="managerEnter" class="btn primary full">Entrar</button>
+
+          <div class="test">
+            <b>Ambiente de teste</b>
+            <p class="muted">Preencha automaticamente um código válido.</p>
+            <button id="testCode" class="btn secondary full">Usar código DC-00001</button>
+          </div>
+        </div>
+
+        <div class="divider">ou</div>
+        <button id="showInternal" class="btn outline full">Acesso interno de C&amp;R e aprovação</button>
+        <p id="loginModeNote" class="muted mt"></p>
+      </div>
+
+      <div id="internalLogin" class="hide">
+        <h1>Acesso interno</h1>
+        <p class="lead">Área de Carreira &amp; Recompensa e dos aprovadores.</p>
+        <div class="panel">
+          <div class="field">
+            <label for="email">E-mail</label>
+            <input id="email" type="email" autocomplete="username">
+          </div>
+          <div class="field">
+            <label for="password">Senha</label>
+            <input id="password" type="password" autocomplete="current-password">
+          </div>
+          <button id="internalEnter" class="btn primary full">Entrar</button>
+
+          <div class="test">
+            <b>Contas de teste</b>
+            <div class="actions mt-sm">
+              <button id="testHr" class="btn secondary">Carreira &amp; Recompensa</button>
+              <button id="testApprover" class="btn secondary">Aprovador</button>
+            </div>
+          </div>
+        </div>
+
+        <button id="backToManager" class="btn outline full mt">Voltar</button>
+      </div>
+    </div>
+  </main>
+</section>
+
+<!-- ========================== APLICAÇÃO ========================== -->
+<section id="application" class="app hide">
+  <aside class="side">
+    <div class="side-brand"><span class="logo small">DC</span> Descritivos</div>
+    <nav id="nav"></nav>
+    <div class="side-foot">
+      <div id="identity" class="identity"></div>
+      <button id="logout" class="btn ghost full">Sair</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <div>
+        <h1 id="title">Cargos</h1>
+        <small id="subtitle" class="muted"></small>
+      </div>
+      <div id="topActions" class="actions"></div>
+    </header>
+    <div id="modeNote"></div>
+    <div id="content"></div>
+  </main>
+</section>
+
+<!-- =========================== OVERLAYS ========================== -->
+<div id="modal" class="modal hide">
+  <div class="panel">
+    <div id="modalContent"></div>
+    <div class="actions end mt">
+      <button id="closeModal" class="btn outline">Fechar</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast hide" role="status" aria-live="polite"></div>
+
+<!--SCRIPTS-->
+</body>
+</html>

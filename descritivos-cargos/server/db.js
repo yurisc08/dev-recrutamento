@@ -11,8 +11,8 @@ const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
 
-const Model = require('../shared/model.js');
 const Flow = require('../shared/flow.js');
+const seedData = require('../shared/seed.js');
 const auth = require('./auth.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -21,67 +21,15 @@ const DB_FILE = path.join(DATA_DIR, 'db.json');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 
 /* ============================= Dados iniciais ============================ */
+/* Os dados de demonstração vêm de shared/seed.js, os mesmos do modo local.
+ * Aqui as senhas viram hash antes de tocar o disco. */
 function seed() {
-  const today = Model.isoToday();
   return {
-    users: [
-      { email: 'rh@empresa.com',        name: 'Carreira & Recompensa', role: 'hr',       passwordHash: auth.hashPassword('Rh@2026!') },
-      { email: 'aprovador@empresa.com', name: 'Aprovador Demonstração', role: 'approver', passwordHash: auth.hashPassword('Ap@2026!') }
-    ],
-    jobs: [
-      Flow.normalizeJob({
-        id: 1,
-        code: 'DC-00001',
-        jobCode: 'AN-0421',
-        name: 'Analista de Dados e BI',
-        company: 'Empresa Exemplo',
-        cbo: '2124-05',
-        track: 'Especialista',
-        creationDate: today,
-        manager: 'Gestor Demonstração',
-        managerEmail: 'gestor@empresa.com',
-        approver: 'Aprovador Demonstração',
-        deadline: Model.addDays(today, 12),
-        status: 'editing',
-        educationMin: 'Superior completo em Estatística, Sistemas de Informação ou correlatos',
-        educationDesired: 'Pós-graduação em Análise de Dados',
-        behavioral: 'Trabalho em equipe\nOrientação a resultados\nComunicação assertiva',
-        history: [Flow.entry('Cargo criado e código de acesso enviado ao responsável', 'Carreira & Recompensa', 'hr')]
-      }),
-      Flow.normalizeJob({
-        id: 2,
-        code: 'DC-00001',
-        jobCode: 'ES-0118',
-        name: 'Especialista de Processos',
-        company: 'Empresa Exemplo',
-        cbo: '2521-05',
-        track: 'Especialista',
-        creationDate: today,
-        manager: 'Gestor Demonstração',
-        managerEmail: 'gestor@empresa.com',
-        approver: 'Aprovador Demonstração',
-        deadline: Model.addDays(today, 14),
-        status: 'returned',
-        educationMin: 'Superior completo em Engenharia ou Administração',
-        educationDesired: 'Certificação Lean Six Sigma',
-        behavioral: 'Visão sistêmica\nCapacidade analítica\nInfluência sem autoridade',
-        focus: 'Melhoria contínua dos processos industriais.',
-        mission: 'Promover a melhoria contínua dos processos, garantindo eficiência e padronização.',
-        responsibilities: 'Mapear processos das áreas produtivas.',
-        languageMin: 'Inglês intermediário',
-        languageDesired: 'Espanhol básico',
-        technicalMin: 'Mapeamento de processos (BPMN)',
-        technicalDesired: 'Automação de processos',
-        experienceMin: '3 anos em melhoria de processos',
-        experienceDesired: '5 anos em ambiente industrial',
-        history: [
-          Flow.entry('Cargo criado e código de acesso enviado ao responsável', 'Carreira & Recompensa', 'hr'),
-          Flow.entry('Enviado para aprovação', 'Gestor Demonstração', 'manager'),
-          Flow.entry('Devolvido para correção: detalhar melhor as responsabilidades', 'Aprovador Demonstração', 'approver')
-        ],
-        comments: [Flow.comment('Detalhar melhor as responsabilidades, listando uma atividade por linha.', 'Aprovador Demonstração', 'approver')]
-      })
-    ]
+    users: seedData.seedUsers().map(({ password, ...user }) => ({
+      ...user,
+      passwordHash: auth.hashPassword(password)
+    })),
+    jobs: seedData.seedJobs()
   };
 }
 
@@ -96,9 +44,6 @@ function defaultConfig() {
 }
 
 /* ================================ Estado ================================= */
-let db = load(DB_FILE, seed);
-let config = mergeConfig(load(CONFIG_FILE, defaultConfig));
-
 function load(file, fallback) {
   try {
     return JSON.parse(fs.readFileSync(file, 'utf8'));
@@ -112,6 +57,9 @@ function mergeConfig(stored) {
   const base = defaultConfig();
   return { ...base, ...stored, smtp: { ...base.smtp, ...(stored.smtp || {}) } };
 }
+
+let db = load(DB_FILE, seed);
+let config = mergeConfig(load(CONFIG_FILE, defaultConfig));
 
 function normalize() {
   db.jobs = (db.jobs || []).map(Flow.normalizeJob);

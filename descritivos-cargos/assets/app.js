@@ -120,6 +120,27 @@ $('#logout').onclick = async () => {
 };
 
 /* ============================== NAVEGAÇÃO ================================ */
+const ICONS = {
+  jobs:      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 5h16M4 12h16M4 19h10"/></svg>',
+  approvals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12.5l5 5L20 6.5"/></svg>',
+  admin:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>',
+  users:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c.6-3.4 3.3-5.4 6.5-5.4s5.9 2 6.5 5.4M17 8.2a3 3 0 010 5.6M18.5 20c-.2-1.6-.7-2.9-1.5-3.9"/></svg>',
+  config:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.8 12h2.4M18.8 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>'
+};
+
+/*
+ * A ferramenta roda em dois modos e a tela avisa em qual deles está:
+ *   local    -> index.html aberto direto, dados só neste navegador
+ *   servidor -> node server.js, dados compartilhados entre as pessoas
+ */
+function renderModeNote() {
+  const note = $('#modeNote');
+  if (!note) return;
+  note.innerHTML = API.mode === 'local'
+    ? `<div class="banner warn"><b>Modo local.</b> Os dados ficam guardados neste navegador, nesta máquina, e os e-mails são preparados no seu cliente de e-mail. Para o fluxo funcionar entre pessoas, rode <code>node server.js</code> e acesse pelo endereço da máquina.</div>`
+    : '';
+}
+
 const NAV = {
   manager:  [{ view: 'jobs', label: 'Meus descritivos' }],
   approver: [{ view: 'approvals', label: 'Aprovações' }, { view: 'jobs', label: 'Cargos' }],
@@ -151,7 +172,7 @@ function renderNav() {
   $('#nav').innerHTML = NAV[session().role].map(item => {
     const showsBadge = item.view === 'approvals' || (session().role === 'manager' && item.view === 'jobs');
     const badge = showsBadge && pending ? `<span class="pill">${pending}</span>` : '';
-    return `<button data-view="${item.view}" class="${state.view === item.view ? 'active' : ''}">${item.label}${badge}</button>`;
+    return `<button data-view="${item.view}" class="${state.view === item.view ? 'active' : ''}">${ICONS[item.view] || ''}<span>${item.label}</span>${badge}</button>`;
   }).join('');
   $$('#nav [data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
 }
@@ -161,6 +182,7 @@ function show(view, jobId) {
   if (jobId !== undefined) state.jobId = jobId;
   $('#topActions').innerHTML = '';
   renderNav();
+  renderModeNote();
   ({
     jobs: jobsView,
     approvals: approvalsView,
@@ -205,6 +227,30 @@ function jobCard(job, actions) {
       ${progressBar(job)}
       <div class="actions mt-sm">${actions}</div>
     </article>`;
+}
+
+/* ---------------------------- Trilha do fluxo ---------------------------- */
+const FLOW_STEPS = [
+  { label: 'Preenchimento', stages: ['editing', 'returned'] },
+  { label: 'Aprovação',     stages: ['manager_review'] },
+  { label: 'Validação C&R', stages: ['hr_review'] },
+  { label: 'Aprovado',      stages: ['approved'] }
+];
+
+/* Mostra em que ponto do fluxo o cargo está — é o resumo visual da etapa. */
+function stepper(job) {
+  if (job.status === 'canceled') {
+    return `<div class="stepper"><div class="step alert" style="flex:1">
+      <small>Situação</small><b>Cargo cancelado — C&R pode reabrir</b></div></div>`;
+  }
+
+  const current = FLOW_STEPS.findIndex(step => step.stages.includes(job.status));
+  return `<div class="stepper">${FLOW_STEPS.map((step, i) => {
+    const done = job.status === 'approved' || i < current;
+    const tone = done ? 'done' : i === current ? (job.status === 'returned' ? 'alert' : 'current') : '';
+    const caption = done ? 'concluído' : i === current ? STAGES[job.status].label : 'a fazer';
+    return `<div class="step ${tone}"><small>${caption}</small><b>${step.label}</b></div>`;
+  }).join('')}</div>`;
 }
 
 /* ============================ VISÃO: CARGOS ============================== */
@@ -266,6 +312,7 @@ function jobView() {
         ${badge(job.status)}
       </div>
       <div class="body">
+        ${stepper(job)}
         ${returnedNote}
         <div class="job-meta">${deadlineTag(job)}<span class="tag">Aprovador: ${esc(job.approver || '—')}</span></div>
         ${progressBar(job)}
@@ -385,7 +432,7 @@ function adminView() {
     <button class="btn outline" data-action="reset">Restaurar dados de teste</button>`;
 
   $('#content').innerHTML = `
-    ${API.smtpReady ? '' : `<div class="banner warn">O envio de e-mails ainda não está configurado — os avisos do fluxo não saem sozinhos. Ajuste em <b>Configurações</b>.</div>`}
+    ${API.smtpReady || API.mode === 'local' ? '' : `<div class="banner warn">O envio de e-mails ainda não está configurado — os avisos do fluxo não saem sozinhos. Ajuste em <b>Configurações</b>.</div>`}
     <div class="metrics">${byStage.map(s => `
       <div class="metric ${adminFilter.status === s.k ? 'selected' : ''}" data-filter="${s.k}">
         <b>${s.n}</b><span>${STAGES[s.k].label}</span>
@@ -634,8 +681,8 @@ async function configView() {
             <small class="muted">Vai nos e-mails, para a pessoa clicar e chegar até aqui. Use o IP ou o nome desta máquina na rede.</small>
           </div>
         </div>
-        <label class="check"><input type="checkbox" id="cNotifications" ${checked(config.notificationsEnabled)}> Enviar avisos automáticos a cada etapa do fluxo</label>
-        <label class="check"><input type="checkbox" id="cReminders" ${checked(config.remindersEnabled)}> Cobrar quem está com pendência perto do prazo</label>
+        <label class="check"><input type="checkbox" id="cNotifications" ${checked(config.notificationsEnabled)} ${API.mode === 'local' ? 'disabled' : ''}> Enviar avisos automáticos a cada etapa do fluxo</label>
+        <label class="check"><input type="checkbox" id="cReminders" ${checked(config.remindersEnabled)} ${API.mode === 'local' ? 'disabled' : ''}> Cobrar quem está com pendência perto do prazo</label>
         <div class="grid">
           <div class="field">
             <label for="cReminderDays">Começar a cobrar a quantos dias do prazo</label>
@@ -646,6 +693,14 @@ async function configView() {
       </div>
     </div>
 
+    ${API.mode === 'local' ? `
+    <div class="card">
+      <div class="head"><b>Servidor de e-mail (SMTP)</b></div>
+      <div class="body">
+        <p class="muted">O envio automático de e-mails depende do servidor. Rode <code>node server.js</code> e acesse pelo endereço da máquina para configurar o SMTP, os avisos de cada etapa e a cobrança de prazo.</p>
+        <p class="muted">No modo local, use o botão <b>Preparar e-mail</b> em Administração: ele abre a mensagem pronta, com o código de acesso, no seu cliente de e-mail.</p>
+      </div>
+    </div>` : `
     <div class="card">
       <div class="head"><b>Servidor de e-mail (SMTP)</b></div>
       <div class="body">
@@ -663,15 +718,22 @@ async function configView() {
           <button class="btn outline" data-action="reminders-run">Rodar cobrança agora</button>
         </div>
       </div>
-    </div>`;
+    </div>`}`;
 }
 
 function collectConfig() {
-  return {
+  const base = {
     appUrl: $('#cAppUrl').value.trim(),
     notificationsEnabled: $('#cNotifications').checked,
     remindersEnabled: $('#cReminders').checked,
-    reminderDaysBefore: Number($('#cReminderDays').value) || 0,
+    reminderDaysBefore: Number($('#cReminderDays').value) || 0
+  };
+
+  // Os campos de SMTP só existem no modo servidor.
+  if (!$('#cHost')) return base;
+
+  return {
+    ...base,
     smtp: {
       host: $('#cHost').value.trim(),
       port: Number($('#cPort').value) || 587,
@@ -814,4 +876,10 @@ if (API.token && API.session) {
     $('#application').classList.add('hide');
     $('#login').classList.remove('hide');
   });
+}
+
+/* -------------------------- Aviso de modo no login ----------------------- */
+if (API.mode === 'local') {
+  $('#loginModeNote').innerHTML =
+    'Modo local: os dados ficam neste navegador. Para usar entre várias pessoas, rode <code>node server.js</code>.';
 }
