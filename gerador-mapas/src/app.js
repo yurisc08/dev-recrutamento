@@ -958,10 +958,25 @@ function renderBaseView() {
     return;
   }
   const ignorados = (state.allRecords || []).length - state.rows.length;
-  $('baseStatus').innerHTML = `<div class="alert ok"><span class="ai">✓</span><div>
+  let html = `<div class="alert ok"><span class="ai">✓</span><div>
     <b>${state.rows.length.toLocaleString('pt-BR')} registros</b> carregados da aba <span class="mono">${esc(state.sheetName)}</span>
-    · ${state.columns.length} colunas · ${ignorados.toLocaleString('pt-BR')} registros ignorados pelos prefixos configurados.
+    · ${state.columns.length} colunas.
   </div></div>`;
+
+  // O filtro de prefixos descarta linhas em silêncio. Quando ele estiver
+  // agindo, mostra quanto e quais, para não sumir cargo sem ninguém notar.
+  if (ignorados > 0) {
+    const porPrefixo = state.blocked.map(p => {
+      const n = (state.allRecords || []).filter(r => clean(r.COD_DO_CARGO).startsWith(p)).length;
+      return n ? `<span class="mono">${esc(p)}</span> (${n.toLocaleString('pt-BR')})` : '';
+    }).filter(Boolean).join(', ');
+    html += `<div class="alert warn" style="margin-top:9px"><span class="ai">!</span><div>
+      <b>${ignorados.toLocaleString('pt-BR')} cargo(s) foram descartados</b> pelo filtro de prefixos: ${porPrefixo}.
+      Eles não aparecem em nenhuma busca nem em nenhum documento. Se não for essa a intenção,
+      limpe o campo <b>Prefixos de código ignorados</b> acima.
+    </div></div>`;
+  }
+  $('baseStatus').innerHTML = html;
   renderColumns();
 }
 

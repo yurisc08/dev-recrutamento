@@ -42,6 +42,14 @@ MODELOS_PADRAO = [
                   "valor": "", "exigeFamilia": False},
     },
     {
+        "id": "operacional",
+        "nome": "Mapa de carreira operacional (4 níveis)",
+        "arquivo": "MAPA DE CARREIRA - OPERACIONAL.docx",
+        "asset": "template-operacional.docx",
+        "regra": {"tipo": "condicao", "coluna": "TCLC_DESC", "operador": "igual",
+                  "valor": "OPERACIONAL", "exigeFamilia": False},
+    },
+    {
         "id": "individual",
         "nome": "Descritivo de cargo individual",
         "arquivo": "DESCRITIVOS DE CARGOS TÉC ADM GESTÃO - COM MOD.docx",

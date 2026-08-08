@@ -17,7 +17,18 @@ publicar ou não a base de cargos junto.
 
 ## Modelos Word
 
-A ferramenta trabalha com **quantos modelos forem necessários**. Na tela *Modelos
+A ferramenta acompanha **três modelos** e aceita quantos mais forem necessários:
+
+| # | Modelo | Quando é usado | Cargos hoje |
+| --- | --- | --- | --- |
+| 1 | Mapa de carreira (JR/PL/SR) | Cargo com os três níveis preenchidos | 1.311 |
+| 2 | Mapa de carreira operacional (4 níveis) | `TCLC_DESC` igual a `OPERACIONAL` | 512 |
+| 3 | Descritivo de cargo individual | Sobra | 1.727 |
+
+O modelo operacional tem quatro níveis — **I, II, III e ESPECIALIZADO** — em vez dos
+três da trilha JR/PL/SR. Ele foi montado a partir do mapa oficial de OPERADOR DE
+MÁQUINAS, reaproveitando o cabeçalho, o logotipo, o rodapé e os estilos do modelo
+oficial. O arquivo é gerado por `gerar_template_operacional.py`. Na tela *Modelos
 Word* dá para adicionar um arquivo `.docx`, dar um nome a ele e definir **quando ele
 deve ser usado**:
 
@@ -34,6 +45,19 @@ naquele modelo, o que permite conferir a regra antes de gerar qualquer documento
 
 Ao adicionar um modelo, a estrutura é lida na hora e os campos `«CAMPO»` já vêm
 mapeados automaticamente quando a coluna correspondente existe na planilha.
+
+### Limite conhecido do modelo operacional
+
+A base atual **não tem colunas por nível para a trilha operacional de quatro níveis**.
+Existem `SKILL_30_JR`, `_PL` e `_SR`, mas nada equivalente para os níveis I a
+ESPECIALIZADO. Por isso, hoje as quatro colunas do documento saem com o mesmo valor —
+o da coluna genérica.
+
+Os quatro códigos do mapa oficial de OPERADOR DE MÁQUINAS (`210016`, `220016`,
+`230016`, `240016`) **também não estão na base**: não há nenhum cargo com código
+começando em 20 a 24. Quando esses dados forem incluídos, basta abrir o
+**Mapeamento** e apontar cada coluna do documento para a coluna certa da planilha —
+sem mexer em código.
 
 ## Enviar a ferramenta pronta
 

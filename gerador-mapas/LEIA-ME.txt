@@ -24,8 +24,20 @@ Mapeamento ........... dizer de qual coluna vem cada campo do documento
 Salvar e distribuir .. gerar a ferramenta pronta para enviar a outra pessoa
 
 
-PARA ADICIONAR UM TERCEIRO MODELO (ex.: operacional)
-----------------------------------------------------
+OS TRES MODELOS QUE JA VEM CONFIGURADOS
+---------------------------------------
+1. Mapa de carreira (JR/PL/SR) ....... cargos com os tres niveis
+2. Mapa de carreira operacional ...... TCLC_DESC = OPERACIONAL (4 niveis)
+3. Descritivo de cargo individual .... todos os demais
+
+Vale conferir: a base atual nao tem colunas separadas por nivel para a
+trilha operacional de 4 niveis, entao as quatro colunas do documento
+saem hoje com o mesmo valor. Quando a base tiver esses dados, e so
+apontar cada coluna na tela Mapeamento.
+
+
+PARA ADICIONAR MAIS UM MODELO
+-----------------------------
 1. Abra a tela "Modelos Word"
 2. Em "Adicionar um modelo", selecione o arquivo .docx
 3. Os campos ja vem mapeados automaticamente quando possivel
