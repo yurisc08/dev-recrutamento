@@ -134,7 +134,11 @@ button,input,textarea,select{font:inherit;color:inherit}
 .login-card h1{font-size:28px;margin:22px 0 6px}
 .lead{color:var(--muted)}
 .panel{background:var(--surface);border:1px solid var(--line);border-radius:var(--radius);padding:26px;box-shadow:var(--shadow);margin-top:20px}
-.test{border:1px dashed var(--line);background:var(--surface-2);padding:14px;border-radius:var(--radius-sm);margin-top:18px}
+.test{border:1px dashed var(--line);background:var(--surface-2);padding:16px;border-radius:var(--radius-sm);margin-top:18px}
+.demo-codes{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:12px}
+.demo-codes .btn{flex-direction:column;align-items:flex-start;gap:2px;padding:10px 12px;text-align:left}
+.demo-codes .btn b{font-size:13.5px;letter-spacing:.06em;font-variant-numeric:tabular-nums}
+.demo-codes .btn span{font-size:11.5px;font-weight:400;color:var(--muted)}
 .test b{font-size:13px}
 .divider{display:flex;align-items:center;gap:12px;margin:18px 0;color:var(--muted);font-size:12px}
 .divider::before,.divider::after{content:"";height:1px;background:var(--line);flex:1}
@@ -334,53 +338,31 @@ table.list .btn{padding:7px 12px;font-size:13px}
 
   <main class="login-main">
     <div class="login-card">
-      <div id="managerLogin">
-        <h1>Acesse seus descritivos</h1>
-        <p class="lead">Informe o código recebido por e-mail. Não é necessário usuário nem senha.</p>
-        <div class="panel">
-          <div class="field">
-            <label for="accessCode">Código de acesso</label>
-            <input id="accessCode" placeholder="Ex.: DC-00001" autocomplete="off" spellcheck="false">
-          </div>
-          <button id="managerEnter" class="btn primary full">Entrar</button>
+      <h1>Entrar com o código</h1>
+      <p class="lead">Todo acesso é por código — responsáveis, aprovadores e Carreira &amp; Recompensa. Não há usuário nem senha.</p>
 
-          <div class="test">
-            <b>Ambiente de teste</b>
-            <p class="muted">Preencha automaticamente um código válido.</p>
-            <button id="testCode" class="btn secondary full">Usar código DC-00001</button>
-          </div>
+      <div class="panel">
+        <div class="field">
+          <label for="accessCode">Código de acesso</label>
+          <input id="accessCode" placeholder="Ex.: DC-00001" autocomplete="off" spellcheck="false"
+                 autocapitalize="characters" style="font-size:19px;letter-spacing:.1em">
+          <small class="muted">Pode digitar com ou sem hífen, maiúsculas ou minúsculas.</small>
         </div>
-
-        <div class="divider">ou</div>
-        <button id="showInternal" class="btn outline full">Acesso interno de C&amp;R e aprovação</button>
-        <p id="loginModeNote" class="muted mt"></p>
+        <button id="enter" class="btn primary full">Entrar</button>
       </div>
 
-      <div id="internalLogin" class="hide">
-        <h1>Acesso interno</h1>
-        <p class="lead">Área de Carreira &amp; Recompensa e dos aprovadores.</p>
-        <div class="panel">
-          <div class="field">
-            <label for="email">E-mail</label>
-            <input id="email" type="email" autocomplete="username">
-          </div>
-          <div class="field">
-            <label for="password">Senha</label>
-            <input id="password" type="password" autocomplete="current-password">
-          </div>
-          <button id="internalEnter" class="btn primary full">Entrar</button>
-
-          <div class="test">
-            <b>Contas de teste</b>
-            <div class="actions mt-sm">
-              <button id="testHr" class="btn secondary">Carreira &amp; Recompensa</button>
-              <button id="testApprover" class="btn secondary">Aprovador</button>
-            </div>
-          </div>
+      <div class="test">
+        <b>Códigos de demonstração</b>
+        <p class="muted">Clique para preencher e ver a ferramenta pelos olhos de cada papel.</p>
+        <div class="demo-codes">
+          <button class="btn secondary" data-demo-code="CR-00001"><b>CR-00001</b><span>Carreira &amp; Recompensa</span></button>
+          <button class="btn secondary" data-demo-code="AP-00001"><b>AP-00001</b><span>Aprovador</span></button>
+          <button class="btn secondary" data-demo-code="DC-00001"><b>DC-00001</b><span>Responsável — 2 cargos</span></button>
+          <button class="btn secondary" data-demo-code="DC-00002"><b>DC-00002</b><span>Responsável — aprovado</span></button>
         </div>
-
-        <button id="backToManager" class="btn outline full mt">Voltar</button>
       </div>
+
+      <p id="loginModeNote" class="muted mt"></p>
     </div>
   </main>
 </section>
@@ -683,20 +665,41 @@ function normalizeJob(job) {
 
 /* ---------------------------- Código de acesso --------------------------- */
 /*
- * O código é a única credencial do responsável, então é sorteado — não
- * sequencial. Alfabeto sem caracteres ambíguos (0/O, 1/I) para ser ditado por
- * telefone sem erro.
+ * Todo mundo entra com um código — não existe usuário e senha em lugar nenhum.
+ * O prefixo diz para que serve, o que ajuda quem administra:
+ *
+ *   DC-  responsável pelo preenchimento (vem junto com o cargo)
+ *   AP-  aprovador
+ *   CR-  Carreira & Recompensa (acesso administrativo)
+ *
+ * Os códigos são sorteados, nunca sequenciais, com alfabeto sem caracteres
+ * ambíguos (0/O, 1/I) para poderem ser ditados por telefone sem erro.
  */
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const CODE_PREFIX = { manager: 'DC', approver: 'AP', hr: 'CR' };
 
-function newAccessCode(randomInt) {
+function newAccessCode(randomInt, role) {
   const pick = n => Array.from({ length: n }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join('');
-  return `DC-${pick(4)}-${pick(4)}`;
+  return `${CODE_PREFIX[role] || 'DC'}-${pick(4)}-${pick(4)}`;
+}
+
+/*
+ * Compara códigos pelo que a pessoa quis digitar, não pelo que digitou:
+ * ignora maiúsculas, espaços, hífens e pontos. Assim "cr 00001", "CR-00001" e
+ * "cr00001" abrem a mesma porta — evita o suporte de "meu código não entra".
+ */
+function normalizeCode(value) {
+  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function sameCode(a, b) {
+  const left = normalizeCode(a);
+  return Boolean(left) && left === normalizeCode(b);
 }
 
 /* ------------------------------- Visibilidade ---------------------------- */
 function visibleTo(jobs, session) {
-  if (session.role === 'manager') return jobs.filter(j => j.code === session.code);
+  if (session.role === 'manager') return jobs.filter(j => sameCode(j.code, session.code));
   if (session.role === 'approver') return jobs.filter(j => j.approver === session.name);
   return jobs;
 }
@@ -786,7 +789,12 @@ function applyFields(job, session, values) {
   return { ok: true };
 }
 
-return { entry, comment, normalizeJob, newAccessCode, visibleTo, isPending, TRANSITIONS, applyTransition, applyFields };
+return {
+  entry, comment, normalizeJob,
+  newAccessCode, normalizeCode, sameCode, CODE_PREFIX,
+  visibleTo, isPending,
+  TRANSITIONS, applyTransition, applyFields
+};
 
 });
 
@@ -800,7 +808,12 @@ return { entry, comment, normalizeJob, newAccessCode, visibleTo, isPending, TRAN
  *   - servidor  (server/db.js), ao criar data/db.json pela primeira vez
  *   - modo local (assets/local-store.js), ao abrir o index.html sem servidor
  *
- * Estar em um só lugar garante que a demonstração seja idêntica nos dois casos.
+ * São quatro códigos de acesso, um para cada tipo de porta de entrada:
+ *
+ *   CR-00001  Carreira & Recompensa (administrativo)
+ *   AP-00001  Aprovador
+ *   DC-00001  Responsável — Gestor Demonstração (2 cargos)
+ *   DC-00002  Responsável — Gestora Demonstração (1 cargo já aprovado)
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
@@ -812,15 +825,18 @@ return { entry, comment, normalizeJob, newAccessCode, visibleTo, isPending, TRAN
   }
 })(typeof globalThis !== 'undefined' ? globalThis : this, function (Model, Flow) {
 
-function seedUsers() {
+/* Chaves administrativas: C&R e aprovadores. Os responsáveis não entram aqui —
+ * o código deles nasce junto com o cargo. */
+function seedKeys() {
   return [
-    { email: 'rh@empresa.com',        name: 'Carreira & Recompensa',  role: 'hr',       password: 'Rh@2026!' },
-    { email: 'aprovador@empresa.com', name: 'Aprovador Demonstração', role: 'approver', password: 'Ap@2026!' }
+    { code: 'CR-00001', name: 'Carreira & Recompensa',  role: 'hr',       createdAt: new Date().toISOString(), lastUsedAt: '' },
+    { code: 'AP-00001', name: 'Aprovador Demonstração', role: 'approver', createdAt: new Date().toISOString(), lastUsedAt: '' }
   ];
 }
 
 function seedJobs() {
   const today = Model.isoToday();
+
   return [
     Flow.normalizeJob({
       id: 1,
@@ -841,6 +857,7 @@ function seedJobs() {
       behavioral: 'Trabalho em equipe\nOrientação a resultados\nComunicação assertiva',
       history: [Flow.entry('Cargo criado e código de acesso enviado ao responsável', 'Carreira & Recompensa', 'hr')]
     }),
+
     Flow.normalizeJob({
       id: 2,
       code: 'DC-00001',
@@ -873,11 +890,47 @@ function seedJobs() {
         Flow.entry('Devolvido para correção: detalhar melhor as responsabilidades', 'Aprovador Demonstração', 'approver')
       ],
       comments: [Flow.comment('Detalhar melhor as responsabilidades, listando uma atividade por linha.', 'Aprovador Demonstração', 'approver')]
+    }),
+
+    /* Um cargo já aprovado, para o documento poder ser visto de imediato. */
+    Flow.normalizeJob({
+      id: 3,
+      code: 'DC-00002',
+      jobCode: 'CO-0307',
+      name: 'Comprador Pleno',
+      company: 'Empresa Exemplo',
+      cbo: '3542-05',
+      track: 'Profissional',
+      creationDate: Model.addDays(today, -20),
+      reviewDate: Model.addDays(today, -2),
+      manager: 'Gestora Demonstração',
+      managerEmail: 'gestora@empresa.com',
+      approver: 'Aprovador Demonstração',
+      deadline: Model.addDays(today, -5),
+      status: 'approved',
+      educationMin: 'Superior completo em Administração ou Engenharia',
+      educationDesired: 'Pós-graduação em Suprimentos',
+      behavioral: 'Negociação\nÉtica\nOrientação a resultados',
+      focus: 'Negociação e gestão da carteira de fornecedores de materiais indiretos.',
+      mission: 'Garantir o abastecimento com o melhor custo total, prazo e qualidade.',
+      responsibilities: 'Negociar contratos e preços com fornecedores.\nAcompanhar indicadores de saving.\nHomologar novos fornecedores.',
+      languageMin: 'Inglês intermediário',
+      languageDesired: 'Espanhol intermediário',
+      technicalMin: 'Técnicas de negociação\nERP de compras',
+      technicalDesired: 'Análise de custos e formação de preço',
+      experienceMin: '3 anos em compras',
+      experienceDesired: '5 anos em compras industriais',
+      history: [
+        Flow.entry('Cargo criado e código de acesso enviado ao responsável', 'Carreira & Recompensa', 'hr'),
+        Flow.entry('Enviado para aprovação', 'Gestora Demonstração', 'manager'),
+        Flow.entry('Aprovado pelo aprovador', 'Aprovador Demonstração', 'approver'),
+        Flow.entry('Validado e aprovado por Carreira & Recompensa', 'Carreira & Recompensa', 'hr')
+      ]
     })
   ];
 }
 
-return { seedUsers, seedJobs };
+return { seedKeys, seedJobs };
 
 });
 
@@ -916,11 +969,11 @@ const LocalStore = {
       const stored = JSON.parse(localStorage.getItem(this.KEY));
       if (!stored) throw new Error('vazio');
       stored.jobs = (stored.jobs || []).map(normalizeJob);
-      stored.users = stored.users || seedUsers();
+      stored.keys = stored.keys || seedKeys();
       stored.config = stored.config || this.defaultConfig();
       return stored;
     } catch {
-      const fresh = { jobs: seedJobs(), users: seedUsers(), config: this.defaultConfig() };
+      const fresh = { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig() };
       this.write(fresh);
       return fresh;
     }
@@ -958,18 +1011,24 @@ const LocalStore = {
     sessionStorage.removeItem('dc_local_session');
   },
 
-  async loginCode(code) {
-    const wanted = String(code || '').trim().toUpperCase();
-    const jobs = this.read().jobs.filter(j => j.code === wanted && j.status !== 'canceled');
-    if (!jobs.length) throw new Error('Código não encontrado');
-    return this.remember({ role: 'manager', name: jobs[0].manager, code: wanted });
-  },
+  /* Mesma porta única do modo servidor: chave administrativa primeiro,
+   * depois os códigos de responsável que vêm com os cargos. */
+  async login(code) {
+    const db = this.read();
 
-  async loginInternal(email, password) {
-    const wanted = String(email || '').trim().toLowerCase();
-    const user = this.read().users.find(u => u.email.toLowerCase() === wanted && u.password === password);
-    if (!user) throw new Error('E-mail ou senha inválidos');
-    return this.remember({ role: user.role, name: user.name, email: user.email });
+    const key = db.keys.find(k => sameCode(k.code, code));
+    if (key) {
+      key.lastUsedAt = new Date().toISOString();
+      this.write(db);
+      return this.remember({ role: key.role, name: key.name, code: key.code });
+    }
+
+    const jobs = db.jobs.filter(j => sameCode(j.code, code) && j.status !== 'canceled');
+    if (jobs.length) {
+      return this.remember({ role: 'manager', name: jobs[0].manager, code: jobs[0].code });
+    }
+
+    throw new Error('Código não encontrado. Confira com Carreira & Recompensa.');
   },
 
   async logout() {
@@ -1000,7 +1059,7 @@ const LocalStore = {
     const job = this.change(db => {
       const email = String(data.managerEmail).toLowerCase();
       const existing = db.jobs.find(j => String(j.managerEmail).toLowerCase() === email);
-      const code = existing ? existing.code : newAccessCode(max => Math.floor(Math.random() * max));
+      const code = existing ? existing.code : newAccessCode(max => Math.floor(Math.random() * max), 'manager');
 
       const created = normalizeJob({
         ...data,
@@ -1076,57 +1135,65 @@ const LocalStore = {
     URL.revokeObjectURL(url);
   },
 
-  /* ------------------------------- Usuários ------------------------------ */
-  async listUsers() {
-    return this.read().users.map(u => ({ email: u.email, name: u.name, role: u.role }));
+  /* --------------------------- Códigos de acesso ------------------------- */
+  async listKeys() {
+    return this.read().keys;
   },
 
-  async createUser({ name, email, role, password }) {
-    const clean = String(email || '').trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean)) throw new Error('E-mail inválido');
-    if (!String(name || '').trim()) throw new Error('Informe o nome');
-    if (String(password || '').length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      throw new Error('A senha precisa ter ao menos 8 caracteres, misturando letras e números');
-    }
+  async createKey({ name, role, email }) {
+    const clean = String(name || '').trim();
+    if (!clean) throw new Error('Informe o nome');
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('E-mail inválido');
 
     return this.change(db => {
-      if (db.users.some(u => u.email.toLowerCase() === clean)) throw new Error('Já existe um usuário com este e-mail');
-      db.users.push({ email: clean, name: String(name).trim(), role: role === 'hr' ? 'hr' : 'approver', password });
-      return { ok: true };
+      const kind = role === 'hr' ? 'hr' : 'approver';
+      if (db.keys.some(k => k.name === clean && k.role === kind)) {
+        throw new Error('Já existe um código para essa pessoa neste perfil');
+      }
+      const key = {
+        code: newAccessCode(max => Math.floor(Math.random() * max), kind),
+        name: clean,
+        role: kind,
+        email: String(email || '').trim(),
+        createdAt: new Date().toISOString(),
+        lastUsedAt: ''
+      };
+      db.keys.push(key);
+      return { key, message: `Código criado: ${key.code}` };
     });
   },
 
-  async updateUser(email, patch) {
+  async updateKey(code, patch) {
     return this.change(db => {
-      const user = db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-      if (!user) throw new Error('Usuário não encontrado');
+      const key = db.keys.find(k => sameCode(k.code, code));
+      if (!key) throw new Error('Código não encontrado');
 
-      if (patch.name !== undefined) user.name = String(patch.name).trim();
-      if (patch.role !== undefined) {
-        const others = db.users.filter(u => u.role === 'hr' && u.email !== user.email);
-        if (user.role === 'hr' && patch.role !== 'hr' && !others.length) {
-          throw new Error('É preciso manter ao menos um usuário de C&R');
+      if (patch.name !== undefined) {
+        const name = String(patch.name).trim();
+        if (!name) throw new Error('Informe o nome');
+        // O nome do aprovador é o vínculo com os cargos; renomear leva junto.
+        if (key.role === 'approver' && name !== key.name) {
+          db.jobs.forEach(job => { if (job.approver === key.name) job.approver = name; });
         }
-        user.role = patch.role === 'hr' ? 'hr' : 'approver';
+        key.name = name;
       }
-      if (patch.password) {
-        if (String(patch.password).length < 8) throw new Error('A senha precisa ter ao menos 8 caracteres');
-        user.password = patch.password;
-      }
-      return { ok: true };
+      if (patch.email !== undefined) key.email = String(patch.email).trim();
+      if (patch.regenerate) key.code = newAccessCode(max => Math.floor(Math.random() * max), key.role);
+
+      return { key, message: patch.regenerate ? `Novo código: ${key.code}` : 'Código atualizado' };
     });
   },
 
-  async deleteUser(email) {
+  async deleteKey(code) {
     return this.change(db => {
-      const user = db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-      if (!user) throw new Error('Usuário não encontrado');
-      if (user.email === this.session.email) throw new Error('Você não pode excluir o próprio usuário');
-      const remaining = db.users.filter(u => u.role === 'hr' && u.email !== user.email);
-      if (user.role === 'hr' && !remaining.length) throw new Error('É preciso manter ao menos um usuário de C&R');
+      const key = db.keys.find(k => sameCode(k.code, code));
+      if (!key) throw new Error('Código não encontrado');
+      if (sameCode(key.code, this.session.code)) throw new Error('Você não pode revogar o próprio código');
+      const remaining = db.keys.filter(k => k.role === 'hr' && !sameCode(k.code, key.code));
+      if (key.role === 'hr' && !remaining.length) throw new Error('É preciso manter ao menos um código de C&R');
 
-      db.users = db.users.filter(u => u !== user);
-      return { ok: true };
+      db.keys = db.keys.filter(k => k !== key);
+      return { message: 'Código revogado' };
     });
   },
 
@@ -1218,12 +1285,9 @@ const RemoteStore = {
     sessionStorage.removeItem('dc_session');
   },
 
-  loginCode(code) {
-    return this.request('POST', '/api/login/code', { code }).then(d => this.remember(d));
-  },
-
-  loginInternal(email, password) {
-    return this.request('POST', '/api/login/internal', { email, password }).then(d => this.remember(d));
+  /* Uma única porta: o código diz o papel de quem entrou. */
+  login(code) {
+    return this.request('POST', '/api/login', { code }).then(d => this.remember(d));
   },
 
   async logout() {
@@ -1284,18 +1348,18 @@ const RemoteStore = {
     URL.revokeObjectURL(url);
   },
 
-  /* ------------------------------- Usuários ------------------------------ */
-  listUsers() {
-    return this.request('GET', '/api/users').then(d => d.users);
+  /* --------------------------- Códigos de acesso ------------------------- */
+  listKeys() {
+    return this.request('GET', '/api/keys').then(d => d.keys);
   },
-  createUser(user) {
-    return this.request('POST', '/api/users', user);
+  createKey(key) {
+    return this.request('POST', '/api/keys', key);
   },
-  updateUser(email, patch) {
-    return this.request('PATCH', `/api/users/${encodeURIComponent(email)}`, patch);
+  updateKey(code, patch) {
+    return this.request('PATCH', `/api/keys/${encodeURIComponent(code)}`, patch);
   },
-  deleteUser(email) {
-    return this.request('DELETE', `/api/users/${encodeURIComponent(email)}`);
+  deleteKey(code) {
+    return this.request('DELETE', `/api/keys/${encodeURIComponent(code)}`);
   },
 
   /* ----------------------------- Configurações --------------------------- */
@@ -1404,47 +1468,42 @@ function askText(title, label, onConfirm) {
 }
 
 /* ================================ LOGIN ================================== */
-$('#testCode').onclick      = () => { $('#accessCode').value = 'DC-00001'; toast('Código preenchido'); };
-$('#showInternal').onclick  = () => { $('#managerLogin').classList.add('hide');  $('#internalLogin').classList.remove('hide'); };
-$('#backToManager').onclick = () => { $('#internalLogin').classList.add('hide'); $('#managerLogin').classList.remove('hide'); };
-$('#testHr').onclick        = () => { $('#email').value = 'rh@empresa.com';        $('#password').value = 'Rh@2026!'; };
-$('#testApprover').onclick  = () => { $('#email').value = 'aprovador@empresa.com'; $('#password').value = 'Ap@2026!'; };
+/*
+ * Uma porta só: a pessoa digita o código que recebeu e a ferramenta descobre
+ * quem ela é. Não existe usuário nem senha em lugar nenhum.
+ */
+$('#accessCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('#enter').click(); });
 
-async function attemptLogin(button, promise, view) {
+/* Os códigos de demonstração preenchem o campo com um clique. */
+$$('[data-demo-code]').forEach(button => {
+  button.onclick = () => {
+    $('#accessCode').value = button.dataset.demoCode;
+    $('#accessCode').focus();
+  };
+});
+
+$('#enter').onclick = async e => {
+  const code = $('#accessCode').value.trim();
+  if (!code) return toast('Informe o código de acesso', 'error');
+
+  const button = e.currentTarget;
   button.disabled = true;
   try {
-    await promise;
-    await enter(view);
+    await API.login(code);
+    await enter();
   } catch (err) {
     toast(err.message, 'error');
+    $('#accessCode').select();
   } finally {
     button.disabled = false;
   }
-}
-
-$('#managerEnter').onclick = e => {
-  const code = $('#accessCode').value.trim().toUpperCase();
-  if (!code) return toast('Informe o código de acesso', 'error');
-  attemptLogin(e.currentTarget, API.loginCode(code), 'jobs');
 };
-
-$('#internalEnter').onclick = e => {
-  const email = $('#email').value.trim();
-  const password = $('#password').value;
-  if (!email || !password) return toast('Informe e-mail e senha', 'error');
-  attemptLogin(e.currentTarget, API.loginInternal(email, password), null);
-};
-
-$('#accessCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('#managerEnter').click(); });
-$('#password').addEventListener('keydown', e => { if (e.key === 'Enter') $('#internalEnter').click(); });
 
 $('#logout').onclick = async () => {
   await API.logout();
   state.jobId = null;
   closeModal();
-  ['#accessCode', '#email', '#password'].forEach(sel => $(sel).value = '');
-  $('#internalLogin').classList.add('hide');
-  $('#managerLogin').classList.remove('hide');
+  $('#accessCode').value = '';
   $('#application').classList.add('hide');
   $('#login').classList.remove('hide');
 };
@@ -1478,7 +1537,7 @@ const NAV = {
     { view: 'approvals', label: 'Validações' },
     { view: 'jobs', label: 'Cargos' },
     { view: 'admin', label: 'Administração' },
-    { view: 'users', label: 'Usuários' },
+    { view: 'users', label: 'Códigos de acesso' },
     { view: 'config', label: 'Configurações' }
   ]
 };
@@ -1824,20 +1883,35 @@ function renderAdminList() {
 /* Valores sugeridos no cadastro, para agilizar o uso no dia a dia. */
 const CREATION_DEFAULTS = {
   creationDate: isoToday(),
-  company: 'Empresa Exemplo',
-  approver: 'Aprovador Demonstração'
+  company: 'Empresa Exemplo'
 };
 
-function newJobModal() {
+async function newJobModal() {
   const hrFields = fieldsOf('hr').filter(f => f.key !== 'reviewDate');
+
+  // O aprovador vira uma lista dos códigos de aprovador já cadastrados: evita
+  // erro de digitação no nome, que é o vínculo usado pela fila de aprovação.
+  let approvers = [];
+  try {
+    approvers = (await API.listKeys()).filter(k => k.role === 'approver');
+  } catch { /* segue com campo livre */ }
+
   const render = f => {
     const id = 'n_' + f.key;
     const preset = esc(CREATION_DEFAULTS[f.key] || '');
     const type = f.type === 'date' ? 'date' : f.type === 'email' ? 'email' : 'text';
-    const control = f.type === 'textarea'
-      ? `<textarea id="${id}" data-new="${f.key}" rows="3">${preset}</textarea>`
-      : `<input id="${id}" data-new="${f.key}" type="${type}" value="${preset}">`;
-    return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)} <span class="req">*</span></label>${control}</div>`;
+
+    const control = f.key === 'approver' && approvers.length
+      ? `<select id="${id}" data-new="${f.key}">${approvers.map(a => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join('')}</select>`
+      : f.type === 'textarea'
+        ? `<textarea id="${id}" data-new="${f.key}" rows="3">${preset}</textarea>`
+        : `<input id="${id}" data-new="${f.key}" type="${type}" value="${preset}">`;
+
+    const hint = f.key === 'approver' && !approvers.length
+      ? '<small class="muted">Nenhum código de aprovador cadastrado ainda — crie um em Códigos de acesso.</small>'
+      : '';
+
+    return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)} <span class="req">*</span></label>${control}${hint}</div>`;
   };
 
   openModal(`
@@ -1889,93 +1963,122 @@ function prepareMail(id) {
   window.location.href = `mailto:${job.managerEmail}?subject=${subject}&body=${body}`;
 }
 
-/* =========================== VISÃO: USUÁRIOS ============================= */
+/* ======================= VISÃO: CÓDIGOS DE ACESSO ======================== */
 /*
- * Só C&R chega aqui. São os acessos internos — aprovadores e a própria equipe
- * de C&R. Responsáveis pelo preenchimento não entram nesta lista: eles usam o
- * código de acesso do cargo.
+ * Só C&R chega aqui. Duas listas:
+ *   - códigos administrativos (C&R e aprovadores), criados nesta tela;
+ *   - códigos dos responsáveis, que nascem junto com o cargo.
  */
 async function usersView() {
   if (session().role !== 'hr') return show('approvals');
 
-  $('#title').textContent = 'Usuários internos';
-  $('#subtitle').textContent = 'Aprovadores e equipe de Carreira & Recompensa';
-  $('#topActions').innerHTML = `<button class="btn primary" data-action="user-new">Novo usuário</button>`;
+  $('#title').textContent = 'Códigos de acesso';
+  $('#subtitle').textContent = 'Toda entrada na ferramenta é por código — não há usuário nem senha';
+  $('#topActions').innerHTML = `<button class="btn primary" data-action="key-new">Novo código</button>`;
   $('#content').innerHTML = `<div class="card"><div class="body empty">Carregando…</div></div>`;
 
-  let users;
+  let keys;
   try {
-    users = await API.listUsers();
+    keys = await API.listKeys();
   } catch (err) {
     return toast(err.message, 'error');
   }
+  usersView.cache = keys;
+
+  /* Um código por responsável, com os cargos que ele abre. */
+  const managers = [];
+  API.jobs.forEach(job => {
+    const found = managers.find(m => m.code === job.code);
+    if (found) found.jobs.push(job);
+    else managers.push({ code: job.code, name: job.manager, email: job.managerEmail, jobs: [job] });
+  });
+
+  const codeCell = code => `<b class="code">${esc(code)}</b>
+    <button class="btn outline" data-action="copy" data-code="${esc(code)}" title="Copiar">Copiar</button>`;
 
   $('#content').innerHTML = `
-    <div class="banner">Os responsáveis pelo preenchimento não precisam de usuário: eles entram com o código de acesso enviado por e-mail.</div>
+    <div class="banner">Quem recebe um código entra direto com ele. Perdeu o código? Gere um novo — o antigo deixa de valer na hora.</div>
+
     <div class="card">
+      <div class="head"><b>Acesso administrativo</b><span class="muted">${keys.length} código(s)</span></div>
       <div class="body">
         <table class="list">
-          <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th></th></tr></thead>
-          <tbody>${users.map(u => `
+          <thead><tr><th>Pessoa</th><th>Perfil</th><th>Código</th><th>Último acesso</th><th></th></tr></thead>
+          <tbody>${keys.map(k => `
             <tr>
-              <td><b>${esc(u.name)}</b></td>
-              <td>${esc(u.email)}</td>
-              <td>${ROLES[u.role].label}</td>
+              <td><b>${esc(k.name)}</b>${k.email ? `<br><span class="muted">${esc(k.email)}</span>` : ''}</td>
+              <td>${ROLES[k.role].label}</td>
+              <td>${codeCell(k.code)}</td>
+              <td class="muted">${k.lastUsedAt ? formatDateTime(k.lastUsedAt) : 'nunca usado'}</td>
               <td class="right">
-                <button class="btn secondary" data-action="user-edit" data-email="${esc(u.email)}">Editar</button>
-                <button class="btn danger" data-action="user-delete" data-email="${esc(u.email)}">Excluir</button>
+                <button class="btn secondary" data-action="key-edit" data-code="${esc(k.code)}">Editar</button>
+                <button class="btn danger" data-action="key-delete" data-code="${esc(k.code)}">Revogar</button>
               </td>
             </tr>`).join('')}
           </tbody>
         </table>
       </div>
-    </div>`;
+    </div>
 
-  // Guarda os dados para o modal de edição não precisar buscar de novo.
-  usersView.cache = users;
+    <div class="card">
+      <div class="head"><b>Códigos dos responsáveis</b><span class="muted">gerados com o cargo</span></div>
+      <div class="body">
+        ${managers.length ? `<table class="list">
+          <thead><tr><th>Responsável</th><th>Cargos</th><th>Código</th><th></th></tr></thead>
+          <tbody>${managers.map(m => `
+            <tr>
+              <td><b>${esc(m.name)}</b><br><span class="muted">${esc(m.email)}</span></td>
+              <td class="muted">${m.jobs.map(j => esc(j.name)).join('<br>')}</td>
+              <td>${codeCell(m.code)}</td>
+              <td class="right">
+                <button class="btn secondary" data-action="${API.smtpReady ? 'resend' : 'mail'}" data-id="${m.jobs[0].id}">
+                  ${API.smtpReady ? 'Reenviar por e-mail' : 'Preparar e-mail'}
+                </button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : '<div class="empty">Nenhum cargo cadastrado ainda.</div>'}
+      </div>
+    </div>`;
 }
 
-function userModal(user) {
-  const editing = Boolean(user);
+function userModal(key) {
+  const editing = Boolean(key);
   openModal(`
-    <h2>${editing ? 'Editar usuário' : 'Novo usuário'}</h2>
+    <h2>${editing ? 'Editar código' : 'Novo código de acesso'}</h2>
     <div class="grid">
-      <div class="field"><label for="uName">Nome <span class="req">*</span></label>
-        <input id="uName" value="${esc(user ? user.name : '')}"></div>
-      <div class="field"><label for="uEmail">E-mail <span class="req">*</span></label>
-        <input id="uEmail" type="email" value="${esc(user ? user.email : '')}" ${editing ? 'disabled' : ''}></div>
+      <div class="field"><label for="uName">Pessoa ou área <span class="req">*</span></label>
+        <input id="uName" value="${esc(key ? key.name : '')}" placeholder="Ex.: Maria Silva"></div>
       <div class="field"><label for="uRole">Perfil <span class="req">*</span></label>
-        <select id="uRole">
-          <option value="approver" ${user && user.role === 'approver' ? 'selected' : ''}>Aprovador</option>
-          <option value="hr" ${user && user.role === 'hr' ? 'selected' : ''}>Carreira &amp; Recompensa</option>
+        <select id="uRole" ${editing ? 'disabled' : ''}>
+          <option value="approver" ${key && key.role === 'approver' ? 'selected' : ''}>Aprovador</option>
+          <option value="hr" ${key && key.role === 'hr' ? 'selected' : ''}>Carreira &amp; Recompensa</option>
         </select></div>
-      <div class="field"><label for="uPassword">Senha ${editing ? '' : '<span class="req">*</span>'}</label>
-        <input id="uPassword" type="password" placeholder="${editing ? 'deixe em branco para manter' : 'mínimo 8 caracteres, com letras e números'}"></div>
+      <div class="field full"><label for="uEmail">E-mail (opcional)</label>
+        <input id="uEmail" type="email" value="${esc(key && key.email ? key.email : '')}" placeholder="para receber os avisos do fluxo">
+      </div>
     </div>
-    <p class="muted">O nome do aprovador precisa ser exatamente o mesmo informado no cadastro do cargo — é por ele que a fila de aprovação encontra os descritivos.</p>
+    ${editing ? `
+      <div class="field full">
+        <label>Código atual</label>
+        <p><b class="code">${esc(key.code)}</b></p>
+        <label class="check"><input type="checkbox" id="uRegenerate"> Gerar um código novo (o atual deixa de valer imediatamente)</label>
+      </div>` : '<p class="muted">O código é sorteado ao salvar e aparece na lista, pronto para copiar.</p>'}
+    <p class="muted">Aprovador: o nome precisa ser o mesmo escolhido no cadastro do cargo — a fila de aprovação usa esse vínculo. Ao renomear aqui, os cargos são atualizados junto.</p>
     <button class="btn primary full mt" data-modal-action="save-user">Salvar</button>
   `);
 
   const button = $('#modalContent').querySelector('[data-modal-action="save-user"]');
   button.onclick = async () => {
-    const data = {
-      name: $('#uName').value.trim(),
-      email: $('#uEmail').value.trim(),
-      role: $('#uRole').value,
-      password: $('#uPassword').value
-    };
+    const data = { name: $('#uName').value.trim(), email: $('#uEmail').value.trim() };
 
     button.disabled = true;
     try {
-      if (editing) {
-        const patch = { name: data.name, role: data.role };
-        if (data.password) patch.password = data.password;
-        await API.updateUser(user.email, patch);
-      } else {
-        await API.createUser(data);
-      }
+      const result = editing
+        ? await API.updateKey(key.code, { ...data, regenerate: $('#uRegenerate').checked })
+        : await API.createKey({ ...data, role: $('#uRole').value });
       closeModal();
-      toast('Usuário salvo', 'success');
+      toast(result.message || 'Código salvo', 'success');
       usersView();
     } catch (err) {
       toast(err.message, 'error');
@@ -2108,7 +2211,7 @@ function documentView() {
 
 /* ============================ AÇÕES (delegação) ========================== */
 async function handleAction(action, id, element) {
-  const email = element ? element.dataset.email : null;
+  const code = element ? element.dataset.code : null;
 
   /* Executa uma chamada à API cuidando de erro, botão travado e re-render. */
   const run = async (promise, successMessage) => {
@@ -2167,16 +2270,22 @@ async function handleAction(action, id, element) {
     case 'new':
       return newJobModal();
 
-    /* ------------------------------ Usuários ---------------------------- */
-    case 'user-new':
+    /* -------------------------- Códigos de acesso ------------------------ */
+    case 'key-new':
       return userModal();
-    case 'user-edit':
-      return userModal((usersView.cache || []).find(u => u.email === email));
-    case 'user-delete':
-      return askText('Excluir usuário', `Digite EXCLUIR para remover o acesso de ${email}`, text => {
-        if (text.trim().toUpperCase() !== 'EXCLUIR') return toast('Confirmação inválida', 'error');
-        run(API.deleteUser(email), 'Usuário excluído');
+    case 'key-edit':
+      return userModal((usersView.cache || []).find(k => k.code === code));
+    case 'key-delete': {
+      const key = (usersView.cache || []).find(k => k.code === code);
+      return askText('Revogar código', `Digite REVOGAR para tirar o acesso de ${key ? key.name : code}`, text => {
+        if (text.trim().toUpperCase() !== 'REVOGAR') return toast('Confirmação inválida', 'error');
+        run(API.deleteKey(code), 'Código revogado');
       });
+    }
+    case 'copy':
+      return navigator.clipboard.writeText(code)
+        .then(() => toast('Código copiado: ' + code, 'success'))
+        .catch(() => toast('Copie manualmente: ' + code));
 
     /* --------------------------- Configurações -------------------------- */
     case 'config-save':

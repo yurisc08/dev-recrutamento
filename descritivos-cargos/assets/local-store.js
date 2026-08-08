@@ -30,11 +30,11 @@ const LocalStore = {
       const stored = JSON.parse(localStorage.getItem(this.KEY));
       if (!stored) throw new Error('vazio');
       stored.jobs = (stored.jobs || []).map(normalizeJob);
-      stored.users = stored.users || seedUsers();
+      stored.keys = stored.keys || seedKeys();
       stored.config = stored.config || this.defaultConfig();
       return stored;
     } catch {
-      const fresh = { jobs: seedJobs(), users: seedUsers(), config: this.defaultConfig() };
+      const fresh = { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig() };
       this.write(fresh);
       return fresh;
     }
@@ -72,18 +72,24 @@ const LocalStore = {
     sessionStorage.removeItem('dc_local_session');
   },
 
-  async loginCode(code) {
-    const wanted = String(code || '').trim().toUpperCase();
-    const jobs = this.read().jobs.filter(j => j.code === wanted && j.status !== 'canceled');
-    if (!jobs.length) throw new Error('Código não encontrado');
-    return this.remember({ role: 'manager', name: jobs[0].manager, code: wanted });
-  },
+  /* Mesma porta única do modo servidor: chave administrativa primeiro,
+   * depois os códigos de responsável que vêm com os cargos. */
+  async login(code) {
+    const db = this.read();
 
-  async loginInternal(email, password) {
-    const wanted = String(email || '').trim().toLowerCase();
-    const user = this.read().users.find(u => u.email.toLowerCase() === wanted && u.password === password);
-    if (!user) throw new Error('E-mail ou senha inválidos');
-    return this.remember({ role: user.role, name: user.name, email: user.email });
+    const key = db.keys.find(k => sameCode(k.code, code));
+    if (key) {
+      key.lastUsedAt = new Date().toISOString();
+      this.write(db);
+      return this.remember({ role: key.role, name: key.name, code: key.code });
+    }
+
+    const jobs = db.jobs.filter(j => sameCode(j.code, code) && j.status !== 'canceled');
+    if (jobs.length) {
+      return this.remember({ role: 'manager', name: jobs[0].manager, code: jobs[0].code });
+    }
+
+    throw new Error('Código não encontrado. Confira com Carreira & Recompensa.');
   },
 
   async logout() {
@@ -114,7 +120,7 @@ const LocalStore = {
     const job = this.change(db => {
       const email = String(data.managerEmail).toLowerCase();
       const existing = db.jobs.find(j => String(j.managerEmail).toLowerCase() === email);
-      const code = existing ? existing.code : newAccessCode(max => Math.floor(Math.random() * max));
+      const code = existing ? existing.code : newAccessCode(max => Math.floor(Math.random() * max), 'manager');
 
       const created = normalizeJob({
         ...data,
@@ -190,57 +196,65 @@ const LocalStore = {
     URL.revokeObjectURL(url);
   },
 
-  /* ------------------------------- Usuários ------------------------------ */
-  async listUsers() {
-    return this.read().users.map(u => ({ email: u.email, name: u.name, role: u.role }));
+  /* --------------------------- Códigos de acesso ------------------------- */
+  async listKeys() {
+    return this.read().keys;
   },
 
-  async createUser({ name, email, role, password }) {
-    const clean = String(email || '').trim().toLowerCase();
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(clean)) throw new Error('E-mail inválido');
-    if (!String(name || '').trim()) throw new Error('Informe o nome');
-    if (String(password || '').length < 8 || !/[A-Za-z]/.test(password) || !/[0-9]/.test(password)) {
-      throw new Error('A senha precisa ter ao menos 8 caracteres, misturando letras e números');
-    }
+  async createKey({ name, role, email }) {
+    const clean = String(name || '').trim();
+    if (!clean) throw new Error('Informe o nome');
+    if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('E-mail inválido');
 
     return this.change(db => {
-      if (db.users.some(u => u.email.toLowerCase() === clean)) throw new Error('Já existe um usuário com este e-mail');
-      db.users.push({ email: clean, name: String(name).trim(), role: role === 'hr' ? 'hr' : 'approver', password });
-      return { ok: true };
+      const kind = role === 'hr' ? 'hr' : 'approver';
+      if (db.keys.some(k => k.name === clean && k.role === kind)) {
+        throw new Error('Já existe um código para essa pessoa neste perfil');
+      }
+      const key = {
+        code: newAccessCode(max => Math.floor(Math.random() * max), kind),
+        name: clean,
+        role: kind,
+        email: String(email || '').trim(),
+        createdAt: new Date().toISOString(),
+        lastUsedAt: ''
+      };
+      db.keys.push(key);
+      return { key, message: `Código criado: ${key.code}` };
     });
   },
 
-  async updateUser(email, patch) {
+  async updateKey(code, patch) {
     return this.change(db => {
-      const user = db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-      if (!user) throw new Error('Usuário não encontrado');
+      const key = db.keys.find(k => sameCode(k.code, code));
+      if (!key) throw new Error('Código não encontrado');
 
-      if (patch.name !== undefined) user.name = String(patch.name).trim();
-      if (patch.role !== undefined) {
-        const others = db.users.filter(u => u.role === 'hr' && u.email !== user.email);
-        if (user.role === 'hr' && patch.role !== 'hr' && !others.length) {
-          throw new Error('É preciso manter ao menos um usuário de C&R');
+      if (patch.name !== undefined) {
+        const name = String(patch.name).trim();
+        if (!name) throw new Error('Informe o nome');
+        // O nome do aprovador é o vínculo com os cargos; renomear leva junto.
+        if (key.role === 'approver' && name !== key.name) {
+          db.jobs.forEach(job => { if (job.approver === key.name) job.approver = name; });
         }
-        user.role = patch.role === 'hr' ? 'hr' : 'approver';
+        key.name = name;
       }
-      if (patch.password) {
-        if (String(patch.password).length < 8) throw new Error('A senha precisa ter ao menos 8 caracteres');
-        user.password = patch.password;
-      }
-      return { ok: true };
+      if (patch.email !== undefined) key.email = String(patch.email).trim();
+      if (patch.regenerate) key.code = newAccessCode(max => Math.floor(Math.random() * max), key.role);
+
+      return { key, message: patch.regenerate ? `Novo código: ${key.code}` : 'Código atualizado' };
     });
   },
 
-  async deleteUser(email) {
+  async deleteKey(code) {
     return this.change(db => {
-      const user = db.users.find(u => u.email.toLowerCase() === String(email).toLowerCase());
-      if (!user) throw new Error('Usuário não encontrado');
-      if (user.email === this.session.email) throw new Error('Você não pode excluir o próprio usuário');
-      const remaining = db.users.filter(u => u.role === 'hr' && u.email !== user.email);
-      if (user.role === 'hr' && !remaining.length) throw new Error('É preciso manter ao menos um usuário de C&R');
+      const key = db.keys.find(k => sameCode(k.code, code));
+      if (!key) throw new Error('Código não encontrado');
+      if (sameCode(key.code, this.session.code)) throw new Error('Você não pode revogar o próprio código');
+      const remaining = db.keys.filter(k => k.role === 'hr' && !sameCode(k.code, key.code));
+      if (key.role === 'hr' && !remaining.length) throw new Error('É preciso manter ao menos um código de C&R');
 
-      db.users = db.users.filter(u => u !== user);
-      return { ok: true };
+      db.keys = db.keys.filter(k => k !== key);
+      return { message: 'Código revogado' };
     });
   },
 

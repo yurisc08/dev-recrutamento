@@ -51,26 +51,60 @@ Para trocar a porta: `PORT=8080 node server.js`.
 
 ## Primeiros passos
 
-1. Entre como C&R (`rh@empresa.com` / `Rh@2026!`).
+1. Entre como C&R com o código `CR-00001`.
 2. Em **Configurações**, preencha o **endereço da ferramenta** (o IP acima, que
    vai nos e-mails) e os dados do **servidor de e-mail**. Clique em
    *Enviar e-mail de teste* para confirmar antes de usar para valer.
-3. Em **Usuários**, troque a senha dos dois acessos de demonstração e cadastre os
-   aprovadores reais. O nome do aprovador precisa ser **igual** ao que você
-   informa no cadastro do cargo — é por ele que a fila de aprovação encontra os
-   descritivos.
+3. Em **Códigos de acesso**, crie o seu código de C&R e os dos aprovadores
+   reais; depois revogue os de demonstração (`CR-00001` e `AP-00001`).
 4. Em **Administração**, use *Restaurar dados de teste* para limpar os cargos de
    demonstração antes de começar (isso também recria os usuários de teste, então
    faça isso **antes** do passo 3).
 5. Crie o primeiro cargo em **Novo cargo**.
 
-## Acessos de teste
+## Acesso: só código, para todo mundo
 
-| Papel | Acesso |
+Não existe usuário nem senha em lugar nenhum. Cada pessoa entra com um código,
+e o próprio código diz quem ela é e o que pode fazer. O prefixo indica o perfil:
+
+| Prefixo | Perfil | De onde vem |
+| --- | --- | --- |
+| `DC-` | Responsável pelo preenchimento | nasce junto com o cargo, por pessoa |
+| `AP-` | Aprovador | criado em **Códigos de acesso** |
+| `CR-` | Carreira & Recompensa (administrativo) | criado em **Códigos de acesso** |
+
+O campo aceita o código como a pessoa digitar: com ou sem hífen, maiúsculas ou
+minúsculas, com espaços (`cr 00001`, `CR-00001` e `cr00001` são o mesmo código).
+
+### Códigos de demonstração
+
+Aparecem como botões na tela de entrada, é só clicar:
+
+| Código | Quem é |
 | --- | --- |
-| Responsável pelo cargo | código `DC-00001` (sem usuário/senha) |
-| Aprovador | `aprovador@empresa.com` / `Ap@2026!` |
-| Carreira & Recompensa | `rh@empresa.com` / `Rh@2026!` |
+| `CR-00001` | Carreira & Recompensa |
+| `AP-00001` | Aprovador |
+| `DC-00001` | Gestor Demonstração (2 cargos, um deles devolvido) |
+| `DC-00002` | Gestora Demonstração (1 cargo já aprovado, documento pronto) |
+
+### Administrando os códigos
+
+Em **Códigos de acesso** (só C&R) ficam as duas listas: os códigos
+administrativos, criados ali, e os códigos dos responsáveis, gerados junto com
+os cargos. Em ambas dá para copiar com um clique.
+
+- **Novo código**: informe a pessoa e o perfil; o código é sorteado na hora.
+- **Gerar código novo** (equivale a trocar a senha): o antigo deixa de valer
+  imediatamente e as sessões abertas com ele caem.
+- **Revogar**: tira o acesso. Não dá para revogar o próprio código nem o último
+  código de C&R — assim ninguém fica trancado para fora.
+- O **e-mail é opcional** no código e serve para receber os avisos do fluxo.
+- Ao **renomear um aprovador**, os cargos ligados a ele são atualizados junto.
+  No cadastro do cargo o aprovador é escolhido numa lista, não digitado.
+
+> Se você vem da versão com e-mail e senha, os usuários viram códigos na
+> primeira execução e **os códigos gerados são impressos no terminal** — anote-os
+> antes de fechar a janela.
 
 ## O fluxo
 
@@ -157,7 +191,7 @@ aprovador nunca edita conteúdo: apenas aprova ou devolve.
 | Validações | C&R | validação final |
 | Cargos | Aprovador e C&R | consulta |
 | Administração | C&R | criar cargo, buscar, filtrar por etapa, reenviar código, cancelar, exportar CSV |
-| Usuários | C&R | cadastrar aprovadores e equipe de C&R, trocar senhas |
+| Códigos de acesso | C&R | criar, copiar, trocar e revogar códigos de C&R e aprovadores |
 | Configurações | C&R | e-mail (SMTP), avisos automáticos e cobrança de prazo |
 | Documento | todos (aprovado) | MAPA DE CARREIRA pronto para imprimir ou salvar em PDF |
 
@@ -165,7 +199,7 @@ aprovador nunca edita conteúdo: apenas aprova ou devolve.
 
 Na pasta `data/`, no computador que roda o servidor:
 
-- `data/db.json` — cargos, histórico, comentários e usuários
+- `data/db.json` — cargos, histórico, comentários e códigos de acesso
 - `data/config.json` — endereço, SMTP e preferências de aviso
 
 É isso que faz o fluxo funcionar entre pessoas: C&R cria o cargo na máquina
@@ -175,7 +209,8 @@ dela, o gestor abre da máquina dele e enxerga o mesmo cargo.
 - **Recomeçar do zero**: apague `data/` e suba o servidor de novo, ou use
   *Restaurar dados de teste* em Administração.
 - A pasta está no `.gitignore` — dados reais não vão para o repositório.
-- Senhas de usuário são guardadas com hash scrypt, nunca em texto.
+- Os códigos ficam legíveis no `data/db.json` — é o que permite a C&R
+  consultá-los e reenviá-los. Proteja o arquivo com as permissões do sistema.
 
 ## Arquivos
 
@@ -186,7 +221,7 @@ dela, o gestor abre da máquina dele e enxerga o mesmo cargo.
 | `src/index.html` | Estrutura da página (fonte) |
 | `server.js` | Servidor HTTP e rotas da API |
 | `server/db.js` | Leitura e gravação atômica de `data/` |
-| `server/auth.js` | Hash de senha e sessões |
+| `server/auth.js` | Sessões abertas a partir dos códigos |
 | `server/mailer.js` | Cliente SMTP próprio (EHLO, STARTTLS, AUTH, DATA) |
 | `server/notify.js` | Textos dos avisos, disparo por etapa e cobrança de prazo |
 | `shared/model.js` | Seções, campos, papéis e etapas do modelo |
@@ -209,9 +244,12 @@ formulário, validação, permissões, exportação e documento acompanham.
 
 Feita para rede interna, na escala de uma área de RH. O que ela assume:
 
-- **No modo local não há e-mail automático nem dados compartilhados**, e as
-  senhas dos usuários internos ficam no `localStorage` do navegador. É um modo
-  de demonstração e uso individual; para valer entre pessoas, use o servidor.
+- **No modo local não há e-mail automático nem dados compartilhados**, e os
+  códigos ficam no `localStorage` do navegador. É um modo de demonstração e uso
+  individual; para valer entre pessoas, use o servidor.
+- **O código é a credencial inteira.** Quem tem o código entra. Por isso os
+  códigos criados são sorteados (`CR-XXXX-XXXX`), nunca sequenciais. Trate-os
+  como senha ao enviar, e revogue quando alguém sair da função.
 
 - **HTTP, sem TLS.** Rede interna confiável. Para expor fora da empresa, ponha
   atrás de um proxy com HTTPS.

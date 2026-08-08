@@ -55,12 +55,9 @@ const RemoteStore = {
     sessionStorage.removeItem('dc_session');
   },
 
-  loginCode(code) {
-    return this.request('POST', '/api/login/code', { code }).then(d => this.remember(d));
-  },
-
-  loginInternal(email, password) {
-    return this.request('POST', '/api/login/internal', { email, password }).then(d => this.remember(d));
+  /* Uma única porta: o código diz o papel de quem entrou. */
+  login(code) {
+    return this.request('POST', '/api/login', { code }).then(d => this.remember(d));
   },
 
   async logout() {
@@ -121,18 +118,18 @@ const RemoteStore = {
     URL.revokeObjectURL(url);
   },
 
-  /* ------------------------------- Usuários ------------------------------ */
-  listUsers() {
-    return this.request('GET', '/api/users').then(d => d.users);
+  /* --------------------------- Códigos de acesso ------------------------- */
+  listKeys() {
+    return this.request('GET', '/api/keys').then(d => d.keys);
   },
-  createUser(user) {
-    return this.request('POST', '/api/users', user);
+  createKey(key) {
+    return this.request('POST', '/api/keys', key);
   },
-  updateUser(email, patch) {
-    return this.request('PATCH', `/api/users/${encodeURIComponent(email)}`, patch);
+  updateKey(code, patch) {
+    return this.request('PATCH', `/api/keys/${encodeURIComponent(code)}`, patch);
   },
-  deleteUser(email) {
-    return this.request('DELETE', `/api/users/${encodeURIComponent(email)}`);
+  deleteKey(code) {
+    return this.request('DELETE', `/api/keys/${encodeURIComponent(code)}`);
   },
 
   /* ----------------------------- Configurações --------------------------- */

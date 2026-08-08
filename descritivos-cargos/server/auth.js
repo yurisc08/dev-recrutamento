@@ -1,47 +1,15 @@
 /*
  * server/auth.js
  * -----------------------------------------------------------------------------
- * Senhas e sessões.
+ * Sessões.
  *
- * As senhas são guardadas como hash scrypt (`scrypt$salt$hash`), nunca em texto.
- * Bancos criados na versão anterior, que guardavam a senha em texto, continuam
- * funcionando: o hash é gravado no primeiro login bem-sucedido.
+ * Não há usuário nem senha em lugar nenhum: a credencial é sempre um código de
+ * acesso. Quem valida o código é o servidor (server.js), e o que sobra aqui é
+ * guardar a sessão aberta a partir dele.
  */
 
 const crypto = require('node:crypto');
 
-const KEY_LENGTH = 64;
-
-function hashPassword(plain) {
-  const salt = crypto.randomBytes(16).toString('hex');
-  const hash = crypto.scryptSync(String(plain), salt, KEY_LENGTH).toString('hex');
-  return `scrypt$${salt}$${hash}`;
-}
-
-function verifyPassword(user, plain) {
-  if (!user || plain == null) return false;
-
-  if (user.passwordHash) {
-    const [algo, salt, hash] = String(user.passwordHash).split('$');
-    if (algo !== 'scrypt' || !salt || !hash) return false;
-    const attempt = crypto.scryptSync(String(plain), salt, KEY_LENGTH);
-    const stored = Buffer.from(hash, 'hex');
-    return stored.length === attempt.length && crypto.timingSafeEqual(stored, attempt);
-  }
-
-  // Formato antigo, em texto puro.
-  return typeof user.password === 'string' && user.password === String(plain);
-}
-
-/* Regras mínimas para uma senha nova. */
-function validatePassword(plain) {
-  const value = String(plain || '');
-  if (value.length < 8) return { ok: false, error: 'A senha precisa ter ao menos 8 caracteres' };
-  if (!/[A-Za-z]/.test(value) || !/[0-9]/.test(value)) return { ok: false, error: 'A senha precisa misturar letras e números' };
-  return { ok: true };
-}
-
-/* -------------------------------- Sessões -------------------------------- */
 const SESSION_TTL = 12 * 60 * 60 * 1000; // 12 horas
 const sessions = new Map();
 
@@ -66,14 +34,13 @@ function closeSession(token) {
   sessions.delete(token);
 }
 
-/* Encerra as sessões abertas de um usuário (troca de senha, exclusão). */
-function closeSessionsOf(email) {
+/* Derruba as sessões abertas com um código — usado ao revogar ou trocar. */
+function closeSessionsOf(code) {
+  const wanted = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
   for (const [token, entry] of sessions) {
-    if (entry.data.email && entry.data.email === email) sessions.delete(token);
+    const current = String(entry.data.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+    if (wanted && current === wanted) sessions.delete(token);
   }
 }
 
-module.exports = {
-  hashPassword, verifyPassword, validatePassword,
-  openSession, readSession, closeSession, closeSessionsOf
-};
+module.exports = { openSession, readSession, closeSession, closeSessionsOf };

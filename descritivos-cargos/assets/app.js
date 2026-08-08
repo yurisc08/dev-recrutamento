@@ -74,47 +74,42 @@ function askText(title, label, onConfirm) {
 }
 
 /* ================================ LOGIN ================================== */
-$('#testCode').onclick      = () => { $('#accessCode').value = 'DC-00001'; toast('Código preenchido'); };
-$('#showInternal').onclick  = () => { $('#managerLogin').classList.add('hide');  $('#internalLogin').classList.remove('hide'); };
-$('#backToManager').onclick = () => { $('#internalLogin').classList.add('hide'); $('#managerLogin').classList.remove('hide'); };
-$('#testHr').onclick        = () => { $('#email').value = 'rh@empresa.com';        $('#password').value = 'Rh@2026!'; };
-$('#testApprover').onclick  = () => { $('#email').value = 'aprovador@empresa.com'; $('#password').value = 'Ap@2026!'; };
+/*
+ * Uma porta só: a pessoa digita o código que recebeu e a ferramenta descobre
+ * quem ela é. Não existe usuário nem senha em lugar nenhum.
+ */
+$('#accessCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('#enter').click(); });
 
-async function attemptLogin(button, promise, view) {
+/* Os códigos de demonstração preenchem o campo com um clique. */
+$$('[data-demo-code]').forEach(button => {
+  button.onclick = () => {
+    $('#accessCode').value = button.dataset.demoCode;
+    $('#accessCode').focus();
+  };
+});
+
+$('#enter').onclick = async e => {
+  const code = $('#accessCode').value.trim();
+  if (!code) return toast('Informe o código de acesso', 'error');
+
+  const button = e.currentTarget;
   button.disabled = true;
   try {
-    await promise;
-    await enter(view);
+    await API.login(code);
+    await enter();
   } catch (err) {
     toast(err.message, 'error');
+    $('#accessCode').select();
   } finally {
     button.disabled = false;
   }
-}
-
-$('#managerEnter').onclick = e => {
-  const code = $('#accessCode').value.trim().toUpperCase();
-  if (!code) return toast('Informe o código de acesso', 'error');
-  attemptLogin(e.currentTarget, API.loginCode(code), 'jobs');
 };
-
-$('#internalEnter').onclick = e => {
-  const email = $('#email').value.trim();
-  const password = $('#password').value;
-  if (!email || !password) return toast('Informe e-mail e senha', 'error');
-  attemptLogin(e.currentTarget, API.loginInternal(email, password), null);
-};
-
-$('#accessCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('#managerEnter').click(); });
-$('#password').addEventListener('keydown', e => { if (e.key === 'Enter') $('#internalEnter').click(); });
 
 $('#logout').onclick = async () => {
   await API.logout();
   state.jobId = null;
   closeModal();
-  ['#accessCode', '#email', '#password'].forEach(sel => $(sel).value = '');
-  $('#internalLogin').classList.add('hide');
-  $('#managerLogin').classList.remove('hide');
+  $('#accessCode').value = '';
   $('#application').classList.add('hide');
   $('#login').classList.remove('hide');
 };
@@ -148,7 +143,7 @@ const NAV = {
     { view: 'approvals', label: 'Validações' },
     { view: 'jobs', label: 'Cargos' },
     { view: 'admin', label: 'Administração' },
-    { view: 'users', label: 'Usuários' },
+    { view: 'users', label: 'Códigos de acesso' },
     { view: 'config', label: 'Configurações' }
   ]
 };
@@ -494,20 +489,35 @@ function renderAdminList() {
 /* Valores sugeridos no cadastro, para agilizar o uso no dia a dia. */
 const CREATION_DEFAULTS = {
   creationDate: isoToday(),
-  company: 'Empresa Exemplo',
-  approver: 'Aprovador Demonstração'
+  company: 'Empresa Exemplo'
 };
 
-function newJobModal() {
+async function newJobModal() {
   const hrFields = fieldsOf('hr').filter(f => f.key !== 'reviewDate');
+
+  // O aprovador vira uma lista dos códigos de aprovador já cadastrados: evita
+  // erro de digitação no nome, que é o vínculo usado pela fila de aprovação.
+  let approvers = [];
+  try {
+    approvers = (await API.listKeys()).filter(k => k.role === 'approver');
+  } catch { /* segue com campo livre */ }
+
   const render = f => {
     const id = 'n_' + f.key;
     const preset = esc(CREATION_DEFAULTS[f.key] || '');
     const type = f.type === 'date' ? 'date' : f.type === 'email' ? 'email' : 'text';
-    const control = f.type === 'textarea'
-      ? `<textarea id="${id}" data-new="${f.key}" rows="3">${preset}</textarea>`
-      : `<input id="${id}" data-new="${f.key}" type="${type}" value="${preset}">`;
-    return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)} <span class="req">*</span></label>${control}</div>`;
+
+    const control = f.key === 'approver' && approvers.length
+      ? `<select id="${id}" data-new="${f.key}">${approvers.map(a => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join('')}</select>`
+      : f.type === 'textarea'
+        ? `<textarea id="${id}" data-new="${f.key}" rows="3">${preset}</textarea>`
+        : `<input id="${id}" data-new="${f.key}" type="${type}" value="${preset}">`;
+
+    const hint = f.key === 'approver' && !approvers.length
+      ? '<small class="muted">Nenhum código de aprovador cadastrado ainda — crie um em Códigos de acesso.</small>'
+      : '';
+
+    return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)} <span class="req">*</span></label>${control}${hint}</div>`;
   };
 
   openModal(`
@@ -559,93 +569,122 @@ function prepareMail(id) {
   window.location.href = `mailto:${job.managerEmail}?subject=${subject}&body=${body}`;
 }
 
-/* =========================== VISÃO: USUÁRIOS ============================= */
+/* ======================= VISÃO: CÓDIGOS DE ACESSO ======================== */
 /*
- * Só C&R chega aqui. São os acessos internos — aprovadores e a própria equipe
- * de C&R. Responsáveis pelo preenchimento não entram nesta lista: eles usam o
- * código de acesso do cargo.
+ * Só C&R chega aqui. Duas listas:
+ *   - códigos administrativos (C&R e aprovadores), criados nesta tela;
+ *   - códigos dos responsáveis, que nascem junto com o cargo.
  */
 async function usersView() {
   if (session().role !== 'hr') return show('approvals');
 
-  $('#title').textContent = 'Usuários internos';
-  $('#subtitle').textContent = 'Aprovadores e equipe de Carreira & Recompensa';
-  $('#topActions').innerHTML = `<button class="btn primary" data-action="user-new">Novo usuário</button>`;
+  $('#title').textContent = 'Códigos de acesso';
+  $('#subtitle').textContent = 'Toda entrada na ferramenta é por código — não há usuário nem senha';
+  $('#topActions').innerHTML = `<button class="btn primary" data-action="key-new">Novo código</button>`;
   $('#content').innerHTML = `<div class="card"><div class="body empty">Carregando…</div></div>`;
 
-  let users;
+  let keys;
   try {
-    users = await API.listUsers();
+    keys = await API.listKeys();
   } catch (err) {
     return toast(err.message, 'error');
   }
+  usersView.cache = keys;
+
+  /* Um código por responsável, com os cargos que ele abre. */
+  const managers = [];
+  API.jobs.forEach(job => {
+    const found = managers.find(m => m.code === job.code);
+    if (found) found.jobs.push(job);
+    else managers.push({ code: job.code, name: job.manager, email: job.managerEmail, jobs: [job] });
+  });
+
+  const codeCell = code => `<b class="code">${esc(code)}</b>
+    <button class="btn outline" data-action="copy" data-code="${esc(code)}" title="Copiar">Copiar</button>`;
 
   $('#content').innerHTML = `
-    <div class="banner">Os responsáveis pelo preenchimento não precisam de usuário: eles entram com o código de acesso enviado por e-mail.</div>
+    <div class="banner">Quem recebe um código entra direto com ele. Perdeu o código? Gere um novo — o antigo deixa de valer na hora.</div>
+
     <div class="card">
+      <div class="head"><b>Acesso administrativo</b><span class="muted">${keys.length} código(s)</span></div>
       <div class="body">
         <table class="list">
-          <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th></th></tr></thead>
-          <tbody>${users.map(u => `
+          <thead><tr><th>Pessoa</th><th>Perfil</th><th>Código</th><th>Último acesso</th><th></th></tr></thead>
+          <tbody>${keys.map(k => `
             <tr>
-              <td><b>${esc(u.name)}</b></td>
-              <td>${esc(u.email)}</td>
-              <td>${ROLES[u.role].label}</td>
+              <td><b>${esc(k.name)}</b>${k.email ? `<br><span class="muted">${esc(k.email)}</span>` : ''}</td>
+              <td>${ROLES[k.role].label}</td>
+              <td>${codeCell(k.code)}</td>
+              <td class="muted">${k.lastUsedAt ? formatDateTime(k.lastUsedAt) : 'nunca usado'}</td>
               <td class="right">
-                <button class="btn secondary" data-action="user-edit" data-email="${esc(u.email)}">Editar</button>
-                <button class="btn danger" data-action="user-delete" data-email="${esc(u.email)}">Excluir</button>
+                <button class="btn secondary" data-action="key-edit" data-code="${esc(k.code)}">Editar</button>
+                <button class="btn danger" data-action="key-delete" data-code="${esc(k.code)}">Revogar</button>
               </td>
             </tr>`).join('')}
           </tbody>
         </table>
       </div>
-    </div>`;
+    </div>
 
-  // Guarda os dados para o modal de edição não precisar buscar de novo.
-  usersView.cache = users;
+    <div class="card">
+      <div class="head"><b>Códigos dos responsáveis</b><span class="muted">gerados com o cargo</span></div>
+      <div class="body">
+        ${managers.length ? `<table class="list">
+          <thead><tr><th>Responsável</th><th>Cargos</th><th>Código</th><th></th></tr></thead>
+          <tbody>${managers.map(m => `
+            <tr>
+              <td><b>${esc(m.name)}</b><br><span class="muted">${esc(m.email)}</span></td>
+              <td class="muted">${m.jobs.map(j => esc(j.name)).join('<br>')}</td>
+              <td>${codeCell(m.code)}</td>
+              <td class="right">
+                <button class="btn secondary" data-action="${API.smtpReady ? 'resend' : 'mail'}" data-id="${m.jobs[0].id}">
+                  ${API.smtpReady ? 'Reenviar por e-mail' : 'Preparar e-mail'}
+                </button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>` : '<div class="empty">Nenhum cargo cadastrado ainda.</div>'}
+      </div>
+    </div>`;
 }
 
-function userModal(user) {
-  const editing = Boolean(user);
+function userModal(key) {
+  const editing = Boolean(key);
   openModal(`
-    <h2>${editing ? 'Editar usuário' : 'Novo usuário'}</h2>
+    <h2>${editing ? 'Editar código' : 'Novo código de acesso'}</h2>
     <div class="grid">
-      <div class="field"><label for="uName">Nome <span class="req">*</span></label>
-        <input id="uName" value="${esc(user ? user.name : '')}"></div>
-      <div class="field"><label for="uEmail">E-mail <span class="req">*</span></label>
-        <input id="uEmail" type="email" value="${esc(user ? user.email : '')}" ${editing ? 'disabled' : ''}></div>
+      <div class="field"><label for="uName">Pessoa ou área <span class="req">*</span></label>
+        <input id="uName" value="${esc(key ? key.name : '')}" placeholder="Ex.: Maria Silva"></div>
       <div class="field"><label for="uRole">Perfil <span class="req">*</span></label>
-        <select id="uRole">
-          <option value="approver" ${user && user.role === 'approver' ? 'selected' : ''}>Aprovador</option>
-          <option value="hr" ${user && user.role === 'hr' ? 'selected' : ''}>Carreira &amp; Recompensa</option>
+        <select id="uRole" ${editing ? 'disabled' : ''}>
+          <option value="approver" ${key && key.role === 'approver' ? 'selected' : ''}>Aprovador</option>
+          <option value="hr" ${key && key.role === 'hr' ? 'selected' : ''}>Carreira &amp; Recompensa</option>
         </select></div>
-      <div class="field"><label for="uPassword">Senha ${editing ? '' : '<span class="req">*</span>'}</label>
-        <input id="uPassword" type="password" placeholder="${editing ? 'deixe em branco para manter' : 'mínimo 8 caracteres, com letras e números'}"></div>
+      <div class="field full"><label for="uEmail">E-mail (opcional)</label>
+        <input id="uEmail" type="email" value="${esc(key && key.email ? key.email : '')}" placeholder="para receber os avisos do fluxo">
+      </div>
     </div>
-    <p class="muted">O nome do aprovador precisa ser exatamente o mesmo informado no cadastro do cargo — é por ele que a fila de aprovação encontra os descritivos.</p>
+    ${editing ? `
+      <div class="field full">
+        <label>Código atual</label>
+        <p><b class="code">${esc(key.code)}</b></p>
+        <label class="check"><input type="checkbox" id="uRegenerate"> Gerar um código novo (o atual deixa de valer imediatamente)</label>
+      </div>` : '<p class="muted">O código é sorteado ao salvar e aparece na lista, pronto para copiar.</p>'}
+    <p class="muted">Aprovador: o nome precisa ser o mesmo escolhido no cadastro do cargo — a fila de aprovação usa esse vínculo. Ao renomear aqui, os cargos são atualizados junto.</p>
     <button class="btn primary full mt" data-modal-action="save-user">Salvar</button>
   `);
 
   const button = $('#modalContent').querySelector('[data-modal-action="save-user"]');
   button.onclick = async () => {
-    const data = {
-      name: $('#uName').value.trim(),
-      email: $('#uEmail').value.trim(),
-      role: $('#uRole').value,
-      password: $('#uPassword').value
-    };
+    const data = { name: $('#uName').value.trim(), email: $('#uEmail').value.trim() };
 
     button.disabled = true;
     try {
-      if (editing) {
-        const patch = { name: data.name, role: data.role };
-        if (data.password) patch.password = data.password;
-        await API.updateUser(user.email, patch);
-      } else {
-        await API.createUser(data);
-      }
+      const result = editing
+        ? await API.updateKey(key.code, { ...data, regenerate: $('#uRegenerate').checked })
+        : await API.createKey({ ...data, role: $('#uRole').value });
       closeModal();
-      toast('Usuário salvo', 'success');
+      toast(result.message || 'Código salvo', 'success');
       usersView();
     } catch (err) {
       toast(err.message, 'error');
@@ -778,7 +817,7 @@ function documentView() {
 
 /* ============================ AÇÕES (delegação) ========================== */
 async function handleAction(action, id, element) {
-  const email = element ? element.dataset.email : null;
+  const code = element ? element.dataset.code : null;
 
   /* Executa uma chamada à API cuidando de erro, botão travado e re-render. */
   const run = async (promise, successMessage) => {
@@ -837,16 +876,22 @@ async function handleAction(action, id, element) {
     case 'new':
       return newJobModal();
 
-    /* ------------------------------ Usuários ---------------------------- */
-    case 'user-new':
+    /* -------------------------- Códigos de acesso ------------------------ */
+    case 'key-new':
       return userModal();
-    case 'user-edit':
-      return userModal((usersView.cache || []).find(u => u.email === email));
-    case 'user-delete':
-      return askText('Excluir usuário', `Digite EXCLUIR para remover o acesso de ${email}`, text => {
-        if (text.trim().toUpperCase() !== 'EXCLUIR') return toast('Confirmação inválida', 'error');
-        run(API.deleteUser(email), 'Usuário excluído');
+    case 'key-edit':
+      return userModal((usersView.cache || []).find(k => k.code === code));
+    case 'key-delete': {
+      const key = (usersView.cache || []).find(k => k.code === code);
+      return askText('Revogar código', `Digite REVOGAR para tirar o acesso de ${key ? key.name : code}`, text => {
+        if (text.trim().toUpperCase() !== 'REVOGAR') return toast('Confirmação inválida', 'error');
+        run(API.deleteKey(code), 'Código revogado');
       });
+    }
+    case 'copy':
+      return navigator.clipboard.writeText(code)
+        .then(() => toast('Código copiado: ' + code, 'success'))
+        .catch(() => toast('Copie manualmente: ' + code));
 
     /* --------------------------- Configurações -------------------------- */
     case 'config-save':

@@ -28,12 +28,15 @@ const daysLeft = iso => Math.round((new Date(iso + 'T00:00:00') - new Date(Model
 /* ----------------------------- Destinatários ----------------------------- */
 const managerOf = job => (job.managerEmail ? [{ email: job.managerEmail, name: job.manager }] : []);
 
-const approverOf = job => {
-  const user = db.users.find(u => u.role === 'approver' && u.name === job.approver);
-  return user ? [{ email: user.email, name: user.name }] : [];
-};
+/* Aprovadores e C&R são identificados pela chave de acesso; o e-mail é
+ * opcional nela, então só recebe aviso quem tiver e-mail cadastrado. */
+const approverOf = job => db.keys
+  .filter(k => k.role === 'approver' && k.name === job.approver && k.email)
+  .map(k => ({ email: k.email, name: k.name }));
 
-const hrTeam = () => db.users.filter(u => u.role === 'hr').map(u => ({ email: u.email, name: u.name }));
+const hrTeam = () => db.keys
+  .filter(k => k.role === 'hr' && k.email)
+  .map(k => ({ email: k.email, name: k.name }));
 
 function recipientsFor(role, job) {
   if (role === 'manager') return managerOf(job);
@@ -67,7 +70,7 @@ const MESSAGES = {
     subject: `Descritivo aguardando sua aprovação: ${job.name}`,
     body: `Olá!\n\n` +
       `${job.manager} enviou o descritivo do cargo ${job.name} para sua aprovação.\n` + link() +
-      `\nEntre com seu e-mail e senha para analisar, aprovar ou devolver.` + signature
+      `\nEntre com o seu código de acesso para analisar, aprovar ou devolver.` + signature
   }),
 
   approve: job => ({

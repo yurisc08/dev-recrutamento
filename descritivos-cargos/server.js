@@ -56,9 +56,6 @@ const randomInt = max => crypto.randomInt(max);
 const visible = session => Flow.visibleTo(db.jobs, session);
 const findVisible = (session, id) => visible(session).find(j => String(j.id) === String(id));
 
-/* Usuário sem nada que não deva sair do servidor. */
-const publicUser = user => ({ email: user.email, name: user.name, role: user.role });
-
 /* Configuração sem a senha do SMTP; o cliente só sabe se ela está preenchida. */
 function publicConfig() {
   const { smtp, ...rest } = db.config;
@@ -132,27 +129,29 @@ async function handleApi(req, res, pathname) {
   const body = req.method === 'GET' ? {} : await readBody(req);
 
   /* ---------------------------- Autenticação --------------------------- */
-  if (pathname === '/api/login/code' && req.method === 'POST') {
-    const code = String(body.code || '').trim().toUpperCase();
-    const jobs = db.jobs.filter(j => j.code === code && j.status !== 'canceled');
-    if (!jobs.length) return fail(res, 401, 'Código não encontrado');
-    const session = { role: 'manager', name: jobs[0].manager, code };
-    return ok(res, { token: auth.openSession(session), session });
-  }
+  /*
+   * Uma única porta de entrada: o código diz quem é a pessoa e o que ela pode.
+   * Primeiro procura entre as chaves administrativas (C&R e aprovadores);
+   * depois entre os códigos de responsável, que nascem junto com os cargos.
+   */
+  if (pathname === '/api/login' && req.method === 'POST') {
+    const code = body.code;
 
-  if (pathname === '/api/login/internal' && req.method === 'POST') {
-    const user = db.findUser(body.email);
-    if (!auth.verifyPassword(user, body.password)) return fail(res, 401, 'E-mail ou senha inválidos');
-
-    // Migra bancos antigos, que guardavam a senha em texto.
-    if (!user.passwordHash) {
-      user.passwordHash = auth.hashPassword(body.password);
-      delete user.password;
+    const key = db.findKey(code);
+    if (key) {
+      key.lastUsedAt = new Date().toISOString();
       await db.persist();
+      const session = { role: key.role, name: key.name, code: key.code };
+      return ok(res, { token: auth.openSession(session), session });
     }
 
-    const session = { role: user.role, name: user.name, email: user.email };
-    return ok(res, { token: auth.openSession(session), session });
+    const jobs = db.jobs.filter(j => Flow.sameCode(j.code, code) && j.status !== 'canceled');
+    if (jobs.length) {
+      const session = { role: 'manager', name: jobs[0].manager, code: jobs[0].code };
+      return ok(res, { token: auth.openSession(session), session });
+    }
+
+    return fail(res, 401, 'Código não encontrado. Confira com Carreira & Recompensa.');
   }
 
   /* Daqui em diante, tudo exige sessão. */
@@ -183,7 +182,7 @@ async function handleApi(req, res, pathname) {
     // Um mesmo responsável mantém um único código, para todos os seus cargos.
     const email = String(data.managerEmail).toLowerCase();
     const existing = db.jobs.find(j => String(j.managerEmail).toLowerCase() === email);
-    const code = existing ? existing.code : Flow.newAccessCode(randomInt);
+    const code = existing ? existing.code : Flow.newAccessCode(randomInt, 'manager');
 
     const job = Flow.normalizeJob({
       ...data,
@@ -246,73 +245,77 @@ async function handleApi(req, res, pathname) {
     return exportCsv(res);
   }
 
-  /* ------------------------------- Usuários ----------------------------- */
-  if (pathname === '/api/users') {
-    if (!requireHr()) return fail(res, 403, 'Apenas C&R pode gerenciar usuários');
+  /* --------------------------- Códigos de acesso ------------------------ */
+  if (pathname === '/api/keys') {
+    if (!requireHr()) return fail(res, 403, 'Apenas C&R pode gerenciar os códigos');
 
-    if (req.method === 'GET') return ok(res, { users: db.users.map(publicUser) });
+    if (req.method === 'GET') return ok(res, { keys: db.keys });
 
     if (req.method === 'POST') {
-      const email = String(body.email || '').trim().toLowerCase();
       const name = String(body.name || '').trim();
       const role = body.role === 'hr' ? 'hr' : 'approver';
+      const email = String(body.email || '').trim();
 
-      if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail(res, 400, 'E-mail inválido');
       if (!name) return fail(res, 400, 'Informe o nome');
-      if (db.findUser(email)) return fail(res, 400, 'Já existe um usuário com este e-mail');
+      if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail(res, 400, 'E-mail inválido');
+      if (db.keys.some(k => k.name === name && k.role === role)) {
+        return fail(res, 400, 'Já existe um código para essa pessoa neste perfil');
+      }
 
-      const check = auth.validatePassword(body.password);
-      if (!check.ok) return fail(res, 400, check.error);
+      const key = db.addKey({
+        code: Flow.newAccessCode(randomInt, role),
+        name, role, email,
+        createdAt: new Date().toISOString(),
+        lastUsedAt: ''
+      });
 
-      const user = db.addUser({ email, name, role, passwordHash: auth.hashPassword(body.password) });
       await db.persist();
-      return ok(res, { user: publicUser(user) });
+      return ok(res, { key, message: `Código criado: ${key.code}` });
     }
   }
 
-  const userRoute = pathname.match(/^\/api\/users\/([^/]+)$/);
-  if (userRoute) {
-    if (!requireHr()) return fail(res, 403, 'Apenas C&R pode gerenciar usuários');
-    const user = db.findUser(decodeURIComponent(userRoute[1]));
-    if (!user) return fail(res, 404, 'Usuário não encontrado');
+  const keyRoute = pathname.match(/^\/api\/keys\/([^/]+)$/);
+  if (keyRoute) {
+    if (!requireHr()) return fail(res, 403, 'Apenas C&R pode gerenciar os códigos');
+    const key = db.findKey(decodeURIComponent(keyRoute[1]));
+    if (!key) return fail(res, 404, 'Código não encontrado');
 
     if (req.method === 'PATCH') {
       if (body.name !== undefined) {
         const name = String(body.name).trim();
         if (!name) return fail(res, 400, 'Informe o nome');
-        user.name = name;
-      }
-
-      if (body.role !== undefined) {
-        const role = body.role === 'hr' ? 'hr' : 'approver';
-        const others = db.users.filter(u => u.role === 'hr' && u.email !== user.email);
-        if (user.role === 'hr' && role !== 'hr' && !others.length) {
-          return fail(res, 400, 'É preciso manter ao menos um usuário de C&R');
+        // O nome do aprovador é o vínculo com os cargos; renomear leva junto.
+        if (key.role === 'approver' && name !== key.name) {
+          db.jobs.forEach(job => { if (job.approver === key.name) job.approver = name; });
         }
-        user.role = role;
+        key.name = name;
       }
 
-      if (body.password) {
-        const check = auth.validatePassword(body.password);
-        if (!check.ok) return fail(res, 400, check.error);
-        user.passwordHash = auth.hashPassword(body.password);
-        delete user.password;
-        auth.closeSessionsOf(user.email);
+      if (body.email !== undefined) {
+        const email = String(body.email).trim();
+        if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return fail(res, 400, 'E-mail inválido');
+        key.email = email;
+      }
+
+      // Trocar o código é o equivalente a trocar a senha: o antigo deixa de valer.
+      if (body.regenerate) {
+        auth.closeSessionsOf(key.code);
+        key.code = Flow.newAccessCode(randomInt, key.role);
       }
 
       await db.persist();
-      return ok(res, { user: publicUser(user) });
+      return ok(res, { key, message: body.regenerate ? `Novo código: ${key.code}` : 'Código atualizado' });
     }
 
     if (req.method === 'DELETE') {
-      if (user.email === session.email) return fail(res, 400, 'Você não pode excluir o próprio usuário');
-      const remainingHr = db.users.filter(u => u.role === 'hr' && u.email !== user.email);
-      if (user.role === 'hr' && !remainingHr.length) return fail(res, 400, 'É preciso manter ao menos um usuário de C&R');
+      if (Flow.sameCode(key.code, session.code)) return fail(res, 400, 'Você não pode revogar o próprio código');
+      const remainingHr = db.keys.filter(k => k.role === 'hr' && !Flow.sameCode(k.code, key.code));
+      if (key.role === 'hr' && !remainingHr.length) return fail(res, 400, 'É preciso manter ao menos um código de C&R');
 
-      db.removeUser(user.email);
-      auth.closeSessionsOf(user.email);
+      db.removeKey(key.code);
+      auth.closeSessionsOf(key.code);
       await db.persist();
-      return ok(res);
+      return ok(res, { message: 'Código revogado' });
     }
   }
 

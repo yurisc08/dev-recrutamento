@@ -39,20 +39,41 @@ function normalizeJob(job) {
 
 /* ---------------------------- Código de acesso --------------------------- */
 /*
- * O código é a única credencial do responsável, então é sorteado — não
- * sequencial. Alfabeto sem caracteres ambíguos (0/O, 1/I) para ser ditado por
- * telefone sem erro.
+ * Todo mundo entra com um código — não existe usuário e senha em lugar nenhum.
+ * O prefixo diz para que serve, o que ajuda quem administra:
+ *
+ *   DC-  responsável pelo preenchimento (vem junto com o cargo)
+ *   AP-  aprovador
+ *   CR-  Carreira & Recompensa (acesso administrativo)
+ *
+ * Os códigos são sorteados, nunca sequenciais, com alfabeto sem caracteres
+ * ambíguos (0/O, 1/I) para poderem ser ditados por telefone sem erro.
  */
 const CODE_ALPHABET = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+const CODE_PREFIX = { manager: 'DC', approver: 'AP', hr: 'CR' };
 
-function newAccessCode(randomInt) {
+function newAccessCode(randomInt, role) {
   const pick = n => Array.from({ length: n }, () => CODE_ALPHABET[randomInt(CODE_ALPHABET.length)]).join('');
-  return `DC-${pick(4)}-${pick(4)}`;
+  return `${CODE_PREFIX[role] || 'DC'}-${pick(4)}-${pick(4)}`;
+}
+
+/*
+ * Compara códigos pelo que a pessoa quis digitar, não pelo que digitou:
+ * ignora maiúsculas, espaços, hífens e pontos. Assim "cr 00001", "CR-00001" e
+ * "cr00001" abrem a mesma porta — evita o suporte de "meu código não entra".
+ */
+function normalizeCode(value) {
+  return String(value || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+}
+
+function sameCode(a, b) {
+  const left = normalizeCode(a);
+  return Boolean(left) && left === normalizeCode(b);
 }
 
 /* ------------------------------- Visibilidade ---------------------------- */
 function visibleTo(jobs, session) {
-  if (session.role === 'manager') return jobs.filter(j => j.code === session.code);
+  if (session.role === 'manager') return jobs.filter(j => sameCode(j.code, session.code));
   if (session.role === 'approver') return jobs.filter(j => j.approver === session.name);
   return jobs;
 }
@@ -142,6 +163,11 @@ function applyFields(job, session, values) {
   return { ok: true };
 }
 
-return { entry, comment, normalizeJob, newAccessCode, visibleTo, isPending, TRANSITIONS, applyTransition, applyFields };
+return {
+  entry, comment, normalizeJob,
+  newAccessCode, normalizeCode, sameCode, CODE_PREFIX,
+  visibleTo, isPending,
+  TRANSITIONS, applyTransition, applyFields
+};
 
 });

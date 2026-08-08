@@ -11,9 +11,10 @@ const fs = require('node:fs');
 const fsp = require('node:fs/promises');
 const path = require('node:path');
 
+const crypto = require('node:crypto');
+
 const Flow = require('../shared/flow.js');
 const seedData = require('../shared/seed.js');
-const auth = require('./auth.js');
 
 const ROOT = path.join(__dirname, '..');
 const DATA_DIR = path.join(ROOT, 'data');
@@ -21,16 +22,9 @@ const DB_FILE = path.join(DATA_DIR, 'db.json');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 
 /* ============================= Dados iniciais ============================ */
-/* Os dados de demonstração vêm de shared/seed.js, os mesmos do modo local.
- * Aqui as senhas viram hash antes de tocar o disco. */
+/* Os dados de demonstração vêm de shared/seed.js, os mesmos do modo local. */
 function seed() {
-  return {
-    users: seedData.seedUsers().map(({ password, ...user }) => ({
-      ...user,
-      passwordHash: auth.hashPassword(password)
-    })),
-    jobs: seedData.seedJobs()
-  };
+  return { keys: seedData.seedKeys(), jobs: seedData.seedJobs() };
 }
 
 function defaultConfig() {
@@ -63,9 +57,39 @@ let config = mergeConfig(load(CONFIG_FILE, defaultConfig));
 
 function normalize() {
   db.jobs = (db.jobs || []).map(Flow.normalizeJob);
-  db.users = db.users || [];
+  db.keys = db.keys || [];
+
+  /* Bancos da versão com e-mail e senha viram códigos de acesso, preservando
+   * nome e papel de cada pessoa. O código novo aparece em "Códigos de acesso". */
+  if (db.users && db.users.length) {
+    const criados = [];
+
+    db.users.forEach(user => {
+      if (db.keys.some(k => k.name === user.name && k.role === user.role)) return;
+      const key = {
+        code: Flow.newAccessCode(max => crypto.randomInt(max), user.role),
+        name: user.name,
+        role: user.role,
+        email: user.email || '',
+        createdAt: new Date().toISOString(),
+        lastUsedAt: ''
+      };
+      db.keys.push(key);
+      criados.push(key);
+    });
+
+    delete db.users;
+    persist();
+
+    /* Os códigos são sorteados, então precisam aparecer em algum lugar na
+     * primeira subida — senão ninguém consegue entrar depois da atualização. */
+    if (criados.length) {
+      console.log('\nUsuários da versão anterior viraram códigos de acesso:');
+      criados.forEach(k => console.log(`  ${k.code}  ${k.name} (${k.role === 'hr' ? 'C&R' : 'aprovador'})`));
+      console.log('');
+    }
+  }
 }
-normalize();
 
 /* =============================== Gravação ================================ */
 let queue = Promise.resolve();
@@ -83,6 +107,9 @@ function writeFile(file, content) {
 const persist = () => writeFile(DB_FILE, db);
 const persistConfig = () => writeFile(CONFIG_FILE, config);
 
+/* Depois de persist() existir: a migração de bancos antigos precisa gravar. */
+normalize();
+
 if (!fs.existsSync(DB_FILE)) persist();
 if (!fs.existsSync(CONFIG_FILE)) persistConfig();
 
@@ -92,7 +119,7 @@ module.exports = {
   DB_FILE,
 
   get jobs() { return db.jobs; },
-  get users() { return db.users; },
+  get keys() { return db.keys; },
   get config() { return config; },
 
   persist,
@@ -102,9 +129,9 @@ module.exports = {
     return db.jobs.find(j => String(j.id) === String(id));
   },
 
-  findUser(email) {
-    const wanted = String(email || '').trim().toLowerCase();
-    return db.users.find(u => u.email.toLowerCase() === wanted);
+  /* Aceita o código como a pessoa digitou: sem hífen, minúsculo, com espaços. */
+  findKey(code) {
+    return db.keys.find(k => Flow.sameCode(k.code, code));
   },
 
   addJob(job) {
@@ -112,16 +139,15 @@ module.exports = {
     return job;
   },
 
-  addUser(user) {
-    db.users.push(user);
-    return user;
+  addKey(key) {
+    db.keys.push(key);
+    return key;
   },
 
-  removeUser(email) {
-    const wanted = String(email || '').trim().toLowerCase();
-    const index = db.users.findIndex(u => u.email.toLowerCase() === wanted);
+  removeKey(code) {
+    const index = db.keys.findIndex(k => Flow.sameCode(k.code, code));
     if (index < 0) return false;
-    db.users.splice(index, 1);
+    db.keys.splice(index, 1);
     return true;
   },
 

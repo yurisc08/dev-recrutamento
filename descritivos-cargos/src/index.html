@@ -27,53 +27,31 @@
 
   <main class="login-main">
     <div class="login-card">
-      <div id="managerLogin">
-        <h1>Acesse seus descritivos</h1>
-        <p class="lead">Informe o código recebido por e-mail. Não é necessário usuário nem senha.</p>
-        <div class="panel">
-          <div class="field">
-            <label for="accessCode">Código de acesso</label>
-            <input id="accessCode" placeholder="Ex.: DC-00001" autocomplete="off" spellcheck="false">
-          </div>
-          <button id="managerEnter" class="btn primary full">Entrar</button>
+      <h1>Entrar com o código</h1>
+      <p class="lead">Todo acesso é por código — responsáveis, aprovadores e Carreira &amp; Recompensa. Não há usuário nem senha.</p>
 
-          <div class="test">
-            <b>Ambiente de teste</b>
-            <p class="muted">Preencha automaticamente um código válido.</p>
-            <button id="testCode" class="btn secondary full">Usar código DC-00001</button>
-          </div>
+      <div class="panel">
+        <div class="field">
+          <label for="accessCode">Código de acesso</label>
+          <input id="accessCode" placeholder="Ex.: DC-00001" autocomplete="off" spellcheck="false"
+                 autocapitalize="characters" style="font-size:19px;letter-spacing:.1em">
+          <small class="muted">Pode digitar com ou sem hífen, maiúsculas ou minúsculas.</small>
         </div>
-
-        <div class="divider">ou</div>
-        <button id="showInternal" class="btn outline full">Acesso interno de C&amp;R e aprovação</button>
-        <p id="loginModeNote" class="muted mt"></p>
+        <button id="enter" class="btn primary full">Entrar</button>
       </div>
 
-      <div id="internalLogin" class="hide">
-        <h1>Acesso interno</h1>
-        <p class="lead">Área de Carreira &amp; Recompensa e dos aprovadores.</p>
-        <div class="panel">
-          <div class="field">
-            <label for="email">E-mail</label>
-            <input id="email" type="email" autocomplete="username">
-          </div>
-          <div class="field">
-            <label for="password">Senha</label>
-            <input id="password" type="password" autocomplete="current-password">
-          </div>
-          <button id="internalEnter" class="btn primary full">Entrar</button>
-
-          <div class="test">
-            <b>Contas de teste</b>
-            <div class="actions mt-sm">
-              <button id="testHr" class="btn secondary">Carreira &amp; Recompensa</button>
-              <button id="testApprover" class="btn secondary">Aprovador</button>
-            </div>
-          </div>
+      <div class="test">
+        <b>Códigos de demonstração</b>
+        <p class="muted">Clique para preencher e ver a ferramenta pelos olhos de cada papel.</p>
+        <div class="demo-codes">
+          <button class="btn secondary" data-demo-code="CR-00001"><b>CR-00001</b><span>Carreira &amp; Recompensa</span></button>
+          <button class="btn secondary" data-demo-code="AP-00001"><b>AP-00001</b><span>Aprovador</span></button>
+          <button class="btn secondary" data-demo-code="DC-00001"><b>DC-00001</b><span>Responsável — 2 cargos</span></button>
+          <button class="btn secondary" data-demo-code="DC-00002"><b>DC-00002</b><span>Responsável — aprovado</span></button>
         </div>
-
-        <button id="backToManager" class="btn outline full mt">Voltar</button>
       </div>
+
+      <p id="loginModeNote" class="muted mt"></p>
     </div>
   </main>
 </section>
