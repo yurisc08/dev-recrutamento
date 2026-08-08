@@ -1,0 +1,69 @@
+GERADOR DE MAPAS DE CARREIRA
+============================
+
+COMECE POR AQUI
+---------------
+Abra o arquivo:
+
+    Gerador_Mapas_Carreira.html
+
+com duplo clique. Ele funciona sozinho: nao precisa instalar nada, nao
+precisa de internet e nao precisa de servidor. A base de cargos e os
+modelos Word ja estao dentro dele.
+
+Tudo roda no seu navegador. Nenhum dado sai do computador.
+
+
+AS TELAS
+--------
+Painel ............... visao geral e o que ainda falta configurar
+Gerar documentos ..... informe os codigos e baixe em Word ou PDF
+Base de dados ........ trocar a planilha, escolher a aba, ver as colunas
+Modelos Word ......... adicionar modelos .docx e definir quando usar cada um
+Mapeamento ........... dizer de qual coluna vem cada campo do documento
+Salvar e distribuir .. gerar a ferramenta pronta para enviar a outra pessoa
+
+
+PARA ADICIONAR UM TERCEIRO MODELO (ex.: operacional)
+----------------------------------------------------
+1. Abra a tela "Modelos Word"
+2. Em "Adicionar um modelo", selecione o arquivo .docx
+3. Os campos ja vem mapeados automaticamente quando possivel
+4. Em "Quando usar este modelo", escolha
+       "Quando uma coluna tiver certo valor"
+   e configure, por exemplo:
+       TCLC_DESC  /  for igual a  /  OPERACIONAL
+5. Use as setas para deixar o modelo mais generico por ultimo
+
+Cada cartao mostra quantos cargos da base cairiam naquele modelo.
+Confira esse numero antes de gerar os documentos.
+
+
+PARA ENVIAR A FERRAMENTA CONFIGURADA A OUTRA PESSOA
+---------------------------------------------------
+Tela "Salvar e distribuir" -> botao "Gerar ferramenta com a base".
+Sai um novo arquivo HTML com tudo dentro: modelos, mapeamento e regras.
+Quem receber so abre e usa.
+
+Se o arquivo for circular por e-mail ou fora da rede interna, prefira
+"Gerar sem a base": o arquivo fica leve e nao leva os dados de cargos
+junto. Quem abrir seleciona a planilha no proprio computador.
+
+
+OS DEMAIS ARQUIVOS DESTA PASTA
+------------------------------
+Sao para quem for hospedar ou alterar a ferramenta. Para so usar,
+o Gerador_Mapas_Carreira.html basta.
+
+README.md .................. documentacao do projeto
+HOSPEDAGEM.md .............. como publicar num servidor
+servidor.py ................ sobe a ferramenta num endereco da rede
+Iniciar-servidor.bat ....... atalho Windows (so nesta maquina)
+Iniciar-servidor-rede.bat .. atalho Windows (libera para a rede)
+build.py ................... regera o Gerador_Mapas_Carreira.html
+build_web.py ............... gera a pasta web/ para hospedar
+src/ ....................... codigo-fonte
+assets/ .................... base de cargos, modelos Word, logotipo
+
+Os itens acima que sao .py precisam do Python instalado.
+O Gerador_Mapas_Carreira.html nao precisa.
