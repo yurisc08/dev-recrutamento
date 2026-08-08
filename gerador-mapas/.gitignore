@@ -3,3 +3,7 @@
 # Para publicar no GitHub Pages, gere em docs/ com:
 #   python3 build_web.py --sem-base --saida docs
 web/
+
+# Cache do Python
+__pycache__/
+*.pyc

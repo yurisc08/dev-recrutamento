@@ -6,10 +6,11 @@ nenhum dado sai do computador de quem usa.
 
 Existem dois formatos, gerados do mesmo código-fonte:
 
-| Formato | Como gerar | Para que serve |
+| Uso | Comando | O que é |
 | --- | --- | --- |
-| **Arquivo único** — `Gerador_Mapas_Carreira.html` | `python3 build.py` | Abrir com duplo clique. Sem servidor, sem instalação, sem internet. |
-| **Site estático** — pasta `web/` | `python3 build_web.py` | Publicar num servidor e acessar pelo navegador. |
+| **Uma pessoa** | `python3 build.py` | `Gerador_Mapas_Carreira.html` — abre com duplo clique. Sem servidor, sem Python, sem internet. |
+| **Equipe, na rede** | `python3 servidor.py --rede` | Sobe um endereço `http://ip-da-maquina:8080` para os colegas. No Windows, `Iniciar-servidor-rede.bat`. |
+| **Servidor permanente** | `python3 build_web.py` | Gera a pasta `web/` para publicar em IIS, nginx, Netlify etc. |
 
 Para hospedar, veja **[HOSPEDAGEM.md](HOSPEDAGEM.md)** — inclui a decisão de
 publicar ou não a base de cargos junto.
@@ -70,6 +71,10 @@ gerador-mapas/
 ├── Gerador_Mapas_Carreira.html   arquivo único, pronto para distribuir
 ├── build.py                      monta o arquivo único
 ├── build_web.py                  monta a pasta web/ (não versionada)
+├── servidor.py                   servidor local, só biblioteca padrão
+├── Iniciar-servidor.bat          atalho Windows — só esta máquina
+├── Iniciar-servidor-rede.bat     atalho Windows — libera na rede
+├── iniciar-servidor.sh           atalho Linux e macOS
 ├── HOSPEDAGEM.md                 guia de publicação
 ├── src/                          código-fonte compartilhado pelos dois formatos
 │   ├── styles.css

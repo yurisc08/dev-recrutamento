@@ -68,19 +68,51 @@ Não abra o `index.html` com duplo clique: o navegador bloqueia `fetch` em
 `file://` e a ferramenta avisa que precisa de um servidor. Suba um local:
 
 ```bash
-cd web
-python3 -m http.server 8080
+python3 servidor.py
 ```
 
-Acesse `http://localhost:8080`. Se preferir Node: `npx http-server -p 8080`.
+Ele abre o navegador em `http://localhost:8080` — o mesmo script serve para testar
+antes de publicar e para hospedar localmente de forma definitiva.
 
-Para uso local mesmo, sem servidor, use o outro formato: o
+Para uso individual, sem servidor, use o outro formato: o
 `Gerador_Mapas_Carreira.html` gerado por `build.py` abre com duplo clique porque
 tem tudo embutido.
 
 ## 3. Escolher onde hospedar
 
-### Rede interna — IIS, nginx ou Apache
+### Local, sem servidor nenhum
+
+Se é só você usando, não hospede nada: o `Gerador_Mapas_Carreira.html` gerado por
+`build.py` abre com duplo clique e funciona sem Python, sem servidor e sem internet.
+
+### Local, com servidor — para a equipe acessar por um endereço
+
+Quando várias pessoas precisam usar a mesma versão sem publicar em lugar nenhum,
+deixe uma máquina servindo:
+
+```bash
+python3 servidor.py            # só nesta máquina  -> http://localhost:8080
+python3 servidor.py --rede     # libera na rede    -> http://192.168.x.x:8080
+python3 servidor.py --porta 9000
+```
+
+No Windows dá para usar os atalhos, sem terminal:
+
+- **`Iniciar-servidor.bat`** — abre só nesta máquina
+- **`Iniciar-servidor-rede.bat`** — libera para a rede local
+
+O script usa apenas a biblioteca padrão do Python, gera a pasta `web/` sozinho se
+ela não existir, aplica os tipos MIME corretos, avança de porta se a escolhida
+estiver ocupada e abre o navegador. Atende vários acessos ao mesmo tempo.
+
+Ao usar `--rede`, ele mostra o endereço que os colegas devem digitar e avisa se a
+base estiver sendo publicada. Duas coisas a esperar:
+
+- o **firewall do Windows** pede liberação na primeira execução;
+- o endereço vale enquanto a máquina estiver ligada e com o script aberto. Para
+  algo permanente, use IIS ou nginx abaixo.
+
+### Rede interna permanente — IIS, nginx ou Apache
 
 É a opção que combina com a base publicada, porque o controle de acesso é o da rede.
 
