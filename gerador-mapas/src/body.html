@@ -26,9 +26,9 @@
 
       <div class="nav-label">Configuração</div>
       <button class="nav-item" data-view="base"><span class="ico">▦</span>Base de dados<span class="badge" id="navBase">—</span></button>
-      <button class="nav-item" data-view="modelos"><span class="ico">▣</span>Modelos Word</button>
+      <button class="nav-item" data-view="modelos"><span class="ico">▣</span>Modelos Word<span class="badge" id="navModelos">—</span></button>
       <button class="nav-item" data-view="mapeamento"><span class="ico">⇄</span>Mapeamento<span class="badge" id="navMap">—</span></button>
-      <button class="nav-item" data-view="perfis"><span class="ico">▥</span>Perfis</button>
+      <button class="nav-item" data-view="distribuir"><span class="ico">▥</span>Salvar e distribuir</button>
     </nav>
 
     <div class="sidebar-foot">
@@ -53,7 +53,7 @@
       <div class="grid-4" style="margin-bottom:18px">
         <div class="stat accent"><div class="k">Registros na base</div><div class="v" id="stRows">—</div><div class="n" id="stRowsNote">carregando…</div></div>
         <div class="stat"><div class="k">Colunas disponíveis</div><div class="v" id="stCols">—</div><div class="n">campos que podem ser vinculados</div></div>
-        <div class="stat"><div class="k">Campos mapeados</div><div class="v" id="stMapped">—</div><div class="n" id="stMappedNote">modelo de carreira + individual</div></div>
+        <div class="stat"><div class="k">Modelos Word</div><div class="v" id="stModelos">—</div><div class="n" id="stModelosNote">—</div></div>
         <div class="stat"><div class="k">Pendências</div><div class="v" id="stPend">—</div><div class="n">campos do documento sem origem</div></div>
       </div>
 
@@ -62,19 +62,20 @@
           <div class="card-head">
             <div>
               <h2>Como usar a ferramenta</h2>
-              <p class="desc">O fluxo completo tem quatro passos. Só é necessário repetir os passos 1 a 3 quando a base ou o modelo Word mudarem.</p>
+              <p class="desc">Os passos 1 a 4 só precisam ser repetidos quando a base ou os modelos mudarem.</p>
             </div>
           </div>
           <div class="card-body">
             <ol style="margin:0;padding-left:20px;font-size:13.5px;line-height:1.85;color:var(--ink-2)">
               <li><b>Base de dados</b> — confira ou substitua a planilha oficial.</li>
-              <li><b>Modelos Word</b> — confira ou substitua os arquivos <span class="mono">.docx</span>.</li>
-              <li><b>Mapeamento</b> — defina qual coluna da planilha alimenta cada campo do documento. Esta tela substitui qualquer alteração de código.</li>
+              <li><b>Modelos Word</b> — adicione quantos arquivos <span class="mono">.docx</span> forem necessários e defina, para cada um, quando ele deve ser usado.</li>
+              <li><b>Mapeamento</b> — defina qual coluna da planilha alimenta cada campo de cada modelo.</li>
+              <li><b>Salvar e distribuir</b> — gere a ferramenta pronta para enviar a quem vai usar.</li>
               <li><b>Gerar documentos</b> — informe os códigos e baixe em Word ou PDF.</li>
             </ol>
             <div class="alert info" style="margin-top:16px">
               <span class="ai">i</span>
-              <div>Ao trocar um modelo Word, abra o <b>Mapeamento</b> e clique em <b>Sugerir automaticamente</b>. A ferramenta lê os campos de mesclagem do documento e propõe a coluna correspondente.</div>
+              <div>Ao adicionar um modelo, a ferramenta lê os campos <span class="mono">«CAMPO»</span> do documento e já propõe a coluna correspondente. Só é preciso ajustar o que ela não reconhecer.</div>
             </div>
           </div>
         </div>
@@ -82,7 +83,7 @@
         <div class="card">
           <div class="card-head">
             <div><h2>Situação atual</h2><p class="desc">Verificação rápida antes de gerar documentos.</p></div>
-            <div class="head-actions"><button class="btn sec sm" data-goto="mapeamento">Abrir mapeamento</button></div>
+            <div class="head-actions"><button class="btn sec sm" data-goto="modelos">Abrir modelos</button></div>
           </div>
           <div class="card-body" id="healthList"></div>
         </div>
@@ -95,16 +96,16 @@
         <div class="card-head">
           <div>
             <h2>Planilha oficial</h2>
-            <p class="desc">A base já vem incorporada na ferramenta. Selecionar um arquivo substitui a base apenas nesta sessão — nada é gravado no servidor.</p>
+            <p class="desc">Selecionar um arquivo substitui a base apenas nesta sessão — nada é enviado a servidor nenhum.</p>
           </div>
-          <div class="head-actions"><button class="btn sec sm" id="btnResetBase">Restaurar base incorporada</button></div>
+          <div class="head-actions"><button class="btn sec sm" id="btnResetBase">Restaurar base padrão</button></div>
         </div>
         <div class="card-body">
           <div class="grid-2">
             <div class="field">
-              <label for="fileExcel">Substituir base (.xlsx)</label>
+              <label for="fileExcel">Carregar ou substituir a base (.xlsx)</label>
               <input id="fileExcel" type="file" accept=".xlsx">
-              <p class="help" id="baseName">Base incorporada</p>
+              <p class="help" id="baseName">—</p>
             </div>
             <div class="field">
               <label for="selSheet">Planilha (aba) utilizada</label>
@@ -125,7 +126,7 @@
 
       <div class="card">
         <div class="card-head">
-          <div><h2>Colunas detectadas</h2><p class="desc">Nomes exatamente como estão no cabeçalho da planilha. São estes nomes que aparecem no mapeamento.</p></div>
+          <div><h2>Colunas detectadas</h2><p class="desc">Nomes exatamente como estão no cabeçalho da planilha. São estes que aparecem no mapeamento e nas regras.</p></div>
           <div class="head-actions" style="width:230px"><input type="search" id="colSearch" placeholder="Filtrar colunas…"></div>
         </div>
         <div class="card-body"><div class="tbl-wrap"><table class="data" id="colTable"></table></div></div>
@@ -134,54 +135,34 @@
 
     <!-- ---------------- MODELOS ---------------- -->
     <section class="view" id="view-modelos" hidden>
-      <div class="alert info" style="margin-bottom:18px">
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Adicionar um modelo</h2>
+            <p class="desc">Selecione um arquivo <span class="mono">.docx</span>. A estrutura é lida na hora e os campos já vêm mapeados automaticamente quando possível.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div class="field" style="max-width:520px">
+            <label for="fileNovoModelo">Arquivo do modelo (.docx)</label>
+            <input type="file" id="fileNovoModelo" accept=".docx">
+          </div>
+        </div>
+      </div>
+
+      <div class="alert info" id="avisoOrdem" hidden>
         <span class="ai">i</span>
-        <div>Os dois modelos já vêm incorporados. Ao substituir um deles, a estrutura é lida automaticamente e o mapeamento é revalidado — confira a tela <b>Mapeamento</b> em seguida.</div>
+        <div>A <b>ordem importa</b>: ao gerar, cada cargo usa o <b>primeiro</b> modelo cuja regra combinar. Deixe o modelo mais genérico por último, com a regra <i>qualquer cargo</i>.</div>
       </div>
 
-      <div class="grid-2">
-        <div class="card">
-          <div class="card-head">
-            <div><h2>Modelo de carreira</h2><p class="desc">Usado quando o cargo possui os três níveis (JR, PL e SR).</p></div>
-          </div>
-          <div class="card-body">
-            <div class="field">
-              <label for="fileTplCarreira">Substituir modelo (.docx)</label>
-              <input id="fileTplCarreira" type="file" accept=".docx">
-            </div>
-            <div id="infoTplCarreira"></div>
-            <div class="inline" style="margin-top:14px">
-              <button class="btn sec sm" data-reset-tpl="carreira">Restaurar padrão</button>
-              <button class="btn sec sm" data-map-tpl="carreira">Mapear campos</button>
-            </div>
-          </div>
-        </div>
-
-        <div class="card">
-          <div class="card-head">
-            <div><h2>Modelo individual</h2><p class="desc">Usado para cargos sem trilha JR/PL/SR e em toda geração 1 para 1.</p></div>
-          </div>
-          <div class="card-body">
-            <div class="field">
-              <label for="fileTplIndividual">Substituir modelo (.docx)</label>
-              <input id="fileTplIndividual" type="file" accept=".docx">
-            </div>
-            <div id="infoTplIndividual"></div>
-            <div class="inline" style="margin-top:14px">
-              <button class="btn sec sm" data-reset-tpl="individual">Restaurar padrão</button>
-              <button class="btn sec sm" data-map-tpl="individual">Mapear campos</button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <div id="listaModelos"></div>
     </section>
 
     <!-- ---------------- MAPEAMENTO ---------------- -->
     <section class="view" id="view-mapeamento" hidden>
       <div class="map-toolbar">
-        <div class="seg" id="segTpl" style="width:290px">
-          <button data-tpl="carreira" class="on">Modelo de carreira</button>
-          <button data-tpl="individual">Modelo individual</button>
+        <div style="min-width:230px">
+          <select id="selModelo" aria-label="Modelo a mapear"></select>
         </div>
         <div class="sep"></div>
         <button class="btn sm" id="btnSuggest">Sugerir automaticamente</button>
@@ -243,13 +224,13 @@
     <section class="view" id="view-geracao" hidden>
       <div class="tabs" id="genTabs">
         <button class="tab active" data-pane="auto">Seleção automática</button>
-        <button class="tab" data-pane="individual">Um arquivo por código</button>
+        <button class="tab" data-pane="escolhido">Escolher o modelo</button>
       </div>
 
       <div class="pane" id="pane-auto">
         <div class="alert info" style="margin-bottom:18px">
           <span class="ai">i</span>
-          <div>Usa o <b>modelo de carreira</b> quando o cargo tem os três níveis (JR, PL e SR) preenchidos. Nos demais casos usa o <b>modelo individual</b>.</div>
+          <div>Cada cargo usa o <b>primeiro modelo cuja regra combinar</b>, na ordem definida na tela Modelos Word.</div>
         </div>
         <div class="card">
           <div class="card-head"><div><h2>Códigos dos cargos</h2><p class="desc">Separe por vírgula, espaço ou quebra de linha.</p></div></div>
@@ -274,70 +255,92 @@
         </div>
       </div>
 
-      <div class="pane" id="pane-individual" hidden>
+      <div class="pane" id="pane-escolhido" hidden>
         <div class="alert info" style="margin-bottom:18px">
           <span class="ai">i</span>
-          <div><b>Lógica 1 para 1:</b> cada código gera exatamente um documento, com os dados da própria linha e sempre no modelo individual — mesmo que o cargo pertença a uma trilha JR/PL/SR.</div>
+          <div><b>Lógica 1 para 1:</b> cada código gera exatamente um documento, com os dados da própria linha e sempre no modelo escolhido abaixo — independente das regras.</div>
         </div>
         <div class="card">
           <div class="card-head"><div><h2>Códigos dos cargos</h2><p class="desc">Aceita um código ou uma lista em massa.</p></div></div>
           <div class="card-body">
             <div class="grid-2">
               <div class="field">
-                <label for="codesInd">Códigos</label>
-                <textarea id="codesInd" placeholder="110002&#10;120021&#10;130045"></textarea>
+                <label for="codesEscolhido">Códigos</label>
+                <textarea id="codesEscolhido" placeholder="110002&#10;120021&#10;130045"></textarea>
               </div>
               <div>
+                <div class="field">
+                  <label for="selModeloGeracao">Modelo a usar</label>
+                  <select id="selModeloGeracao"></select>
+                </div>
                 <label>Ações</label>
-                <p class="help" style="margin-bottom:12px">Cada código vira um arquivo Word separado. O PDF reúne os descritivos em páginas distintas.</p>
                 <div class="inline">
-                  <button class="btn" id="btnSearchInd">Localizar</button>
-                  <button class="btn sec" id="btnWordInd" disabled>Baixar Word</button>
-                  <button class="btn pdf" id="btnPdfInd" disabled>Salvar PDF</button>
+                  <button class="btn" id="btnSearchEscolhido">Localizar</button>
+                  <button class="btn sec" id="btnWordEscolhido" disabled>Baixar Word</button>
+                  <button class="btn pdf" id="btnPdfEscolhido" disabled>Salvar PDF</button>
                 </div>
               </div>
             </div>
-            <div id="resultsInd" style="margin-top:16px"></div>
+            <div id="resultsEscolhido" style="margin-top:16px"></div>
           </div>
         </div>
       </div>
     </section>
 
-    <!-- ---------------- PERFIS ---------------- -->
-    <section class="view" id="view-perfis" hidden>
+    <!-- ---------------- SALVAR E DISTRIBUIR ---------------- -->
+    <section class="view" id="view-distribuir" hidden>
       <div class="card">
         <div class="card-head">
           <div>
-            <h2>Perfis de mapeamento</h2>
-            <p class="desc">Um perfil guarda a ligação entre as colunas da planilha e os campos dos dois modelos Word. Exporte para compartilhar a mesma configuração com outra pessoa.</p>
+            <h2>Gerar a ferramenta pronta</h2>
+            <p class="desc">Cria um novo arquivo HTML já com os modelos, o mapeamento e as regras configurados. Quem receber só abre e usa — não precisa configurar nada.</p>
+          </div>
+        </div>
+        <div class="card-body">
+          <div id="exportInfo"></div>
+          <div class="inline" style="margin-top:14px">
+            <button class="btn" id="btnExportTool">Gerar ferramenta com a base</button>
+            <button class="btn sec" id="btnExportToolSemBase">Gerar sem a base</button>
+          </div>
+          <p class="help" style="margin-top:12px">
+            <b>Com a base</b> gera um arquivo maior, pronto para usar sozinho.
+            <b>Sem a base</b> gera um arquivo leve; quem abrir seleciona a planilha no próprio computador — indique quando o arquivo for circular por e-mail ou fora da rede interna.
+          </p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-head">
+          <div>
+            <h2>Configuração em arquivo</h2>
+            <p class="desc">Só o mapeamento e as regras, sem os arquivos. Útil para padronizar entre quem já tem a ferramenta.</p>
           </div>
         </div>
         <div class="card-body">
           <div class="grid-2">
             <div class="field">
-              <label for="profileName">Nome do perfil</label>
+              <label for="profileName">Salvar como perfil neste navegador</label>
               <div class="inline">
                 <input type="text" id="profileName" placeholder="Ex.: Padrão RH 2026" style="flex:1">
                 <button class="btn" id="btnProfileSave">Salvar</button>
               </div>
-              <p class="help">Salvo no armazenamento local deste navegador.</p>
             </div>
             <div class="field">
-              <label for="fileProfile">Importar perfil (.json)</label>
+              <label for="fileProfile">Importar configuração (.json)</label>
               <input type="file" id="fileProfile" accept=".json">
-              <p class="help">Substitui o mapeamento atual pelo conteúdo do arquivo.</p>
+              <p class="help">Substitui o mapeamento e as regras atuais.</p>
             </div>
           </div>
-          <div class="inline" style="margin-top:4px">
-            <button class="btn sec sm" id="btnProfileExport">Exportar perfil atual</button>
-            <button class="btn ghost sm" id="btnProfileReset">Voltar ao mapeamento padrão</button>
+          <div class="inline">
+            <button class="btn sec sm" id="btnProfileExport">Exportar configuração (.json)</button>
+            <button class="btn ghost sm" id="btnProfileReset">Remapear tudo automaticamente</button>
           </div>
         </div>
       </div>
 
       <div class="card">
         <div class="card-head"><div><h2>Perfis salvos</h2></div></div>
-        <div class="card-body" id="profileList"></div>
+        <div class="card-body" id="listaPerfis"></div>
       </div>
     </section>
 

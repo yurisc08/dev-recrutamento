@@ -4,7 +4,7 @@ Ferramenta para gerar mapas de carreira e descritivos de cargo em Word e PDF a
 partir da base oficial de cargos. Todo o processamento acontece no navegador —
 nenhum dado sai do computador de quem usa.
 
-Existem dois formatos, gerados do mesmo código-fonte:
+Existem três formas de uso, geradas do mesmo código-fonte:
 
 | Uso | Comando | O que é |
 | --- | --- | --- |
@@ -14,6 +14,39 @@ Existem dois formatos, gerados do mesmo código-fonte:
 
 Para hospedar, veja **[HOSPEDAGEM.md](HOSPEDAGEM.md)** — inclui a decisão de
 publicar ou não a base de cargos junto.
+
+## Modelos Word
+
+A ferramenta trabalha com **quantos modelos forem necessários**. Na tela *Modelos
+Word* dá para adicionar um arquivo `.docx`, dar um nome a ele e definir **quando ele
+deve ser usado**:
+
+| Regra | Usa este modelo quando |
+| --- | --- |
+| **Quando uma coluna tiver certo valor** | Ex.: `TCLC_DESC` for igual a `OPERACIONAL` |
+| **Trilha JR/PL/SR completa** | O cargo tem os três níveis preenchidos |
+| **Qualquer cargo** | Sobra — deixe por último |
+| **Somente manual** | Nunca é escolhido sozinho |
+
+Ao gerar, cada cargo usa o **primeiro modelo cuja regra combinar** — por isso a ordem
+importa, e há setas para reordenar. Cada cartão mostra quantos cargos da base cairiam
+naquele modelo, o que permite conferir a regra antes de gerar qualquer documento.
+
+Ao adicionar um modelo, a estrutura é lida na hora e os campos `«CAMPO»` já vêm
+mapeados automaticamente quando a coluna correspondente existe na planilha.
+
+## Enviar a ferramenta pronta
+
+Na tela *Salvar e distribuir*, o botão **Gerar ferramenta** cria um novo arquivo HTML
+já com os modelos, o mapeamento e as regras configurados. Quem receber apenas abre e
+usa — não precisa configurar nada, nem ter Python.
+
+- **Com a base** — arquivo maior, funciona sozinho.
+- **Sem a base** — arquivo leve; quem abrir seleciona a planilha no próprio
+  computador. Indicado quando o arquivo circula por e-mail ou fora da rede interna.
+
+A cópia gerada também consegue gerar outras cópias, então a configuração pode ser
+repassada adiante sem voltar ao código.
 
 ## O que mudou em relação à versão anterior
 
@@ -27,7 +60,11 @@ desenvolvimento.
 
 Outras mudanças:
 
-- Console corporativo com seis telas (Painel, Base, Modelos, Mapeamento, Geração e Perfis).
+- Número de modelos deixou de ser fixo em dois: agora são quantos forem necessários,
+  cada um com sua regra de uso.
+- A ferramenta configurada pode ser exportada como um novo arquivo HTML pronto para uso.
+- Console corporativo com seis telas (Painel, Base, Modelos, Mapeamento, Geração e
+  Salvar e distribuir).
 - Leitura automática da estrutura do `.docx`: tabelas, células e campos de mesclagem.
 - Sugestão automática de mapeamento a partir dos campos `«CAMPO»` do documento e dos
   rótulos das colunas (Júnior / Pleno / Sênior).
@@ -50,8 +87,8 @@ possível definir a origem do conteúdo:
 | **Em branco** | Limpa a célula |
 | **Manter** | Preserva o que está escrito no modelo Word |
 
-Para o modelo de carreira há ainda o **nível da trilha**: escolhendo *Pleno* em uma
-célula ligada a `SKILL_30`, a ferramenta passa a usar `SKILL_30_PL`.
+Há ainda o **nível da trilha**: escolhendo *Pleno* em uma célula ligada a
+`SKILL_30`, a ferramenta passa a usar `SKILL_30_PL`.
 
 Complementos disponíveis por célula: formato do valor (texto, data, maiúsculas,
 primeira maiúscula), colunas alternativas para quando a principal está vazia e
@@ -76,7 +113,7 @@ gerador-mapas/
 ├── Iniciar-servidor-rede.bat     atalho Windows — libera na rede
 ├── iniciar-servidor.sh           atalho Linux e macOS
 ├── HOSPEDAGEM.md                 guia de publicação
-├── src/                          código-fonte compartilhado pelos dois formatos
+├── src/                          código-fonte compartilhado pelos formatos
 │   ├── styles.css
 │   ├── body.html
 │   └── app.js
@@ -102,6 +139,12 @@ padrão, substitua o arquivo correspondente em `assets/` mantendo o mesmo nome.
 
 A diferença entre os builds está apenas em `window.GMC`, o descritor que diz se
 os assets vêm embutidos em base64 ou são baixados por URL. O `app.js` é o mesmo.
+
+O arquivo gerado carrega também uma cópia do próprio esqueleto (HTML + CSS + JS, sem
+os dados, cerca de 200 KB). É isso que permite à ferramenta gerar novas cópias já
+configuradas pelo navegador. Como a cópia embutida mantém os marcadores intactos, a
+ferramenta gerada também consegue se regerar — verificado: a segunda geração sai
+byte a byte igual à primeira.
 
 ## Observações sobre os dados
 

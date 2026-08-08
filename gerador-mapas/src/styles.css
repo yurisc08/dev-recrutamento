@@ -255,6 +255,25 @@ table.data tbody tr:hover{background:#fafbfc}
 .result .code{font-family:var(--mono);font-weight:700;font-size:13px;color:var(--brand-dark)}
 .result .nm{flex:1;min-width:180px;font-size:13.5px}
 
+/* ---------- Cartões de modelo ---------- */
+.card.modelo .card-head h2{display:flex;align-items:center;gap:10px;width:100%}
+.card.modelo.faltando{border-color:#f3c6cb}
+.ordem{
+  display:grid;place-items:center;flex:0 0 auto;
+  width:24px;height:24px;border-radius:7px;
+  background:var(--brand);color:#fff;font-size:12px;font-weight:700;
+}
+.nome-modelo{
+  flex:1;min-width:0;border:1px solid transparent;background:transparent;
+  padding:4px 7px;border-radius:7px;font:inherit;font-size:15px;font-weight:650;
+  color:var(--ink);
+}
+.nome-modelo:hover{border-color:var(--line);background:#fafbfc}
+.nome-modelo:focus{border-color:var(--brand);background:#fff}
+.regra-cond{display:flex;gap:8px;margin-top:9px;flex-wrap:wrap}
+.regra-cond select,.regra-cond input{flex:1;min-width:130px}
+.regra-tipo{margin-bottom:0}
+
 /* ============================================================
    MAPEAMENTO — tela principal de configuração
    ============================================================ */

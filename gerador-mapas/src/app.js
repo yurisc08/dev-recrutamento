@@ -2,12 +2,17 @@
    Gerador de Mapas de Carreira — console corporativo
    Toda a execução acontece no navegador: nenhum dado é enviado.
 
-   Conceito central
-   ----------------
-   A ligação entre as colunas da planilha e as células dos modelos
-   Word não está no código: ela é um "mapeamento" editável na tela
-   Mapeamento e guardado em perfis. Trocar o modelo Word ou uma
-   coluna da base não exige alteração de código.
+   Conceitos centrais
+   ------------------
+   1. Modelos      — a ferramenta trabalha com quantos modelos Word
+                     forem necessários. Cada um tem uma regra que diz
+                     quando ele deve ser usado.
+   2. Mapeamento   — a ligação entre as colunas da planilha e as
+                     células de cada modelo não está no código: é
+                     editável na tela Mapeamento.
+   3. Distribuição — a configuração pronta pode ser exportada como um
+                     novo arquivo HTML, já com modelos e mapeamentos
+                     embutidos, para enviar a quem vai usar.
    ============================================================ */
 (function () {
 'use strict';
@@ -17,6 +22,13 @@ const NIVEIS = ['JR', 'PL', 'SR'];
 const NIVEL_NOME = { JR: 'Júnior', PL: 'Pleno', SR: 'Sênior' };
 const LS_CURRENT = 'gmc.mapeamento.atual';
 const LS_PROFILES = 'gmc.mapeamento.perfis';
+const IDB_NOME = 'gmc';
+const IDB_STORE = 'modelos';
+
+/* Origem do próprio arquivo, para poder gerar cópias configuradas.
+   O build substitui o marcador abaixo pelo HTML completo da ferramenta. */
+const SHELL_SRC = "__SHELL__";
+const podeExportarFerramenta = SHELL_SRC.length > 2000;
 
 /* ---------------- utilidades ---------------- */
 const $ = id => document.getElementById(id);
@@ -30,6 +42,20 @@ const firstOf = (o, keys) => { for (const k of keys) if (val(o, k)) return val(o
 const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 const tokens = s => norm(s).split(/[^A-Z0-9]+/).filter(t => t.length > 1);
 const bytesOf = b64 => { const b = atob(b64), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+const parseXml = t => { const d = new DOMParser().parseFromString(t, 'application/xml'); if (d.querySelector('parsererror')) throw new Error('XML inválido no arquivo.'); return d; };
+const tagged = (el, n) => [...el.getElementsByTagNameNS(W, n)];
+const kids = (el, n) => [...el.children].filter(x => x.localName === n);
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+
+/** base64 de um Uint8Array, em blocos para não estourar a pilha. */
+function paraB64(bytes) {
+  let s = '';
+  const passo = 0x8000;
+  for (let i = 0; i < bytes.length; i += passo) {
+    s += String.fromCharCode.apply(null, bytes.subarray(i, i + passo));
+  }
+  return btoa(s);
+}
 
 /* ---------------- fontes de dados ----------------
    A ferramenta tem dois formatos de distribuição:
@@ -42,7 +68,6 @@ const bytesOf = b64 => { const b = atob(b64), u = new Uint8Array(b.length); for 
 ------------------------------------------------------------------- */
 const SRC = window.GMC || {};
 const LOGO = SRC.logo || '';
-const defaults = { base: null, carreira: null, individual: null };
 
 async function fetchSource(desc, onProgress) {
   if (!desc) return null;
@@ -69,27 +94,21 @@ async function fetchSource(desc, onProgress) {
   for (const p of parts) { out.set(p, off); off += p.length; }
   return out;
 }
-const parseXml = t => { const d = new DOMParser().parseFromString(t, 'application/xml'); if (d.querySelector('parsererror')) throw new Error('XML inválido no arquivo.'); return d; };
-const tagged = (el, n) => [...el.getElementsByTagNameNS(W, n)];
-const kids = (el, n) => [...el.children].filter(x => x.localName === n);
-const sleep = ms => new Promise(r => setTimeout(r, ms));
 
 /* ---------------- estado ---------------- */
 const state = {
-  rows: [], columns: [], sheets: [], sheetName: '',
-  baseLabel: 'Base incorporada',
+  rows: [], allRecords: [], columns: [], sheets: [], sheetName: '',
+  baseLabel: '', baseBytes: null, baseDefault: null,
   blocked: ['20', '21', '22', '23', '24'],
-  templates: {
-    carreira: { label: 'Modelo de carreira (padrão)', bytes: null, scan: null, custom: false },
-    individual: { label: 'Modelo individual (padrão)', bytes: null, scan: null, custom: false }
-  },
-  mapping: { carreira: {}, individual: {} },
-  activeTpl: 'carreira',
-  selectedSlot: null,
-  showStatic: true,
-  dirty: false,
-  sel: { auto: [], individual: [] },
-  ready: false
+  modelos: [],            // [{id, nome, arquivo, bytes, scan, regra, origem}]
+  mapeamento: {},         // { idDoModelo: { chaveDaCelula: vinculo } }
+  modeloAtivo: '',
+  celulaSelecionada: null,
+  mostrarFixos: true,
+  alterado: false,
+  sel: { auto: [], escolhido: [] },
+  semBase: false,
+  pronto: false
 };
 
 /* ============================================================
@@ -157,8 +176,10 @@ function isBlocked(code) {
 }
 
 async function loadBase(buffer, label) {
-  const wbook = await readWorkbook(buffer);
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  const wbook = await readWorkbook(bytes);
   state.workbook = wbook;
+  state.baseBytes = bytes;
   state.sheets = wbook.sheets.map(s => s.name);
   const preferred = state.sheets.includes('Base') ? 'Base' : state.sheets[0];
   await applySheet(preferred);
@@ -245,7 +266,6 @@ function scanTemplate(xmlDoc) {
     const title = rows[0]?.cells[0]?.text || `Tabela ${ti + 1}`;
     const isStatic = c => !c.field && !!c.text;
 
-    // Rótulos de contexto de cada célula
     rows.forEach(row => row.cells.forEach(cell => {
       let rowLabel = '';
       for (const c of row.cells) {
@@ -275,39 +295,144 @@ function scanTemplate(xmlDoc) {
   return { tables, cells, fieldCount: cells.filter(c => c.field).length };
 }
 
-async function loadTemplate(key, buffer, label, custom) {
-  const zip = await JSZip.loadAsync(buffer);
+/* ============================================================
+   3. Coleção de modelos e regras de escolha
+   ============================================================ */
+function novoId(nome) {
+  const base = norm(nome).toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '') || 'modelo';
+  let id = base, n = 2;
+  while (state.modelos.some(m => m.id === id)) id = `${base}-${n++}`;
+  return id;
+}
+
+function modeloPorId(id) {
+  return state.modelos.find(m => m.id === id) || null;
+}
+
+function modeloAtivo() {
+  return modeloPorId(state.modeloAtivo) || state.modelos[0] || null;
+}
+
+function regraPadrao() {
+  return { tipo: 'sempre', coluna: '', operador: 'igual', valor: '', exigeFamilia: false };
+}
+
+function temFamilia(record) {
+  return NIVEIS.every(s => val(record, 'COD_DO_CARGO_' + s));
+}
+
+function regraCombina(regra, record) {
+  if (!regra || regra.tipo === 'manual') return false;
+  if (regra.exigeFamilia && !temFamilia(record)) return false;
+  if (regra.tipo === 'sempre') return true;
+  if (regra.tipo === 'familia') return temFamilia(record);
+  if (regra.tipo === 'condicao') {
+    const v = norm(val(record, regra.coluna));
+    const alvo = norm(regra.valor);
+    switch (regra.operador) {
+      case 'igual': return v === alvo;
+      case 'contem': return !!alvo && v.includes(alvo);
+      case 'comeca': return !!alvo && v.startsWith(alvo);
+      case 'vazio': return !v;
+      case 'preenchido': return !!v;
+      default: return false;
+    }
+  }
+  return false;
+}
+
+/** Primeiro modelo cuja regra combina; se nenhum combinar, o último da lista. */
+function escolherModelo(record) {
+  for (const m of state.modelos) {
+    if (m.scan && regraCombina(m.regra, record)) return m;
+  }
+  const utilizaveis = state.modelos.filter(m => m.scan);
+  return utilizaveis[utilizaveis.length - 1] || null;
+}
+
+function descreverRegra(regra) {
+  if (!regra) return 'sempre';
+  const extra = regra.exigeFamilia ? ' + trilha JR/PL/SR completa' : '';
+  if (regra.tipo === 'manual') return 'somente quando escolhido manualmente';
+  if (regra.tipo === 'sempre') return 'qualquer cargo (use como último da lista)' + extra;
+  if (regra.tipo === 'familia') return 'cargos com trilha JR/PL/SR completa';
+  if (regra.tipo === 'condicao') {
+    const op = { igual: 'for igual a', contem: 'contiver', comeca: 'começar com', vazio: 'estiver vazia', preenchido: 'estiver preenchida' }[regra.operador] || '';
+    const alvo = ['vazio', 'preenchido'].includes(regra.operador) ? '' : ` “${regra.valor}”`;
+    return `quando ${regra.coluna || '(coluna)'} ${op}${alvo}` + extra;
+  }
+  return '';
+}
+
+/** Quantos cargos da base cairiam em cada modelo. */
+function contagemPorModelo() {
+  const contagem = Object.fromEntries(state.modelos.map(m => [m.id, 0]));
+  for (const r of state.rows) {
+    const m = escolherModelo(r);
+    if (m) contagem[m.id] = (contagem[m.id] || 0) + 1;
+  }
+  return contagem;
+}
+
+async function lerModelo(modelo, buffer) {
+  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+  const zip = await JSZip.loadAsync(bytes);
   const file = zip.file('word/document.xml');
   if (!file) throw new Error('Arquivo .docx inválido: document.xml não encontrado.');
   const scan = scanTemplate(parseXml(await file.async('string')));
-  const tpl = state.templates[key];
-  const previous = tpl.scan;
-  tpl.bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
-  tpl.scan = scan;
-  tpl.label = label;
-  tpl.custom = !!custom;
-  if (previous) reattachMapping(key, previous, scan);
+  const anterior = modelo.scan;
+  modelo.bytes = bytes;
+  modelo.scan = scan;
+  if (anterior) reancorarMapeamento(modelo.id, anterior, scan);
   return scan;
 }
 
 /**
- * Ao trocar um modelo, tenta preservar o mapeamento existente:
- * primeiro pela posição, depois pela assinatura de contexto.
+ * Ao trocar o arquivo de um modelo, tenta preservar o mapeamento:
+ * primeiro pela posição da célula, depois pela assinatura de contexto.
  */
-function reattachMapping(key, oldScan, newScan) {
-  const old = state.mapping[key] || {};
-  const bySig = new Map();
-  oldScan.cells.forEach(c => { if (old[c.key]) bySig.set(c.sig, old[c.key]); });
-  const next = {};
-  newScan.cells.forEach(c => {
-    if (old[c.key]) next[c.key] = old[c.key];
-    else if (bySig.has(c.sig)) next[c.key] = bySig.get(c.sig);
+function reancorarMapeamento(id, scanAntigo, scanNovo) {
+  const antigo = state.mapeamento[id] || {};
+  const porAssinatura = new Map();
+  scanAntigo.cells.forEach(c => { if (antigo[c.key]) porAssinatura.set(c.sig, antigo[c.key]); });
+  const novo = {};
+  scanNovo.cells.forEach(c => {
+    if (antigo[c.key]) novo[c.key] = antigo[c.key];
+    else if (porAssinatura.has(c.sig)) novo[c.key] = porAssinatura.get(c.sig);
   });
-  state.mapping[key] = next;
+  state.mapeamento[id] = novo;
+}
+
+async function adicionarModelo(nome, arquivo, bytes, regra, origem) {
+  const modelo = {
+    id: novoId(nome), nome, arquivo, bytes: null, scan: null,
+    regra: regra || regraPadrao(), origem: origem || 'adicionado'
+  };
+  state.modelos.push(modelo);
+  state.mapeamento[modelo.id] = {};
+  await lerModelo(modelo, bytes);
+  return modelo;
+}
+
+function removerModelo(id) {
+  const i = state.modelos.findIndex(m => m.id === id);
+  if (i < 0) return;
+  state.modelos.splice(i, 1);
+  delete state.mapeamento[id];
+  idbRemover(id).catch(() => {});
+  if (state.modeloAtivo === id) state.modeloAtivo = state.modelos[0]?.id || '';
+}
+
+function moverModelo(id, direcao) {
+  const i = state.modelos.findIndex(m => m.id === id);
+  const j = i + direcao;
+  if (i < 0 || j < 0 || j >= state.modelos.length) return;
+  const [m] = state.modelos.splice(i, 1);
+  state.modelos.splice(j, 0, m);
 }
 
 /* ============================================================
-   3. Mapeamento: sugestão automática e resolução de valores
+   4. Mapeamento: sugestão automática e resolução de valores
    ============================================================ */
 const SINONIMOS = {
   'EMPRESA': 'EMPRESA',
@@ -370,26 +495,25 @@ function suggestBinding(cell) {
     if (alt) return make(alt, level && state.columns.includes(alt + '_' + level) ? level : '');
     return null;
   }
-  if (cell.static) return null;                       // rótulo fixo: não sugere
+  if (cell.static) return null;
   const label = cell.labels.row || cell.labels.col;
   const col = columnByLabel(label);
   if (!col) return null;
   return make(col, level && state.columns.includes(col + '_' + level) ? level : '');
 }
 
-function autoSuggest(key) {
-  const scan = state.templates[key].scan;
-  if (!scan) return 0;
-  const map = state.mapping[key] || (state.mapping[key] = {});
+function autoSuggest(id) {
+  const modelo = modeloPorId(id);
+  if (!modelo || !modelo.scan) return 0;
+  const map = state.mapeamento[id] || (state.mapeamento[id] = {});
   let n = 0;
-  scan.cells.forEach(cell => {
+  modelo.scan.cells.forEach(cell => {
     const b = suggestBinding(cell);
     if (b) { map[cell.key] = b; n++; }
   });
   return n;
 }
 
-/* --- formatação de valores --- */
 function excelSerialToDate(v) {
   const n = Number(v);
   if (!isFinite(n) || n < 1 || n > 400000) return null;
@@ -413,7 +537,7 @@ function applyFormat(value, format) {
   return v;
 }
 
-/** Devolve o texto a gravar na célula, ou null para não alterar o documento. */
+/** Texto a gravar na célula, ou null para não alterar o documento. */
 function resolveBinding(binding, record) {
   if (!binding) return null;
   if (binding.source === 'keep') return null;
@@ -435,18 +559,18 @@ function describeBinding(b) {
   return b.column + (b.level ? '_' + b.level : '');
 }
 
-function mappingStats(key) {
-  const scan = state.templates[key].scan;
-  const map = state.mapping[key] || {};
-  if (!scan) return { total: 0, bound: 0, pending: 0 };
-  const fieldCells = scan.cells.filter(c => c.field || (!c.static && !c.text));
-  const bound = fieldCells.filter(c => map[c.key]).length;
-  const extra = scan.cells.filter(c => map[c.key] && !fieldCells.includes(c)).length;
-  return { total: fieldCells.length, bound: bound + extra, pending: fieldCells.length - bound };
+function mappingStats(id) {
+  const modelo = modeloPorId(id);
+  const map = state.mapeamento[id] || {};
+  if (!modelo || !modelo.scan) return { total: 0, bound: 0, pending: 0 };
+  const alvo = modelo.scan.cells.filter(c => c.field || (!c.static && !c.text));
+  const bound = alvo.filter(c => map[c.key]).length;
+  const extra = modelo.scan.cells.filter(c => map[c.key] && !alvo.includes(c)).length;
+  return { total: alvo.length, bound: bound + extra, pending: alvo.length - bound };
 }
 
 /* ============================================================
-   4. Seleção de registros
+   5. Seleção de registros
    ============================================================ */
 function exactRecord(code) {
   return state.rows.find(r => clean(r.COD_DO_CARGO) === clean(code)) || null;
@@ -466,18 +590,17 @@ function resolveRecord(code) {
 
   const merged = { ...(family[0] || base) };
   for (const r of family) for (const [k, v] of Object.entries(r)) if (!val(merged, k) && str(v)) merged[k] = v;
-  // campos de identidade sempre vêm da linha exata pesquisada
   for (const k of ['COD_EMPRESA', 'EMPRESA', 'EMP_COD', 'COD_DO_CARGO', 'CARGO', 'NOME_COMPLETO', 'CBO',
     'TCLC_DESC', 'DT_ATIVACAO', 'DATA_REVISAO', 'TEXTO_RESULTADO_ESPERADO', 'ATIV_DESC', 'DESCRICAO_CARGO',
     'SKILL_30', 'SKILL_31', 'SKILL_32', 'SKILL_33', 'SKILL_34', 'SKILL_35', 'SKILL_36', 'SKILL_37']) {
     if (val(base, k)) merged[k] = base[k];
   }
-  merged._family = NIVEIS.every(s => val(merged, 'COD_DO_CARGO_' + s));
+  merged._family = temFamilia(merged);
   return merged;
 }
 
 /* ============================================================
-   5. Geração do documento Word
+   6. Geração do documento Word
    ============================================================ */
 function writeCell(tc, text) {
   const doc = tc.ownerDocument;
@@ -508,11 +631,10 @@ function writeCell(tc, text) {
   paras.slice(1).forEach(p => p.parentNode && p.parentNode.removeChild(p));
 }
 
-async function buildDocx(tplKey, record) {
-  const tpl = state.templates[tplKey];
-  if (!tpl.bytes) throw new Error('Modelo Word não carregado.');
-  const map = state.mapping[tplKey] || {};
-  const zip = await JSZip.loadAsync(tpl.bytes);
+async function buildDocx(modelo, record) {
+  if (!modelo || !modelo.bytes) throw new Error('Modelo Word não carregado.');
+  const map = state.mapeamento[modelo.id] || {};
+  const zip = await JSZip.loadAsync(modelo.bytes);
   const doc = parseXml(await zip.file('word/document.xml').async('string'));
 
   tagged(doc, 'tbl').forEach((tbl, ti) => {
@@ -545,19 +667,18 @@ function download(blob, name) {
 }
 
 /* ============================================================
-   6. Geração do PDF — reproduz a estrutura real do modelo
+   7. Geração do PDF — reproduz a estrutura real do modelo
    ============================================================ */
-function renderDocForPrint(tplKey, record) {
-  const scan = state.templates[tplKey].scan;
-  const map = state.mapping[tplKey] || {};
-  if (!scan) return '';
+function renderDocForPrint(modelo, record) {
+  if (!modelo || !modelo.scan) return '';
+  const map = state.mapeamento[modelo.id] || {};
 
-  const tables = scan.tables.map(t => {
+  const tables = modelo.scan.tables.map(t => {
     const rows = t.rows.map(row => {
       const cells = row.cells.filter(c => !c.vmerge).map(c => {
         const bound = map[c.key];
         let text = bound ? resolveBinding(bound, record) : null;
-        if (text === null) text = c.field ? '' : c.text;   // campo sem origem fica vazio
+        if (text === null) text = c.field ? '' : c.text;
         const head = !bound && c.static;
         const span = c.span > 1 ? ` colspan="${c.span}"` : '';
         return `<td class="${head ? 'h' : ''}"${span}>${nl2br(text)}</td>`;
@@ -573,15 +694,162 @@ function renderDocForPrint(tplKey, record) {
 }
 
 /* ============================================================
-   7. Interface
+   8. Persistência
+   ============================================================ */
+function idbAbrir() {
+  return new Promise((res, rej) => {
+    if (!window.indexedDB) return rej(new Error('IndexedDB indisponível'));
+    const r = indexedDB.open(IDB_NOME, 1);
+    r.onupgradeneeded = () => { if (!r.result.objectStoreNames.contains(IDB_STORE)) r.result.createObjectStore(IDB_STORE); };
+    r.onsuccess = () => res(r.result);
+    r.onerror = () => rej(r.error || new Error('IndexedDB bloqueado'));
+    r.onblocked = () => rej(new Error('IndexedDB bloqueado'));
+  });
+}
+
+async function idbGravar(id, bytes) {
+  const db = await idbAbrir();
+  return new Promise((res, rej) => {
+    const t = db.transaction(IDB_STORE, 'readwrite');
+    t.objectStore(IDB_STORE).put(bytes, id);
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+}
+
+async function idbLer(id) {
+  const db = await idbAbrir();
+  return new Promise((res, rej) => {
+    const t = db.transaction(IDB_STORE, 'readonly');
+    const q = t.objectStore(IDB_STORE).get(id);
+    q.onsuccess = () => res(q.result || null);
+    q.onerror = () => rej(q.error);
+  });
+}
+
+async function idbRemover(id) {
+  const db = await idbAbrir();
+  return new Promise((res, rej) => {
+    const t = db.transaction(IDB_STORE, 'readwrite');
+    t.objectStore(IDB_STORE).delete(id);
+    t.oncomplete = () => res();
+    t.onerror = () => rej(t.error);
+  });
+}
+
+/** Configuração corrente, sem os arquivos: cabe no localStorage. */
+function configuracaoAtual() {
+  return {
+    versao: 2,
+    salvoEm: new Date().toISOString(),
+    prefixosIgnorados: state.blocked,
+    aba: state.sheetName,
+    modelos: state.modelos.map(m => ({
+      id: m.id, nome: m.nome, arquivo: m.arquivo, regra: m.regra, origem: m.origem
+    })),
+    mapeamento: state.mapeamento
+  };
+}
+
+async function aplicarConfiguracao(cfg, { recarregarArquivos = true } = {}) {
+  if (!cfg || !cfg.mapeamento) throw new Error('Arquivo de configuração inválido.');
+  state.mapeamento = cfg.mapeamento;
+  if (Array.isArray(cfg.prefixosIgnorados)) { state.blocked = cfg.prefixosIgnorados; refilterRows(); }
+
+  if (Array.isArray(cfg.modelos) && cfg.modelos.length) {
+    const ordenados = [];
+    for (const meta of cfg.modelos) {
+      const existente = modeloPorId(meta.id);
+      if (existente) {
+        existente.nome = meta.nome || existente.nome;
+        existente.regra = meta.regra || existente.regra;
+        existente.arquivo = meta.arquivo || existente.arquivo;
+        ordenados.push(existente);
+      } else if (recarregarArquivos) {
+        // modelo adicionado por quem usa: o arquivo fica no IndexedDB
+        let bytes = null;
+        try { bytes = await idbLer(meta.id); } catch (e) { /* indisponível */ }
+        const modelo = {
+          id: meta.id, nome: meta.nome, arquivo: meta.arquivo,
+          bytes: null, scan: null, regra: meta.regra || regraPadrao(),
+          origem: meta.origem || 'adicionado'
+        };
+        ordenados.push(modelo);
+        if (bytes) { try { await lerModelo(modelo, bytes); } catch (e) { /* arquivo corrompido */ } }
+      }
+    }
+    for (const m of state.modelos) if (!ordenados.includes(m)) ordenados.push(m);
+    state.modelos = ordenados;
+  }
+  if (!modeloPorId(state.modeloAtivo)) state.modeloAtivo = state.modelos[0]?.id || '';
+  state.alterado = false;
+}
+
+function salvarConfiguracao() {
+  try { localStorage.setItem(LS_CURRENT, JSON.stringify(configuracaoAtual())); } catch (e) { /* modo privado */ }
+}
+
+function lerConfiguracaoSalva() {
+  try {
+    const raw = localStorage.getItem(LS_CURRENT);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) { return null; }
+}
+
+function listarPerfis() {
+  try { return JSON.parse(localStorage.getItem(LS_PROFILES) || '{}'); } catch (e) { return {}; }
+}
+
+/* ============================================================
+   9. Exportação da ferramenta configurada
+   ============================================================ */
+/** O logotipo pode ser uma URL (versão web); na cópia gerada ele precisa ir embutido. */
+async function logoEmbutido() {
+  if (!LOGO || LOGO.startsWith('data:')) return LOGO;
+  try {
+    const res = await fetch(LOGO);
+    const buf = new Uint8Array(await res.arrayBuffer());
+    const tipo = res.headers.get('content-type') || 'image/png';
+    return `data:${tipo};base64,` + paraB64(buf);
+  } catch (e) {
+    return '';
+  }
+}
+
+async function gerarFerramenta({ comBase }) {
+  if (!podeExportarFerramenta) throw new Error('Esta cópia não sabe se regerar. Use o build.py.');
+
+  const fontes = {
+    logo: await logoEmbutido(),
+    base: comBase && state.baseBytes
+      ? { tipo: 'base64', nome: state.baseLabel || 'Base incorporada', dados: paraB64(state.baseBytes) }
+      : null,
+    modelos: state.modelos.filter(m => m.bytes).map(m => ({
+      id: m.id, nome: m.nome, arquivo: m.arquivo, regra: m.regra, origem: 'padrao',
+      tipo: 'base64', dados: paraB64(m.bytes)
+    })),
+    mapeamento: state.mapeamento,
+    prefixosIgnorados: state.blocked
+  };
+
+  const literalFontes = 'window.GMC=' + JSON.stringify(fontes) + ';';
+  const literalShell = JSON.stringify(SHELL_SRC).replace(/<\//g, '<\\/');
+
+  return SHELL_SRC
+    .replace('/*__GMC_FONTES__*/', () => literalFontes)
+    .replace('"__SHELL__"', () => literalShell);
+}
+
+/* ============================================================
+   10. Interface
    ============================================================ */
 function toast(message, kind) {
   const el = document.createElement('div');
   el.className = 'toast' + (kind ? ' ' + kind : '');
   el.textContent = message;
   $('toasts').appendChild(el);
-  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; }, 3200);
-  setTimeout(() => el.remove(), 3600);
+  setTimeout(() => { el.style.opacity = '0'; el.style.transition = 'opacity .3s'; }, 3600);
+  setTimeout(() => el.remove(), 4000);
 }
 
 function setStatus(text, kind) {
@@ -593,10 +861,10 @@ function setStatus(text, kind) {
 const VIEW_META = {
   painel: ['Painel', 'Visão geral da configuração e da base oficial'],
   base: ['Base de dados', 'Planilha oficial, aba utilizada e colunas disponíveis'],
-  modelos: ['Modelos Word', 'Arquivos .docx usados como base dos documentos'],
+  modelos: ['Modelos Word', 'Arquivos .docx e a regra que define quando cada um é usado'],
   mapeamento: ['Mapeamento de campos', 'Defina de onde vem o conteúdo de cada campo do documento'],
   geracao: ['Gerar documentos', 'Localize os cargos e baixe em Word ou PDF'],
-  perfis: ['Perfis', 'Salve, exporte e importe configurações de mapeamento']
+  distribuir: ['Salvar e distribuir', 'Guarde a configuração ou gere a ferramenta pronta para enviar']
 };
 
 function showView(name) {
@@ -607,120 +875,217 @@ function showView(name) {
   $('pageSub').textContent = s;
   if (name === 'mapeamento') renderMapping();
   if (name === 'painel') renderDashboard();
-  if (name === 'perfis') renderProfiles();
+  if (name === 'modelos') renderModelos();
+  if (name === 'distribuir') renderDistribuir();
   window.scrollTo(0, 0);
 }
 
 /* ---------------- painel ---------------- */
 function renderDashboard() {
-  const c = mappingStats('carreira'), i = mappingStats('individual');
+  const stats = state.modelos.map(m => mappingStats(m.id));
+  const vinculados = stats.reduce((a, s) => a + s.bound, 0);
+  const pendentes = stats.reduce((a, s) => a + s.pending, 0);
+
   $('stRows').textContent = state.rows.length.toLocaleString('pt-BR');
-  $('stRowsNote').textContent = `aba ${state.sheetName || '—'} · ${((state.allRecords || []).length - state.rows.length).toLocaleString('pt-BR')} ignorados por prefixo`;
+  $('stRowsNote').textContent = state.columns.length
+    ? `aba ${state.sheetName} · ${((state.allRecords || []).length - state.rows.length).toLocaleString('pt-BR')} ignorados por prefixo`
+    : 'nenhuma planilha carregada';
   $('stCols').textContent = state.columns.length;
-  $('stMapped').textContent = c.bound + i.bound;
-  $('stPend').textContent = c.pending + i.pending;
+  $('stModelos').textContent = state.modelos.length;
+  $('stModelosNote').textContent = `${vinculados} campos vinculados`;
+  $('stPend').textContent = pendentes;
 
-  const items = [];
-  const push = (ok, label, detail, view) => items.push({ ok, label, detail, view });
-  push(state.rows.length > 0, 'Base de dados carregada',
-    state.rows.length ? `${state.rows.length.toLocaleString('pt-BR')} cargos disponíveis · ${state.baseLabel}` : 'Nenhum registro disponível', 'base');
-  push(!!state.templates.carreira.scan, 'Modelo de carreira',
-    state.templates.carreira.scan ? `${state.templates.carreira.scan.tables.length} tabelas · ${state.templates.carreira.scan.fieldCount} campos de mesclagem` : 'Não carregado', 'modelos');
-  push(!!state.templates.individual.scan, 'Modelo individual',
-    state.templates.individual.scan ? `${state.templates.individual.scan.tables.length} tabelas · ${state.templates.individual.scan.fieldCount} campos de mesclagem` : 'Não carregado', 'modelos');
-  push(c.pending === 0, 'Mapeamento do modelo de carreira',
-    c.pending ? `${c.pending} campo(s) sem coluna definida` : `${c.bound} campos vinculados`, 'mapeamento');
-  push(i.pending === 0, 'Mapeamento do modelo individual',
-    i.pending ? `${i.pending} campo(s) sem coluna definida` : `${i.bound} campos vinculados`, 'mapeamento');
+  const contagem = state.rows.length ? contagemPorModelo() : {};
+  const itens = [];
+  itens.push({
+    ok: state.rows.length > 0, label: 'Base de dados',
+    detalhe: state.rows.length ? `${state.rows.length.toLocaleString('pt-BR')} cargos · ${state.baseLabel}` : 'Nenhuma planilha carregada',
+    view: 'base'
+  });
+  state.modelos.forEach(m => {
+    const st = mappingStats(m.id);
+    const n = contagem[m.id] || 0;
+    itens.push({
+      ok: !!m.scan && st.pending === 0, label: m.nome,
+      detalhe: !m.scan ? 'Arquivo .docx ausente — carregue novamente'
+        : `${st.pending ? st.pending + ' campo(s) sem origem · ' : ''}${n.toLocaleString('pt-BR')} cargo(s) usariam este modelo`,
+      view: 'modelos'
+    });
+  });
 
-  $('healthList').innerHTML = items.map(it => `
+  $('healthList').innerHTML = itens.map(it => `
     <div class="issue" data-goto="${it.view}">
       <span class="tag ${it.ok ? 'ok' : 'warn'}">${it.ok ? 'OK' : 'Atenção'}</span>
-      <span class="il"><b>${esc(it.label)}</b><br><span style="color:var(--muted)">${esc(it.detail)}</span></span>
+      <span class="il"><b>${esc(it.label)}</b><br><span style="color:var(--muted)">${esc(it.detalhe)}</span></span>
       <span style="color:var(--muted)">›</span>
     </div>`).join('');
 
   $('navBase').textContent = state.rows.length ? state.rows.length.toLocaleString('pt-BR') : '—';
-  const pend = c.pending + i.pending;
+  $('navModelos').textContent = state.modelos.length;
   const nav = $('navMap');
-  nav.textContent = pend ? pend : 'OK';
-  nav.parentElement.classList.toggle('warn', pend > 0);
+  nav.textContent = pendentes ? pendentes : 'OK';
+  nav.parentElement.classList.toggle('warn', pendentes > 0);
 }
 
 /* ---------------- base ---------------- */
 function renderBaseView() {
-  $('baseName').textContent = state.baseLabel;
+  $('baseName').textContent = state.baseLabel || 'Nenhuma planilha carregada';
   $('selSheet').innerHTML = state.sheets.map(s =>
     `<option${s === state.sheetName ? ' selected' : ''}>${esc(s)}</option>`).join('');
   $('inpBlocked').value = state.blocked.join(', ');
 
   if (!state.columns.length) {
     $('baseStatus').innerHTML = `<div class="alert warn"><span class="ai">!</span><div>
-      <b>Nenhuma planilha carregada.</b> Esta instalação não traz a base embutida — selecione o
-      arquivo <span class="mono">.xlsx</span> acima para começar. O arquivo é lido no seu próprio
-      navegador e não é enviado para nenhum servidor.
+      <b>Nenhuma planilha carregada.</b> Selecione o arquivo <span class="mono">.xlsx</span> acima
+      para começar. O arquivo é lido no seu próprio navegador e não é enviado para nenhum servidor.
     </div></div>`;
     renderColumns();
     return;
   }
-  const ignored = (state.allRecords || []).length - state.rows.length;
+  const ignorados = (state.allRecords || []).length - state.rows.length;
   $('baseStatus').innerHTML = `<div class="alert ok"><span class="ai">✓</span><div>
     <b>${state.rows.length.toLocaleString('pt-BR')} registros</b> carregados da aba <span class="mono">${esc(state.sheetName)}</span>
-    · ${state.columns.length} colunas · ${ignored.toLocaleString('pt-BR')} registros ignorados pelos prefixos configurados.
+    · ${state.columns.length} colunas · ${ignorados.toLocaleString('pt-BR')} registros ignorados pelos prefixos configurados.
   </div></div>`;
   renderColumns();
 }
 
 function renderColumns() {
-  const filter = norm($('colSearch').value);
-  const sample = state.rows[0] || {};
-  const list = state.columns.filter(c => !filter || norm(c).includes(filter));
+  const filtro = norm($('colSearch').value);
+  const amostra = state.rows[0] || {};
+  const lista = state.columns.filter(c => !filtro || norm(c).includes(filtro));
   $('colTable').innerHTML = `
     <thead><tr><th style="width:44px">#</th><th>Coluna</th><th>Exemplo de conteúdo</th></tr></thead>
-    <tbody>${list.map((c, i) => `<tr>
+    <tbody>${lista.map(c => `<tr>
       <td class="mono" style="color:var(--muted)">${state.columns.indexOf(c) + 1}</td>
       <td class="mono"><b>${esc(c)}</b></td>
-      <td style="color:var(--muted)">${esc(str(sample[c]).slice(0, 90)) || '<i>vazio</i>'}</td>
+      <td style="color:var(--muted)">${esc(str(amostra[c]).slice(0, 90)) || '<i>vazio</i>'}</td>
     </tr>`).join('') || '<tr><td colspan="3" style="color:var(--muted)">Nenhuma coluna encontrada.</td></tr>'}</tbody>`;
 }
 
 /* ---------------- modelos ---------------- */
-function renderTemplatesView() {
-  ['carreira', 'individual'].forEach(key => {
-    const tpl = state.templates[key];
-    const box = $('infoTpl' + (key === 'carreira' ? 'Carreira' : 'Individual'));
-    if (!tpl.scan) { box.innerHTML = '<div class="alert warn"><span class="ai">!</span><div>Modelo não carregado.</div></div>'; return; }
-    const st = mappingStats(key);
-    box.innerHTML = `
-      <div class="alert ${st.pending ? 'warn' : 'ok'}"><span class="ai">${st.pending ? '!' : '✓'}</span><div>
-        <b>${esc(tpl.label)}</b><br>
-        ${tpl.scan.tables.length} tabelas · ${tpl.scan.cells.length} células · ${tpl.scan.fieldCount} campos de mesclagem<br>
-        ${st.pending ? `<b>${st.pending} campo(s) sem coluna definida.</b>` : `${st.bound} campos vinculados.`}
-      </div></div>`;
-  });
+const OPERADORES = {
+  igual: 'for igual a', contem: 'contiver', comeca: 'começar com',
+  vazio: 'estiver vazia', preenchido: 'estiver preenchida'
+};
+
+function renderModelos() {
+  const contagem = state.rows.length ? contagemPorModelo() : {};
+  const host = $('listaModelos');
+
+  host.innerHTML = state.modelos.map((m, i) => {
+    const st = mappingStats(m.id);
+    const n = contagem[m.id] || 0;
+    const semArquivo = !m.scan;
+    const precisaValor = m.regra.tipo === 'condicao' && !['vazio', 'preenchido'].includes(m.regra.operador);
+
+    return `<div class="card modelo${semArquivo ? ' faltando' : ''}">
+      <div class="card-head">
+        <div>
+          <h2>
+            <span class="ordem">${i + 1}</span>
+            <input class="nome-modelo" type="text" value="${esc(m.nome)}" data-nome="${m.id}" aria-label="Nome do modelo">
+          </h2>
+          <p class="desc mono" style="margin-top:6px">${esc(m.arquivo || '—')}</p>
+        </div>
+        <div class="head-actions">
+          <button class="btn ghost sm" data-mover="${m.id}" data-dir="-1" ${i === 0 ? 'disabled' : ''} title="Subir">↑</button>
+          <button class="btn ghost sm" data-mover="${m.id}" data-dir="1" ${i === state.modelos.length - 1 ? 'disabled' : ''} title="Descer">↓</button>
+          <button class="btn sec sm" data-mapear="${m.id}" ${semArquivo ? 'disabled' : ''}>Mapear campos</button>
+          <button class="btn ghost sm" data-remover="${m.id}" ${state.modelos.length < 2 ? 'disabled' : ''}>Remover</button>
+        </div>
+      </div>
+      <div class="card-body">
+        ${semArquivo ? `<div class="alert err" style="margin-bottom:14px"><span class="ai">×</span><div>
+            O arquivo deste modelo não está disponível nesta sessão. Selecione o
+            <span class="mono">.docx</span> abaixo para reativá-lo.</div></div>` : ''}
+
+        <div class="grid-2">
+          <div>
+            <label>Quando usar este modelo</label>
+            <select class="regra-tipo" data-regra="${m.id}" data-campo="tipo">
+              <option value="condicao"${m.regra.tipo === 'condicao' ? ' selected' : ''}>Quando uma coluna tiver certo valor</option>
+              <option value="familia"${m.regra.tipo === 'familia' ? ' selected' : ''}>Quando o cargo tiver trilha JR/PL/SR completa</option>
+              <option value="sempre"${m.regra.tipo === 'sempre' ? ' selected' : ''}>Qualquer cargo (padrão de sobra)</option>
+              <option value="manual"${m.regra.tipo === 'manual' ? ' selected' : ''}>Somente quando escolhido manualmente</option>
+            </select>
+
+            ${m.regra.tipo === 'condicao' ? `
+              <div class="regra-cond">
+                <select data-regra="${m.id}" data-campo="coluna">
+                  <option value="">— coluna —</option>
+                  ${state.columns.map(c => `<option${c === m.regra.coluna ? ' selected' : ''}>${esc(c)}</option>`).join('')}
+                </select>
+                <select data-regra="${m.id}" data-campo="operador">
+                  ${Object.entries(OPERADORES).map(([k, v]) => `<option value="${k}"${m.regra.operador === k ? ' selected' : ''}>${v}</option>`).join('')}
+                </select>
+                ${precisaValor ? `<input type="text" list="valores-${m.id}" value="${esc(m.regra.valor)}" data-regra="${m.id}" data-campo="valor" placeholder="valor">
+                  <datalist id="valores-${m.id}">${valoresDaColuna(m.regra.coluna).map(v => `<option value="${esc(v)}">`).join('')}</datalist>` : ''}
+              </div>` : ''}
+
+            <label class="check" style="margin-top:12px">
+              <input type="checkbox" data-regra="${m.id}" data-campo="exigeFamilia" ${m.regra.exigeFamilia ? 'checked' : ''}>
+              Exigir também trilha JR/PL/SR completa
+            </label>
+          </div>
+
+          <div>
+            <label>Situação</label>
+            <div class="alert ${semArquivo ? 'err' : st.pending ? 'warn' : 'ok'}">
+              <span class="ai">${semArquivo ? '×' : st.pending ? '!' : '✓'}</span>
+              <div>
+                ${m.scan ? `${m.scan.tables.length} tabelas · ${m.scan.fieldCount} campos de mesclagem<br>` : ''}
+                ${semArquivo ? 'Arquivo ausente' : st.pending ? `<b>${st.pending} campo(s) sem origem definida</b>` : `${st.bound} campos vinculados`}
+                <br><b>${n.toLocaleString('pt-BR')}</b> cargo(s) da base usariam este modelo
+              </div>
+            </div>
+            <p class="help" style="margin-top:10px">Usado ${esc(descreverRegra(m.regra))}.</p>
+            <div class="field" style="margin-top:12px">
+              <label for="troca-${m.id}">Substituir o arquivo .docx</label>
+              <input type="file" accept=".docx" data-trocar="${m.id}" id="troca-${m.id}">
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  $('avisoOrdem').hidden = state.modelos.length < 2;
+}
+
+function valoresDaColuna(coluna) {
+  if (!coluna) return [];
+  const set = new Set();
+  for (const r of state.rows) { const v = val(r, coluna); if (v) set.add(v); if (set.size > 60) break; }
+  return [...set].sort();
 }
 
 /* ---------------- mapeamento ---------------- */
 function renderMapping() {
-  const key = state.activeTpl;
-  const tpl = state.templates[key];
+  const modelo = modeloAtivo();
+  $('selModelo').innerHTML = state.modelos.map(m =>
+    `<option value="${m.id}"${m.id === (modelo && modelo.id) ? ' selected' : ''}>${esc(m.nome)}</option>`).join('');
+
   const host = $('docTables');
-  if (!tpl.scan) {
-    host.innerHTML = '<div class="card"><div class="empty-state"><span class="big">▣</span><h3>Modelo não carregado</h3>Carregue um arquivo .docx na tela Modelos Word.</div></div>';
+  if (!modelo || !modelo.scan) {
+    host.innerHTML = '<div class="card"><div class="empty-state"><span class="big">▣</span><h3>Modelo sem arquivo</h3>Carregue o .docx na tela Modelos Word.</div></div>';
+    $('mapCount').textContent = '—';
+    renderInspector();
     return;
   }
-  const map = state.mapping[key] || {};
-  const st = mappingStats(key);
+
+  const map = state.mapeamento[modelo.id] || {};
+  const st = mappingStats(modelo.id);
   $('mapCount').textContent = `${st.bound} vinculados · ${st.pending} pendentes`;
-  $('mapDirty').hidden = !state.dirty;
+  $('mapDirty').hidden = !state.alterado;
 
   const record = previewRecord();
-  host.innerHTML = tpl.scan.tables.map(t => {
+  host.innerHTML = modelo.scan.tables.map(t => {
     const rows = t.rows.map(row => {
       const cells = row.cells.map(c => {
         const b = map[c.key];
         const cls = ['cell'];
-        if (state.selectedSlot === c.key) cls.push('sel');
+        if (state.celulaSelecionada === c.key) cls.push('sel');
         if (b) {
           cls.push('bound');
           if (b.source === 'text') cls.push('fixed');
@@ -728,7 +1093,7 @@ function renderMapping() {
         } else if (c.field) cls.push('unbound');
         else if (c.static) cls.push('static');
 
-        if (c.static && !b && !state.showStatic) {
+        if (c.static && !b && !state.mostrarFixos) {
           return `<td${c.span > 1 ? ` colspan="${c.span}"` : ''}><span class="cell static" style="opacity:.45"></span></td>`;
         }
 
@@ -761,24 +1126,27 @@ function renderMapping() {
 function previewRecord() {
   const code = clean($('previewCode').value);
   if (code) {
-    const r = state.activeTpl === 'carreira' ? resolveRecord(code) : exactRecord(code);
+    const r = resolveRecord(code);
     if (r) return r;
   }
-  // registro representativo: um cargo com trilha completa para o modelo de carreira
-  if (state.activeTpl === 'carreira') {
-    const f = state.rows.find(r => NIVEIS.every(s => val(r, 'COD_DO_CARGO_' + s)));
-    if (f) return resolveRecord(f.COD_DO_CARGO);
+  const modelo = modeloAtivo();
+  if (modelo) {
+    const alvo = state.rows.find(r => {
+      const m = escolherModelo(resolveRecord(r.COD_DO_CARGO) || r);
+      return m && m.id === modelo.id;
+    });
+    if (alvo) return resolveRecord(alvo.COD_DO_CARGO);
   }
   return state.rows[0] || null;
 }
 
 function findCell(key) {
-  const scan = state.templates[state.activeTpl].scan;
-  return scan ? scan.cells.find(c => c.key === key) : null;
+  const modelo = modeloAtivo();
+  return modelo && modelo.scan ? modelo.scan.cells.find(c => c.key === key) : null;
 }
 
 function renderInspector() {
-  const key = state.selectedSlot;
+  const key = state.celulaSelecionada;
   const cell = key ? findCell(key) : null;
   const body = $('inspBody');
   if (!cell) {
@@ -787,7 +1155,8 @@ function renderInspector() {
     body.innerHTML = '<div class="insp-empty"><span class="big">⇄</span>Selecione uma célula do documento para definir qual coluna da planilha vai preenchê-la.</div>';
     return;
   }
-  const map = state.mapping[state.activeTpl] || {};
+  const modelo = modeloAtivo();
+  const map = state.mapeamento[modelo.id] || {};
   const b = map[key] || null;
   const source = b ? b.source : 'keep';
 
@@ -812,7 +1181,7 @@ function renderInspector() {
 
     ${source === 'column' ? `
       <div class="field">
-        <label for="inspLevel">Nível da trilha</label>
+        <label>Nível da trilha</label>
         <div class="seg" id="segLevel">
           <button data-lvl="" class="${!b || !b.level ? 'on' : ''}">Sem nível</button>
           ${NIVEIS.map(n => `<button data-lvl="${n}" class="${b && b.level === n ? 'on' : ''}">${NIVEL_NOME[n]}</button>`).join('')}
@@ -863,13 +1232,13 @@ function renderInspector() {
 function renderColumnPicker(binding) {
   const search = $('inspColSearch');
   const list = $('inspColList');
-  const sample = previewRecord() || {};
+  const amostra = previewRecord() || {};
   const draw = () => {
     const f = norm(search.value);
     const cols = state.columns.filter(c => !f || norm(c).includes(f)).slice(0, 300);
     list.innerHTML = cols.map(c => {
       const on = binding && binding.column === c;
-      const v = str(sample[binding && binding.level ? c + '_' + binding.level : c]).slice(0, 46);
+      const v = str(amostra[binding && binding.level ? c + '_' + binding.level : c]).slice(0, 46);
       return `<button class="col-opt ${on ? 'on' : ''}" data-col="${esc(c)}" type="button">${esc(c)}
         ${v ? `<span class="cs">${esc(v)}</span>` : ''}</button>`;
     }).join('') || '<div style="padding:12px;color:var(--muted);font-size:12.5px">Nenhuma coluna encontrada.</div>';
@@ -886,24 +1255,25 @@ function renderColumnPicker(binding) {
 }
 
 function currentBinding() {
-  const map = state.mapping[state.activeTpl] || (state.mapping[state.activeTpl] = {});
-  if (!map[state.selectedSlot]) {
-    map[state.selectedSlot] = { source: 'column', column: '', level: '', fallbacks: [], format: 'texto', text: '' };
+  const modelo = modeloAtivo();
+  const map = state.mapeamento[modelo.id] || (state.mapeamento[modelo.id] = {});
+  if (!map[state.celulaSelecionada]) {
+    map[state.celulaSelecionada] = { source: 'column', column: '', level: '', fallbacks: [], format: 'texto', text: '' };
   }
-  return map[state.selectedSlot];
+  return map[state.celulaSelecionada];
 }
 
 function updateBinding(mutator) {
   const b = currentBinding();
   mutator(b);
-  state.dirty = true;
+  state.alterado = true;
   renderMapping();
 }
 
 function removeBinding() {
-  const map = state.mapping[state.activeTpl] || {};
-  delete map[state.selectedSlot];
-  state.dirty = true;
+  const modelo = modeloAtivo();
+  delete (state.mapeamento[modelo.id] || {})[state.celulaSelecionada];
+  state.alterado = true;
   renderMapping();
 }
 
@@ -912,9 +1282,8 @@ function bindInspectorEvents(cell, binding, source) {
   if (seg) seg.onclick = e => {
     const btn = e.target.closest('[data-src]');
     if (!btn) return;
-    const src = btn.dataset.src;
-    if (src === 'keep') { removeBinding(); return; }
-    updateBinding(b => { b.source = src; });
+    if (btn.dataset.src === 'keep') { removeBinding(); return; }
+    updateBinding(b => { b.source = btn.dataset.src; });
   };
 
   const lvl = $('segLevel');
@@ -954,159 +1323,162 @@ function openModal(title, html) {
 }
 
 function validateMapping() {
-  const key = state.activeTpl;
-  const scan = state.templates[key].scan;
-  const map = state.mapping[key] || {};
-  if (!scan) return;
-  const problems = [];
+  const modelo = modeloAtivo();
+  if (!modelo || !modelo.scan) return;
+  const map = state.mapeamento[modelo.id] || {};
+  const problemas = [];
 
-  scan.cells.forEach(c => {
+  modelo.scan.cells.forEach(c => {
     const b = map[c.key];
     if (!b) {
-      if (c.field) problems.push({ lvl: 'warn', txt: `Campo «${c.field}» em <b>${esc(c.labels.table)}</b> não tem origem definida — sairá em branco.` });
+      if (c.field) problemas.push({ lvl: 'warn', txt: `Campo «${esc(c.field)}» em <b>${esc(c.labels.table)}</b> não tem origem definida — sairá em branco.` });
       return;
     }
     if (b.source === 'column') {
-      if (!b.column) { problems.push({ lvl: 'err', txt: `Célula em <b>${esc(c.labels.table)}</b> está marcada como coluna, mas nenhuma coluna foi escolhida.` }); return; }
-      const usedKey = b.level ? b.column + '_' + b.level : b.column;
-      if (!state.columns.includes(usedKey)) {
-        problems.push({ lvl: 'err', txt: `A coluna <span class="mono">${esc(usedKey)}</span> não existe na planilha atual (<b>${esc(c.labels.table)}</b>).` });
-      } else {
-        const filled = state.rows.filter(r => val(r, usedKey)).length;
-        if (filled === 0) problems.push({ lvl: 'warn', txt: `A coluna <span class="mono">${esc(usedKey)}</span> está vazia em todos os registros.` });
+      if (!b.column) { problemas.push({ lvl: 'err', txt: `Célula em <b>${esc(c.labels.table)}</b> está marcada como coluna, mas nenhuma coluna foi escolhida.` }); return; }
+      const usada = b.level ? b.column + '_' + b.level : b.column;
+      if (!state.columns.includes(usada)) {
+        problemas.push({ lvl: 'err', txt: `A coluna <span class="mono">${esc(usada)}</span> não existe na planilha atual (<b>${esc(c.labels.table)}</b>).` });
+      } else if (state.rows.filter(r => val(r, usada)).length === 0) {
+        problemas.push({ lvl: 'warn', txt: `A coluna <span class="mono">${esc(usada)}</span> está vazia em todos os registros.` });
       }
       (b.fallbacks || []).forEach(f => {
-        if (!state.columns.includes(f)) problems.push({ lvl: 'warn', txt: `Coluna alternativa <span class="mono">${esc(f)}</span> não existe na planilha.` });
+        if (!state.columns.includes(f)) problemas.push({ lvl: 'warn', txt: `Coluna alternativa <span class="mono">${esc(f)}</span> não existe na planilha.` });
       });
     }
   });
 
-  const html = problems.length
-    ? problems.map(p => `<div class="alert ${p.lvl}" style="margin-bottom:8px"><span class="ai">${p.lvl === 'err' ? '×' : '!'}</span><div>${p.txt}</div></div>`).join('')
+  const html = problemas.length
+    ? problemas.map(p => `<div class="alert ${p.lvl}" style="margin-bottom:8px"><span class="ai">${p.lvl === 'err' ? '×' : '!'}</span><div>${p.txt}</div></div>`).join('')
     : '<div class="alert ok"><span class="ai">✓</span><div>Nenhum problema encontrado. Todos os campos do documento têm origem válida.</div></div>';
-  openModal(`Validação — ${key === 'carreira' ? 'modelo de carreira' : 'modelo individual'}`, html);
+  openModal(`Validação — ${modelo.nome}`, html);
 }
 
 /* ---------------- geração ---------------- */
-function renderResults(hostId, items, missing, mode) {
-  const host = $(hostId);
-  host.innerHTML = items.map(r => {
-    const carreira = mode === 'auto' && r._family;
-    return `<div class="result">
-      <span class="code">${esc(clean(r.COD_DO_CARGO))}</span>
-      <span class="nm">${esc(firstOf(r, ['NOME_COMPLETO', 'CARGO']))}</span>
-      <span class="tag ${carreira ? 'brand' : ''}">${carreira ? 'Modelo de carreira' : 'Modelo individual'}</span>
-    </div>`;
-  }).join('') + (missing.length
-    ? `<div class="alert warn" style="margin-top:10px"><span class="ai">!</span><div>Códigos não encontrados: <span class="mono">${esc(missing.join(', '))}</span></div></div>`
-    : '');
-}
-
 function parseCodes(text) {
   return [...new Set(text.split(/[\s,;]+/).map(clean).filter(Boolean))];
 }
 
+function renderResults(hostId, itens, faltando) {
+  $(hostId).innerHTML = itens.map(x => `
+    <div class="result">
+      <span class="code">${esc(clean(x.record.COD_DO_CARGO))}</span>
+      <span class="nm">${esc(firstOf(x.record, ['NOME_COMPLETO', 'CARGO']))}</span>
+      <span class="tag ${x.modelo ? 'brand' : 'err'}">${esc(x.modelo ? x.modelo.nome : 'sem modelo')}</span>
+    </div>`).join('') + (faltando.length
+      ? `<div class="alert warn" style="margin-top:10px"><span class="ai">!</span><div>Códigos não encontrados: <span class="mono">${esc(faltando.join(', '))}</span></div></div>`
+      : '');
+}
+
 function searchAuto() {
-  const codes = parseCodes($('codesAuto').value);
-  const found = [], missing = [];
-  codes.forEach(c => { const r = resolveRecord(c); r ? found.push(r) : missing.push(c); });
-  state.sel.auto = found;
-  renderResults('resultsAuto', found, missing, 'auto');
-  $('btnWordAuto').disabled = $('btnPdfAuto').disabled = !found.length;
-  toast(`${found.length} cargo(s) localizado(s).`, found.length ? 'ok' : 'warn');
-}
-
-function searchIndividual() {
-  const codes = parseCodes($('codesInd').value);
-  const found = [], missing = [];
-  codes.forEach(c => {
-    const r = exactRecord(c);
-    r ? found.push({ ...r, _family: false }) : missing.push(c);
+  const codigos = parseCodes($('codesAuto').value);
+  const achados = [], faltando = [];
+  codigos.forEach(c => {
+    const r = resolveRecord(c);
+    if (r) achados.push({ record: r, modelo: escolherModelo(r) });
+    else faltando.push(c);
   });
-  state.sel.individual = found;
-  renderResults('resultsInd', found, missing, 'individual');
-  $('btnWordInd').disabled = $('btnPdfInd').disabled = !found.length;
-  toast(`${found.length} cargo(s) localizado(s).`, found.length ? 'ok' : 'warn');
+  state.sel.auto = achados;
+  renderResults('resultsAuto', achados, faltando);
+  $('btnWordAuto').disabled = $('btnPdfAuto').disabled = !achados.length;
+  toast(`${achados.length} cargo(s) localizado(s).`, achados.length ? 'ok' : 'warn');
 }
 
-async function downloadWord(items, forceIndividual, button) {
-  if (!items.length) return;
-  const original = button.textContent;
-  button.disabled = true;
+function searchEscolhido() {
+  const modelo = modeloPorId($('selModeloGeracao').value);
+  const codigos = parseCodes($('codesEscolhido').value);
+  const achados = [], faltando = [];
+  codigos.forEach(c => {
+    const r = exactRecord(c);
+    if (r) achados.push({ record: r, modelo });
+    else faltando.push(c);
+  });
+  state.sel.escolhido = achados;
+  renderResults('resultsEscolhido', achados, faltando);
+  $('btnWordEscolhido').disabled = $('btnPdfEscolhido').disabled = !achados.length || !modelo;
+  toast(`${achados.length} cargo(s) localizado(s).`, achados.length ? 'ok' : 'warn');
+}
+
+async function downloadWord(itens, botao) {
+  if (!itens.length) return;
+  const original = botao.textContent;
+  botao.disabled = true;
   try {
-    for (let i = 0; i < items.length; i++) {
-      const r = items[i];
-      button.textContent = `Gerando ${i + 1} de ${items.length}…`;
-      const key = (!forceIndividual && r._family) ? 'carreira' : 'individual';
-      download(await buildDocx(key, r), fileNameFor(r) + '.docx');
+    for (let i = 0; i < itens.length; i++) {
+      const { record, modelo } = itens[i];
+      if (!modelo) continue;
+      botao.textContent = `Gerando ${i + 1} de ${itens.length}…`;
+      download(await buildDocx(modelo, record), fileNameFor(record) + '.docx');
       await sleep(420);
     }
-    toast(`${items.length} arquivo(s) Word gerado(s).`, 'ok');
+    toast(`${itens.length} arquivo(s) Word gerado(s).`, 'ok');
   } catch (e) {
     toast('Erro ao gerar Word: ' + e.message, 'err');
   } finally {
-    button.textContent = original;
-    button.disabled = false;
+    botao.textContent = original;
+    botao.disabled = false;
   }
 }
 
-function printPdf(items, forceIndividual) {
-  if (!items.length) return;
-  $('printArea').innerHTML = items.map(r =>
-    renderDocForPrint((!forceIndividual && r._family) ? 'carreira' : 'individual', r)).join('');
+function printPdf(itens) {
+  if (!itens.length) return;
+  $('printArea').innerHTML = itens.map(x => x.modelo ? renderDocForPrint(x.modelo, x.record) : '').join('');
   toast('Documento preparado. Escolha “Salvar como PDF” na janela de impressão.', 'ok');
   setTimeout(() => window.print(), 150);
 }
 
-/* ---------------- perfis ---------------- */
-function currentProfile() {
-  return {
-    versao: 1,
-    salvoEm: new Date().toISOString(),
-    prefixosIgnorados: state.blocked,
-    aba: state.sheetName,
-    mapeamento: state.mapping
-  };
-}
-
-function applyProfile(p) {
-  if (!p || !p.mapeamento) throw new Error('Arquivo de perfil inválido.');
-  state.mapping = { carreira: p.mapeamento.carreira || {}, individual: p.mapeamento.individual || {} };
-  if (Array.isArray(p.prefixosIgnorados)) { state.blocked = p.prefixosIgnorados; refilterRows(); }
-  state.dirty = false;
-}
-
-function saveCurrent() {
-  try { localStorage.setItem(LS_CURRENT, JSON.stringify(currentProfile())); } catch (e) { /* modo privado */ }
-}
-
-function loadCurrent() {
-  try {
-    const raw = localStorage.getItem(LS_CURRENT);
-    if (!raw) return false;
-    applyProfile(JSON.parse(raw));
-    return true;
-  } catch (e) { return false; }
-}
-
-function listProfiles() {
-  try { return JSON.parse(localStorage.getItem(LS_PROFILES) || '{}'); } catch (e) { return {}; }
-}
-
-function renderProfiles() {
-  const all = listProfiles();
-  const names = Object.keys(all);
-  $('profileList').innerHTML = names.length ? names.map(n => `
+/* ---------------- salvar e distribuir ---------------- */
+function renderDistribuir() {
+  const perfis = listarPerfis();
+  const nomes = Object.keys(perfis);
+  $('listaPerfis').innerHTML = nomes.length ? nomes.map(n => `
     <div class="issue">
-      <span class="il"><b>${esc(n)}</b><br><span style="color:var(--muted)">Salvo em ${esc(new Date(all[n].salvoEm).toLocaleString('pt-BR'))}</span></span>
+      <span class="il"><b>${esc(n)}</b><br><span style="color:var(--muted)">Salvo em ${esc(new Date(perfis[n].salvoEm).toLocaleString('pt-BR'))}</span></span>
       <button class="btn sec sm" data-load-profile="${esc(n)}">Carregar</button>
       <button class="btn ghost sm" data-del-profile="${esc(n)}">Excluir</button>
     </div>`).join('')
-    : '<div class="empty-state"><span class="big">▥</span><h3>Nenhum perfil salvo</h3>Configure o mapeamento e salve com um nome para reutilizar depois.</div>';
+    : '<div class="empty-state"><span class="big">▥</span><h3>Nenhum perfil salvo</h3>Configure e salve com um nome para reutilizar depois.</div>';
+
+  const box = $('exportInfo');
+  if (!podeExportarFerramenta) {
+    box.innerHTML = `<div class="alert warn"><span class="ai">!</span><div>
+      Esta cópia não consegue se regerar. Gere a ferramenta pelo <span class="mono">build.py</span>.</div></div>`;
+    $('btnExportTool').disabled = true;
+    $('btnExportToolSemBase').disabled = true;
+    return;
+  }
+  const tamModelos = state.modelos.reduce((a, m) => a + (m.bytes ? m.bytes.length : 0), 0);
+  const tamBase = state.baseBytes ? state.baseBytes.length : 0;
+  const mb = b => (b * 1.37 / 1048576).toFixed(1);
+  box.innerHTML = `<div class="alert info"><span class="ai">i</span><div>
+    A ferramenta gerada leva ${state.modelos.length} modelo(s), o mapeamento e as regras já configurados.
+    Tamanho aproximado: <b>${mb(tamModelos + tamBase + 250000)} MB</b> com a base,
+    <b>${mb(tamModelos + 250000)} MB</b> sem ela.</div></div>`;
+  $('btnExportTool').disabled = !state.baseBytes;
+  $('btnExportToolSemBase').disabled = false;
+}
+
+async function exportarFerramenta(comBase) {
+  const botao = comBase ? $('btnExportTool') : $('btnExportToolSemBase');
+  const original = botao.textContent;
+  botao.disabled = true;
+  botao.textContent = 'Gerando…';
+  try {
+    await sleep(30);
+    const html = await gerarFerramenta({ comBase });
+    download(new Blob([html], { type: 'text/html;charset=utf-8' }), 'Gerador_Mapas_Carreira.html');
+    toast('Ferramenta gerada. Envie o arquivo para quem vai usar.', 'ok');
+  } catch (e) {
+    toast('Erro ao gerar a ferramenta: ' + e.message, 'err');
+  } finally {
+    botao.textContent = original;
+    botao.disabled = false;
+    renderDistribuir();
+  }
 }
 
 /* ============================================================
-   8. Inicialização e eventos
+   11. Inicialização e eventos
    ============================================================ */
 function bootProgress(msg, fraction) {
   const m = $('bootMsg'), f = $('bootFill');
@@ -1126,38 +1498,51 @@ async function boot() {
   if (bootLogo && LOGO) bootLogo.src = LOGO;
 
   try {
-    // A versão web baixa os arquivos por fetch, o que o navegador bloqueia
-    // em file://. Sem este aviso o erro sai como um "Failed to fetch" seco.
-    if (location.protocol === 'file:' && SRC.carreira && SRC.carreira.tipo === 'url') {
+    if (location.protocol === 'file:' && (SRC.modelos || []).some(m => m.tipo === 'url')) {
       throw new Error('esta é a versão web e precisa ser aberta por um servidor '
         + '(http://). Para uso local, abra o arquivo Gerador_Mapas_Carreira.html.');
     }
 
-    bootProgress('Carregando modelos Word…', 0.05);
-    defaults.carreira = await fetchSource(SRC.carreira);
-    await loadTemplate('carreira', defaults.carreira, SRC.carreira.nome, false);
-
-    bootProgress('Carregando modelos Word…', 0.2);
-    defaults.individual = await fetchSource(SRC.individual);
-    await loadTemplate('individual', defaults.individual, SRC.individual.nome, false);
+    const definicoes = SRC.modelos || [];
+    for (let i = 0; i < definicoes.length; i++) {
+      const d = definicoes[i];
+      bootProgress('Carregando modelos Word…', 0.05 + (i / definicoes.length) * 0.18);
+      const bytes = await fetchSource(d);
+      const modelo = {
+        id: d.id, nome: d.nome, arquivo: d.arquivo, bytes: null, scan: null,
+        regra: d.regra || regraPadrao(), origem: d.origem || 'padrao'
+      };
+      state.modelos.push(modelo);
+      state.mapeamento[modelo.id] = {};
+      await lerModelo(modelo, bytes);
+    }
+    state.modeloAtivo = state.modelos[0]?.id || '';
 
     if (SRC.base) {
       bootProgress('Baixando a base de cargos…', 0.25);
-      defaults.base = await fetchSource(SRC.base, p => bootProgress(null, 0.25 + p * 0.5));
+      state.baseDefault = await fetchSource(SRC.base, p => bootProgress(null, 0.25 + p * 0.5));
       bootProgress('Lendo a planilha…', 0.8);
-      await sleep(0);                                   // deixa a barra pintar
-      await loadBase(defaults.base, SRC.base.nome || 'Base incorporada');
+      await sleep(0);
+      await loadBase(state.baseDefault, SRC.base.nome || 'Base incorporada');
     } else {
       state.semBase = true;
     }
 
-    bootProgress('Preparando o mapeamento…', 0.92);
-    afterBaseLoaded();
-    state.ready = true;
+    bootProgress('Preparando o mapeamento…', 0.9);
+    if (Array.isArray(SRC.prefixosIgnorados)) { state.blocked = SRC.prefixosIgnorados; refilterRows(); }
+
+    // mapeamento embutido pela exportação tem prioridade sobre a sugestão
+    if (SRC.mapeamento && Object.keys(SRC.mapeamento).length) {
+      state.mapeamento = SRC.mapeamento;
+    }
+    const salvo = lerConfiguracaoSalva();
+    if (salvo) { try { await aplicarConfiguracao(salvo); } catch (e) { console.warn(e); } }
+
+    depoisDaBase();
+    state.pronto = true;
     renderAll();
     bootProgress('Pronto', 1);
     bootDone();
-
     if (state.semBase) showView('base');
   } catch (e) {
     bootProgress('Falha ao iniciar: ' + e.message, 1);
@@ -1171,26 +1556,34 @@ async function boot() {
 }
 
 /** Passos que dependem de haver (ou não) uma base carregada. */
-function afterBaseLoaded() {
+function depoisDaBase() {
   if (!state.columns.length) {
     setStatus('Aguardando a planilha', 'warn');
     return;
   }
   state.semBase = false;
-  const restored = loadCurrent();
-  if (!restored || !Object.keys(state.mapping.carreira || {}).length) {
-    autoSuggest('carreira');
-    autoSuggest('individual');
-    saveCurrent();
+  let sugeridos = 0;
+  for (const m of state.modelos) {
+    if (m.scan && !Object.keys(state.mapeamento[m.id] || {}).length) sugeridos += autoSuggest(m.id);
   }
+  if (sugeridos) salvarConfiguracao();
   setStatus(`${state.rows.length.toLocaleString('pt-BR')} cargos carregados`, 'ok');
 }
 
 function renderAll() {
   renderDashboard();
   renderBaseView();
-  renderTemplatesView();
+  renderModelos();
+  renderGeracaoModelos();
   if (!$('view-mapeamento').hidden) renderMapping();
+  if (!$('view-distribuir').hidden) renderDistribuir();
+}
+
+function renderGeracaoModelos() {
+  const sel = $('selModeloGeracao');
+  const atual = sel.value;
+  sel.innerHTML = state.modelos.filter(m => m.scan).map(m =>
+    `<option value="${m.id}"${m.id === atual ? ' selected' : ''}>${esc(m.nome)}</option>`).join('');
 }
 
 function wire() {
@@ -1201,55 +1594,120 @@ function wire() {
     if (nav) { showView(nav.dataset.view); return; }
     const goto = e.target.closest('[data-goto]');
     if (goto) { showView(goto.dataset.goto); return; }
-    const mapTpl = e.target.closest('[data-map-tpl]');
-    if (mapTpl) { state.activeTpl = mapTpl.dataset.mapTpl; syncTplSegment(); showView('mapeamento'); return; }
+
+    const mapear = e.target.closest('[data-mapear]');
+    if (mapear) { state.modeloAtivo = mapear.dataset.mapear; state.celulaSelecionada = null; showView('mapeamento'); return; }
+
+    const mover = e.target.closest('[data-mover]');
+    if (mover) {
+      moverModelo(mover.dataset.mover, +mover.dataset.dir);
+      state.alterado = true; salvarConfiguracao(); renderAll();
+      return;
+    }
+    const remover = e.target.closest('[data-remover]');
+    if (remover) {
+      const m = modeloPorId(remover.dataset.remover);
+      if (m && confirm(`Remover o modelo “${m.nome}”? O mapeamento dele será perdido.`)) {
+        removerModelo(m.id); salvarConfiguracao(); renderAll();
+        toast('Modelo removido.');
+      }
+      return;
+    }
     const cellBtn = e.target.closest('[data-cell]');
-    if (cellBtn) { state.selectedSlot = cellBtn.dataset.cell; renderMapping(); return; }
+    if (cellBtn) { state.celulaSelecionada = cellBtn.dataset.cell; renderMapping(); return; }
+
     const loadP = e.target.closest('[data-load-profile]');
     if (loadP) {
-      const all = listProfiles();
-      try { applyProfile(all[loadP.dataset.loadProfile]); saveCurrent(); renderAll(); toast('Perfil carregado.', 'ok'); }
-      catch (err) { toast(err.message, 'err'); }
+      const todos = listarPerfis();
+      aplicarConfiguracao(todos[loadP.dataset.loadProfile])
+        .then(() => { salvarConfiguracao(); renderAll(); toast('Perfil carregado.', 'ok'); })
+        .catch(err => toast(err.message, 'err'));
       return;
     }
     const delP = e.target.closest('[data-del-profile]');
     if (delP) {
-      const all = listProfiles();
-      delete all[delP.dataset.delProfile];
-      localStorage.setItem(LS_PROFILES, JSON.stringify(all));
-      renderProfiles();
+      const todos = listarPerfis();
+      delete todos[delP.dataset.delProfile];
+      localStorage.setItem(LS_PROFILES, JSON.stringify(todos));
+      renderDistribuir();
       toast('Perfil excluído.');
       return;
     }
-    const resetTpl = e.target.closest('[data-reset-tpl]');
-    if (resetTpl) { resetTemplate(resetTpl.dataset.resetTpl); return; }
   });
 
-  // abas de geração
-  $('genTabs').onclick = e => {
-    const tab = e.target.closest('[data-pane]');
-    if (!tab) return;
-    qsa('#genTabs .tab').forEach(t => t.classList.toggle('active', t === tab));
-    qsa('#view-geracao .pane').forEach(p => { p.hidden = p.id !== 'pane-' + tab.dataset.pane; });
+  // ---- modelos: regras, nome e troca de arquivo ----
+  $('listaModelos').addEventListener('change', async e => {
+    const campoRegra = e.target.closest('[data-regra]');
+    if (campoRegra) {
+      const m = modeloPorId(campoRegra.dataset.regra);
+      if (!m) return;
+      const campo = campoRegra.dataset.campo;
+      m.regra[campo] = campo === 'exigeFamilia' ? campoRegra.checked : campoRegra.value;
+      state.alterado = true; salvarConfiguracao(); renderModelos(); renderDashboard();
+      return;
+    }
+    const trocar = e.target.closest('[data-trocar]');
+    if (trocar && trocar.files[0]) {
+      const m = modeloPorId(trocar.dataset.trocar);
+      const f = trocar.files[0];
+      try {
+        await lerModelo(m, await f.arrayBuffer());
+        m.arquivo = f.name;
+        if (m.origem === 'adicionado') { try { await idbGravar(m.id, m.bytes); } catch (err) { /* sem persistência */ } }
+        if (!Object.keys(state.mapeamento[m.id] || {}).length) autoSuggest(m.id);
+        salvarConfiguracao(); renderAll();
+        const st = mappingStats(m.id);
+        toast(st.pending ? `Modelo carregado. ${st.pending} campo(s) precisam de mapeamento.` : 'Modelo carregado.', st.pending ? 'warn' : 'ok');
+      } catch (err) { toast(err.message, 'err'); }
+    }
+  });
+
+  $('listaModelos').addEventListener('input', e => {
+    const nome = e.target.closest('[data-nome]');
+    if (!nome) return;
+    const m = modeloPorId(nome.dataset.nome);
+    if (m) { m.nome = nome.value; state.alterado = true; }
+  });
+  $('listaModelos').addEventListener('blur', e => {
+    if (e.target.closest('[data-nome]')) { salvarConfiguracao(); renderAll(); }
+  }, true);
+
+  $('fileNovoModelo').onchange = async e => {
+    const f = e.target.files[0];
+    if (!f) return;
+    try {
+      const nome = f.name.replace(/\.docx$/i, '').replace(/[_-]+/g, ' ').trim() || 'Novo modelo';
+      const m = await adicionarModelo(nome, f.name, await f.arrayBuffer(), regraPadrao(), 'adicionado');
+      // o novo modelo entra antes do último, que costuma ser o padrão de sobra
+      if (state.modelos.length > 1) moverModelo(m.id, -1);
+      try { await idbGravar(m.id, m.bytes); }
+      catch (err) { toast('O arquivo não pôde ser guardado neste navegador: exporte a ferramenta para não perdê-lo.', 'warn'); }
+      autoSuggest(m.id);
+      salvarConfiguracao();
+      renderAll();
+      e.target.value = '';
+      const st = mappingStats(m.id);
+      toast(st.pending ? `Modelo adicionado. ${st.pending} campo(s) sem origem — revise o mapeamento.` : 'Modelo adicionado e mapeado automaticamente.', st.pending ? 'warn' : 'ok');
+      showView('modelos');
+    } catch (err) { toast('Não foi possível ler o arquivo: ' + err.message, 'err'); }
   };
 
-  // base
+  // ---- base ----
   $('fileExcel').onchange = async e => {
     const f = e.target.files[0];
     if (!f) return;
     setStatus('Lendo planilha…');
     try {
       await loadBase(await f.arrayBuffer(), f.name);
-      afterBaseLoaded();
+      depoisDaBase();
       renderAll();
       toast('Base atualizada nesta sessão.', 'ok');
     } catch (err) { setStatus('Falha ao ler planilha', 'err'); toast(err.message, 'err'); }
   };
   $('btnResetBase').onclick = async () => {
-    if (!defaults.base) { toast('Esta instalação não tem base padrão: carregue uma planilha.', 'warn'); return; }
-    await loadBase(defaults.base, SRC.base.nome || 'Base incorporada');
-    afterBaseLoaded();
-    renderAll();
+    if (!state.baseDefault) { toast('Esta instalação não tem base padrão: carregue uma planilha.', 'warn'); return; }
+    await loadBase(state.baseDefault, SRC.base.nome || 'Base incorporada');
+    depoisDaBase(); renderAll();
     toast('Base padrão restaurada.', 'ok');
   };
   $('selSheet').onchange = async e => {
@@ -1259,124 +1717,93 @@ function wire() {
   };
   $('inpBlocked').onchange = e => {
     state.blocked = e.target.value.split(/[,;\s]+/).map(x => x.trim()).filter(Boolean);
-    refilterRows();
-    saveCurrent();
-    renderAll();
+    refilterRows(); salvarConfiguracao(); renderAll();
   };
   $('colSearch').oninput = renderColumns;
 
-  // modelos
-  const tplInput = (inputId, key) => {
-    $(inputId).onchange = async e => {
-      const f = e.target.files[0];
-      if (!f) return;
-      try {
-        await loadTemplate(key, await f.arrayBuffer(), f.name, true);
-        renderAll();
-        const st = mappingStats(key);
-        toast(st.pending
-          ? `Modelo carregado. ${st.pending} campo(s) precisam de mapeamento.`
-          : 'Modelo carregado e mapeamento preservado.', st.pending ? 'warn' : 'ok');
-      } catch (err) { toast(err.message, 'err'); }
-    };
-  };
-  tplInput('fileTplCarreira', 'carreira');
-  tplInput('fileTplIndividual', 'individual');
-
-  // mapeamento
-  $('segTpl').onclick = e => {
-    const btn = e.target.closest('[data-tpl]');
-    if (!btn) return;
-    state.activeTpl = btn.dataset.tpl;
-    state.selectedSlot = null;
-    syncTplSegment();
+  // ---- mapeamento ----
+  $('selModelo').onchange = e => {
+    state.modeloAtivo = e.target.value;
+    state.celulaSelecionada = null;
     renderMapping();
   };
   $('btnSuggest').onclick = () => {
-    const n = autoSuggest(state.activeTpl);
-    state.dirty = true;
+    const n = autoSuggest(state.modeloAtivo);
+    state.alterado = true;
     renderMapping();
     toast(`${n} campo(s) mapeado(s) automaticamente.`, 'ok');
   };
   $('btnClearMap').onclick = () => {
-    state.mapping[state.activeTpl] = {};
-    state.selectedSlot = null;
-    state.dirty = true;
+    state.mapeamento[state.modeloAtivo] = {};
+    state.celulaSelecionada = null;
+    state.alterado = true;
     renderMapping();
     toast('Mapeamento do modelo limpo.');
   };
   $('btnValidate').onclick = validateMapping;
   $('btnSaveMap').onclick = () => {
-    saveCurrent();
-    state.dirty = false;
-    renderMapping();
-    renderDashboard();
+    salvarConfiguracao();
+    state.alterado = false;
+    renderMapping(); renderDashboard();
     toast('Mapeamento salvo neste navegador.', 'ok');
   };
   $('previewCode').oninput = () => { if (!$('view-mapeamento').hidden) renderMapping(); };
   $('btnToggleStatic').onclick = () => {
-    state.showStatic = !state.showStatic;
-    $('btnToggleStatic').textContent = state.showStatic ? 'Ocultar rótulos fixos' : 'Mostrar rótulos fixos';
+    state.mostrarFixos = !state.mostrarFixos;
+    $('btnToggleStatic').textContent = state.mostrarFixos ? 'Ocultar rótulos fixos' : 'Mostrar rótulos fixos';
     renderMapping();
   };
 
-  // geração
+  // ---- geração ----
+  $('genTabs').onclick = e => {
+    const tab = e.target.closest('[data-pane]');
+    if (!tab) return;
+    qsa('#genTabs .tab').forEach(t => t.classList.toggle('active', t === tab));
+    qsa('#view-geracao .pane').forEach(p => { p.hidden = p.id !== 'pane-' + tab.dataset.pane; });
+  };
   $('btnSearchAuto').onclick = searchAuto;
-  $('btnSearchInd').onclick = searchIndividual;
-  $('btnWordAuto').onclick = () => downloadWord(state.sel.auto, false, $('btnWordAuto'));
-  $('btnWordInd').onclick = () => downloadWord(state.sel.individual, true, $('btnWordInd'));
-  $('btnPdfAuto').onclick = () => printPdf(state.sel.auto, false);
-  $('btnPdfInd').onclick = () => printPdf(state.sel.individual, true);
+  $('btnSearchEscolhido').onclick = searchEscolhido;
+  $('btnWordAuto').onclick = () => downloadWord(state.sel.auto, $('btnWordAuto'));
+  $('btnWordEscolhido').onclick = () => downloadWord(state.sel.escolhido, $('btnWordEscolhido'));
+  $('btnPdfAuto').onclick = () => printPdf(state.sel.auto);
+  $('btnPdfEscolhido').onclick = () => printPdf(state.sel.escolhido);
+  $('selModeloGeracao').onchange = () => { if (state.sel.escolhido.length) searchEscolhido(); };
 
-  // perfis
+  // ---- salvar e distribuir ----
+  $('btnExportTool').onclick = () => exportarFerramenta(true);
+  $('btnExportToolSemBase').onclick = () => exportarFerramenta(false);
   $('btnProfileSave').onclick = () => {
-    const name = $('profileName').value.trim();
-    if (!name) { toast('Informe um nome para o perfil.', 'warn'); return; }
-    const all = listProfiles();
-    all[name] = currentProfile();
-    localStorage.setItem(LS_PROFILES, JSON.stringify(all));
-    saveCurrent();
-    state.dirty = false;
-    renderProfiles();
-    toast(`Perfil “${name}” salvo.`, 'ok');
+    const nome = $('profileName').value.trim();
+    if (!nome) { toast('Informe um nome para o perfil.', 'warn'); return; }
+    const todos = listarPerfis();
+    todos[nome] = configuracaoAtual();
+    localStorage.setItem(LS_PROFILES, JSON.stringify(todos));
+    salvarConfiguracao();
+    state.alterado = false;
+    renderDistribuir();
+    toast(`Perfil “${nome}” salvo.`, 'ok');
   };
   $('btnProfileExport').onclick = () => {
-    const blob = new Blob([JSON.stringify(currentProfile(), null, 2)], { type: 'application/json' });
-    download(blob, 'mapeamento-mapas-carreira.json');
+    const blob = new Blob([JSON.stringify(configuracaoAtual(), null, 2)], { type: 'application/json' });
+    download(blob, 'configuracao-mapas-carreira.json');
   };
   $('fileProfile').onchange = async e => {
     const f = e.target.files[0];
     if (!f) return;
     try {
-      applyProfile(JSON.parse(await f.text()));
-      saveCurrent();
-      renderAll();
-      toast('Perfil importado.', 'ok');
+      await aplicarConfiguracao(JSON.parse(await f.text()));
+      salvarConfiguracao(); renderAll();
+      toast('Configuração importada.', 'ok');
     } catch (err) { toast('Arquivo inválido: ' + err.message, 'err'); }
   };
   $('btnProfileReset').onclick = () => {
-    state.mapping = { carreira: {}, individual: {} };
-    autoSuggest('carreira');
-    autoSuggest('individual');
-    saveCurrent();
-    renderAll();
+    for (const m of state.modelos) { state.mapeamento[m.id] = {}; autoSuggest(m.id); }
+    salvarConfiguracao(); renderAll();
     toast('Mapeamento padrão restaurado.', 'ok');
   };
 
-  // modal
   $('modalClose').onclick = () => { $('modalBg').hidden = true; };
   $('modalBg').onclick = e => { if (e.target === $('modalBg')) $('modalBg').hidden = true; };
-}
-
-async function resetTemplate(key) {
-  if (!defaults[key]) { toast('Modelo padrão indisponível nesta instalação.', 'warn'); return; }
-  await loadTemplate(key, defaults[key], SRC[key].nome, false);
-  renderAll();
-  toast('Modelo padrão restaurado.', 'ok');
-}
-
-function syncTplSegment() {
-  qsa('#segTpl button').forEach(b => b.classList.toggle('on', b.dataset.tpl === state.activeTpl));
 }
 
 wire();
