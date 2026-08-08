@@ -43,6 +43,22 @@ body{
 h1,h2,h3,h4{margin:0;font-weight:650;letter-spacing:-.01em}
 a{color:var(--brand-dark)}
 
+/* ---------- Tela de carregamento ---------- */
+.boot{
+  position:fixed;inset:0;z-index:300;background:var(--nav);
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .25s ease;
+}
+.boot-box{text-align:center;width:min(340px,82vw)}
+.boot-box img{width:64px;padding:10px;background:#ffffff12;border:1px solid #ffffff1f;border-radius:12px}
+.boot-box h2{color:#fff;font-size:16px;margin:16px 0 20px;font-weight:600}
+.boot-bar{height:5px;border-radius:99px;background:#ffffff1c;overflow:hidden}
+.boot-bar span{
+  display:block;height:100%;width:0;border-radius:99px;
+  background:var(--brand);transition:width .25s ease;
+}
+.boot-box p{color:#8d95a1;font-size:12.5px;margin:12px 0 0}
+
 /* ---------- App shell ---------- */
 .app{display:grid;grid-template-columns:252px 1fr;min-height:100vh}
 

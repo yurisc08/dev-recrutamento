@@ -46,14 +46,16 @@ def main() -> None:
     app = texto(SRC / "app.js")
     jszip = texto(ASSETS / "jszip.min.js")
 
-    constantes = "\n".join([
-        f"const BASE={js_string(b64('base.xlsx'))};",
-        f"const TPL_CARREIRA={js_string(b64('template-carreira.docx'))};",
-        f"const TPL_CARREIRA_NOME={js_string(NOME_CARREIRA)};",
-        f"const TPL_INDIVIDUAL={js_string(b64('template-individual.docx'))};",
-        f"const TPL_INDIVIDUAL_NOME={js_string(NOME_INDIVIDUAL)};",
-        f"const LOGO={js_string('data:image/png;base64,' + b64('logo.png'))};",
-    ])
+    def embutido(arquivo: str, nome: str) -> str:
+        return ("{tipo:'base64',nome:" + js_string(nome)
+                + ",dados:" + js_string(b64(arquivo)) + "}")
+
+    constantes = "window.GMC={\n" + ",\n".join([
+        "  base:" + embutido("base.xlsx", "Base incorporada"),
+        "  carreira:" + embutido("template-carreira.docx", NOME_CARREIRA),
+        "  individual:" + embutido("template-individual.docx", NOME_INDIVIDUAL),
+        "  logo:" + js_string("data:image/png;base64," + b64("logo.png")),
+    ]) + "\n};"
 
     html = f"""<!doctype html>
 <html lang="pt-BR">

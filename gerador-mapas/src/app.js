@@ -30,6 +30,45 @@ const firstOf = (o, keys) => { for (const k of keys) if (val(o, k)) return val(o
 const norm = s => String(s ?? '').normalize('NFD').replace(/[\u0300-\u036f]/g, '').toUpperCase();
 const tokens = s => norm(s).split(/[^A-Z0-9]+/).filter(t => t.length > 1);
 const bytesOf = b64 => { const b = atob(b64), u = new Uint8Array(b.length); for (let i = 0; i < b.length; i++) u[i] = b.charCodeAt(i); return u; };
+
+/* ---------------- fontes de dados ----------------
+   A ferramenta tem dois formatos de distribuição:
+
+   - arquivo único: os assets vêm embutidos em base64 (tipo 'base64');
+   - versão web:    os assets são baixados do servidor (tipo 'url').
+
+   window.GMC é definido pelo build e descreve qual dos dois usar, de
+   modo que o restante do código não precisa saber a diferença.
+------------------------------------------------------------------- */
+const SRC = window.GMC || {};
+const LOGO = SRC.logo || '';
+const defaults = { base: null, carreira: null, individual: null };
+
+async function fetchSource(desc, onProgress) {
+  if (!desc) return null;
+  if (desc.tipo === 'base64') return bytesOf(desc.dados);
+
+  const res = await fetch(desc.url, { cache: 'default' });
+  if (!res.ok) throw new Error(`Não foi possível baixar ${desc.url} (HTTP ${res.status}).`);
+
+  const total = +(res.headers.get('content-length') || 0);
+  if (!onProgress || !total || !res.body) return new Uint8Array(await res.arrayBuffer());
+
+  const reader = res.body.getReader();
+  const parts = [];
+  let lidos = 0;
+  for (;;) {
+    const { done, value } = await reader.read();
+    if (done) break;
+    parts.push(value);
+    lidos += value.length;
+    onProgress(lidos / total);
+  }
+  const out = new Uint8Array(lidos);
+  let off = 0;
+  for (const p of parts) { out.set(p, off); off += p.length; }
+  return out;
+}
 const parseXml = t => { const d = new DOMParser().parseFromString(t, 'application/xml'); if (d.querySelector('parsererror')) throw new Error('XML inválido no arquivo.'); return d; };
 const tagged = (el, n) => [...el.getElementsByTagNameNS(W, n)];
 const kids = (el, n) => [...el.children].filter(x => x.localName === n);
@@ -243,7 +282,7 @@ async function loadTemplate(key, buffer, label, custom) {
   const scan = scanTemplate(parseXml(await file.async('string')));
   const tpl = state.templates[key];
   const previous = tpl.scan;
-  tpl.bytes = new Uint8Array(buffer instanceof ArrayBuffer ? buffer : buffer.buffer || buffer);
+  tpl.bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
   tpl.scan = scan;
   tpl.label = label;
   tpl.custom = !!custom;
@@ -615,6 +654,15 @@ function renderBaseView() {
     `<option${s === state.sheetName ? ' selected' : ''}>${esc(s)}</option>`).join('');
   $('inpBlocked').value = state.blocked.join(', ');
 
+  if (!state.columns.length) {
+    $('baseStatus').innerHTML = `<div class="alert warn"><span class="ai">!</span><div>
+      <b>Nenhuma planilha carregada.</b> Esta instalação não traz a base embutida — selecione o
+      arquivo <span class="mono">.xlsx</span> acima para começar. O arquivo é lido no seu próprio
+      navegador e não é enviado para nenhum servidor.
+    </div></div>`;
+    renderColumns();
+    return;
+  }
   const ignored = (state.allRecords || []).length - state.rows.length;
   $('baseStatus').innerHTML = `<div class="alert ok"><span class="ai">✓</span><div>
     <b>${state.rows.length.toLocaleString('pt-BR')} registros</b> carregados da aba <span class="mono">${esc(state.sheetName)}</span>
@@ -1060,27 +1108,82 @@ function renderProfiles() {
 /* ============================================================
    8. Inicialização e eventos
    ============================================================ */
-async function boot() {
-  setStatus('Carregando base…');
-  try {
-    await loadBase(bytesOf(BASE).buffer, 'Base incorporada');
-    await loadTemplate('carreira', bytesOf(TPL_CARREIRA).buffer, TPL_CARREIRA_NOME, false);
-    await loadTemplate('individual', bytesOf(TPL_INDIVIDUAL).buffer, TPL_INDIVIDUAL_NOME, false);
+function bootProgress(msg, fraction) {
+  const m = $('bootMsg'), f = $('bootFill');
+  if (m && msg) m.textContent = msg;
+  if (f) f.style.width = Math.round(Math.max(0, Math.min(1, fraction)) * 100) + '%';
+}
 
-    const restored = loadCurrent();
-    if (!restored || !Object.keys(state.mapping.carreira || {}).length) {
-      autoSuggest('carreira');
-      autoSuggest('individual');
-      saveCurrent();
+function bootDone() {
+  const s = $('bootScreen');
+  if (!s) return;
+  s.style.opacity = '0';
+  setTimeout(() => { s.hidden = true; }, 250);
+}
+
+async function boot() {
+  const bootLogo = $('bootLogo');
+  if (bootLogo && LOGO) bootLogo.src = LOGO;
+
+  try {
+    // A versão web baixa os arquivos por fetch, o que o navegador bloqueia
+    // em file://. Sem este aviso o erro sai como um "Failed to fetch" seco.
+    if (location.protocol === 'file:' && SRC.carreira && SRC.carreira.tipo === 'url') {
+      throw new Error('esta é a versão web e precisa ser aberta por um servidor '
+        + '(http://). Para uso local, abra o arquivo Gerador_Mapas_Carreira.html.');
     }
+
+    bootProgress('Carregando modelos Word…', 0.05);
+    defaults.carreira = await fetchSource(SRC.carreira);
+    await loadTemplate('carreira', defaults.carreira, SRC.carreira.nome, false);
+
+    bootProgress('Carregando modelos Word…', 0.2);
+    defaults.individual = await fetchSource(SRC.individual);
+    await loadTemplate('individual', defaults.individual, SRC.individual.nome, false);
+
+    if (SRC.base) {
+      bootProgress('Baixando a base de cargos…', 0.25);
+      defaults.base = await fetchSource(SRC.base, p => bootProgress(null, 0.25 + p * 0.5));
+      bootProgress('Lendo a planilha…', 0.8);
+      await sleep(0);                                   // deixa a barra pintar
+      await loadBase(defaults.base, SRC.base.nome || 'Base incorporada');
+    } else {
+      state.semBase = true;
+    }
+
+    bootProgress('Preparando o mapeamento…', 0.92);
+    afterBaseLoaded();
     state.ready = true;
-    setStatus(`${state.rows.length.toLocaleString('pt-BR')} cargos carregados`, 'ok');
     renderAll();
+    bootProgress('Pronto', 1);
+    bootDone();
+
+    if (state.semBase) showView('base');
   } catch (e) {
+    bootProgress('Falha ao iniciar: ' + e.message, 1);
+    const f = $('bootFill');
+    if (f) f.style.background = 'var(--danger)';
     setStatus('Falha ao iniciar', 'err');
-    toast('Erro na inicialização: ' + e.message, 'err');
     console.error(e);
+    setTimeout(bootDone, 2500);
+    toast('Erro na inicialização: ' + e.message, 'err');
   }
+}
+
+/** Passos que dependem de haver (ou não) uma base carregada. */
+function afterBaseLoaded() {
+  if (!state.columns.length) {
+    setStatus('Aguardando a planilha', 'warn');
+    return;
+  }
+  state.semBase = false;
+  const restored = loadCurrent();
+  if (!restored || !Object.keys(state.mapping.carreira || {}).length) {
+    autoSuggest('carreira');
+    autoSuggest('individual');
+    saveCurrent();
+  }
+  setStatus(`${state.rows.length.toLocaleString('pt-BR')} cargos carregados`, 'ok');
 }
 
 function renderAll() {
@@ -1137,15 +1240,17 @@ function wire() {
     setStatus('Lendo planilha…');
     try {
       await loadBase(await f.arrayBuffer(), f.name);
-      setStatus(`${state.rows.length.toLocaleString('pt-BR')} cargos carregados`, 'ok');
+      afterBaseLoaded();
       renderAll();
       toast('Base atualizada nesta sessão.', 'ok');
     } catch (err) { setStatus('Falha ao ler planilha', 'err'); toast(err.message, 'err'); }
   };
   $('btnResetBase').onclick = async () => {
-    await loadBase(bytesOf(BASE).buffer, 'Base incorporada');
+    if (!defaults.base) { toast('Esta instalação não tem base padrão: carregue uma planilha.', 'warn'); return; }
+    await loadBase(defaults.base, SRC.base.nome || 'Base incorporada');
+    afterBaseLoaded();
     renderAll();
-    toast('Base incorporada restaurada.', 'ok');
+    toast('Base padrão restaurada.', 'ok');
   };
   $('selSheet').onchange = async e => {
     await applySheet(e.target.value);
@@ -1264,9 +1369,8 @@ function wire() {
 }
 
 async function resetTemplate(key) {
-  const src = key === 'carreira' ? TPL_CARREIRA : TPL_INDIVIDUAL;
-  const nome = key === 'carreira' ? TPL_CARREIRA_NOME : TPL_INDIVIDUAL_NOME;
-  await loadTemplate(key, bytesOf(src).buffer, nome, false);
+  if (!defaults[key]) { toast('Modelo padrão indisponível nesta instalação.', 'warn'); return; }
+  await loadTemplate(key, defaults[key], SRC[key].nome, false);
   renderAll();
   toast('Modelo padrão restaurado.', 'ok');
 }

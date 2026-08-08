@@ -1,12 +1,18 @@
 # Gerador de Mapas de Carreira
 
-Ferramenta em **um único arquivo HTML** para gerar mapas de carreira e descritivos
-de cargo em Word e PDF a partir da base oficial de cargos.
+Ferramenta para gerar mapas de carreira e descritivos de cargo em Word e PDF a
+partir da base oficial de cargos. Todo o processamento acontece no navegador —
+nenhum dado sai do computador de quem usa.
 
-O arquivo pronto para uso é **`Gerador_Mapas_Carreira.html`**: basta abrir com duplo
-clique. Não precisa de servidor, instalação ou internet — a planilha, os dois modelos
-Word e todas as bibliotecas estão embutidos no próprio arquivo, e todo o
-processamento acontece no navegador.
+Existem dois formatos, gerados do mesmo código-fonte:
+
+| Formato | Como gerar | Para que serve |
+| --- | --- | --- |
+| **Arquivo único** — `Gerador_Mapas_Carreira.html` | `python3 build.py` | Abrir com duplo clique. Sem servidor, sem instalação, sem internet. |
+| **Site estático** — pasta `web/` | `python3 build_web.py` | Publicar num servidor e acessar pelo navegador. |
+
+Para hospedar, veja **[HOSPEDAGEM.md](HOSPEDAGEM.md)** — inclui a decisão de
+publicar ou não a base de cargos junto.
 
 ## O que mudou em relação à versão anterior
 
@@ -61,9 +67,11 @@ de Mapeamento e no Painel.
 
 ```
 gerador-mapas/
-├── Gerador_Mapas_Carreira.html   arquivo final — é este que se distribui
-├── build.py                      monta o arquivo final
-├── src/
+├── Gerador_Mapas_Carreira.html   arquivo único, pronto para distribuir
+├── build.py                      monta o arquivo único
+├── build_web.py                  monta a pasta web/ (não versionada)
+├── HOSPEDAGEM.md                 guia de publicação
+├── src/                          código-fonte compartilhado pelos dois formatos
 │   ├── styles.css
 │   ├── body.html
 │   └── app.js
@@ -75,16 +83,20 @@ gerador-mapas/
     └── jszip.min.js
 ```
 
-### Regerar o arquivo
+### Regerar
 
 Depois de alterar qualquer fonte em `src/` ou trocar um arquivo em `assets/`:
 
 ```bash
-python3 build.py
+python3 build.py        # arquivo único
+python3 build_web.py    # versão web
 ```
 
-Para atualizar a base ou os modelos padrão, substitua o arquivo correspondente em
-`assets/` mantendo o mesmo nome e rode o build novamente.
+Rode os dois para manter os formatos iguais. Para atualizar a base ou os modelos
+padrão, substitua o arquivo correspondente em `assets/` mantendo o mesmo nome.
+
+A diferença entre os builds está apenas em `window.GMC`, o descritor que diz se
+os assets vêm embutidos em base64 ou são baixados por URL. O `app.js` é o mesmo.
 
 ## Observações sobre os dados
 
