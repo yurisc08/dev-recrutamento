@@ -1,0 +1,12 @@
+{
+  "name": "descritivos-cargos",
+  "version": "1.0.0",
+  "description": "Ferramenta local de criação, preenchimento e aprovação de descritivos de cargo",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

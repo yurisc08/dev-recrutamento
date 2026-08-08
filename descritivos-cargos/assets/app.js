@@ -1,8 +1,12 @@
 /*
- * app.js
+ * assets/app.js
  * -----------------------------------------------------------------------------
- * Camada de interface: login, navegação por papel, formulário guiado pelo
- * modelo, filas de aprovação, administração e documento final.
+ * Interface: login, navegação por papel, formulário guiado pelo modelo, filas
+ * de aprovação, administração e documento final.
+ *
+ * Todo dado vem de API.jobs (preenchido pelo servidor) e toda ação passa pela
+ * API — a interface não decide permissão, apenas reflete o que o servidor
+ * permite, escondendo o que não cabe ao papel.
  */
 
 const $  = s => document.querySelector(s);
@@ -10,7 +14,23 @@ const $$ = s => Array.from(document.querySelectorAll(s));
 const esc = s => String(s ?? '').replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 const nl2br = s => esc(s).replace(/\n/g, '<br>');
 
-const state = { session: null, view: 'jobs', jobId: null };
+const state = { view: 'jobs', jobId: null };
+const session = () => API.session;
+
+/* ------------------------------ Datas (exibição) ------------------------- */
+function formatDate(iso) {
+  if (!iso) return '—';
+  const [y, m, d] = String(iso).split('-');
+  return d && m && y ? `${d}/${m}/${y}` : iso;
+}
+function formatDateTime(iso) {
+  const d = new Date(iso);
+  return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+}
+function daysLeft(iso) {
+  if (!iso) return null;
+  return Math.round((new Date(iso + 'T00:00:00') - new Date(isoToday() + 'T00:00:00')) / 86400000);
+}
 
 /* ------------------------------- Toast ----------------------------------- */
 let toastTimer = null;
@@ -19,7 +39,7 @@ function toast(text, tone) {
   el.textContent = text;
   el.className = 'toast' + (tone ? ' ' + tone : '');
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => el.classList.add('hide'), 3200);
+  toastTimer = setTimeout(() => el.classList.add('hide'), 3600);
 }
 
 /* ------------------------------- Modal ----------------------------------- */
@@ -34,7 +54,7 @@ function closeModal() {
 $('#closeModal').onclick = closeModal;
 $('#modal').addEventListener('click', e => { if (e.target.id === 'modal') closeModal(); });
 
-/* Caixa de texto obrigatória (devolução, reabertura, comentário). */
+/* Caixa de justificativa (devolução, reabertura, restauração). */
 function askText(title, label, onConfirm) {
   openModal(`
     <h2>${esc(title)}</h2>
@@ -54,34 +74,42 @@ function askText(title, label, onConfirm) {
 }
 
 /* ================================ LOGIN ================================== */
-$('#testCode').onclick   = () => { $('#accessCode').value = 'DC-00001'; toast('Código preenchido'); };
-$('#showInternal').onclick   = () => { $('#managerLogin').classList.add('hide');  $('#internalLogin').classList.remove('hide'); };
-$('#backToManager').onclick  = () => { $('#internalLogin').classList.add('hide'); $('#managerLogin').classList.remove('hide'); };
-$('#testHr').onclick       = () => { $('#email').value = 'rh@empresa.com';        $('#password').value = 'Rh@2026!'; };
-$('#testApprover').onclick = () => { $('#email').value = 'aprovador@empresa.com'; $('#password').value = 'Ap@2026!'; };
+$('#testCode').onclick      = () => { $('#accessCode').value = 'DC-00001'; toast('Código preenchido'); };
+$('#showInternal').onclick  = () => { $('#managerLogin').classList.add('hide');  $('#internalLogin').classList.remove('hide'); };
+$('#backToManager').onclick = () => { $('#internalLogin').classList.add('hide'); $('#managerLogin').classList.remove('hide'); };
+$('#testHr').onclick        = () => { $('#email').value = 'rh@empresa.com';        $('#password').value = 'Rh@2026!'; };
+$('#testApprover').onclick  = () => { $('#email').value = 'aprovador@empresa.com'; $('#password').value = 'Ap@2026!'; };
 
-$('#managerEnter').onclick = () => {
+async function attemptLogin(button, promise, view) {
+  button.disabled = true;
+  try {
+    await promise;
+    await enter(view);
+  } catch (err) {
+    toast(err.message, 'error');
+  } finally {
+    button.disabled = false;
+  }
+}
+
+$('#managerEnter').onclick = e => {
   const code = $('#accessCode').value.trim().toUpperCase();
-  const jobs = getDB().jobs.filter(j => j.code === code);
-  if (!jobs.length) return toast('Código não encontrado', 'error');
-  state.session = { role: 'manager', name: jobs[0].manager, code };
-  enter('jobs');
+  if (!code) return toast('Informe o código de acesso', 'error');
+  attemptLogin(e.currentTarget, API.loginCode(code), 'jobs');
 };
 
-$('#internalEnter').onclick = () => {
-  const email = $('#email').value.trim().toLowerCase();
+$('#internalEnter').onclick = e => {
+  const email = $('#email').value.trim();
   const password = $('#password').value;
-  const user = getDB().users.find(u => u.email === email && u.password === password);
-  if (!user) return toast('E-mail ou senha inválidos', 'error');
-  state.session = { role: user.role, name: user.name, email: user.email };
-  enter(user.role === 'approver' ? 'approvals' : 'admin');
+  if (!email || !password) return toast('Informe e-mail e senha', 'error');
+  attemptLogin(e.currentTarget, API.loginInternal(email, password), null);
 };
 
 $('#accessCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('#managerEnter').click(); });
 $('#password').addEventListener('keydown', e => { if (e.key === 'Enter') $('#internalEnter').click(); });
 
-$('#logout').onclick = () => {
-  state.session = null;
+$('#logout').onclick = async () => {
+  await API.logout();
   state.jobId = null;
   closeModal();
   ['#accessCode', '#email', '#password'].forEach(sel => $(sel).value = '');
@@ -98,21 +126,25 @@ const NAV = {
   hr:       [{ view: 'approvals', label: 'Validações' }, { view: 'jobs', label: 'Cargos' }, { view: 'admin', label: 'Administração' }]
 };
 
-function enter(view) {
+const HOME = { manager: 'jobs', approver: 'approvals', hr: 'admin' };
+
+async function enter(view) {
+  await API.loadJobs();
   $('#login').classList.add('hide');
   $('#application').classList.remove('hide');
-  const roleLabel = ROLES[state.session.role].label;
-  $('#identity').innerHTML = `<b>${esc(state.session.name)}</b>` +
-    (state.session.name === roleLabel ? '' : `<br><span class="muted">${roleLabel}</span>`);
-  renderNav();
-  show(view);
+
+  const roleLabel = ROLES[session().role].label;
+  $('#identity').innerHTML = `<b>${esc(session().name)}</b>` +
+    (session().name === roleLabel ? '' : `<br><span class="muted">${roleLabel}</span>`);
+
+  show(view || HOME[session().role]);
 }
 
 function renderNav() {
-  const pending = pendingJobs(state.session).length;
-  $('#nav').innerHTML = NAV[state.session.role].map(item => {
-    const badge = (item.view === 'approvals' || (state.session.role === 'manager' && item.view === 'jobs')) && pending
-      ? `<span class="pill">${pending}</span>` : '';
+  const pending = API.pending().length;
+  $('#nav').innerHTML = NAV[session().role].map(item => {
+    const showsBadge = item.view === 'approvals' || (session().role === 'manager' && item.view === 'jobs');
+    const badge = showsBadge && pending ? `<span class="pill">${pending}</span>` : '';
     return `<button data-view="${item.view}" class="${state.view === item.view ? 'active' : ''}">${item.label}${badge}</button>`;
   }).join('');
   $$('#nav [data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
@@ -128,8 +160,8 @@ function show(view, jobId) {
 
 /* ----------------------------- Componentes ------------------------------- */
 function badge(status) {
-  const s = STAGES[status];
-  return `<span class="status ${s.tone}">${s.label}</span>`;
+  const stage = STAGES[status];
+  return `<span class="status ${stage.tone}">${stage.label}</span>`;
 }
 
 function deadlineTag(job) {
@@ -163,29 +195,29 @@ function jobCard(job, actions) {
 
 /* ============================ VISÃO: CARGOS ============================== */
 function jobsView() {
-  const jobs = visibleJobs(state.session);
-  const pending = pendingJobs(state.session);
+  const jobs = API.jobs;
+  const pending = API.pending();
 
-  $('#title').textContent = state.session.role === 'manager' ? 'Meus descritivos' : 'Cargos';
+  $('#title').textContent = session().role === 'manager' ? 'Meus descritivos' : 'Cargos';
   $('#subtitle').textContent = `${jobs.length} cargo(s) • ${pending.length} aguardando você`;
 
-  $('#content').innerHTML = pending.length && state.session.role === 'manager'
+  const banner = pending.length && session().role === 'manager'
     ? `<div class="banner">Você tem <b>${pending.length}</b> descritivo(s) aguardando preenchimento ou correção.</div>` : '';
 
-  $('#content').innerHTML += jobs.length
+  $('#content').innerHTML = banner + (jobs.length
     ? `<div class="cards">${jobs.map(j => jobCard(j, `
         <button class="btn primary" data-action="open" data-id="${j.id}">Abrir descritivo</button>
         ${j.status === 'approved' ? `<button class="btn outline" data-action="doc" data-id="${j.id}">Documento</button>` : ''}
       `)).join('')}</div>`
-    : `<div class="card"><div class="body empty">Nenhum cargo atribuído a você.</div></div>`;
+    : `<div class="card"><div class="body empty">Nenhum cargo atribuído a você.</div></div>`);
 }
 
 /* ========================= VISÃO: DETALHE DO CARGO ======================= */
 function jobView() {
-  const job = getJob(state.jobId);
+  const job = API.getJob(state.jobId);
   if (!job) return show('jobs');
 
-  const role = state.session.role;
+  const role = session().role;
   const editable = canEdit(job, role);
   const stage = STAGES[job.status];
 
@@ -197,17 +229,14 @@ function jobView() {
     ? `<div class="banner warn"><b>Correção solicitada.</b> ${nl2br(job.comments.at(-1).text)}</div>` : '';
 
   const sections = SECTIONS.map(section => {
-    const ownerLabel = ROLES[section.owner].label;
-    const fields = section.fields.map(f => {
-      const owner = f.owner || section.owner;
-      const isEditable = editable && owner === role;
-      return inputField(f, job[f.key], isEditable);
-    }).join('');
+    const fields = section.fields
+      .map(f => inputField(f, job[f.key], editable && (f.owner || section.owner) === role))
+      .join('');
     return `
       <section class="block">
         <div class="block-head">
           <h3>${section.title}</h3>
-          <span class="owner">Preenchimento: ${ownerLabel}</span>
+          <span class="owner">Preenchimento: ${ROLES[section.owner].label}</span>
         </div>
         <div class="grid">${fields}</div>
       </section>`;
@@ -298,12 +327,6 @@ function historyCard(job) {
     </div>`;
 }
 
-function formatDateTime(iso) {
-  if (!iso) return '';
-  const d = new Date(iso);
-  return isNaN(d) ? '' : d.toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
-}
-
 /* Lê os campos editáveis presentes na tela. */
 function collectFields() {
   const values = {};
@@ -313,9 +336,9 @@ function collectFields() {
 
 /* ========================== VISÃO: APROVAÇÕES ============================ */
 function approvalsView() {
-  if (state.session.role === 'manager') return show('jobs');
-  const queue = pendingJobs(state.session);
-  const isHr = state.session.role === 'hr';
+  if (session().role === 'manager') return show('jobs');
+  const queue = API.pending();
+  const isHr = session().role === 'hr';
 
   $('#title').textContent = isHr ? 'Validações de C&R' : 'Aprovações';
   $('#subtitle').textContent = `${queue.length} descritivo(s) na sua fila`;
@@ -331,8 +354,8 @@ function approvalsView() {
 
 /* ========================= VISÃO: ADMINISTRAÇÃO ========================== */
 function adminView() {
-  if (state.session.role !== 'hr') return show('approvals');
-  const jobs = getDB().jobs;
+  if (session().role !== 'hr') return show('approvals');
+  const jobs = API.jobs;
   const byStage = Object.keys(STAGES).map(k => ({ k, n: jobs.filter(j => j.status === k).length }));
 
   $('#title').textContent = 'Administração';
@@ -363,14 +386,6 @@ function adminView() {
       </article>`).join('')}</div>`;
 }
 
-/* Campos de cadastro: identificação + dados do fluxo + campos de C&R. */
-const CREATION_FLOW_FIELDS = [
-  { key: 'manager',      label: 'Responsável pelo preenchimento', type: 'text',  required: true },
-  { key: 'managerEmail', label: 'E-mail do responsável',          type: 'email', required: true },
-  { key: 'approver',     label: 'Aprovador',                      type: 'text',  required: true },
-  { key: 'deadline',     label: 'Prazo de preenchimento',         type: 'date',  required: true }
-];
-
 /* Valores sugeridos no cadastro, para agilizar o uso no dia a dia. */
 const CREATION_DEFAULTS = {
   creationDate: isoToday(),
@@ -383,9 +398,10 @@ function newJobModal() {
   const render = f => {
     const id = 'n_' + f.key;
     const preset = esc(CREATION_DEFAULTS[f.key] || '');
+    const type = f.type === 'date' ? 'date' : f.type === 'email' ? 'email' : 'text';
     const control = f.type === 'textarea'
       ? `<textarea id="${id}" data-new="${f.key}" rows="3">${preset}</textarea>`
-      : `<input id="${id}" data-new="${f.key}" type="${f.type === 'date' ? 'date' : f.type === 'email' ? 'email' : 'text'}" value="${preset}">`;
+      : `<input id="${id}" data-new="${f.key}" type="${type}" value="${preset}">`;
     return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)} <span class="req">*</span></label>${control}</div>`;
   };
 
@@ -393,36 +409,40 @@ function newJobModal() {
     <h2>Novo cargo</h2>
     <p class="muted">C&amp;R preenche a identificação e os blocos normativos. O restante do modelo é preenchido pelo responsável.</p>
     <h3>Fluxo</h3>
-    <div class="grid">${CREATION_FLOW_FIELDS.map(render).join('')}</div>
+    <div class="grid">${FLOW_FIELDS.map(render).join('')}</div>
     <h3>Modelo</h3>
     <div class="grid">${hrFields.map(render).join('')}</div>
     <button class="btn primary full mt" data-modal-action="create">Criar, gerar código e preparar e-mail</button>
   `);
 
-  $('#modalContent').querySelector('[data-modal-action="create"]').onclick = () => {
+  const button = $('#modalContent').querySelector('[data-modal-action="create"]');
+  button.onclick = async () => {
     const data = {};
     $$('#modalContent [data-new]').forEach(el => data[el.dataset.new] = el.value.trim());
-    const required = [...CREATION_FLOW_FIELDS, ...hrFields];
-    const missing = required.filter(f => !data[f.key]).map(f => f.label);
-    if (missing.length) return toast('Preencha: ' + missing.join(', '), 'error');
 
-    const job = createJob(data, state.session);
-    closeModal();
-    adminView();
-    toast('Cargo criado com o código ' + job.code, 'success');
-    prepareMail(job.id);
+    button.disabled = true;
+    try {
+      const job = await API.createJob(data);
+      closeModal();
+      show('admin');
+      toast('Cargo criado com o código ' + job.code, 'success');
+      prepareMail(job.id);
+    } catch (err) {
+      toast(err.message, 'error');
+      button.disabled = false;
+    }
   };
 }
 
 function prepareMail(id) {
-  const job = getJob(id);
+  const job = API.getJob(id);
   const subject = encodeURIComponent(`Preenchimento de descritivo de cargo: ${job.name}`);
   const body = encodeURIComponent(
     `Olá, ${job.manager}!\n\n` +
     `Foi atribuído a você o preenchimento do descritivo do cargo ${job.name}.\n` +
-    `Prazo: ${formatDate(job.deadline)}\n` +
+    `Prazo: ${formatDate(job.deadline)}\n\n` +
+    `Acesse ${location.origin} e informe o código abaixo — não é necessário usuário nem senha.\n\n` +
     `Código de acesso: ${job.code}\n\n` +
-    `Acesse a ferramenta e informe somente esse código — não é necessário usuário nem senha.\n\n` +
     `Carreira & Recompensa`
   );
   window.location.href = `mailto:${job.managerEmail}?subject=${subject}&body=${body}`;
@@ -430,7 +450,7 @@ function prepareMail(id) {
 
 /* ========================== VISÃO: DOCUMENTO ============================= */
 function documentView() {
-  const job = getJob(state.jobId);
+  const job = API.getJob(state.jobId);
   if (!job) return show('jobs');
 
   const rows = SECTIONS[0].fields
@@ -449,7 +469,7 @@ function documentView() {
 
   $('#content').innerHTML = `
     ${job.status !== 'approved' ? '<div class="banner warn">Pré-visualização: este descritivo ainda não foi aprovado.</div>' : ''}
-    <div class="card document" id="printable">
+    <div class="card document">
       <div class="body">
         <h1 class="doc-title">MAPA DE CARREIRA</h1>
         <table class="doc-table">${rows}</table>
@@ -460,39 +480,41 @@ function documentView() {
 }
 
 /* ============================ AÇÕES (delegação) ========================== */
-function handleAction(action, id) {
-  const session = state.session;
-
-  const apply = (name, text) => {
-    const result = transition(id, name, session, text);
-    if (!result.ok) return toast(result.error, 'error');
-    toast('Fluxo atualizado', 'success');
-    state.view === 'job' ? jobView() : show(state.view);
-    renderNav();
+async function handleAction(action, id, element) {
+  /* Executa uma chamada à API cuidando de erro, botão travado e re-render. */
+  const run = async (promise, successMessage) => {
+    if (element) element.disabled = true;
+    try {
+      await promise;
+      if (successMessage) toast(successMessage, 'success');
+      show(state.view);
+    } catch (err) {
+      toast(err.message, 'error');
+      if (!API.session) location.reload();
+    } finally {
+      if (element) element.disabled = false;
+    }
   };
 
   switch (action) {
     case 'open':
       return show('job', id);
     case 'back':
-      return show(state.session.role === 'hr' ? 'admin' : state.session.role === 'approver' ? 'approvals' : 'jobs');
-    case 'save': {
-      const result = saveFields(id, session, collectFields());
-      return toast(result.ok ? 'Rascunho salvo' : result.error, result.ok ? 'success' : 'error');
-    }
-    case 'submit': {
-      const saved = saveFields(id, session, collectFields());
-      if (!saved.ok) return toast(saved.error, 'error');
-      return apply('submit');
-    }
+      return show(HOME[session().role]);
+    case 'save':
+      return run(API.saveFields(id, collectFields()), 'Rascunho salvo');
+    case 'submit':
+      return run(API.transition(id, 'submit', { fields: collectFields() }), 'Enviado para aprovação');
     case 'approve':
-      return apply('approve');
+      return run(API.transition(id, 'approve'), 'Descritivo aprovado');
     case 'validate':
-      return apply('validate');
+      return run(API.transition(id, 'validate'), 'Descritivo validado e aprovado');
     case 'return':
-      return askText('Devolver para correção', 'Descreva o que precisa ser ajustado', text => apply('return', text));
+      return askText('Devolver para correção', 'Descreva o que precisa ser ajustado',
+        text => run(API.transition(id, 'return', { text }), 'Devolvido para correção'));
     case 'reopen':
-      return askText('Reabrir para revisão', 'Motivo da reabertura', text => apply('reopen', text));
+      return askText('Reabrir para revisão', 'Motivo da reabertura',
+        text => run(API.transition(id, 'reopen', { text }), 'Reaberto para revisão'));
     case 'doc':
       return show('document', id);
     case 'print':
@@ -504,15 +526,21 @@ function handleAction(action, id) {
     case 'reset':
       return askText('Restaurar dados de teste', 'Digite RESTAURAR para confirmar', text => {
         if (text.trim().toUpperCase() !== 'RESTAURAR') return toast('Confirmação inválida', 'error');
-        resetDB();
-        adminView();
-        toast('Dados de teste restaurados', 'success');
+        run(API.reset(), 'Dados de teste restaurados');
       });
   }
 }
 
 document.addEventListener('click', e => {
   const el = e.target.closest('[data-action]');
-  if (!el) return;
-  handleAction(el.dataset.action, el.dataset.id);
+  if (el) handleAction(el.dataset.action, el.dataset.id, el);
 });
+
+/* ---------------------- Retomada de sessão ao recarregar ----------------- */
+if (API.token && API.session) {
+  enter().catch(() => {
+    API.clear();
+    $('#application').classList.add('hide');
+    $('#login').classList.remove('hide');
+  });
+}

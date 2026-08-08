@@ -1,16 +1,23 @@
 /*
- * model.js
+ * shared/model.js
  * -----------------------------------------------------------------------------
  * Fonte única de verdade do MODELO de descritivo de cargo (MAPA DE CARREIRA).
  *
- * A ordem das seções e dos campos aqui declarada é usada em três lugares:
- *   1. formulário de preenchimento  (app.js -> jobView)
- *   2. validação de envio/aprovação (app.js -> validate)
- *   3. documento final impresso     (app.js -> documentView)
+ * Carregado pelos dois lados:
+ *   - navegador (<script src="shared/model.js">)  -> expõe os nomes como globais
+ *   - servidor  (require('./shared/model.js'))    -> exporta o mesmo objeto
  *
- * Assim o fluxo nunca sai do modelo: basta alterar este arquivo para que
- * formulário, validação e documento acompanhem.
+ * A ordem das seções e dos campos declarada aqui é usada em quatro lugares:
+ *   1. formulário de preenchimento  (assets/app.js)
+ *   2. validação do fluxo           (shared/flow.js, executada no servidor)
+ *   3. permissão de escrita         (shared/flow.js, executada no servidor)
+ *   4. documento final impresso     (assets/app.js)
  */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else { root.Model = api; Object.assign(root, api); }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
 
 /* --------------------------------- Papéis -------------------------------- */
 const ROLES = {
@@ -74,22 +81,21 @@ const EDITABLE_STAGES = {
  * owner  : papel responsável por preencher o campo
  * type   : text | textarea | date
  * full   : ocupa a linha inteira do formulário
- * docHead: título do bloco no documento final (quando o campo vira uma seção)
+ * docHead: título do bloco no documento final
  */
 const SECTIONS = [
   {
     id: 'identificacao',
     title: 'Identificação do cargo',
     owner: 'hr',
-    layout: 'table',
     fields: [
-      { key: 'company',      label: 'Empresa',              type: 'text', required: true },
-      { key: 'jobCode',      label: 'Código do cargo',      type: 'text', required: true },
-      { key: 'name',         label: 'Nome do cargo',        type: 'text', required: true },
-      { key: 'cbo',          label: 'CBO',                  type: 'text', required: true },
-      { key: 'track',        label: 'Trilha de carreira',   type: 'text', required: true },
-      { key: 'creationDate', label: 'Data de criação',      type: 'date', required: true },
-      { key: 'reviewDate',   label: 'Data de revisão',      type: 'date', required: false,
+      { key: 'company',      label: 'Empresa',            type: 'text', required: true },
+      { key: 'jobCode',      label: 'Código do cargo',    type: 'text', required: true },
+      { key: 'name',         label: 'Nome do cargo',      type: 'text', required: true },
+      { key: 'cbo',          label: 'CBO',                type: 'text', required: true },
+      { key: 'track',        label: 'Trilha de carreira', type: 'text', required: true },
+      { key: 'creationDate', label: 'Data de criação',    type: 'date', required: true },
+      { key: 'reviewDate',   label: 'Data de revisão',    type: 'date', required: false,
         hint: 'Preenchida automaticamente na validação final de C&R.' }
     ]
   },
@@ -98,8 +104,8 @@ const SECTIONS = [
     title: 'Conteúdo do cargo',
     owner: 'manager',
     fields: [
-      { key: 'focus',            label: 'Foco de atuação',                        type: 'textarea', required: true, full: true, docHead: 'FOCO DE ATUAÇÃO' },
-      { key: 'mission',          label: 'Missão',                                 type: 'textarea', required: true, full: true, docHead: 'MISSÃO' },
+      { key: 'focus',            label: 'Foco de atuação', type: 'textarea', required: true, full: true, docHead: 'FOCO DE ATUAÇÃO' },
+      { key: 'mission',          label: 'Missão',          type: 'textarea', required: true, full: true, docHead: 'MISSÃO' },
       { key: 'responsibilities', label: 'Principais responsabilidades / atividades', type: 'textarea', required: true, full: true, docHead: 'PRINCIPAIS RESPONSABILIDADES / ATIVIDADES',
         hint: 'Uma responsabilidade por linha.' }
     ]
@@ -150,6 +156,14 @@ const SECTIONS = [
   }
 ];
 
+/* Campos do fluxo (não fazem parte do documento, mas são cadastrados por C&R). */
+const FLOW_FIELDS = [
+  { key: 'manager',      label: 'Responsável pelo preenchimento', type: 'text',  required: true },
+  { key: 'managerEmail', label: 'E-mail do responsável',          type: 'email', required: true },
+  { key: 'approver',     label: 'Aprovador',                      type: 'text',  required: true },
+  { key: 'deadline',     label: 'Prazo de preenchimento',         type: 'date',  required: true }
+];
+
 /* ------------------------------ Utilidades ------------------------------- */
 const ALL_FIELDS = SECTIONS.flatMap(s => s.fields.map(f => ({ ...f, owner: f.owner || s.owner, section: s.id })));
 
@@ -166,7 +180,7 @@ function missingFields(job, role) {
   return fieldsOf(role).filter(f => f.required && !String(job[f.key] || '').trim());
 }
 
-/* Percentual preenchido considerando apenas os campos do papel. */
+/* Percentual preenchido considerando apenas os campos obrigatórios do papel. */
 function completion(job, role) {
   const fields = fieldsOf(role).filter(f => f.required);
   if (!fields.length) return 100;
@@ -174,6 +188,23 @@ function completion(job, role) {
   return Math.round((done / fields.length) * 100);
 }
 
-function canEdit(job, role, stage) {
-  return (EDITABLE_STAGES[role] || []).includes(stage || job.status);
+function canEdit(job, role) {
+  return (EDITABLE_STAGES[role] || []).includes(job.status);
 }
+
+/* --------------------------------- Datas --------------------------------- */
+function isoToday() {
+  return new Date().toISOString().slice(0, 10);
+}
+function addDays(iso, days) {
+  const d = new Date(iso + 'T00:00:00');
+  d.setDate(d.getDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+
+return {
+  ROLES, STAGES, EDITABLE_STAGES, SECTIONS, FLOW_FIELDS, ALL_FIELDS,
+  fieldsOf, blankJob, missingFields, completion, canEdit, isoToday, addDays
+};
+
+});
