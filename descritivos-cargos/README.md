@@ -27,6 +27,9 @@ C&R cadastra na máquina dela e o gestor abre da dele, pelo IP da máquina que
 está rodando (`http://192.168.0.42:3000`, por exemplo — descubra o seu com
 `ipconfig`).
 
+Para deixar no ar de forma definitiva — subindo sozinho com a máquina, num
+servidor ou numa plataforma de hospedagem — veja **[HOSPEDAR.md](HOSPEDAR.md)**.
+
 ### Para só dar uma olhada: duplo clique no `index.html`
 
 A ferramenta inteira está dentro desse arquivo e funciona sem instalar nada.
@@ -224,7 +227,7 @@ dela, o gestor abre da máquina dele e enxerga o mesmo cargo.
 | `build.js` | Gera o `index.html` a partir de `src/`, `assets/` e `shared/` |
 | `src/index.html` | Estrutura da página (fonte) |
 | `server.js` | Servidor HTTP e rotas da API |
-| `server/db.js` | Leitura e gravação atômica de `data/` |
+| `server/db.js` | Leitura e gravação atômica de `data/` (ou de `DATA_DIR`) |
 | `server/auth.js` | Sessões abertas a partir dos códigos |
 | `server/mailer.js` | Cliente SMTP próprio (EHLO, STARTTLS, AUTH, DATA) |
 | `server/notify.js` | Textos dos avisos, disparo por etapa e cobrança de prazo |

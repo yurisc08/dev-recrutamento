@@ -17,7 +17,13 @@ const Flow = require('../shared/flow.js');
 const seedData = require('../shared/seed.js');
 
 const ROOT = path.join(__dirname, '..');
-const DATA_DIR = path.join(ROOT, 'data');
+
+/* Onde os dados são gravados. A variável DATA_DIR permite apontar para um disco
+ * persistente — necessário em plataformas de hospedagem cujo sistema de
+ * arquivos é apagado a cada nova implantação. */
+const DATA_DIR = process.env.DATA_DIR
+  ? path.resolve(process.env.DATA_DIR)
+  : path.join(ROOT, 'data');
 const DB_FILE = path.join(DATA_DIR, 'db.json');
 const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 

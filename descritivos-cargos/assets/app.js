@@ -175,22 +175,54 @@ function renderNav() {
   $$('#nav [data-view]').forEach(b => b.onclick = () => show(b.dataset.view));
 }
 
-function show(view, jobId) {
-  state.view = view;
-  if (jobId !== undefined) state.jobId = jobId;
+const VIEWS = {
+  jobs: jobsView,
+  approvals: approvalsView,
+  admin: adminView,
+  users: usersView,
+  config: configView,
+  job: jobView,
+  document: documentView
+};
+
+/* Telas de lista: podem ser redesenhadas a qualquer momento sem atrapalhar
+ * ninguém. A tela do cargo fica de fora porque tem texto sendo digitado. */
+const LIST_VIEWS = ['jobs', 'approvals', 'admin'];
+
+function render() {
   $('#topActions').innerHTML = '';
   renderNav();
   renderModeNote();
-  ({
-    jobs: jobsView,
-    approvals: approvalsView,
-    admin: adminView,
-    users: usersView,
-    config: configView,
-    job: jobView,
-    document: documentView
-  }[view] || jobsView)();
+  (VIEWS[state.view] || jobsView)();
 }
+
+function show(view, jobId) {
+  state.view = view;
+  if (jobId !== undefined) state.jobId = jobId;
+  render();
+
+  // Outra pessoa pode ter mexido no fluxo desde o último carregamento: ao
+  // abrir uma lista, busca o estado atual e redesenha se algo mudou.
+  if (LIST_VIEWS.includes(view)) refreshJobs();
+}
+
+/* Busca silenciosa: erro aqui não deve incomodar quem está usando. */
+function refreshJobs() {
+  if (API.mode !== 'server') return;
+  const viewAtStart = state.view;
+  API.loadJobs()
+    .then(() => { if (state.view === viewAtStart && LIST_VIEWS.includes(state.view)) render(); })
+    .catch(() => {});
+}
+
+/* Enquanto uma lista estiver aberta, acompanha o fluxo sem precisar recarregar
+ * a página — importante para quem fica esperando algo cair na fila. */
+setInterval(() => {
+  if (!API.session) return;
+  if (!LIST_VIEWS.includes(state.view)) return;
+  if (!$('#modal').classList.contains('hide')) return;
+  refreshJobs();
+}, 30000);
 
 /* ----------------------------- Componentes ------------------------------- */
 function badge(status) {
