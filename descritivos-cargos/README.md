@@ -12,11 +12,19 @@ O formulário, as validações e o documento final seguem o modelo
 **Extraia o zip primeiro.** Abrir arquivos de dentro do zip, pelo visualizador do
 Windows, não funciona: o navegador enxerga só um arquivo solto.
 
-### O jeito recomendado: `abrir.bat`
+### O jeito recomendado: `Descritivos.vbs`
 
-Duplo clique em **`abrir.bat`** (Windows) ou `./abrir.sh` (Linux/macOS). Ele
-sobe o servidor e abre o navegador em <http://localhost:3000>. Deixe a janela
-preta aberta enquanto estiver usando; fechá-la desliga o servidor.
+Duplo clique em **`Descritivos.vbs`** (Windows). Ele sobe a ferramenta **sem
+janela nenhuma** e abre o navegador em <http://localhost:3000>. Para encerrar,
+use **`Parar.vbs`**.
+
+Rodando **`Instalar atalhos.vbs`** uma vez, você ganha um atalho na Área de
+Trabalho e a ferramenta passa a subir sozinha ao ligar o computador — sem
+Agendador de Tarefas e sem permissão de administrador.
+
+> Se a sua empresa bloquear arquivos `.vbs`, use o **`abrir.bat`**, que faz o
+> mesmo mas deixa uma janela preta aberta (fechá-la desliga o servidor).
+> No Linux/macOS, `./abrir.sh`.
 
 Precisa do **Node.js 18 ou mais novo** — se não tiver, baixe a versão LTS em
 <https://nodejs.org> (instalação padrão, tudo "avançar"). Não existe
@@ -27,8 +35,12 @@ C&R cadastra na máquina dela e o gestor abre da dele, pelo IP da máquina que
 está rodando (`http://192.168.0.42:3000`, por exemplo — descubra o seu com
 `ipconfig`).
 
-Para deixar no ar de forma definitiva — subindo sozinho com a máquina, num
-servidor ou numa plataforma de hospedagem — veja **[HOSPEDAR.md](HOSPEDAR.md)**.
+Dois caminhos a partir daqui:
+
+- **Testar com gestores de fora da rede, sem contratar nada** →
+  **[PILOTO-INTERNET.md](PILOTO-INTERNET.md)** (túnel a partir da sua máquina).
+- **Deixar no ar de forma definitiva**, num servidor ou plataforma →
+  **[HOSPEDAR.md](HOSPEDAR.md)**.
 
 ### Para só dar uma olhada: duplo clique no `index.html`
 
@@ -257,6 +269,9 @@ dela, o gestor abre da máquina dele e enxerga o mesmo cargo.
 | Arquivo | Responsabilidade |
 | --- | --- |
 | `index.html` | **Arquivo único gerado**, com tudo embutido — é o que se abre |
+| `Descritivos.vbs` | Inicia a ferramenta sem janela (Windows) |
+| `Parar.vbs` | Encerra a ferramenta |
+| `Instalar atalhos.vbs` | Cria o atalho na Área de Trabalho e o início automático |
 | `build.js` | Gera o `index.html` a partir de `src/`, `assets/` e `shared/` |
 | `src/index.html` | Estrutura da página (fonte) |
 | `server.js` | Servidor HTTP e rotas da API |
