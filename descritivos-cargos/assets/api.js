@@ -12,6 +12,7 @@ const API = {
   token: sessionStorage.getItem('dc_token') || null,
   session: JSON.parse(sessionStorage.getItem('dc_session') || 'null'),
   jobs: [],
+  smtpReady: false,
 
   async request(method, path, body) {
     let response;
@@ -70,6 +71,7 @@ const API = {
   async loadJobs() {
     const data = await this.request('GET', '/api/jobs');
     this.jobs = data.jobs;
+    this.smtpReady = Boolean(data.smtpReady);
     return this.jobs;
   },
 
@@ -84,7 +86,7 @@ const API = {
   async createJob(job) {
     const data = await this.request('POST', '/api/jobs', { job });
     await this.loadJobs();
-    return data.job;
+    return data;
   },
 
   async saveFields(id, fields) {
@@ -93,8 +95,57 @@ const API = {
   },
 
   async transition(id, action, { text, fields } = {}) {
-    await this.request('POST', `/api/jobs/${encodeURIComponent(id)}/transition`, { action, text, fields });
+    const data = await this.request('POST', `/api/jobs/${encodeURIComponent(id)}/transition`, { action, text, fields });
     await this.loadJobs();
+    return data;
+  },
+
+  resendCode(id) {
+    return this.request('POST', `/api/jobs/${encodeURIComponent(id)}/resend-code`);
+  },
+
+  /* Baixa o CSV passando pelo cabeçalho de sessão. */
+  async exportCsv() {
+    const response = await fetch('/api/export.csv', { headers: { 'X-Session': this.token } });
+    if (!response.ok) throw new Error('Não foi possível exportar');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = Object.assign(document.createElement('a'), {
+      href: url,
+      download: `descritivos-${new Date().toISOString().slice(0, 10)}.csv`
+    });
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
+
+  /* ------------------------------- Usuários ------------------------------ */
+  listUsers() {
+    return this.request('GET', '/api/users').then(d => d.users);
+  },
+  createUser(user) {
+    return this.request('POST', '/api/users', user);
+  },
+  updateUser(email, patch) {
+    return this.request('PATCH', `/api/users/${encodeURIComponent(email)}`, patch);
+  },
+  deleteUser(email) {
+    return this.request('DELETE', `/api/users/${encodeURIComponent(email)}`);
+  },
+
+  /* ----------------------------- Configurações --------------------------- */
+  loadConfig() {
+    return this.request('GET', '/api/config').then(d => d.config);
+  },
+  saveConfig(config) {
+    return this.request('PATCH', '/api/config', { config }).then(d => d.config);
+  },
+  testMail(to) {
+    return this.request('POST', '/api/config/test', { to });
+  },
+  runReminders() {
+    return this.request('POST', '/api/reminders/run');
   },
 
   async reset() {

@@ -66,6 +66,12 @@ const STAGES = {
     tone: 'approved',
     owner: null,
     hint: 'Descritivo aprovado. O documento já pode ser gerado.'
+  },
+  canceled: {
+    label: 'Cancelado',
+    tone: 'canceled',
+    owner: null,
+    hint: 'Cargo cancelado por Carreira & Recompensa. Pode ser reaberto.'
   }
 };
 

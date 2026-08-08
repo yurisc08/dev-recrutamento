@@ -86,6 +86,7 @@ button,input,textarea,select{font:inherit}
 .status.review{background:var(--blue-bg);color:var(--blue)}
 .status.returned{background:var(--red-bg);color:var(--red)}
 .status.draft{background:var(--amber-bg);color:var(--amber)}
+.status.canceled{background:#e9edf4;color:#54607a}
 .tag{display:inline-block;padding:4px 9px;border-radius:8px;font-size:12px;font-weight:600;background:#eef1f7;color:var(--muted)}
 .tag.soon{background:var(--amber-bg);color:var(--amber)}
 .tag.late{background:var(--red-bg);color:var(--red)}
@@ -111,9 +112,24 @@ button,input,textarea,select{font:inherit}
 .timeline li:last-child{padding-bottom:0}
 .timeline li::before{content:"";position:absolute;left:-21px;top:5px;width:9px;height:9px;border-radius:50%;background:var(--o)}
 .metrics{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:16px}
-.metric{background:#fff;border-radius:var(--radius);padding:14px 16px;box-shadow:0 12px 30px #18233b0d}
+.metric{background:#fff;border-radius:var(--radius);padding:14px 16px;box-shadow:0 12px 30px #18233b0d;cursor:pointer;border:2px solid transparent}
+.metric:hover{border-color:#e2e7f0}
+.metric.selected{border-color:var(--o)}
 .metric b{display:block;font-size:26px}
 .metric span{color:var(--muted);font-size:13px}
+
+/* ------------------------- Busca, tabelas, opções ------------------------ */
+.toolbar{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin-bottom:14px}
+.toolbar input{flex:1 1 280px;padding:11px 13px;border:1px solid var(--line);border-radius:10px;background:#fff}
+.toolbar input:focus{outline:2px solid var(--o);outline-offset:1px}
+table.list{width:100%;border-collapse:collapse}
+table.list th{text-align:left;font-size:12px;text-transform:uppercase;letter-spacing:.04em;color:var(--muted);padding:0 10px 8px}
+table.list td{border-top:1px solid var(--line);padding:12px 10px;vertical-align:middle}
+table.list td.right{text-align:right;white-space:nowrap}
+table.list .btn{padding:8px 12px}
+.field select{width:100%;padding:11px 12px;border:1px solid var(--line);border-radius:10px;background:#fff;color:var(--ink)}
+.check{display:flex;gap:9px;align-items:flex-start;margin:10px 0;font-size:14px;line-height:1.35;cursor:pointer}
+.check input{margin-top:2px;width:17px;height:17px;accent-color:var(--o);flex:0 0 auto}
 
 /* ------------------------------- Overlays ------------------------------- */
 .modal{position:fixed;inset:0;background:#0009;display:grid;place-items:center;padding:20px;z-index:40}

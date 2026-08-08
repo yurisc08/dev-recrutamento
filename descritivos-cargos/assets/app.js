@@ -123,7 +123,13 @@ $('#logout').onclick = async () => {
 const NAV = {
   manager:  [{ view: 'jobs', label: 'Meus descritivos' }],
   approver: [{ view: 'approvals', label: 'Aprovações' }, { view: 'jobs', label: 'Cargos' }],
-  hr:       [{ view: 'approvals', label: 'Validações' }, { view: 'jobs', label: 'Cargos' }, { view: 'admin', label: 'Administração' }]
+  hr:       [
+    { view: 'approvals', label: 'Validações' },
+    { view: 'jobs', label: 'Cargos' },
+    { view: 'admin', label: 'Administração' },
+    { view: 'users', label: 'Usuários' },
+    { view: 'config', label: 'Configurações' }
+  ]
 };
 
 const HOME = { manager: 'jobs', approver: 'approvals', hr: 'admin' };
@@ -155,7 +161,15 @@ function show(view, jobId) {
   if (jobId !== undefined) state.jobId = jobId;
   $('#topActions').innerHTML = '';
   renderNav();
-  ({ jobs: jobsView, approvals: approvalsView, admin: adminView, job: jobView, document: documentView }[view] || jobsView)();
+  ({
+    jobs: jobsView,
+    approvals: approvalsView,
+    admin: adminView,
+    users: usersView,
+    config: configView,
+    job: jobView,
+    document: documentView
+  }[view] || jobsView)();
 }
 
 /* ----------------------------- Componentes ------------------------------- */
@@ -293,8 +307,11 @@ function jobActions(job, role, editable) {
     buttons.push(`<button class="btn danger" data-action="return" data-id="${job.id}">Devolver</button>`);
     buttons.push(`<button class="btn primary" data-action="validate" data-id="${job.id}">Validar e aprovar</button>`);
   }
-  if (role === 'hr' && job.status === 'approved') {
-    buttons.push(`<button class="btn outline" data-action="reopen" data-id="${job.id}">Reabrir para revisão</button>`);
+  if (role === 'hr' && ['approved', 'canceled'].includes(job.status)) {
+    buttons.push(`<button class="btn outline" data-action="reopen" data-id="${job.id}">Reabrir para preenchimento</button>`);
+  }
+  if (role === 'hr' && job.status !== 'canceled') {
+    buttons.push(`<button class="btn danger" data-action="cancel" data-id="${job.id}">Cancelar cargo</button>`);
   }
   if (job.status === 'approved') {
     buttons.push(`<button class="btn primary" data-action="doc" data-id="${job.id}">Ver documento</button>`);
@@ -353,6 +370,8 @@ function approvalsView() {
 }
 
 /* ========================= VISÃO: ADMINISTRAÇÃO ========================== */
+const adminFilter = { term: '', status: '' };
+
 function adminView() {
   if (session().role !== 'hr') return show('approvals');
   const jobs = API.jobs;
@@ -362,28 +381,67 @@ function adminView() {
   $('#subtitle').textContent = `${jobs.length} cargo(s) cadastrados`;
   $('#topActions').innerHTML = `
     <button class="btn primary" data-action="new">Novo cargo</button>
+    <button class="btn secondary" data-action="export">Exportar CSV</button>
     <button class="btn outline" data-action="reset">Restaurar dados de teste</button>`;
 
   $('#content').innerHTML = `
+    ${API.smtpReady ? '' : `<div class="banner warn">O envio de e-mails ainda não está configurado — os avisos do fluxo não saem sozinhos. Ajuste em <b>Configurações</b>.</div>`}
     <div class="metrics">${byStage.map(s => `
-      <div class="metric"><b>${s.n}</b><span>${STAGES[s.k].label}</span></div>`).join('')}</div>
-    <div class="cards">${jobs.map(j => `
-      <article class="job">
-        <div class="job-head">
-          <div>
-            <b>${esc(j.name)}</b>
-            <p class="muted">${esc(j.manager)} • ${esc(j.managerEmail)}</p>
-            <p class="muted">Código de acesso: <b class="code">${esc(j.code)}</b></p>
+      <div class="metric ${adminFilter.status === s.k ? 'selected' : ''}" data-filter="${s.k}">
+        <b>${s.n}</b><span>${STAGES[s.k].label}</span>
+      </div>`).join('')}</div>
+    <div class="toolbar">
+      <input id="adminSearch" placeholder="Buscar por cargo, responsável, e-mail ou código" value="${esc(adminFilter.term)}">
+      ${adminFilter.status ? `<button class="btn outline" data-filter="">Limpar filtro: ${STAGES[adminFilter.status].label}</button>` : ''}
+    </div>
+    <div id="adminList"></div>`;
+
+  $('#adminSearch').oninput = e => { adminFilter.term = e.target.value; renderAdminList(); };
+  $$('#content [data-filter]').forEach(el => el.onclick = () => {
+    adminFilter.status = el.dataset.filter === adminFilter.status ? '' : el.dataset.filter;
+    adminView();
+    $('#adminSearch').focus();
+  });
+
+  renderAdminList();
+}
+
+function renderAdminList() {
+  const term = adminFilter.term.trim().toLowerCase();
+  const jobs = API.jobs.filter(j => {
+    if (adminFilter.status && j.status !== adminFilter.status) return false;
+    if (!term) return true;
+    return [j.name, j.manager, j.managerEmail, j.code, j.jobCode].some(v => String(v || '').toLowerCase().includes(term));
+  });
+
+  $('#adminList').innerHTML = jobs.length
+    ? `<div class="cards">${jobs.map(j => {
+        const lastMail = (j.notifications || []).at(-1);
+        const mailNote = lastMail
+          ? `<span class="tag ${lastMail.ok ? '' : 'late'}">${lastMail.ok ? 'Último e-mail enviado' : 'Falha no envio'} • ${formatDateTime(lastMail.at)}</span>`
+          : '';
+        return `
+        <article class="job">
+          <div class="job-head">
+            <div>
+              <b>${esc(j.name)}</b>
+              <p class="muted">${esc(j.manager)} • ${esc(j.managerEmail)}</p>
+              <p class="muted">Código de acesso: <b class="code">${esc(j.code)}</b></p>
+            </div>
+            ${badge(j.status)}
           </div>
-          ${badge(j.status)}
-        </div>
-        <div class="job-meta">${deadlineTag(j)}</div>
-        <div class="actions mt-sm">
-          <button class="btn primary" data-action="open" data-id="${j.id}">Abrir</button>
-          <button class="btn secondary" data-action="mail" data-id="${j.id}">Preparar e-mail</button>
-          <button class="btn outline" data-action="doc" data-id="${j.id}">Documento</button>
-        </div>
-      </article>`).join('')}</div>`;
+          <div class="job-meta">${deadlineTag(j)}${mailNote}</div>
+          <div class="actions mt-sm">
+            <button class="btn primary" data-action="open" data-id="${j.id}">Abrir</button>
+            <button class="btn secondary" data-action="${API.smtpReady ? 'resend' : 'mail'}" data-id="${j.id}">${API.smtpReady ? 'Reenviar código' : 'Preparar e-mail'}</button>
+            <button class="btn outline" data-action="doc" data-id="${j.id}">Documento</button>
+            ${j.status === 'canceled'
+              ? `<button class="btn outline" data-action="reopen" data-id="${j.id}">Reabrir</button>`
+              : `<button class="btn danger" data-action="cancel" data-id="${j.id}">Cancelar</button>`}
+          </div>
+        </article>`;
+      }).join('')}</div>`
+    : `<div class="card"><div class="body empty">Nenhum cargo encontrado com esse filtro.</div></div>`;
 }
 
 /* Valores sugeridos no cadastro, para agilizar o uso no dia a dia. */
@@ -422,11 +480,17 @@ function newJobModal() {
 
     button.disabled = true;
     try {
-      const job = await API.createJob(data);
+      const { job, mail } = await API.createJob(data);
       closeModal();
       show('admin');
-      toast('Cargo criado com o código ' + job.code, 'success');
-      prepareMail(job.id);
+
+      if (mail && mail.sent) {
+        toast(`Cargo criado (${job.code}) e código enviado para ${job.managerEmail}`, 'success');
+      } else {
+        // Sem envio automático, abre o e-mail já escrito no cliente da pessoa.
+        toast('Cargo criado com o código ' + job.code, 'success');
+        prepareMail(job.id);
+      }
     } catch (err) {
       toast(err.message, 'error');
       button.disabled = false;
@@ -446,6 +510,177 @@ function prepareMail(id) {
     `Carreira & Recompensa`
   );
   window.location.href = `mailto:${job.managerEmail}?subject=${subject}&body=${body}`;
+}
+
+/* =========================== VISÃO: USUÁRIOS ============================= */
+/*
+ * Só C&R chega aqui. São os acessos internos — aprovadores e a própria equipe
+ * de C&R. Responsáveis pelo preenchimento não entram nesta lista: eles usam o
+ * código de acesso do cargo.
+ */
+async function usersView() {
+  if (session().role !== 'hr') return show('approvals');
+
+  $('#title').textContent = 'Usuários internos';
+  $('#subtitle').textContent = 'Aprovadores e equipe de Carreira & Recompensa';
+  $('#topActions').innerHTML = `<button class="btn primary" data-action="user-new">Novo usuário</button>`;
+  $('#content').innerHTML = `<div class="card"><div class="body empty">Carregando…</div></div>`;
+
+  let users;
+  try {
+    users = await API.listUsers();
+  } catch (err) {
+    return toast(err.message, 'error');
+  }
+
+  $('#content').innerHTML = `
+    <div class="banner">Os responsáveis pelo preenchimento não precisam de usuário: eles entram com o código de acesso enviado por e-mail.</div>
+    <div class="card">
+      <div class="body">
+        <table class="list">
+          <thead><tr><th>Nome</th><th>E-mail</th><th>Perfil</th><th></th></tr></thead>
+          <tbody>${users.map(u => `
+            <tr>
+              <td><b>${esc(u.name)}</b></td>
+              <td>${esc(u.email)}</td>
+              <td>${ROLES[u.role].label}</td>
+              <td class="right">
+                <button class="btn secondary" data-action="user-edit" data-email="${esc(u.email)}">Editar</button>
+                <button class="btn danger" data-action="user-delete" data-email="${esc(u.email)}">Excluir</button>
+              </td>
+            </tr>`).join('')}
+          </tbody>
+        </table>
+      </div>
+    </div>`;
+
+  // Guarda os dados para o modal de edição não precisar buscar de novo.
+  usersView.cache = users;
+}
+
+function userModal(user) {
+  const editing = Boolean(user);
+  openModal(`
+    <h2>${editing ? 'Editar usuário' : 'Novo usuário'}</h2>
+    <div class="grid">
+      <div class="field"><label for="uName">Nome <span class="req">*</span></label>
+        <input id="uName" value="${esc(user ? user.name : '')}"></div>
+      <div class="field"><label for="uEmail">E-mail <span class="req">*</span></label>
+        <input id="uEmail" type="email" value="${esc(user ? user.email : '')}" ${editing ? 'disabled' : ''}></div>
+      <div class="field"><label for="uRole">Perfil <span class="req">*</span></label>
+        <select id="uRole">
+          <option value="approver" ${user && user.role === 'approver' ? 'selected' : ''}>Aprovador</option>
+          <option value="hr" ${user && user.role === 'hr' ? 'selected' : ''}>Carreira &amp; Recompensa</option>
+        </select></div>
+      <div class="field"><label for="uPassword">Senha ${editing ? '' : '<span class="req">*</span>'}</label>
+        <input id="uPassword" type="password" placeholder="${editing ? 'deixe em branco para manter' : 'mínimo 8 caracteres, com letras e números'}"></div>
+    </div>
+    <p class="muted">O nome do aprovador precisa ser exatamente o mesmo informado no cadastro do cargo — é por ele que a fila de aprovação encontra os descritivos.</p>
+    <button class="btn primary full mt" data-modal-action="save-user">Salvar</button>
+  `);
+
+  const button = $('#modalContent').querySelector('[data-modal-action="save-user"]');
+  button.onclick = async () => {
+    const data = {
+      name: $('#uName').value.trim(),
+      email: $('#uEmail').value.trim(),
+      role: $('#uRole').value,
+      password: $('#uPassword').value
+    };
+
+    button.disabled = true;
+    try {
+      if (editing) {
+        const patch = { name: data.name, role: data.role };
+        if (data.password) patch.password = data.password;
+        await API.updateUser(user.email, patch);
+      } else {
+        await API.createUser(data);
+      }
+      closeModal();
+      toast('Usuário salvo', 'success');
+      usersView();
+    } catch (err) {
+      toast(err.message, 'error');
+      button.disabled = false;
+    }
+  };
+}
+
+/* ========================= VISÃO: CONFIGURAÇÕES ========================== */
+async function configView() {
+  if (session().role !== 'hr') return show('approvals');
+
+  $('#title').textContent = 'Configurações';
+  $('#subtitle').textContent = 'Envio de e-mail, avisos do fluxo e cobrança de prazo';
+  $('#content').innerHTML = `<div class="card"><div class="body empty">Carregando…</div></div>`;
+
+  let config;
+  try {
+    config = await API.loadConfig();
+  } catch (err) {
+    return toast(err.message, 'error');
+  }
+
+  const checked = value => (value ? 'checked' : '');
+  $('#content').innerHTML = `
+    <div class="card">
+      <div class="head"><b>Endereço e avisos</b>${config.smtpReady ? '<span class="status approved">E-mail configurado</span>' : '<span class="status returned">E-mail não configurado</span>'}</div>
+      <div class="body">
+        <div class="grid">
+          <div class="field full">
+            <label for="cAppUrl">Endereço da ferramenta</label>
+            <input id="cAppUrl" value="${esc(config.appUrl)}" placeholder="http://192.168.0.42:3000">
+            <small class="muted">Vai nos e-mails, para a pessoa clicar e chegar até aqui. Use o IP ou o nome desta máquina na rede.</small>
+          </div>
+        </div>
+        <label class="check"><input type="checkbox" id="cNotifications" ${checked(config.notificationsEnabled)}> Enviar avisos automáticos a cada etapa do fluxo</label>
+        <label class="check"><input type="checkbox" id="cReminders" ${checked(config.remindersEnabled)}> Cobrar quem está com pendência perto do prazo</label>
+        <div class="grid">
+          <div class="field">
+            <label for="cReminderDays">Começar a cobrar a quantos dias do prazo</label>
+            <input id="cReminderDays" type="number" min="0" max="30" value="${esc(config.reminderDaysBefore)}">
+            <small class="muted">Um lembrete por cargo por dia, incluindo os atrasados.</small>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="head"><b>Servidor de e-mail (SMTP)</b></div>
+      <div class="body">
+        <div class="grid">
+          <div class="field"><label for="cHost">Servidor</label><input id="cHost" value="${esc(config.smtp.host)}" placeholder="smtp.empresa.com"></div>
+          <div class="field"><label for="cPort">Porta</label><input id="cPort" type="number" value="${esc(config.smtp.port)}"></div>
+          <div class="field"><label for="cUser">Usuário</label><input id="cUser" value="${esc(config.smtp.user)}" autocomplete="off"></div>
+          <div class="field"><label for="cPass">Senha</label><input id="cPass" type="password" autocomplete="new-password" placeholder="${config.smtp.hasPassword ? 'gravada — deixe em branco para manter' : 'senha do e-mail'}"></div>
+          <div class="field full"><label for="cFrom">Remetente</label><input id="cFrom" value="${esc(config.smtp.from)}" placeholder="Carreira &amp; Recompensa &lt;rh@empresa.com&gt;"></div>
+        </div>
+        <label class="check"><input type="checkbox" id="cSecure" ${checked(config.smtp.secure)}> Conexão TLS direta (porta 465). Deixe desmarcado na porta 587, que usa STARTTLS.</label>
+        <div class="actions mt">
+          <button class="btn primary" data-action="config-save">Salvar configurações</button>
+          <button class="btn secondary" data-action="config-test">Enviar e-mail de teste</button>
+          <button class="btn outline" data-action="reminders-run">Rodar cobrança agora</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+function collectConfig() {
+  return {
+    appUrl: $('#cAppUrl').value.trim(),
+    notificationsEnabled: $('#cNotifications').checked,
+    remindersEnabled: $('#cReminders').checked,
+    reminderDaysBefore: Number($('#cReminderDays').value) || 0,
+    smtp: {
+      host: $('#cHost').value.trim(),
+      port: Number($('#cPort').value) || 587,
+      user: $('#cUser').value.trim(),
+      pass: $('#cPass').value,
+      from: $('#cFrom').value.trim(),
+      secure: $('#cSecure').checked
+    }
+  };
 }
 
 /* ========================== VISÃO: DOCUMENTO ============================= */
@@ -481,12 +716,21 @@ function documentView() {
 
 /* ============================ AÇÕES (delegação) ========================== */
 async function handleAction(action, id, element) {
+  const email = element ? element.dataset.email : null;
+
   /* Executa uma chamada à API cuidando de erro, botão travado e re-render. */
   const run = async (promise, successMessage) => {
     if (element) element.disabled = true;
     try {
-      await promise;
-      if (successMessage) toast(successMessage, 'success');
+      const result = await promise;
+      const mail = result && result.mail;
+      if (mail && mail.failed) {
+        toast(`${successMessage || 'Feito'} — mas ${mail.failed} e-mail(s) não saíram. Confira em Configurações.`, 'error');
+      } else if (result && result.message) {
+        toast(result.message, 'success');
+      } else if (successMessage) {
+        toast(successMessage, 'success');
+      }
       show(state.view);
     } catch (err) {
       toast(err.message, 'error');
@@ -515,14 +759,41 @@ async function handleAction(action, id, element) {
     case 'reopen':
       return askText('Reabrir para revisão', 'Motivo da reabertura',
         text => run(API.transition(id, 'reopen', { text }), 'Reaberto para revisão'));
+    case 'cancel':
+      return askText('Cancelar cargo', 'Motivo do cancelamento',
+        text => run(API.transition(id, 'cancel', { text }), 'Cargo cancelado'));
     case 'doc':
       return show('document', id);
     case 'print':
       return window.print();
     case 'mail':
       return prepareMail(id);
+    case 'resend':
+      return run(API.resendCode(id));
+    case 'export':
+      return run(API.exportCsv(), 'Arquivo gerado');
     case 'new':
       return newJobModal();
+
+    /* ------------------------------ Usuários ---------------------------- */
+    case 'user-new':
+      return userModal();
+    case 'user-edit':
+      return userModal((usersView.cache || []).find(u => u.email === email));
+    case 'user-delete':
+      return askText('Excluir usuário', `Digite EXCLUIR para remover o acesso de ${email}`, text => {
+        if (text.trim().toUpperCase() !== 'EXCLUIR') return toast('Confirmação inválida', 'error');
+        run(API.deleteUser(email), 'Usuário excluído');
+      });
+
+    /* --------------------------- Configurações -------------------------- */
+    case 'config-save':
+      return run(API.saveConfig(collectConfig()), 'Configurações salvas');
+    case 'config-test':
+      return askText('Enviar e-mail de teste', 'Para qual endereço?', to => run(API.testMail(to.trim())));
+    case 'reminders-run':
+      return run(API.runReminders());
+
     case 'reset':
       return askText('Restaurar dados de teste', 'Digite RESTAURAR para confirmar', text => {
         if (text.trim().toUpperCase() !== 'RESTAURAR') return toast('Confirmação inválida', 'error');

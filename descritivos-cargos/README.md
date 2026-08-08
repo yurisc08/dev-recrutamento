@@ -14,10 +14,11 @@ cd descritivos-cargos
 node server.js          # ou: npm start
 ```
 
-Abra <http://localhost:3000>.
+Abra <http://localhost:3000>. Não tem `npm install`, não tem build.
+Precisa de Node 18 ou mais novo (`node -v` para conferir).
 
-Para que outras pessoas acessem, elas usam o **IP da máquina que está rodando o
-servidor** — `http://192.168.0.42:3000`, por exemplo. Para descobrir esse IP:
+Para outras pessoas acessarem, elas usam o **IP da máquina que roda o servidor**
+— `http://192.168.0.42:3000`, por exemplo. Para descobrir esse IP:
 
 | Sistema | Comando |
 | --- | --- |
@@ -29,16 +30,20 @@ enquanto as pessoas preenchem, e o firewall dele precisa liberar a porta 3000
 (no Windows, a primeira execução costuma abrir a caixa "Permitir acesso").
 Para trocar a porta: `PORT=8080 node server.js`.
 
-## Onde ficam os dados
+## Primeiros passos
 
-Em `data/db.json`, no computador que roda o servidor — é isso que faz o fluxo
-funcionar entre pessoas: C&R cria o cargo na máquina dela, o gestor abre da
-máquina dele e enxerga o mesmo cargo.
-
-- **Backup**: copie `data/db.json`. É o arquivo inteiro.
-- **Recomeçar do zero**: apague a pasta `data/` e suba o servidor de novo, ou
-  use **Restaurar dados de teste** em Administração.
-- A pasta `data/` está no `.gitignore` — dados reais não vão para o repositório.
+1. Entre como C&R (`rh@empresa.com` / `Rh@2026!`).
+2. Em **Configurações**, preencha o **endereço da ferramenta** (o IP acima, que
+   vai nos e-mails) e os dados do **servidor de e-mail**. Clique em
+   *Enviar e-mail de teste* para confirmar antes de usar para valer.
+3. Em **Usuários**, troque a senha dos dois acessos de demonstração e cadastre os
+   aprovadores reais. O nome do aprovador precisa ser **igual** ao que você
+   informa no cadastro do cargo — é por ele que a fila de aprovação encontra os
+   descritivos.
+4. Em **Administração**, use *Restaurar dados de teste* para limpar os cargos de
+   demonstração antes de começar (isso também recria os usuários de teste, então
+   faça isso **antes** do passo 3).
+5. Crie o primeiro cargo em **Novo cargo**.
 
 ## Acessos de teste
 
@@ -48,18 +53,17 @@ máquina dele e enxerga o mesmo cargo.
 | Aprovador | `aprovador@empresa.com` / `Ap@2026!` |
 | Carreira & Recompensa | `rh@empresa.com` / `Rh@2026!` |
 
-Os usuários internos ficam em `data/db.json` (`users`). Para uso real, troque as
-senhas ali e reinicie o servidor.
-
 ## O fluxo
 
 ```
 C&R cria o cargo (identificação + formação + comportamentais)
-        │  gera o código de acesso e prepara o e-mail ao responsável
+        │  gera o código de acesso e envia o e-mail ao responsável
         ▼
    editing ──enviar──▶ manager_review ──aprovar──▶ hr_review ──validar──▶ approved
       ▲                     │                          │                     │
       └──── returned ◀──devolver───────────────devolver─┘        documento / PDF
+
+   qualquer etapa ──cancelar (C&R)──▶ canceled ──reabrir (C&R)──▶ editing
 ```
 
 | Etapa | Rótulo | Quem age |
@@ -69,15 +73,36 @@ C&R cria o cargo (identificação + formação + comportamentais)
 | `manager_review` | Aguardando aprovação | Aprovador |
 | `hr_review` | Validação de C&R | Carreira & Recompensa |
 | `approved` | Aprovado | — (documento liberado) |
+| `canceled` | Cancelado | — (pode ser reaberto por C&R) |
 
 Regras aplicadas em `shared/flow.js`, **no servidor**:
 
 - **Enviar para aprovação** exige todos os campos obrigatórios do responsável.
-- **Devolver** exige justificativa, que vira comentário e entra no histórico.
+- **Devolver**, **cancelar** e **reabrir** exigem justificativa, que vira
+  comentário e entra no histórico.
 - **Validar e aprovar** revalida os campos dos dois papéis e grava a
   *Data de revisão* automaticamente.
-- **Reabrir para revisão** (só C&R, só em cargos aprovados) devolve o cargo para
-  preenchimento com justificativa.
+- Cargo cancelado sai do ar para o responsável: o código deixa de dar acesso a
+  ele.
+
+### E-mails automáticos
+
+Configurado o SMTP, a ferramenta envia sozinha em cada passo:
+
+| Quando | Para quem | Contém |
+| --- | --- | --- |
+| Cargo criado | Responsável | prazo, endereço e **código de acesso** |
+| Enviado para aprovação | Aprovador | quem enviou e o que analisar |
+| Aprovado pelo aprovador | Equipe de C&R | entrou na fila de validação |
+| Devolvido | Responsável | **motivo** e código de acesso |
+| Aprovado por C&R | Responsável | aviso de conclusão |
+| Reaberto / cancelado | Responsável | motivo |
+| Prazo perto ou vencido | Quem está devendo a ação | lembrete, 1× por dia |
+
+Se o envio falhar, **o fluxo não trava**: a ação já foi gravada e a falha fica
+registrada no cargo, visível em Administração ("Falha no envio"). Sem SMTP
+configurado, nada é enviado e o botão **Preparar e-mail** abre o e-mail já
+escrito no cliente da própria pessoa (Outlook, Gmail…), para envio manual.
 
 ### Código de acesso
 
@@ -85,11 +110,8 @@ O responsável entra só com o código — sem usuário nem senha. Ele é sortea
 (`DC-XXXX-XXXX`, alfabeto sem `0/O` e `1/I` para ser ditado por telefone sem
 erro) e é **por pessoa, não por cargo**: se C&R cadastrar três cargos para o
 mesmo e-mail, os três caem sob o mesmo código e aparecem juntos quando o gestor
-entra.
-
-O botão **Preparar e-mail** abre o cliente de e-mail padrão com a mensagem
-pronta — assunto, prazo, endereço do servidor e o código. O envio em si é feito
-pelo seu e-mail de sempre; a ferramenta não manda e-mail sozinha.
+entra. O botão **Reenviar código** manda tudo de novo quando a pessoa perde o
+e-mail.
 
 ## Divisão do modelo por papel
 
@@ -107,21 +129,54 @@ Campos que não pertencem ao papel logado aparecem bloqueados (🔒) na tela —
 **recusados pelo servidor** mesmo que alguém tente enviá-los por fora. O
 aprovador nunca edita conteúdo: apenas aprova ou devolve.
 
+## O que cada tela faz
+
+| Tela | Quem vê | Para quê |
+| --- | --- | --- |
+| Meus descritivos | Responsável | preencher e enviar seus cargos |
+| Aprovações | Aprovador | aprovar ou devolver, com o descritivo inteiro à vista |
+| Validações | C&R | validação final |
+| Cargos | Aprovador e C&R | consulta |
+| Administração | C&R | criar cargo, buscar, filtrar por etapa, reenviar código, cancelar, exportar CSV |
+| Usuários | C&R | cadastrar aprovadores e equipe de C&R, trocar senhas |
+| Configurações | C&R | e-mail (SMTP), avisos automáticos e cobrança de prazo |
+| Documento | todos (aprovado) | MAPA DE CARREIRA pronto para imprimir ou salvar em PDF |
+
+## Onde ficam os dados
+
+Na pasta `data/`, no computador que roda o servidor:
+
+- `data/db.json` — cargos, histórico, comentários e usuários
+- `data/config.json` — endereço, SMTP e preferências de aviso
+
+É isso que faz o fluxo funcionar entre pessoas: C&R cria o cargo na máquina
+dela, o gestor abre da máquina dele e enxerga o mesmo cargo.
+
+- **Backup**: copie a pasta `data/`. São dois arquivos.
+- **Recomeçar do zero**: apague `data/` e suba o servidor de novo, ou use
+  *Restaurar dados de teste* em Administração.
+- A pasta está no `.gitignore` — dados reais não vão para o repositório.
+- Senhas de usuário são guardadas com hash scrypt, nunca em texto.
+
 ## Arquivos
 
 | Arquivo | Responsabilidade |
 | --- | --- |
-| `server.js` | Servidor HTTP, API, sessões e gravação em `data/db.json` |
-| `shared/model.js` | Seções, campos, papéis e etapas do modelo (navegador + servidor) |
-| `shared/flow.js` | Visibilidade, permissão de escrita e transições (navegador + servidor) |
+| `server.js` | Servidor HTTP e rotas da API |
+| `server/db.js` | Leitura e gravação atômica de `data/` |
+| `server/auth.js` | Hash de senha e sessões |
+| `server/mailer.js` | Cliente SMTP próprio (EHLO, STARTTLS, AUTH, DATA) |
+| `server/notify.js` | Textos dos avisos, disparo por etapa e cobrança de prazo |
+| `shared/model.js` | Seções, campos, papéis e etapas do modelo |
+| `shared/flow.js` | Visibilidade, permissão de escrita e transições |
 | `assets/api.js` | Cliente da API; única camada do navegador que fala com o servidor |
-| `assets/app.js` | Interface: login, navegação, formulário, filas, documento |
-| `assets/styles.css` | Estilos, incluindo a folha de impressão do documento |
+| `assets/app.js` | Interface |
+| `assets/styles.css` | Estilos e folha de impressão do documento |
 
 Os arquivos de `shared/` são carregados pelos dois lados — o navegador desenha a
 interface com as mesmas regras que o servidor aplica de verdade. Para incluir ou
 renomear um campo do descritivo, edite `SECTIONS` em `shared/model.js`:
-formulário, validação, permissões e documento final acompanham.
+formulário, validação, permissões, exportação e documento acompanham.
 
 ## Alcance desta versão
 
@@ -129,9 +184,11 @@ Feita para rede interna, na escala de uma área de RH. O que ela assume:
 
 - **HTTP, sem TLS.** Rede interna confiável. Para expor fora da empresa, ponha
   atrás de um proxy com HTTPS.
-- **Senhas em texto no `data/db.json`.** Se a ferramenta passar a valer como
-  registro oficial, troque por hash (`node:crypto.scrypt`) e proteja o arquivo.
-- **Sessões em memória.** Reiniciar o servidor apenas pede um novo login.
+- **Sessões em memória**, válidas por 12 horas. Reiniciar o servidor apenas pede
+  um novo login.
 - **Gravação em arquivo JSON.** Adequada para dezenas ou centenas de cargos com
-  poucos acessos simultâneos. Se crescer, `server.js` é o único arquivo que muda
-  para virar SQLite ou Postgres.
+  poucos acessos simultâneos. Se crescer, `server/db.js` é o único arquivo que
+  muda para virar SQLite ou Postgres.
+- **A senha do SMTP fica em texto em `data/config.json`**, porque o protocolo
+  exige a senha original no envio. Proteja o arquivo com as permissões do
+  sistema e prefira uma conta de e-mail dedicada a envios automáticos.

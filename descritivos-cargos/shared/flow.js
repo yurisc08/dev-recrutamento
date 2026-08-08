@@ -89,10 +89,17 @@ const TRANSITIONS = {
     requiresComment: true
   },
   reopen: {
-    from: ['approved'],
+    from: ['approved', 'canceled'],
     role: 'hr',
     to: 'editing',
-    log: 'Reaberto para revisão por Carreira & Recompensa',
+    log: 'Reaberto para preenchimento por Carreira & Recompensa',
+    requiresComment: true
+  },
+  cancel: {
+    from: ['editing', 'returned', 'manager_review', 'hr_review', 'approved'],
+    role: 'hr',
+    to: 'canceled',
+    log: 'Cargo cancelado',
     requiresComment: true
   }
 };
