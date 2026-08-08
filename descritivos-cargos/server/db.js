@@ -13,6 +13,7 @@ const path = require('node:path');
 
 const crypto = require('node:crypto');
 
+const Model = require('../shared/model.js');
 const Flow = require('../shared/flow.js');
 const seedData = require('../shared/seed.js');
 
@@ -30,7 +31,7 @@ const CONFIG_FILE = path.join(DATA_DIR, 'config.json');
 /* ============================= Dados iniciais ============================ */
 /* Os dados de demonstração vêm de shared/seed.js, os mesmos do modo local. */
 function seed() {
-  return { keys: seedData.seedKeys(), jobs: seedData.seedJobs() };
+  return { keys: seedData.seedKeys(), jobs: seedData.seedJobs(), model: Model.DEFAULT_SECTIONS };
 }
 
 function defaultConfig() {
@@ -62,6 +63,14 @@ let db = load(DB_FILE, seed);
 let config = mergeConfig(load(CONFIG_FILE, defaultConfig));
 
 function normalize() {
+  /* O modelo entra em vigor antes de qualquer outra coisa: normalizar cargos
+   * depende de saber quais campos existem. */
+  const applied = db.model ? Model.setSections(db.model) : { ok: false };
+  if (!applied.ok) {
+    Model.resetSections();
+    db.model = Model.sections();
+  }
+
   db.jobs = (db.jobs || []).map(Flow.normalizeJob);
   db.keys = db.keys || [];
 
@@ -126,6 +135,21 @@ module.exports = {
 
   get jobs() { return db.jobs; },
   get keys() { return db.keys; },
+  get model() { return db.model; },
+
+  /* Troca o modelo do descritivo. Aplica primeiro, grava depois. */
+  setModel(sections) {
+    const applied = Model.setSections(sections);
+    if (!applied.ok) return applied;
+    db.model = Model.sections();
+    return { ok: true };
+  },
+
+  resetModel() {
+    Model.resetSections();
+    db.model = Model.sections();
+    return { ok: true };
+  },
   get config() { return config; },
 
   persist,

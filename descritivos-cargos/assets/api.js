@@ -119,6 +119,23 @@ const RemoteStore = {
     URL.revokeObjectURL(url);
   },
 
+  /* ---------------------------- Modelo do cargo -------------------------- */
+  async loadModel() {
+    const data = await this.request('GET', '/api/model');
+    Model.setSections(data.model);
+    return data.model;
+  },
+  async saveModel(model) {
+    const data = await this.request('PUT', '/api/model', { model });
+    Model.setSections(data.model);
+    return data;
+  },
+  async resetModel() {
+    const data = await this.request('DELETE', '/api/model');
+    Model.setSections(data.model);
+    return data;
+  },
+
   /* --------------------------- Códigos de acesso ------------------------- */
   listKeys() {
     return this.request('GET', '/api/keys').then(d => d.keys);

@@ -50,16 +50,16 @@ const STAGES = {
     hint: 'Ajuste os pontos apontados e reenvie para aprovação.'
   },
   manager_review: {
-    label: 'Aguardando aprovação',
+    label: 'Aprovação do aprovador',
     tone: 'review',
     owner: 'approver',
-    hint: 'Enviado ao aprovador. Nenhuma ação do responsável é necessária.'
+    hint: 'Etapa opcional: enviado ao aprovador indicado no cadastro do cargo.'
   },
   hr_review: {
-    label: 'Validação de C&R',
+    label: 'Aprovação de C&R',
     tone: 'review',
     owner: 'hr',
-    hint: 'Aprovado pelo aprovador. Em validação final de Carreira & Recompensa.'
+    hint: 'Aguardando a análise de Carreira & Recompensa: aprovar ou devolver.'
   },
   approved: {
     label: 'Aprovado',
@@ -89,11 +89,12 @@ const EDITABLE_STAGES = {
  * full   : ocupa a linha inteira do formulário
  * docHead: título do bloco no documento final
  */
-const SECTIONS = [
+const DEFAULT_SECTIONS = [
   {
     id: 'identificacao',
     title: 'Identificação do cargo',
     owner: 'hr',
+    layout: 'table',
     fields: [
       { key: 'company',      label: 'Empresa',            type: 'text', required: true },
       { key: 'jobCode',      label: 'Código do cargo',    type: 'text', required: true },
@@ -110,9 +111,9 @@ const SECTIONS = [
     title: 'Conteúdo do cargo',
     owner: 'manager',
     fields: [
-      { key: 'focus',            label: 'Foco de atuação', type: 'textarea', required: true, full: true, docHead: 'FOCO DE ATUAÇÃO' },
-      { key: 'mission',          label: 'Missão',          type: 'textarea', required: true, full: true, docHead: 'MISSÃO' },
-      { key: 'responsibilities', label: 'Principais responsabilidades / atividades', type: 'textarea', required: true, full: true, docHead: 'PRINCIPAIS RESPONSABILIDADES / ATIVIDADES',
+      { key: 'focus',            label: 'Foco de atuação', type: 'textarea', required: true, full: true },
+      { key: 'mission',          label: 'Missão',          type: 'textarea', required: true, full: true },
+      { key: 'responsibilities', label: 'Principais responsabilidades / atividades', type: 'textarea', required: true, full: true,
         hint: 'Uma responsabilidade por linha.' }
     ]
   },
@@ -121,8 +122,8 @@ const SECTIONS = [
     title: 'Formação',
     owner: 'hr',
     fields: [
-      { key: 'educationMin',     label: 'Formação mínima',    type: 'text', required: true, docHead: 'FORMAÇÃO MÍNIMA' },
-      { key: 'educationDesired', label: 'Formação desejável', type: 'text', required: true, docHead: 'FORMAÇÃO DESEJÁVEL' }
+      { key: 'educationMin',     label: 'Formação mínima',    type: 'text', required: true },
+      { key: 'educationDesired', label: 'Formação desejável', type: 'text', required: true }
     ]
   },
   {
@@ -130,8 +131,8 @@ const SECTIONS = [
     title: 'Idiomas',
     owner: 'manager',
     fields: [
-      { key: 'languageMin',     label: 'Idioma mínimo',    type: 'text', required: true, docHead: 'IDIOMA MÍNIMO' },
-      { key: 'languageDesired', label: 'Idioma desejável', type: 'text', required: true, docHead: 'IDIOMA DESEJÁVEL' }
+      { key: 'languageMin',     label: 'Idioma mínimo',    type: 'text', required: true },
+      { key: 'languageDesired', label: 'Idioma desejável', type: 'text', required: true }
     ]
   },
   {
@@ -139,8 +140,8 @@ const SECTIONS = [
     title: 'Competências técnicas',
     owner: 'manager',
     fields: [
-      { key: 'technicalMin',     label: 'Competências técnicas mínimas',    type: 'textarea', required: true, full: true, docHead: 'COMPETÊNCIAS TÉCNICAS MÍNIMAS' },
-      { key: 'technicalDesired', label: 'Competências técnicas desejáveis', type: 'textarea', required: true, full: true, docHead: 'COMPETÊNCIAS TÉCNICAS DESEJÁVEIS' }
+      { key: 'technicalMin',     label: 'Competências técnicas mínimas',    type: 'textarea', required: true, full: true },
+      { key: 'technicalDesired', label: 'Competências técnicas desejáveis', type: 'textarea', required: true, full: true }
     ]
   },
   {
@@ -148,7 +149,7 @@ const SECTIONS = [
     title: 'Competências comportamentais',
     owner: 'hr',
     fields: [
-      { key: 'behavioral', label: 'Competências comportamentais Marcopolo', type: 'textarea', required: true, full: true, docHead: 'COMPETÊNCIAS COMPORTAMENTAIS MARCOPOLO' }
+      { key: 'behavioral', label: 'Competências comportamentais Marcopolo', type: 'textarea', required: true, full: true }
     ]
   },
   {
@@ -156,8 +157,8 @@ const SECTIONS = [
     title: 'Experiência profissional',
     owner: 'manager',
     fields: [
-      { key: 'experienceMin',     label: 'Experiência mínima',    type: 'text', required: true, docHead: 'EXPERIÊNCIA MÍNIMA' },
-      { key: 'experienceDesired', label: 'Experiência desejável', type: 'text', required: true, docHead: 'EXPERIÊNCIA DESEJÁVEL' }
+      { key: 'experienceMin',     label: 'Experiência mínima',    type: 'text', required: true },
+      { key: 'experienceDesired', label: 'Experiência desejável', type: 'text', required: true }
     ]
   }
 ];
@@ -166,19 +167,115 @@ const SECTIONS = [
 const FLOW_FIELDS = [
   { key: 'manager',      label: 'Responsável pelo preenchimento', type: 'text',  required: true },
   { key: 'managerEmail', label: 'E-mail do responsável',          type: 'email', required: true },
-  { key: 'approver',     label: 'Aprovador',                      type: 'text',  required: true },
+  { key: 'approver',     label: 'Aprovador (opcional)',           type: 'text',  required: false,
+    hint: 'Deixe em branco para o descritivo ir direto de você para C&R.' },
   { key: 'deadline',     label: 'Prazo de preenchimento',         type: 'date',  required: true }
 ];
 
-/* ------------------------------ Utilidades ------------------------------- */
-const ALL_FIELDS = SECTIONS.flatMap(s => s.fields.map(f => ({ ...f, owner: f.owner || s.owner, section: s.id })));
+/* --------------------------- Modelo em vigor ----------------------------- */
+/*
+ * O modelo não é fixo no código: C&R pode criar, renomear e reordenar campos
+ * pela tela "Modelo". O padrão abaixo é só o ponto de partida — quem manda é o
+ * que estiver gravado (data/db.json no servidor, ou o navegador no modo local).
+ *
+ * Tudo o que depende do modelo — formulário, validação, permissão de escrita,
+ * documento e exportação — passa por estas funções, então basta trocar as
+ * seções aqui para as quatro coisas acompanharem.
+ */
+let currentSections = clone(DEFAULT_SECTIONS);
+let currentFields = flatten(currentSections);
 
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function flatten(sections) {
+  return sections.flatMap(section => section.fields.map(field => ({
+    ...field,
+    owner: field.owner || section.owner,
+    section: section.id,
+    // Título do bloco no documento: o rótulo em maiúsculas, salvo indicação.
+    docHead: field.docHead || String(field.label || '').toUpperCase()
+  })));
+}
+
+function sections() {
+  return currentSections;
+}
+
+function allFields() {
+  return currentFields;
+}
+
+/* Troca o modelo em vigor. Devolve { ok, error } sem alterar nada se algo
+ * estiver errado — assim um modelo inválido nunca chega a valer. */
+function setSections(next) {
+  const check = validateSections(next);
+  if (!check.ok) return check;
+  currentSections = clone(next);
+  currentFields = flatten(currentSections);
+  return { ok: true };
+}
+
+function resetSections() {
+  currentSections = clone(DEFAULT_SECTIONS);
+  currentFields = flatten(currentSections);
+  return { ok: true };
+}
+
+const FIELD_TYPES = ['text', 'textarea', 'date'];
+
+function validateSections(next) {
+  if (!Array.isArray(next) || !next.length) return { ok: false, error: 'O modelo precisa ter ao menos uma seção' };
+
+  const keys = new Set();
+
+  for (const section of next) {
+    if (!section || !String(section.title || '').trim()) return { ok: false, error: 'Toda seção precisa de um título' };
+    if (!Array.isArray(section.fields) || !section.fields.length) {
+      return { ok: false, error: `A seção "${section.title}" está sem campos` };
+    }
+
+    for (const field of section.fields) {
+      if (!String(field.label || '').trim()) return { ok: false, error: `Há um campo sem rótulo em "${section.title}"` };
+      if (!String(field.key || '').trim()) return { ok: false, error: `O campo "${field.label}" está sem identificador` };
+      if (keys.has(field.key)) return { ok: false, error: `Identificador repetido: ${field.key}` };
+      if (field.type && !FIELD_TYPES.includes(field.type)) return { ok: false, error: `Tipo inválido em "${field.label}"` };
+      keys.add(field.key);
+    }
+  }
+
+  // O nome do cargo identifica o descritivo na lista, no e-mail e no documento.
+  if (!keys.has('name')) return { ok: false, error: 'O modelo precisa manter o campo "Nome do cargo"' };
+
+  // Sem campos do responsável, o fluxo perderia o sentido: ele não teria o que
+  // preencher e o cargo iria direto para aprovação vazio.
+  const hasManagerField = flatten(next).some(f => f.owner === 'manager');
+  if (!hasManagerField) return { ok: false, error: 'Ao menos um campo precisa ser preenchido pelo responsável' };
+
+  return { ok: true };
+}
+
+/* Identificador estável a partir do rótulo, para campos criados na tela. */
+function keyFromLabel(label, taken = []) {
+  const base = String(label || 'campo')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+    .slice(0, 30) || 'campo';
+
+  let key = base;
+  let n = 2;
+  while (taken.includes(key)) key = `${base}_${n++}`;
+  return key;
+}
+
+/* ------------------------------ Utilidades ------------------------------- */
 function fieldsOf(role) {
-  return ALL_FIELDS.filter(f => f.owner === role);
+  return currentFields.filter(f => f.owner === role);
 }
 
 function blankJob() {
-  return ALL_FIELDS.reduce((acc, f) => (acc[f.key] = '', acc), {});
+  return currentFields.reduce((acc, f) => (acc[f.key] = '', acc), {});
 }
 
 /* Campos obrigatórios do papel que ainda estão vazios. */
@@ -209,7 +306,8 @@ function addDays(iso, days) {
 }
 
 return {
-  ROLES, STAGES, EDITABLE_STAGES, SECTIONS, FLOW_FIELDS, ALL_FIELDS,
+  ROLES, STAGES, EDITABLE_STAGES, FLOW_FIELDS, FIELD_TYPES, DEFAULT_SECTIONS,
+  sections, allFields, setSections, resetSections, validateSections, keyFromLabel,
   fieldsOf, blankJob, missingFields, completion, canEdit, isoToday, addDays
 };
 

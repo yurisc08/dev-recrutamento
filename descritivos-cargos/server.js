@@ -106,7 +106,7 @@ function exportCsv(res) {
     { label: 'E-mail do responsável', value: j => j.managerEmail },
     { label: 'Aprovador', value: j => j.approver },
     { label: 'Prazo', value: j => j.deadline },
-    ...Model.ALL_FIELDS.map(f => ({ label: f.label, value: j => j[f.key] }))
+    ...Model.allFields().map(f => ({ label: f.label, value: j => j[f.key] }))
   ];
 
   const escape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
@@ -145,10 +145,17 @@ async function handleApi(req, res, pathname) {
       return ok(res, { token: auth.openSession(session), session });
     }
 
-    const jobs = db.jobs.filter(j => Flow.sameCode(j.code, code) && j.status !== 'canceled');
-    if (jobs.length) {
-      const session = { role: 'manager', name: jobs[0].manager, code: jobs[0].code };
+    const open = Flow.openForCode(db.jobs, code);
+    if (open.length) {
+      const session = { role: 'manager', name: open[0].manager, code: open[0].code };
       return ok(res, { token: auth.openSession(session), session });
+    }
+
+    // O código existe, mas já cumpriu seu papel: todos os cargos dele saíram do
+    // fluxo. Melhor dizer isso do que "código inválido".
+    const encerrados = db.jobs.filter(j => Flow.sameCode(j.code, code));
+    if (encerrados.length) {
+      return fail(res, 401, 'Este código já foi encerrado: os descritivos ligados a ele foram concluídos.');
     }
 
     return fail(res, 401, 'Código não encontrado. Confira com Carreira & Recompensa.');
@@ -175,7 +182,8 @@ async function handleApi(req, res, pathname) {
     if (!requireHr()) return fail(res, 403, 'Apenas C&R pode criar cargos');
 
     const data = body.job || {};
-    const required = [...Model.FLOW_FIELDS, ...Model.fieldsOf('hr').filter(f => f.key !== 'reviewDate')];
+    const required = [...Model.FLOW_FIELDS, ...Model.fieldsOf('hr').filter(f => f.key !== 'reviewDate')]
+      .filter(f => f.required);
     const missing = required.filter(f => !String(data[f.key] || '').trim()).map(f => f.label);
     if (missing.length) return fail(res, 400, 'Preencha: ' + missing.join(', '));
 
@@ -243,6 +251,27 @@ async function handleApi(req, res, pathname) {
   if (pathname === '/api/export.csv' && req.method === 'GET') {
     if (!requireHr()) return fail(res, 403, 'Apenas C&R pode exportar');
     return exportCsv(res);
+  }
+
+  /* ---------------------------- Modelo do cargo ------------------------- */
+  /* Todo mundo lê (o formulário depende dele); só C&R altera. */
+  if (pathname === '/api/model') {
+    if (req.method === 'GET') return ok(res, { model: db.model });
+
+    if (req.method === 'PUT') {
+      if (!requireHr()) return fail(res, 403, 'Apenas C&R pode alterar o modelo');
+      const applied = db.setModel(body.model);
+      if (!applied.ok) return fail(res, 400, applied.error);
+      await db.persist();
+      return ok(res, { model: db.model, message: 'Modelo atualizado' });
+    }
+
+    if (req.method === 'DELETE') {
+      if (!requireHr()) return fail(res, 403, 'Apenas C&R pode alterar o modelo');
+      db.resetModel();
+      await db.persist();
+      return ok(res, { model: db.model, message: 'Modelo padrão restaurado' });
+    }
   }
 
   /* --------------------------- Códigos de acesso ------------------------ */

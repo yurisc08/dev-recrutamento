@@ -120,6 +120,7 @@ const ICONS = {
   approvals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12.5l5 5L20 6.5"/></svg>',
   admin:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>',
   users:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c.6-3.4 3.3-5.4 6.5-5.4s5.9 2 6.5 5.4M17 8.2a3 3 0 010 5.6M18.5 20c-.2-1.6-.7-2.9-1.5-3.9"/></svg>',
+  model:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18.5" cy="15.5" r="2.6"/></svg>',
   config:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.8 12h2.4M18.8 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>'
 };
 
@@ -147,6 +148,7 @@ const NAV = {
     { view: 'jobs', label: 'Cargos' },
     { view: 'admin', label: 'Administração' },
     { view: 'users', label: 'Códigos de acesso' },
+    { view: 'model', label: 'Modelo' },
     { view: 'config', label: 'Configurações' }
   ]
 };
@@ -154,6 +156,8 @@ const NAV = {
 const HOME = { manager: 'jobs', approver: 'approvals', hr: 'admin' };
 
 async function enter(view) {
+  // O modelo vem antes dos cargos: o formulário inteiro depende dele.
+  await API.loadModel();
   await API.loadJobs();
   $('#login').classList.add('hide');
   $('#application').classList.remove('hide');
@@ -180,6 +184,7 @@ const VIEWS = {
   approvals: approvalsView,
   admin: adminView,
   users: usersView,
+  model: modelView,
   config: configView,
   job: jobView,
   document: documentView
@@ -259,6 +264,14 @@ function jobCard(job, actions) {
     </article>`;
 }
 
+/* A primeira seção (identificação) vira a tabela do topo do documento; as
+ * demais viram blocos. Assim campos criados por C&R entram no documento sem
+ * precisar de configuração extra. */
+function identificationId() {
+  const table = Model.sections().find(s => s.layout === 'table') || Model.sections()[0];
+  return table ? table.id : null;
+}
+
 /* ---------------------------- Trilha do fluxo ---------------------------- */
 const FLOW_STEPS = [
   { label: 'Preenchimento', stages: ['editing', 'returned'] },
@@ -318,7 +331,7 @@ function jobView() {
   const returnedNote = job.status === 'returned' && job.comments.length
     ? `<div class="banner warn"><b>Correção solicitada.</b> ${nl2br(job.comments.at(-1).text)}</div>` : '';
 
-  const sections = SECTIONS.map(section => {
+  const sections = Model.sections().map(section => {
     const fields = section.fields
       .map(f => inputField(f, job[f.key], editable && (f.owner || section.owner) === role))
       .join('');
@@ -542,17 +555,19 @@ async function newJobModal() {
     const preset = esc(CREATION_DEFAULTS[f.key] || '');
     const type = f.type === 'date' ? 'date' : f.type === 'email' ? 'email' : 'text';
 
-    const control = f.key === 'approver' && approvers.length
-      ? `<select id="${id}" data-new="${f.key}">${approvers.map(a => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join('')}</select>`
+    const control = f.key === 'approver'
+      ? `<select id="${id}" data-new="${f.key}">
+           <option value="">Sem aprovador — vai direto para C&amp;R</option>
+           ${approvers.map(a => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join('')}
+         </select>`
       : f.type === 'textarea'
         ? `<textarea id="${id}" data-new="${f.key}" rows="3">${preset}</textarea>`
         : `<input id="${id}" data-new="${f.key}" type="${type}" value="${preset}">`;
 
-    const hint = f.key === 'approver' && !approvers.length
-      ? '<small class="muted">Nenhum código de aprovador cadastrado ainda — crie um em Códigos de acesso.</small>'
-      : '';
+    const hint = f.hint ? `<small class="muted">${esc(f.hint)}</small>` : '';
+    const req = f.required ? ' <span class="req">*</span>' : '';
 
-    return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)} <span class="req">*</span></label>${control}${hint}</div>`;
+    return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)}${req}</label>${control}${hint}</div>`;
   };
 
   openModal(`
@@ -728,6 +743,167 @@ function userModal(key) {
   };
 }
 
+/* =========================== VISÃO: MODELO =============================== */
+/*
+ * C&R monta o descritivo: cria seções, cria campos, escolhe quem preenche cada
+ * um e se é obrigatório. "Quem preenche" é o que tranca o campo — o que for de
+ * C&R aparece bloqueado para o responsável, e vice-versa.
+ *
+ * A edição é imediata: cada ação grava o modelo inteiro e redesenha.
+ */
+const PROTECTED_KEYS = ['name'];
+
+function modelView() {
+  if (session().role !== 'hr') return show('approvals');
+  const sections = Model.sections();
+
+  $('#title').textContent = 'Modelo do descritivo';
+  $('#subtitle').textContent = `${sections.length} seção(ões) • ${Model.allFields().length} campo(s)`;
+  $('#topActions').innerHTML = `
+    <button class="btn primary" data-action="section-new">Nova seção</button>
+    <button class="btn outline" data-action="model-reset">Restaurar modelo padrão</button>`;
+
+  $('#content').innerHTML = `
+    <div class="banner">Alterações valem para os próximos preenchimentos e para o documento. Cargos já preenchidos mantêm o que foi escrito; campos removidos apenas deixam de aparecer.</div>
+    ${sections.map((section, si) => `
+      <div class="card">
+        <div class="head">
+          <div>
+            <b>${esc(section.title)}</b>
+            <p class="muted">Padrão da seção: ${ROLES[section.owner] ? ROLES[section.owner].label : '—'}${section.layout === 'table' ? ' • vira a tabela de identificação do documento' : ''}</p>
+          </div>
+          <div class="actions">
+            <button class="btn outline" data-action="section-move" data-index="${si}" data-dir="-1" ${si === 0 ? 'disabled' : ''}>↑</button>
+            <button class="btn outline" data-action="section-move" data-index="${si}" data-dir="1" ${si === sections.length - 1 ? 'disabled' : ''}>↓</button>
+            <button class="btn secondary" data-action="section-edit" data-index="${si}">Editar</button>
+            <button class="btn danger" data-action="section-del" data-index="${si}">Excluir</button>
+          </div>
+        </div>
+        <div class="body">
+          <table class="list">
+            <thead><tr><th>Campo</th><th>Tipo</th><th>Quem preenche</th><th>Obrigatório</th><th></th></tr></thead>
+            <tbody>${section.fields.map((field, fi) => `
+              <tr>
+                <td><b>${esc(field.label)}</b>${field.hint ? `<br><span class="muted">${esc(field.hint)}</span>` : ''}</td>
+                <td class="muted">${({ text: 'Texto curto', textarea: 'Texto longo', date: 'Data' })[field.type || 'text']}</td>
+                <td>${ROLES[field.owner || section.owner].label}${(field.owner || section.owner) === 'hr' ? ' <span class="lock" title="Bloqueado para o responsável">🔒</span>' : ''}</td>
+                <td class="muted">${field.required ? 'Sim' : 'Não'}</td>
+                <td class="right">
+                  <button class="btn outline" data-action="field-move" data-index="${si}" data-field-index="${fi}" data-dir="-1" ${fi === 0 ? 'disabled' : ''}>↑</button>
+                  <button class="btn outline" data-action="field-move" data-index="${si}" data-field-index="${fi}" data-dir="1" ${fi === section.fields.length - 1 ? 'disabled' : ''}>↓</button>
+                  <button class="btn secondary" data-action="field-edit" data-index="${si}" data-field-index="${fi}">Editar</button>
+                  <button class="btn danger" data-action="field-del" data-index="${si}" data-field-index="${fi}">Excluir</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          <div class="actions mt"><button class="btn secondary" data-action="field-new" data-index="${si}">Novo campo nesta seção</button></div>
+        </div>
+      </div>`).join('')}`;
+}
+
+/* Trabalha sobre uma cópia e grava o modelo inteiro. */
+async function updateModel(change, message) {
+  const draft = JSON.parse(JSON.stringify(Model.sections()));
+  try {
+    change(draft);
+    const result = await API.saveModel(draft);
+    toast(message || result.message || 'Modelo atualizado', 'success');
+    modelView();
+  } catch (err) {
+    toast(err.message, 'error');
+    modelView();
+  }
+}
+
+function sectionModal(index) {
+  const editing = index !== undefined;
+  const section = editing ? Model.sections()[index] : { title: '', owner: 'manager' };
+
+  openModal(`
+    <h2>${editing ? 'Editar seção' : 'Nova seção'}</h2>
+    <div class="grid">
+      <div class="field"><label for="sTitle">Título da seção <span class="req">*</span></label>
+        <input id="sTitle" value="${esc(section.title)}" placeholder="Ex.: Responsabilidades"></div>
+      <div class="field"><label for="sOwner">Quem preenche, por padrão</label>
+        <select id="sOwner">
+          <option value="manager" ${section.owner === 'manager' ? 'selected' : ''}>Responsável pelo cargo</option>
+          <option value="hr" ${section.owner === 'hr' ? 'selected' : ''}>Carreira &amp; Recompensa (bloqueado para o responsável)</option>
+        </select></div>
+    </div>
+    <button class="btn primary full mt" data-modal-action="save-section">Salvar</button>
+  `);
+
+  $('#modalContent').querySelector('[data-modal-action="save-section"]').onclick = () => {
+    const title = $('#sTitle').value.trim();
+    const owner = $('#sOwner').value;
+    if (!title) return toast('Informe o título', 'error');
+    closeModal();
+
+    updateModel(draft => {
+      if (editing) Object.assign(draft[index], { title, owner });
+      else draft.push({ id: 'sec_' + Date.now(), title, owner, fields: [] });
+    }, editing ? 'Seção atualizada' : 'Seção criada — agora inclua os campos');
+  };
+}
+
+function fieldModal(sectionIndex, fieldIndex) {
+  const section = Model.sections()[sectionIndex];
+  const editing = fieldIndex !== undefined;
+  const field = editing ? section.fields[fieldIndex] : { label: '', type: 'text', owner: section.owner, required: true, hint: '' };
+  const protectedKey = editing && PROTECTED_KEYS.includes(field.key);
+
+  openModal(`
+    <h2>${editing ? 'Editar campo' : 'Novo campo'}</h2>
+    <p class="muted">Seção: ${esc(section.title)}</p>
+    <div class="grid">
+      <div class="field full"><label for="fLabel">Rótulo <span class="req">*</span></label>
+        <input id="fLabel" value="${esc(field.label)}" placeholder="Ex.: Principais entregas"></div>
+      <div class="field"><label for="fType">Tipo</label>
+        <select id="fType">
+          <option value="text" ${(field.type || 'text') === 'text' ? 'selected' : ''}>Texto curto</option>
+          <option value="textarea" ${field.type === 'textarea' ? 'selected' : ''}>Texto longo</option>
+          <option value="date" ${field.type === 'date' ? 'selected' : ''}>Data</option>
+        </select></div>
+      <div class="field"><label for="fOwner">Quem preenche</label>
+        <select id="fOwner" ${protectedKey ? 'disabled' : ''}>
+          <option value="manager" ${(field.owner || section.owner) === 'manager' ? 'selected' : ''}>Responsável pelo cargo</option>
+          <option value="hr" ${(field.owner || section.owner) === 'hr' ? 'selected' : ''}>Carreira &amp; Recompensa (bloqueado para o responsável)</option>
+        </select></div>
+      <div class="field full"><label for="fHint">Dica para quem preenche (opcional)</label>
+        <input id="fHint" value="${esc(field.hint || '')}" placeholder="Ex.: uma responsabilidade por linha"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="fRequired" ${field.required ? 'checked' : ''}> Obrigatório para avançar no fluxo</label>
+    ${protectedKey ? '<p class="muted">Este campo identifica o cargo na lista e no e-mail, por isso continua sendo de C&R.</p>' : ''}
+    <button class="btn primary full mt" data-modal-action="save-field">Salvar</button>
+  `);
+
+  $('#modalContent').querySelector('[data-modal-action="save-field"]').onclick = () => {
+    const label = $('#fLabel').value.trim();
+    if (!label) return toast('Informe o rótulo', 'error');
+
+    const data = {
+      label,
+      type: $('#fType').value,
+      owner: protectedKey ? field.owner : $('#fOwner').value,
+      required: $('#fRequired').checked,
+      hint: $('#fHint').value.trim()
+    };
+    if (data.type === 'textarea') data.full = true;
+    closeModal();
+
+    updateModel(draft => {
+      const target = draft[sectionIndex];
+      if (editing) {
+        Object.assign(target.fields[fieldIndex], data);
+      } else {
+        const taken = draft.flatMap(s => s.fields.map(f => f.key));
+        target.fields.push({ key: Model.keyFromLabel(label, taken), ...data });
+      }
+    }, editing ? 'Campo atualizado' : 'Campo criado');
+  };
+}
+
 /* ========================= VISÃO: CONFIGURAÇÕES ========================== */
 async function configView() {
   if (session().role !== 'hr') return show('approvals');
@@ -824,11 +1000,11 @@ function documentView() {
   const job = API.getJob(state.jobId);
   if (!job) return show('jobs');
 
-  const rows = SECTIONS[0].fields
+  const rows = (Model.sections().find(s => s.layout === 'table') || Model.sections()[0]).fields
     .map(f => `<tr><th>${esc(f.label)}</th><td>${esc(f.type === 'date' ? formatDate(job[f.key]) : job[f.key] || '—')}</td></tr>`)
     .join('');
 
-  const blocks = ALL_FIELDS.filter(f => f.docHead)
+  const blocks = Model.allFields().filter(f => f.section !== identificationId())
     .map(f => `<h2>${esc(f.docHead)}</h2><p>${nl2br(job[f.key] || 'Não informado')}</p>`)
     .join('');
 
@@ -927,6 +1103,49 @@ async function handleAction(action, id, element) {
       return navigator.clipboard.writeText(code)
         .then(() => toast('Código copiado: ' + code, 'success'))
         .catch(() => toast('Copie manualmente: ' + code));
+
+    /* ------------------------------ Modelo ------------------------------ */
+    case 'section-new':
+      return sectionModal();
+    case 'section-edit':
+      return sectionModal(Number(element.dataset.index));
+    case 'section-move':
+      return updateModel(draft => {
+        const from = Number(element.dataset.index);
+        const to = from + Number(element.dataset.dir);
+        [draft[from], draft[to]] = [draft[to], draft[from]];
+      }, 'Ordem atualizada');
+    case 'section-del': {
+      const index = Number(element.dataset.index);
+      const section = Model.sections()[index];
+      return askText('Excluir seção', `Digite EXCLUIR para remover "${section.title}" e seus ${section.fields.length} campo(s)`, text => {
+        if (text.trim().toUpperCase() !== 'EXCLUIR') return toast('Confirmação inválida', 'error');
+        updateModel(draft => draft.splice(index, 1), 'Seção excluída');
+      });
+    }
+    case 'field-new':
+      return fieldModal(Number(element.dataset.index));
+    case 'field-edit':
+      return fieldModal(Number(element.dataset.index), Number(element.dataset.fieldIndex));
+    case 'field-move':
+      return updateModel(draft => {
+        const fields = draft[Number(element.dataset.index)].fields;
+        const from = Number(element.dataset.fieldIndex);
+        const to = from + Number(element.dataset.dir);
+        [fields[from], fields[to]] = [fields[to], fields[from]];
+      }, 'Ordem atualizada');
+    case 'field-del': {
+      const si = Number(element.dataset.index);
+      const fi = Number(element.dataset.fieldIndex);
+      const field = Model.sections()[si].fields[fi];
+      if (PROTECTED_KEYS.includes(field.key)) return toast('Este campo não pode ser removido: identifica o cargo', 'error');
+      return updateModel(draft => draft[si].fields.splice(fi, 1), 'Campo excluído');
+    }
+    case 'model-reset':
+      return askText('Restaurar modelo padrão', 'Digite RESTAURAR para voltar ao MAPA DE CARREIRA original', text => {
+        if (text.trim().toUpperCase() !== 'RESTAURAR') return toast('Confirmação inválida', 'error');
+        run(API.resetModel(), 'Modelo padrão restaurado');
+      });
 
     /* --------------------------- Configurações -------------------------- */
     case 'config-save':

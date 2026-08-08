@@ -85,9 +85,10 @@ const LocalStore = {
       stored.jobs = (stored.jobs || []).map(normalizeJob);
       stored.keys = stored.keys || seedKeys();
       stored.config = stored.config || this.defaultConfig();
+      stored.model = stored.model || Model.DEFAULT_SECTIONS;
       return stored;
     } catch {
-      const fresh = { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig() };
+      const fresh = { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig(), model: Model.DEFAULT_SECTIONS };
       this.write(fresh);
       return fresh;
     }
@@ -137,9 +138,13 @@ const LocalStore = {
       return this.remember({ role: key.role, name: key.name, code: key.code });
     }
 
-    const jobs = db.jobs.filter(j => sameCode(j.code, code) && j.status !== 'canceled');
-    if (jobs.length) {
-      return this.remember({ role: 'manager', name: jobs[0].manager, code: jobs[0].code });
+    const open = openForCode(db.jobs, code);
+    if (open.length) {
+      return this.remember({ role: 'manager', name: open[0].manager, code: open[0].code });
+    }
+
+    if (db.jobs.some(j => sameCode(j.code, code))) {
+      throw new Error('Este código já foi encerrado: os descritivos ligados a ele foram concluídos.');
     }
 
     throw new Error('Código não encontrado. Confira com Carreira & Recompensa.');
@@ -166,7 +171,8 @@ const LocalStore = {
   async createJob(data) {
     if (this.session.role !== 'hr') throw new Error('Apenas C&R pode criar cargos');
 
-    const required = [...FLOW_FIELDS, ...fieldsOf('hr').filter(f => f.key !== 'reviewDate')];
+    const required = [...FLOW_FIELDS, ...fieldsOf('hr').filter(f => f.key !== 'reviewDate')]
+      .filter(f => f.required);
     const missing = required.filter(f => !String(data[f.key] || '').trim()).map(f => f.label);
     if (missing.length) throw new Error('Preencha: ' + missing.join(', '));
 
@@ -230,7 +236,7 @@ const LocalStore = {
       { label: 'E-mail do responsável', value: j => j.managerEmail },
       { label: 'Aprovador', value: j => j.approver },
       { label: 'Prazo', value: j => j.deadline },
-      ...ALL_FIELDS.map(f => ({ label: f.label, value: j => j[f.key] }))
+      ...Model.allFields().map(f => ({ label: f.label, value: j => j[f.key] }))
     ];
 
     const escape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
@@ -247,6 +253,27 @@ const LocalStore = {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+  },
+
+  /* ---------------------------- Modelo do cargo -------------------------- */
+  async loadModel() {
+    const model = this.read().model;
+    const applied = Model.setSections(model);
+    if (!applied.ok) Model.resetSections();
+    return Model.sections();
+  },
+
+  async saveModel(model) {
+    const applied = Model.setSections(model);
+    if (!applied.ok) throw new Error(applied.error);
+    this.change(db => { db.model = Model.sections(); });
+    return { model: Model.sections(), message: 'Modelo atualizado' };
+  },
+
+  async resetModel() {
+    Model.resetSections();
+    this.change(db => { db.model = Model.sections(); });
+    return { model: Model.sections(), message: 'Modelo padrão restaurado' };
   },
 
   /* --------------------------- Códigos de acesso ------------------------- */

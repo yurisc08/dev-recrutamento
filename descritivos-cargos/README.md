@@ -113,67 +113,99 @@ os cargos. Em ambas dá para copiar com um clique.
 > primeira execução e **os códigos gerados são impressos no terminal** — anote-os
 > antes de fechar a janela.
 
-## O fluxo
+## O fluxo de trabalho
 
 ```
-C&R cria o cargo (identificação + formação + comportamentais)
-        │  gera o código de acesso e envia o e-mail ao responsável
+1. C&R cadastra o cargo
+   preenche a parte dela (identificação, formação, competências normativas)
+   e o sistema gera o código de acesso do responsável
+        │  e-mail automático ao gestor, com o código e o prazo
         ▼
-   editing ──enviar──▶ manager_review ──aprovar──▶ hr_review ──validar──▶ approved
-      ▲                     │                          │                     │
-      └──── returned ◀──devolver───────────────devolver─┘        documento / PDF
-
-   qualquer etapa ──cancelar (C&R)──▶ canceled ──reabrir (C&R)──▶ editing
+2. Gestor entra com o código
+   preenche as partes que cabem a ele e envia
+        │
+        ▼
+3. Carreira & Recompensa analisa
+   ├── devolve com o motivo ──▶ volta ao gestor (novo e-mail com o código)
+   └── aprova ──▶ documento pronto; o código do gestor deixa de valer
 ```
 
-| Etapa | Rótulo | Quem age |
+**O aprovador é opcional.** No cadastro do cargo, deixando o campo *Aprovador*
+em branco, o descritivo vai do gestor direto para C&R — que é quem aprova.
+Se a sua estrutura exigir um aval intermediário (um diretor, por exemplo),
+basta indicar um aprovador e ele entra entre as duas pontas.
+
+| Etapa | Rótulo na tela | Quem age |
 | --- | --- | --- |
-| `editing` | Em preenchimento | Responsável pelo cargo |
-| `returned` | Devolvido para correção | Responsável pelo cargo |
-| `manager_review` | Aguardando aprovação | Aprovador |
-| `hr_review` | Validação de C&R | Carreira & Recompensa |
+| `editing` | Em preenchimento | Gestor responsável |
+| `returned` | Devolvido para correção | Gestor responsável |
+| `manager_review` | Aprovação do aprovador | Aprovador *(só quando indicado)* |
+| `hr_review` | Aprovação de C&R | Carreira & Recompensa |
 | `approved` | Aprovado | — (documento liberado) |
-| `canceled` | Cancelado | — (pode ser reaberto por C&R) |
+| `canceled` | Cancelado | — (C&R pode reabrir) |
 
-Regras aplicadas em `shared/flow.js`, **no servidor**:
+Regras aplicadas no servidor (`shared/flow.js`):
 
-- **Enviar para aprovação** exige todos os campos obrigatórios do responsável.
+- **Enviar** exige todos os campos obrigatórios do gestor preenchidos.
 - **Devolver**, **cancelar** e **reabrir** exigem justificativa, que vira
-  comentário e entra no histórico.
-- **Validar e aprovar** revalida os campos dos dois papéis e grava a
-  *Data de revisão* automaticamente.
-- Cargo cancelado sai do ar para o responsável: o código deixa de dar acesso a
-  ele.
+  comentário e entra no histórico do cargo.
+- **Aprovar** revalida os campos dos dois lados e grava a *Data de revisão*.
+- Cada pessoa só escreve nos campos do seu papel — o servidor recusa o resto,
+  mesmo que alguém tente por fora da tela.
+
+### O código de acesso do gestor
+
+É a única credencial dele: sem usuário, sem senha, sem cadastro. O código:
+
+- é **por pessoa**, não por cargo — três cargos para o mesmo gestor entram sob o
+  mesmo código e aparecem juntos quando ele entra;
+- vai por e-mail **a cada envio para ele**: na criação do cargo, na devolução e
+  na reabertura, sempre com o prazo e o endereço da ferramenta;
+- **deixa de valer quando o descritivo é aprovado**. Se o gestor não tiver mais
+  nenhum cargo pendente, o código para de dar acesso e a tela explica isso.
+  Enquanto houver um cargo em aberto, o mesmo código continua servindo.
 
 ### E-mails automáticos
 
-Configurado o SMTP, a ferramenta envia sozinha em cada passo:
+Com o SMTP configurado (**Configurações**), sai um aviso a cada passo:
 
 | Quando | Para quem | Contém |
 | --- | --- | --- |
-| Cargo criado | Responsável | prazo, endereço e **código de acesso** |
-| Enviado para aprovação | Aprovador | quem enviou e o que analisar |
-| Aprovado pelo aprovador | Equipe de C&R | entrou na fila de validação |
-| Devolvido | Responsável | **motivo** e código de acesso |
-| Aprovado por C&R | Responsável | aviso de conclusão |
-| Reaberto / cancelado | Responsável | motivo |
+| Cargo cadastrado | Gestor | prazo, endereço e **código de acesso** |
+| Enviado para aprovação | Aprovador (se houver) ou C&R | o que analisar |
+| Devolvido | Gestor | **motivo** e o código novamente |
+| Aprovado | Gestor | aviso de conclusão |
+| Reaberto / cancelado | Gestor | motivo |
 | Prazo perto ou vencido | Quem está devendo a ação | lembrete, 1× por dia |
 
 Se o envio falhar, **o fluxo não trava**: a ação já foi gravada e a falha fica
-registrada no cargo, visível em Administração ("Falha no envio"). Sem SMTP
-configurado, nada é enviado e o botão **Preparar e-mail** abre o e-mail já
-escrito no cliente da própria pessoa (Outlook, Gmail…), para envio manual.
+marcada no cargo, visível em Administração. Sem SMTP, o botão *Preparar e-mail*
+abre a mensagem pronta no Outlook/Gmail de quem está usando.
 
-### Código de acesso
+## O modelo do descritivo é editável
 
-O responsável entra só com o código — sem usuário nem senha. Ele é sorteado
-(`DC-XXXX-XXXX`, alfabeto sem `0/O` e `1/I` para ser ditado por telefone sem
-erro) e é **por pessoa, não por cargo**: se C&R cadastrar três cargos para o
-mesmo e-mail, os três caem sob o mesmo código e aparecem juntos quando o gestor
-entra. O botão **Reenviar código** manda tudo de novo quando a pessoa perde o
-e-mail.
+O conteúdo do descritivo **não está fixo no código**. Em **Modelo**, C&R monta
+o documento: cria e reordena seções, cria campos e define, para cada um:
 
-## Divisão do modelo por papel
+| Escolha | Efeito |
+| --- | --- |
+| **Rótulo** | o que aparece no formulário e vira o título do bloco no documento |
+| **Tipo** | texto curto, texto longo ou data |
+| **Quem preenche** | C&R (**bloqueado** para o gestor, com o cadeado 🔒) ou o gestor |
+| **Obrigatório** | se trava ou não o envio enquanto estiver vazio |
+| **Dica** | um texto de apoio embaixo do campo |
+
+A mudança vale de imediato para o formulário, para a validação do envio, para o
+documento e para a exportação em CSV — as quatro coisas leem o mesmo modelo.
+Cargos já preenchidos mantêm o que foi escrito; campos removidos simplesmente
+deixam de aparecer. O botão *Restaurar modelo padrão* volta ao MAPA DE CARREIRA
+original.
+
+Duas travas de segurança: o modelo precisa manter o campo **Nome do cargo** (é
+o que identifica o descritivo na lista, no e-mail e no documento) e precisa ter
+**ao menos um campo do gestor** — sem isso ele não teria o que preencher.
+
+## Divisão padrão do modelo por papel
 
 | Bloco do modelo | Preenchido por |
 | --- | --- |
@@ -199,6 +231,7 @@ aprovador nunca edita conteúdo: apenas aprova ou devolve.
 | Cargos | Aprovador e C&R | consulta |
 | Administração | C&R | criar cargo, buscar, filtrar por etapa, reenviar código, cancelar, exportar CSV |
 | Códigos de acesso | C&R | criar, copiar, trocar e revogar códigos de C&R e aprovadores |
+| Modelo | C&R | montar as seções e os campos do descritivo, e quem preenche cada um |
 | Configurações | C&R | e-mail (SMTP), avisos automáticos e cobrança de prazo |
 | Documento | todos (aprovado) | MAPA DE CARREIRA pronto para imprimir ou salvar em PDF |
 

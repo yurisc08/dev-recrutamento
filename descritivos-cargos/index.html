@@ -340,10 +340,10 @@ table.list .btn{padding:7px 12px;font-size:13px}
       <p>Cada pessoa preenche a parte que é dela, o fluxo anda sozinho e o documento sai pronto no fim.</p>
     </div>
     <div class="steps-preview">
-      <div><span>1</span> C&amp;R cadastra o cargo e envia o código</div>
-      <div><span>2</span> O responsável preenche o conteúdo</div>
-      <div><span>3</span> O aprovador aprova ou devolve</div>
-      <div><span>4</span> C&amp;R valida e o MAPA DE CARREIRA fica pronto</div>
+      <div><span>1</span> C&amp;R cadastra o cargo e envia o código por e-mail</div>
+      <div><span>2</span> O gestor entra com o código e preenche a parte dele</div>
+      <div><span>3</span> C&amp;R analisa: aprova ou devolve com o motivo</div>
+      <div><span>4</span> Aprovado, o MAPA DE CARREIRA fica pronto</div>
     </div>
     <small style="color:rgba(255,255,255,.55)">Modelo MAPA DE CARREIRA</small>
   </aside>
@@ -368,9 +368,9 @@ table.list .btn{padding:7px 12px;font-size:13px}
         <p class="muted">Clique para preencher e ver a ferramenta pelos olhos de cada papel.</p>
         <div class="demo-codes">
           <button class="btn secondary" data-demo-code="CR-00001"><b>CR-00001</b><span>Carreira &amp; Recompensa</span></button>
-          <button class="btn secondary" data-demo-code="AP-00001"><b>AP-00001</b><span>Aprovador</span></button>
-          <button class="btn secondary" data-demo-code="DC-00001"><b>DC-00001</b><span>Responsável — 2 cargos</span></button>
-          <button class="btn secondary" data-demo-code="DC-00002"><b>DC-00002</b><span>Responsável — aprovado</span></button>
+          <button class="btn secondary" data-demo-code="AP-00001"><b>AP-00001</b><span>Aprovador (opcional)</span></button>
+          <button class="btn secondary" data-demo-code="DC-00001"><b>DC-00001</b><span>Gestor — 2 cargos</span></button>
+          <button class="btn secondary" data-demo-code="DC-00002"><b>DC-00002</b><span>Gestor — código já encerrado</span></button>
         </div>
       </div>
 
@@ -470,16 +470,16 @@ const STAGES = {
     hint: 'Ajuste os pontos apontados e reenvie para aprovação.'
   },
   manager_review: {
-    label: 'Aguardando aprovação',
+    label: 'Aprovação do aprovador',
     tone: 'review',
     owner: 'approver',
-    hint: 'Enviado ao aprovador. Nenhuma ação do responsável é necessária.'
+    hint: 'Etapa opcional: enviado ao aprovador indicado no cadastro do cargo.'
   },
   hr_review: {
-    label: 'Validação de C&R',
+    label: 'Aprovação de C&R',
     tone: 'review',
     owner: 'hr',
-    hint: 'Aprovado pelo aprovador. Em validação final de Carreira & Recompensa.'
+    hint: 'Aguardando a análise de Carreira & Recompensa: aprovar ou devolver.'
   },
   approved: {
     label: 'Aprovado',
@@ -509,11 +509,12 @@ const EDITABLE_STAGES = {
  * full   : ocupa a linha inteira do formulário
  * docHead: título do bloco no documento final
  */
-const SECTIONS = [
+const DEFAULT_SECTIONS = [
   {
     id: 'identificacao',
     title: 'Identificação do cargo',
     owner: 'hr',
+    layout: 'table',
     fields: [
       { key: 'company',      label: 'Empresa',            type: 'text', required: true },
       { key: 'jobCode',      label: 'Código do cargo',    type: 'text', required: true },
@@ -530,9 +531,9 @@ const SECTIONS = [
     title: 'Conteúdo do cargo',
     owner: 'manager',
     fields: [
-      { key: 'focus',            label: 'Foco de atuação', type: 'textarea', required: true, full: true, docHead: 'FOCO DE ATUAÇÃO' },
-      { key: 'mission',          label: 'Missão',          type: 'textarea', required: true, full: true, docHead: 'MISSÃO' },
-      { key: 'responsibilities', label: 'Principais responsabilidades / atividades', type: 'textarea', required: true, full: true, docHead: 'PRINCIPAIS RESPONSABILIDADES / ATIVIDADES',
+      { key: 'focus',            label: 'Foco de atuação', type: 'textarea', required: true, full: true },
+      { key: 'mission',          label: 'Missão',          type: 'textarea', required: true, full: true },
+      { key: 'responsibilities', label: 'Principais responsabilidades / atividades', type: 'textarea', required: true, full: true,
         hint: 'Uma responsabilidade por linha.' }
     ]
   },
@@ -541,8 +542,8 @@ const SECTIONS = [
     title: 'Formação',
     owner: 'hr',
     fields: [
-      { key: 'educationMin',     label: 'Formação mínima',    type: 'text', required: true, docHead: 'FORMAÇÃO MÍNIMA' },
-      { key: 'educationDesired', label: 'Formação desejável', type: 'text', required: true, docHead: 'FORMAÇÃO DESEJÁVEL' }
+      { key: 'educationMin',     label: 'Formação mínima',    type: 'text', required: true },
+      { key: 'educationDesired', label: 'Formação desejável', type: 'text', required: true }
     ]
   },
   {
@@ -550,8 +551,8 @@ const SECTIONS = [
     title: 'Idiomas',
     owner: 'manager',
     fields: [
-      { key: 'languageMin',     label: 'Idioma mínimo',    type: 'text', required: true, docHead: 'IDIOMA MÍNIMO' },
-      { key: 'languageDesired', label: 'Idioma desejável', type: 'text', required: true, docHead: 'IDIOMA DESEJÁVEL' }
+      { key: 'languageMin',     label: 'Idioma mínimo',    type: 'text', required: true },
+      { key: 'languageDesired', label: 'Idioma desejável', type: 'text', required: true }
     ]
   },
   {
@@ -559,8 +560,8 @@ const SECTIONS = [
     title: 'Competências técnicas',
     owner: 'manager',
     fields: [
-      { key: 'technicalMin',     label: 'Competências técnicas mínimas',    type: 'textarea', required: true, full: true, docHead: 'COMPETÊNCIAS TÉCNICAS MÍNIMAS' },
-      { key: 'technicalDesired', label: 'Competências técnicas desejáveis', type: 'textarea', required: true, full: true, docHead: 'COMPETÊNCIAS TÉCNICAS DESEJÁVEIS' }
+      { key: 'technicalMin',     label: 'Competências técnicas mínimas',    type: 'textarea', required: true, full: true },
+      { key: 'technicalDesired', label: 'Competências técnicas desejáveis', type: 'textarea', required: true, full: true }
     ]
   },
   {
@@ -568,7 +569,7 @@ const SECTIONS = [
     title: 'Competências comportamentais',
     owner: 'hr',
     fields: [
-      { key: 'behavioral', label: 'Competências comportamentais Marcopolo', type: 'textarea', required: true, full: true, docHead: 'COMPETÊNCIAS COMPORTAMENTAIS MARCOPOLO' }
+      { key: 'behavioral', label: 'Competências comportamentais Marcopolo', type: 'textarea', required: true, full: true }
     ]
   },
   {
@@ -576,8 +577,8 @@ const SECTIONS = [
     title: 'Experiência profissional',
     owner: 'manager',
     fields: [
-      { key: 'experienceMin',     label: 'Experiência mínima',    type: 'text', required: true, docHead: 'EXPERIÊNCIA MÍNIMA' },
-      { key: 'experienceDesired', label: 'Experiência desejável', type: 'text', required: true, docHead: 'EXPERIÊNCIA DESEJÁVEL' }
+      { key: 'experienceMin',     label: 'Experiência mínima',    type: 'text', required: true },
+      { key: 'experienceDesired', label: 'Experiência desejável', type: 'text', required: true }
     ]
   }
 ];
@@ -586,19 +587,115 @@ const SECTIONS = [
 const FLOW_FIELDS = [
   { key: 'manager',      label: 'Responsável pelo preenchimento', type: 'text',  required: true },
   { key: 'managerEmail', label: 'E-mail do responsável',          type: 'email', required: true },
-  { key: 'approver',     label: 'Aprovador',                      type: 'text',  required: true },
+  { key: 'approver',     label: 'Aprovador (opcional)',           type: 'text',  required: false,
+    hint: 'Deixe em branco para o descritivo ir direto de você para C&R.' },
   { key: 'deadline',     label: 'Prazo de preenchimento',         type: 'date',  required: true }
 ];
 
-/* ------------------------------ Utilidades ------------------------------- */
-const ALL_FIELDS = SECTIONS.flatMap(s => s.fields.map(f => ({ ...f, owner: f.owner || s.owner, section: s.id })));
+/* --------------------------- Modelo em vigor ----------------------------- */
+/*
+ * O modelo não é fixo no código: C&R pode criar, renomear e reordenar campos
+ * pela tela "Modelo". O padrão abaixo é só o ponto de partida — quem manda é o
+ * que estiver gravado (data/db.json no servidor, ou o navegador no modo local).
+ *
+ * Tudo o que depende do modelo — formulário, validação, permissão de escrita,
+ * documento e exportação — passa por estas funções, então basta trocar as
+ * seções aqui para as quatro coisas acompanharem.
+ */
+let currentSections = clone(DEFAULT_SECTIONS);
+let currentFields = flatten(currentSections);
 
+function clone(value) {
+  return JSON.parse(JSON.stringify(value));
+}
+
+function flatten(sections) {
+  return sections.flatMap(section => section.fields.map(field => ({
+    ...field,
+    owner: field.owner || section.owner,
+    section: section.id,
+    // Título do bloco no documento: o rótulo em maiúsculas, salvo indicação.
+    docHead: field.docHead || String(field.label || '').toUpperCase()
+  })));
+}
+
+function sections() {
+  return currentSections;
+}
+
+function allFields() {
+  return currentFields;
+}
+
+/* Troca o modelo em vigor. Devolve { ok, error } sem alterar nada se algo
+ * estiver errado — assim um modelo inválido nunca chega a valer. */
+function setSections(next) {
+  const check = validateSections(next);
+  if (!check.ok) return check;
+  currentSections = clone(next);
+  currentFields = flatten(currentSections);
+  return { ok: true };
+}
+
+function resetSections() {
+  currentSections = clone(DEFAULT_SECTIONS);
+  currentFields = flatten(currentSections);
+  return { ok: true };
+}
+
+const FIELD_TYPES = ['text', 'textarea', 'date'];
+
+function validateSections(next) {
+  if (!Array.isArray(next) || !next.length) return { ok: false, error: 'O modelo precisa ter ao menos uma seção' };
+
+  const keys = new Set();
+
+  for (const section of next) {
+    if (!section || !String(section.title || '').trim()) return { ok: false, error: 'Toda seção precisa de um título' };
+    if (!Array.isArray(section.fields) || !section.fields.length) {
+      return { ok: false, error: `A seção "${section.title}" está sem campos` };
+    }
+
+    for (const field of section.fields) {
+      if (!String(field.label || '').trim()) return { ok: false, error: `Há um campo sem rótulo em "${section.title}"` };
+      if (!String(field.key || '').trim()) return { ok: false, error: `O campo "${field.label}" está sem identificador` };
+      if (keys.has(field.key)) return { ok: false, error: `Identificador repetido: ${field.key}` };
+      if (field.type && !FIELD_TYPES.includes(field.type)) return { ok: false, error: `Tipo inválido em "${field.label}"` };
+      keys.add(field.key);
+    }
+  }
+
+  // O nome do cargo identifica o descritivo na lista, no e-mail e no documento.
+  if (!keys.has('name')) return { ok: false, error: 'O modelo precisa manter o campo "Nome do cargo"' };
+
+  // Sem campos do responsável, o fluxo perderia o sentido: ele não teria o que
+  // preencher e o cargo iria direto para aprovação vazio.
+  const hasManagerField = flatten(next).some(f => f.owner === 'manager');
+  if (!hasManagerField) return { ok: false, error: 'Ao menos um campo precisa ser preenchido pelo responsável' };
+
+  return { ok: true };
+}
+
+/* Identificador estável a partir do rótulo, para campos criados na tela. */
+function keyFromLabel(label, taken = []) {
+  const base = String(label || 'campo')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase().replace(/[^a-z0-9]+/g, '_').replace(/^_|_$/g, '')
+    .slice(0, 30) || 'campo';
+
+  let key = base;
+  let n = 2;
+  while (taken.includes(key)) key = `${base}_${n++}`;
+  return key;
+}
+
+/* ------------------------------ Utilidades ------------------------------- */
 function fieldsOf(role) {
-  return ALL_FIELDS.filter(f => f.owner === role);
+  return currentFields.filter(f => f.owner === role);
 }
 
 function blankJob() {
-  return ALL_FIELDS.reduce((acc, f) => (acc[f.key] = '', acc), {});
+  return currentFields.reduce((acc, f) => (acc[f.key] = '', acc), {});
 }
 
 /* Campos obrigatórios do papel que ainda estão vazios. */
@@ -629,7 +726,8 @@ function addDays(iso, days) {
 }
 
 return {
-  ROLES, STAGES, EDITABLE_STAGES, SECTIONS, FLOW_FIELDS, ALL_FIELDS,
+  ROLES, STAGES, EDITABLE_STAGES, FLOW_FIELDS, FIELD_TYPES, DEFAULT_SECTIONS,
+  sections, allFields, setSections, resetSections, validateSections, keyFromLabel,
   fieldsOf, blankJob, missingFields, completion, canEdit, isoToday, addDays
 };
 
@@ -712,8 +810,19 @@ function sameCode(a, b) {
 }
 
 /* ------------------------------- Visibilidade ---------------------------- */
+/*
+ * O código do responsável vale enquanto houver trabalho a fazer. Assim que o
+ * descritivo é aprovado, ele sai da lista — e quando não sobra nenhum cargo
+ * pendente, o código deixa de dar acesso (ver openForCode).
+ */
+const CLOSED_STAGES = ['approved', 'canceled'];
+
+function openForCode(jobs, code) {
+  return jobs.filter(j => sameCode(j.code, code) && !CLOSED_STAGES.includes(j.status));
+}
+
 function visibleTo(jobs, session) {
-  if (session.role === 'manager') return jobs.filter(j => sameCode(j.code, session.code));
+  if (session.role === 'manager') return openForCode(jobs, session.code);
   if (session.role === 'approver') return jobs.filter(j => j.approver === session.name);
   return jobs;
 }
@@ -724,10 +833,12 @@ function isPending(job, role) {
 
 /* ------------------------------- Transições ------------------------------ */
 const TRANSITIONS = {
+  /* O destino do envio depende do cadastro do cargo: com aprovador indicado,
+   * passa por ele antes; sem aprovador, vai direto para C&R. */
   submit: {
     from: ['editing', 'returned'],
     role: 'manager',
-    to: 'manager_review',
+    to: job => (String(job.approver || '').trim() ? 'manager_review' : 'hr_review'),
     log: 'Enviado para aprovação'
   },
   approve: {
@@ -740,7 +851,7 @@ const TRANSITIONS = {
     from: ['hr_review'],
     role: 'hr',
     to: 'approved',
-    log: 'Validado e aprovado por Carreira & Recompensa'
+    log: 'Aprovado por Carreira & Recompensa'
   },
   return: {
     from: ['manager_review', 'hr_review'],
@@ -786,7 +897,7 @@ function applyTransition(job, action, session, text) {
     if (missing.length) return { ok: false, error: 'Campos pendentes: ' + missing.map(f => f.label).join(', ') };
   }
 
-  job.status = rule.to;
+  job.status = typeof rule.to === 'function' ? rule.to(job) : rule.to;
   if (action === 'validate') job.reviewDate = isoToday();
   job.history.push(entry(rule.log + (note ? ': ' + note : ''), session.name, session.role));
   if (note) job.comments.push(comment(note, session.name, session.role));
@@ -806,7 +917,7 @@ function applyFields(job, session, values) {
 return {
   entry, comment, normalizeJob,
   newAccessCode, normalizeCode, sameCode, CODE_PREFIX,
-  visibleTo, isPending,
+  visibleTo, isPending, openForCode, CLOSED_STAGES,
   TRANSITIONS, applyTransition, applyFields
 };
 
@@ -824,8 +935,8 @@ return {
  *
  * São quatro códigos de acesso, um para cada tipo de porta de entrada:
  *
- *   CR-00001  Carreira & Recompensa (administrativo)
- *   AP-00001  Aprovador
+ *   CR-00001  Carreira & Recompensa (administrativo, é quem aprova)
+ *   AP-00001  Aprovador (etapa opcional, usada quando o cargo indica um)
  *   DC-00001  Responsável — Gestor Demonstração (2 cargos)
  *   DC-00002  Responsável — Gestora Demonstração (1 cargo já aprovado)
  */
@@ -863,7 +974,7 @@ function seedJobs() {
       creationDate: today,
       manager: 'Gestor Demonstração',
       managerEmail: 'gestor@empresa.com',
-      approver: 'Aprovador Demonstração',
+      approver: '',
       deadline: Model.addDays(today, 12),
       status: 'editing',
       educationMin: 'Superior completo em Estatística, Sistemas de Informação ou correlatos',
@@ -1038,9 +1149,10 @@ const LocalStore = {
       stored.jobs = (stored.jobs || []).map(normalizeJob);
       stored.keys = stored.keys || seedKeys();
       stored.config = stored.config || this.defaultConfig();
+      stored.model = stored.model || Model.DEFAULT_SECTIONS;
       return stored;
     } catch {
-      const fresh = { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig() };
+      const fresh = { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig(), model: Model.DEFAULT_SECTIONS };
       this.write(fresh);
       return fresh;
     }
@@ -1090,9 +1202,13 @@ const LocalStore = {
       return this.remember({ role: key.role, name: key.name, code: key.code });
     }
 
-    const jobs = db.jobs.filter(j => sameCode(j.code, code) && j.status !== 'canceled');
-    if (jobs.length) {
-      return this.remember({ role: 'manager', name: jobs[0].manager, code: jobs[0].code });
+    const open = openForCode(db.jobs, code);
+    if (open.length) {
+      return this.remember({ role: 'manager', name: open[0].manager, code: open[0].code });
+    }
+
+    if (db.jobs.some(j => sameCode(j.code, code))) {
+      throw new Error('Este código já foi encerrado: os descritivos ligados a ele foram concluídos.');
     }
 
     throw new Error('Código não encontrado. Confira com Carreira & Recompensa.');
@@ -1119,7 +1235,8 @@ const LocalStore = {
   async createJob(data) {
     if (this.session.role !== 'hr') throw new Error('Apenas C&R pode criar cargos');
 
-    const required = [...FLOW_FIELDS, ...fieldsOf('hr').filter(f => f.key !== 'reviewDate')];
+    const required = [...FLOW_FIELDS, ...fieldsOf('hr').filter(f => f.key !== 'reviewDate')]
+      .filter(f => f.required);
     const missing = required.filter(f => !String(data[f.key] || '').trim()).map(f => f.label);
     if (missing.length) throw new Error('Preencha: ' + missing.join(', '));
 
@@ -1183,7 +1300,7 @@ const LocalStore = {
       { label: 'E-mail do responsável', value: j => j.managerEmail },
       { label: 'Aprovador', value: j => j.approver },
       { label: 'Prazo', value: j => j.deadline },
-      ...ALL_FIELDS.map(f => ({ label: f.label, value: j => j[f.key] }))
+      ...Model.allFields().map(f => ({ label: f.label, value: j => j[f.key] }))
     ];
 
     const escape = value => `"${String(value ?? '').replace(/"/g, '""')}"`;
@@ -1200,6 +1317,27 @@ const LocalStore = {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+  },
+
+  /* ---------------------------- Modelo do cargo -------------------------- */
+  async loadModel() {
+    const model = this.read().model;
+    const applied = Model.setSections(model);
+    if (!applied.ok) Model.resetSections();
+    return Model.sections();
+  },
+
+  async saveModel(model) {
+    const applied = Model.setSections(model);
+    if (!applied.ok) throw new Error(applied.error);
+    this.change(db => { db.model = Model.sections(); });
+    return { model: Model.sections(), message: 'Modelo atualizado' };
+  },
+
+  async resetModel() {
+    Model.resetSections();
+    this.change(db => { db.model = Model.sections(); });
+    return { model: Model.sections(), message: 'Modelo padrão restaurado' };
   },
 
   /* --------------------------- Códigos de acesso ------------------------- */
@@ -1416,6 +1554,23 @@ const RemoteStore = {
     URL.revokeObjectURL(url);
   },
 
+  /* ---------------------------- Modelo do cargo -------------------------- */
+  async loadModel() {
+    const data = await this.request('GET', '/api/model');
+    Model.setSections(data.model);
+    return data.model;
+  },
+  async saveModel(model) {
+    const data = await this.request('PUT', '/api/model', { model });
+    Model.setSections(data.model);
+    return data;
+  },
+  async resetModel() {
+    const data = await this.request('DELETE', '/api/model');
+    Model.setSections(data.model);
+    return data;
+  },
+
   /* --------------------------- Códigos de acesso ------------------------- */
   listKeys() {
     return this.request('GET', '/api/keys').then(d => d.keys);
@@ -1582,6 +1737,7 @@ const ICONS = {
   approvals: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 12.5l5 5L20 6.5"/></svg>',
   admin:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg>',
   users:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="9" cy="8" r="3.2"/><path d="M2.5 20c.6-3.4 3.3-5.4 6.5-5.4s5.9 2 6.5 5.4M17 8.2a3 3 0 010 5.6M18.5 20c-.2-1.6-.7-2.9-1.5-3.9"/></svg>',
+  model:     '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 6h16M4 12h10M4 18h7"/><circle cx="18.5" cy="15.5" r="2.6"/></svg>',
   config:    '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="3.2"/><path d="M12 2.8v2.4M12 18.8v2.4M4.6 4.6l1.7 1.7M17.7 17.7l1.7 1.7M2.8 12h2.4M18.8 12h2.4M4.6 19.4l1.7-1.7M17.7 6.3l1.7-1.7"/></svg>'
 };
 
@@ -1609,6 +1765,7 @@ const NAV = {
     { view: 'jobs', label: 'Cargos' },
     { view: 'admin', label: 'Administração' },
     { view: 'users', label: 'Códigos de acesso' },
+    { view: 'model', label: 'Modelo' },
     { view: 'config', label: 'Configurações' }
   ]
 };
@@ -1616,6 +1773,8 @@ const NAV = {
 const HOME = { manager: 'jobs', approver: 'approvals', hr: 'admin' };
 
 async function enter(view) {
+  // O modelo vem antes dos cargos: o formulário inteiro depende dele.
+  await API.loadModel();
   await API.loadJobs();
   $('#login').classList.add('hide');
   $('#application').classList.remove('hide');
@@ -1642,6 +1801,7 @@ const VIEWS = {
   approvals: approvalsView,
   admin: adminView,
   users: usersView,
+  model: modelView,
   config: configView,
   job: jobView,
   document: documentView
@@ -1721,6 +1881,14 @@ function jobCard(job, actions) {
     </article>`;
 }
 
+/* A primeira seção (identificação) vira a tabela do topo do documento; as
+ * demais viram blocos. Assim campos criados por C&R entram no documento sem
+ * precisar de configuração extra. */
+function identificationId() {
+  const table = Model.sections().find(s => s.layout === 'table') || Model.sections()[0];
+  return table ? table.id : null;
+}
+
 /* ---------------------------- Trilha do fluxo ---------------------------- */
 const FLOW_STEPS = [
   { label: 'Preenchimento', stages: ['editing', 'returned'] },
@@ -1780,7 +1948,7 @@ function jobView() {
   const returnedNote = job.status === 'returned' && job.comments.length
     ? `<div class="banner warn"><b>Correção solicitada.</b> ${nl2br(job.comments.at(-1).text)}</div>` : '';
 
-  const sections = SECTIONS.map(section => {
+  const sections = Model.sections().map(section => {
     const fields = section.fields
       .map(f => inputField(f, job[f.key], editable && (f.owner || section.owner) === role))
       .join('');
@@ -2004,17 +2172,19 @@ async function newJobModal() {
     const preset = esc(CREATION_DEFAULTS[f.key] || '');
     const type = f.type === 'date' ? 'date' : f.type === 'email' ? 'email' : 'text';
 
-    const control = f.key === 'approver' && approvers.length
-      ? `<select id="${id}" data-new="${f.key}">${approvers.map(a => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join('')}</select>`
+    const control = f.key === 'approver'
+      ? `<select id="${id}" data-new="${f.key}">
+           <option value="">Sem aprovador — vai direto para C&amp;R</option>
+           ${approvers.map(a => `<option value="${esc(a.name)}">${esc(a.name)}</option>`).join('')}
+         </select>`
       : f.type === 'textarea'
         ? `<textarea id="${id}" data-new="${f.key}" rows="3">${preset}</textarea>`
         : `<input id="${id}" data-new="${f.key}" type="${type}" value="${preset}">`;
 
-    const hint = f.key === 'approver' && !approvers.length
-      ? '<small class="muted">Nenhum código de aprovador cadastrado ainda — crie um em Códigos de acesso.</small>'
-      : '';
+    const hint = f.hint ? `<small class="muted">${esc(f.hint)}</small>` : '';
+    const req = f.required ? ' <span class="req">*</span>' : '';
 
-    return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)} <span class="req">*</span></label>${control}${hint}</div>`;
+    return `<div class="field${f.full ? ' full' : ''}"><label for="${id}">${esc(f.label)}${req}</label>${control}${hint}</div>`;
   };
 
   openModal(`
@@ -2190,6 +2360,167 @@ function userModal(key) {
   };
 }
 
+/* =========================== VISÃO: MODELO =============================== */
+/*
+ * C&R monta o descritivo: cria seções, cria campos, escolhe quem preenche cada
+ * um e se é obrigatório. "Quem preenche" é o que tranca o campo — o que for de
+ * C&R aparece bloqueado para o responsável, e vice-versa.
+ *
+ * A edição é imediata: cada ação grava o modelo inteiro e redesenha.
+ */
+const PROTECTED_KEYS = ['name'];
+
+function modelView() {
+  if (session().role !== 'hr') return show('approvals');
+  const sections = Model.sections();
+
+  $('#title').textContent = 'Modelo do descritivo';
+  $('#subtitle').textContent = `${sections.length} seção(ões) • ${Model.allFields().length} campo(s)`;
+  $('#topActions').innerHTML = `
+    <button class="btn primary" data-action="section-new">Nova seção</button>
+    <button class="btn outline" data-action="model-reset">Restaurar modelo padrão</button>`;
+
+  $('#content').innerHTML = `
+    <div class="banner">Alterações valem para os próximos preenchimentos e para o documento. Cargos já preenchidos mantêm o que foi escrito; campos removidos apenas deixam de aparecer.</div>
+    ${sections.map((section, si) => `
+      <div class="card">
+        <div class="head">
+          <div>
+            <b>${esc(section.title)}</b>
+            <p class="muted">Padrão da seção: ${ROLES[section.owner] ? ROLES[section.owner].label : '—'}${section.layout === 'table' ? ' • vira a tabela de identificação do documento' : ''}</p>
+          </div>
+          <div class="actions">
+            <button class="btn outline" data-action="section-move" data-index="${si}" data-dir="-1" ${si === 0 ? 'disabled' : ''}>↑</button>
+            <button class="btn outline" data-action="section-move" data-index="${si}" data-dir="1" ${si === sections.length - 1 ? 'disabled' : ''}>↓</button>
+            <button class="btn secondary" data-action="section-edit" data-index="${si}">Editar</button>
+            <button class="btn danger" data-action="section-del" data-index="${si}">Excluir</button>
+          </div>
+        </div>
+        <div class="body">
+          <table class="list">
+            <thead><tr><th>Campo</th><th>Tipo</th><th>Quem preenche</th><th>Obrigatório</th><th></th></tr></thead>
+            <tbody>${section.fields.map((field, fi) => `
+              <tr>
+                <td><b>${esc(field.label)}</b>${field.hint ? `<br><span class="muted">${esc(field.hint)}</span>` : ''}</td>
+                <td class="muted">${({ text: 'Texto curto', textarea: 'Texto longo', date: 'Data' })[field.type || 'text']}</td>
+                <td>${ROLES[field.owner || section.owner].label}${(field.owner || section.owner) === 'hr' ? ' <span class="lock" title="Bloqueado para o responsável">🔒</span>' : ''}</td>
+                <td class="muted">${field.required ? 'Sim' : 'Não'}</td>
+                <td class="right">
+                  <button class="btn outline" data-action="field-move" data-index="${si}" data-field-index="${fi}" data-dir="-1" ${fi === 0 ? 'disabled' : ''}>↑</button>
+                  <button class="btn outline" data-action="field-move" data-index="${si}" data-field-index="${fi}" data-dir="1" ${fi === section.fields.length - 1 ? 'disabled' : ''}>↓</button>
+                  <button class="btn secondary" data-action="field-edit" data-index="${si}" data-field-index="${fi}">Editar</button>
+                  <button class="btn danger" data-action="field-del" data-index="${si}" data-field-index="${fi}">Excluir</button>
+                </td>
+              </tr>`).join('')}
+            </tbody>
+          </table>
+          <div class="actions mt"><button class="btn secondary" data-action="field-new" data-index="${si}">Novo campo nesta seção</button></div>
+        </div>
+      </div>`).join('')}`;
+}
+
+/* Trabalha sobre uma cópia e grava o modelo inteiro. */
+async function updateModel(change, message) {
+  const draft = JSON.parse(JSON.stringify(Model.sections()));
+  try {
+    change(draft);
+    const result = await API.saveModel(draft);
+    toast(message || result.message || 'Modelo atualizado', 'success');
+    modelView();
+  } catch (err) {
+    toast(err.message, 'error');
+    modelView();
+  }
+}
+
+function sectionModal(index) {
+  const editing = index !== undefined;
+  const section = editing ? Model.sections()[index] : { title: '', owner: 'manager' };
+
+  openModal(`
+    <h2>${editing ? 'Editar seção' : 'Nova seção'}</h2>
+    <div class="grid">
+      <div class="field"><label for="sTitle">Título da seção <span class="req">*</span></label>
+        <input id="sTitle" value="${esc(section.title)}" placeholder="Ex.: Responsabilidades"></div>
+      <div class="field"><label for="sOwner">Quem preenche, por padrão</label>
+        <select id="sOwner">
+          <option value="manager" ${section.owner === 'manager' ? 'selected' : ''}>Responsável pelo cargo</option>
+          <option value="hr" ${section.owner === 'hr' ? 'selected' : ''}>Carreira &amp; Recompensa (bloqueado para o responsável)</option>
+        </select></div>
+    </div>
+    <button class="btn primary full mt" data-modal-action="save-section">Salvar</button>
+  `);
+
+  $('#modalContent').querySelector('[data-modal-action="save-section"]').onclick = () => {
+    const title = $('#sTitle').value.trim();
+    const owner = $('#sOwner').value;
+    if (!title) return toast('Informe o título', 'error');
+    closeModal();
+
+    updateModel(draft => {
+      if (editing) Object.assign(draft[index], { title, owner });
+      else draft.push({ id: 'sec_' + Date.now(), title, owner, fields: [] });
+    }, editing ? 'Seção atualizada' : 'Seção criada — agora inclua os campos');
+  };
+}
+
+function fieldModal(sectionIndex, fieldIndex) {
+  const section = Model.sections()[sectionIndex];
+  const editing = fieldIndex !== undefined;
+  const field = editing ? section.fields[fieldIndex] : { label: '', type: 'text', owner: section.owner, required: true, hint: '' };
+  const protectedKey = editing && PROTECTED_KEYS.includes(field.key);
+
+  openModal(`
+    <h2>${editing ? 'Editar campo' : 'Novo campo'}</h2>
+    <p class="muted">Seção: ${esc(section.title)}</p>
+    <div class="grid">
+      <div class="field full"><label for="fLabel">Rótulo <span class="req">*</span></label>
+        <input id="fLabel" value="${esc(field.label)}" placeholder="Ex.: Principais entregas"></div>
+      <div class="field"><label for="fType">Tipo</label>
+        <select id="fType">
+          <option value="text" ${(field.type || 'text') === 'text' ? 'selected' : ''}>Texto curto</option>
+          <option value="textarea" ${field.type === 'textarea' ? 'selected' : ''}>Texto longo</option>
+          <option value="date" ${field.type === 'date' ? 'selected' : ''}>Data</option>
+        </select></div>
+      <div class="field"><label for="fOwner">Quem preenche</label>
+        <select id="fOwner" ${protectedKey ? 'disabled' : ''}>
+          <option value="manager" ${(field.owner || section.owner) === 'manager' ? 'selected' : ''}>Responsável pelo cargo</option>
+          <option value="hr" ${(field.owner || section.owner) === 'hr' ? 'selected' : ''}>Carreira &amp; Recompensa (bloqueado para o responsável)</option>
+        </select></div>
+      <div class="field full"><label for="fHint">Dica para quem preenche (opcional)</label>
+        <input id="fHint" value="${esc(field.hint || '')}" placeholder="Ex.: uma responsabilidade por linha"></div>
+    </div>
+    <label class="check"><input type="checkbox" id="fRequired" ${field.required ? 'checked' : ''}> Obrigatório para avançar no fluxo</label>
+    ${protectedKey ? '<p class="muted">Este campo identifica o cargo na lista e no e-mail, por isso continua sendo de C&R.</p>' : ''}
+    <button class="btn primary full mt" data-modal-action="save-field">Salvar</button>
+  `);
+
+  $('#modalContent').querySelector('[data-modal-action="save-field"]').onclick = () => {
+    const label = $('#fLabel').value.trim();
+    if (!label) return toast('Informe o rótulo', 'error');
+
+    const data = {
+      label,
+      type: $('#fType').value,
+      owner: protectedKey ? field.owner : $('#fOwner').value,
+      required: $('#fRequired').checked,
+      hint: $('#fHint').value.trim()
+    };
+    if (data.type === 'textarea') data.full = true;
+    closeModal();
+
+    updateModel(draft => {
+      const target = draft[sectionIndex];
+      if (editing) {
+        Object.assign(target.fields[fieldIndex], data);
+      } else {
+        const taken = draft.flatMap(s => s.fields.map(f => f.key));
+        target.fields.push({ key: Model.keyFromLabel(label, taken), ...data });
+      }
+    }, editing ? 'Campo atualizado' : 'Campo criado');
+  };
+}
+
 /* ========================= VISÃO: CONFIGURAÇÕES ========================== */
 async function configView() {
   if (session().role !== 'hr') return show('approvals');
@@ -2286,11 +2617,11 @@ function documentView() {
   const job = API.getJob(state.jobId);
   if (!job) return show('jobs');
 
-  const rows = SECTIONS[0].fields
+  const rows = (Model.sections().find(s => s.layout === 'table') || Model.sections()[0]).fields
     .map(f => `<tr><th>${esc(f.label)}</th><td>${esc(f.type === 'date' ? formatDate(job[f.key]) : job[f.key] || '—')}</td></tr>`)
     .join('');
 
-  const blocks = ALL_FIELDS.filter(f => f.docHead)
+  const blocks = Model.allFields().filter(f => f.section !== identificationId())
     .map(f => `<h2>${esc(f.docHead)}</h2><p>${nl2br(job[f.key] || 'Não informado')}</p>`)
     .join('');
 
@@ -2389,6 +2720,49 @@ async function handleAction(action, id, element) {
       return navigator.clipboard.writeText(code)
         .then(() => toast('Código copiado: ' + code, 'success'))
         .catch(() => toast('Copie manualmente: ' + code));
+
+    /* ------------------------------ Modelo ------------------------------ */
+    case 'section-new':
+      return sectionModal();
+    case 'section-edit':
+      return sectionModal(Number(element.dataset.index));
+    case 'section-move':
+      return updateModel(draft => {
+        const from = Number(element.dataset.index);
+        const to = from + Number(element.dataset.dir);
+        [draft[from], draft[to]] = [draft[to], draft[from]];
+      }, 'Ordem atualizada');
+    case 'section-del': {
+      const index = Number(element.dataset.index);
+      const section = Model.sections()[index];
+      return askText('Excluir seção', `Digite EXCLUIR para remover "${section.title}" e seus ${section.fields.length} campo(s)`, text => {
+        if (text.trim().toUpperCase() !== 'EXCLUIR') return toast('Confirmação inválida', 'error');
+        updateModel(draft => draft.splice(index, 1), 'Seção excluída');
+      });
+    }
+    case 'field-new':
+      return fieldModal(Number(element.dataset.index));
+    case 'field-edit':
+      return fieldModal(Number(element.dataset.index), Number(element.dataset.fieldIndex));
+    case 'field-move':
+      return updateModel(draft => {
+        const fields = draft[Number(element.dataset.index)].fields;
+        const from = Number(element.dataset.fieldIndex);
+        const to = from + Number(element.dataset.dir);
+        [fields[from], fields[to]] = [fields[to], fields[from]];
+      }, 'Ordem atualizada');
+    case 'field-del': {
+      const si = Number(element.dataset.index);
+      const fi = Number(element.dataset.fieldIndex);
+      const field = Model.sections()[si].fields[fi];
+      if (PROTECTED_KEYS.includes(field.key)) return toast('Este campo não pode ser removido: identifica o cargo', 'error');
+      return updateModel(draft => draft[si].fields.splice(fi, 1), 'Campo excluído');
+    }
+    case 'model-reset':
+      return askText('Restaurar modelo padrão', 'Digite RESTAURAR para voltar ao MAPA DE CARREIRA original', text => {
+        if (text.trim().toUpperCase() !== 'RESTAURAR') return toast('Confirmação inválida', 'error');
+        run(API.resetModel(), 'Modelo padrão restaurado');
+      });
 
     /* --------------------------- Configurações -------------------------- */
     case 'config-save':

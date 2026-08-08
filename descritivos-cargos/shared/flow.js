@@ -72,8 +72,19 @@ function sameCode(a, b) {
 }
 
 /* ------------------------------- Visibilidade ---------------------------- */
+/*
+ * O código do responsável vale enquanto houver trabalho a fazer. Assim que o
+ * descritivo é aprovado, ele sai da lista — e quando não sobra nenhum cargo
+ * pendente, o código deixa de dar acesso (ver openForCode).
+ */
+const CLOSED_STAGES = ['approved', 'canceled'];
+
+function openForCode(jobs, code) {
+  return jobs.filter(j => sameCode(j.code, code) && !CLOSED_STAGES.includes(j.status));
+}
+
 function visibleTo(jobs, session) {
-  if (session.role === 'manager') return jobs.filter(j => sameCode(j.code, session.code));
+  if (session.role === 'manager') return openForCode(jobs, session.code);
   if (session.role === 'approver') return jobs.filter(j => j.approver === session.name);
   return jobs;
 }
@@ -84,10 +95,12 @@ function isPending(job, role) {
 
 /* ------------------------------- Transições ------------------------------ */
 const TRANSITIONS = {
+  /* O destino do envio depende do cadastro do cargo: com aprovador indicado,
+   * passa por ele antes; sem aprovador, vai direto para C&R. */
   submit: {
     from: ['editing', 'returned'],
     role: 'manager',
-    to: 'manager_review',
+    to: job => (String(job.approver || '').trim() ? 'manager_review' : 'hr_review'),
     log: 'Enviado para aprovação'
   },
   approve: {
@@ -100,7 +113,7 @@ const TRANSITIONS = {
     from: ['hr_review'],
     role: 'hr',
     to: 'approved',
-    log: 'Validado e aprovado por Carreira & Recompensa'
+    log: 'Aprovado por Carreira & Recompensa'
   },
   return: {
     from: ['manager_review', 'hr_review'],
@@ -146,7 +159,7 @@ function applyTransition(job, action, session, text) {
     if (missing.length) return { ok: false, error: 'Campos pendentes: ' + missing.map(f => f.label).join(', ') };
   }
 
-  job.status = rule.to;
+  job.status = typeof rule.to === 'function' ? rule.to(job) : rule.to;
   if (action === 'validate') job.reviewDate = isoToday();
   job.history.push(entry(rule.log + (note ? ': ' + note : ''), session.name, session.role));
   if (note) job.comments.push(comment(note, session.name, session.role));
@@ -166,7 +179,7 @@ function applyFields(job, session, values) {
 return {
   entry, comment, normalizeJob,
   newAccessCode, normalizeCode, sameCode, CODE_PREFIX,
-  visibleTo, isPending,
+  visibleTo, isPending, openForCode, CLOSED_STAGES,
   TRANSITIONS, applyTransition, applyFields
 };
 

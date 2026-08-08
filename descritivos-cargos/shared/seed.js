@@ -7,8 +7,8 @@
  *
  * São quatro códigos de acesso, um para cada tipo de porta de entrada:
  *
- *   CR-00001  Carreira & Recompensa (administrativo)
- *   AP-00001  Aprovador
+ *   CR-00001  Carreira & Recompensa (administrativo, é quem aprova)
+ *   AP-00001  Aprovador (etapa opcional, usada quando o cargo indica um)
  *   DC-00001  Responsável — Gestor Demonstração (2 cargos)
  *   DC-00002  Responsável — Gestora Demonstração (1 cargo já aprovado)
  */
@@ -46,7 +46,7 @@ function seedJobs() {
       creationDate: today,
       manager: 'Gestor Demonstração',
       managerEmail: 'gestor@empresa.com',
-      approver: 'Aprovador Demonstração',
+      approver: '',
       deadline: Model.addDays(today, 12),
       status: 'editing',
       educationMin: 'Superior completo em Estatística, Sistemas de Informação ou correlatos',
