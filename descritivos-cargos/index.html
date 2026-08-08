@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Descritivos de Cargos</title>
+<link rel="stylesheet" href="assets/styles.css">
+</head>
+<body>
+
+<!-- ============================ LOGIN ============================ -->
+<section id="login" class="login">
+  <div class="box">
+    <div class="logo">DC</div>
+
+    <div id="managerLogin">
+      <h1>Descritivos de Cargos</h1>
+      <p class="lead">Informe o código de acesso recebido por e-mail. Não é necessário usuário nem senha.</p>
+      <div class="field">
+        <label for="accessCode">Código de acesso</label>
+        <input id="accessCode" placeholder="Ex.: DC-00001" autocomplete="off">
+      </div>
+      <button id="managerEnter" class="btn primary full">Acessar meus descritivos</button>
+
+      <div class="test">
+        <b>Ambiente de teste</b>
+        <p class="muted">Preencha automaticamente um código válido.</p>
+        <button id="testCode" class="btn secondary full">Usar código DC-00001</button>
+      </div>
+
+      <button id="showInternal" class="btn outline full mt">Acesso interno de C&amp;R e aprovação</button>
+    </div>
+
+    <div id="internalLogin" class="hide">
+      <h1>Acesso interno</h1>
+      <p class="lead">Área de Carreira &amp; Recompensa e dos aprovadores.</p>
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input id="email" type="email" autocomplete="username">
+      </div>
+      <div class="field">
+        <label for="password">Senha</label>
+        <input id="password" type="password" autocomplete="current-password">
+      </div>
+      <button id="internalEnter" class="btn primary full">Entrar</button>
+
+      <div class="test">
+        <b>Contas de teste</b>
+        <div class="actions mt-sm">
+          <button id="testHr" class="btn secondary">Carreira &amp; Recompensa</button>
+          <button id="testApprover" class="btn secondary">Aprovador</button>
+        </div>
+      </div>
+
+      <button id="backToManager" class="btn outline full mt">Voltar</button>
+    </div>
+  </div>
+</section>
+
+<!-- ========================== APLICAÇÃO ========================== -->
+<section id="application" class="app hide">
+  <aside class="side">
+    <div class="side-brand"><span class="logo small">DC</span> <b>Descritivos</b></div>
+    <nav id="nav"></nav>
+    <div class="side-foot">
+      <div id="identity" class="identity"></div>
+      <button id="logout" class="btn ghost full">Sair</button>
+    </div>
+  </aside>
+
+  <main class="main">
+    <header class="top">
+      <div>
+        <h1 id="title">Cargos</h1>
+        <small id="subtitle" class="muted"></small>
+      </div>
+      <div id="topActions" class="actions"></div>
+    </header>
+    <div id="content"></div>
+  </main>
+</section>
+
+<!-- =========================== OVERLAYS ========================== -->
+<div id="modal" class="modal hide">
+  <div class="box">
+    <div id="modalContent"></div>
+    <div class="actions end mt">
+      <button id="closeModal" class="btn outline">Fechar</button>
+    </div>
+  </div>
+</div>
+<div id="toast" class="toast hide" role="status" aria-live="polite"></div>
+
+<script src="assets/model.js"></script>
+<script src="assets/store.js"></script>
+<script src="assets/app.js"></script>
+</body>
+</html>
