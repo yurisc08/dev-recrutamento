@@ -101,6 +101,10 @@ def ip_da_rede() -> str:
 def garantir_web() -> None:
     if (WEB / "index.html").exists():
         return
+    # No pacote de hospedagem a pasta web/ já vem pronta e não há build_web.py.
+    if not (RAIZ / "build_web.py").exists():
+        sys.exit("Pasta web/ não encontrada ao lado deste script.\n"
+                 "Descompacte o pacote inteiro, mantendo web/ e servidor.py juntos.")
     print("Pasta web/ não encontrada. Gerando...")
     r = subprocess.run([sys.executable, str(RAIZ / "build_web.py")], cwd=str(RAIZ))
     if r.returncode != 0 or not (WEB / "index.html").exists():
