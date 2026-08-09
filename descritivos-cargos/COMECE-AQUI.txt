@@ -1,0 +1,85 @@
+﻿====================================================================
+  DESCRITIVOS DE CARGOS
+  Fluxo de preenchimento e aprovacao de descritivos
+====================================================================
+
+COMO COMECAR (3 passos)
+--------------------------------------------------------------------
+
+1. Instale o Node.js, se ainda nao tiver.
+   https://nodejs.org  -> versao LTS -> instalacao padrao (tudo "Avancar")
+
+2. De um duplo clique em:   Instalar atalhos.vbs
+   Isso cria um atalho na Area de Trabalho e faz a ferramenta subir
+   sozinha quando voce liga o computador.
+
+3. Abra pelo atalho "Descritivos de Cargos" na Area de Trabalho.
+   O navegador abre em http://localhost:3000
+
+   Entre com o codigo:  CR-00001
+
+
+PRIMEIRA CONFIGURACAO (na ordem, e importante)
+--------------------------------------------------------------------
+
+a) Administracao  -> "Restaurar dados de teste"
+   Limpa os cargos de exemplo. Faca isso ANTES do passo (b),
+   porque essa acao tambem recria os codigos de demonstracao.
+
+b) Codigos        -> crie o SEU codigo de C&R e o dos aprovadores.
+   Depois revogue CR-00001 e AP-00001.
+   ATENCAO: crie o seu antes de revogar, senao voce fica sem acesso.
+
+c) Ajustes        -> endereco da ferramenta e servidor de e-mail (SMTP).
+   Use "Enviar e-mail de teste" para confirmar.
+
+d) Modelo         -> ajuste as secoes e campos do descritivo:
+   o que voce preenche, o que o gestor preenche, o que e obrigatorio.
+
+e) Fluxo          -> "Novo cargo" e o processo comeca.
+
+
+COMO O FLUXO FUNCIONA
+--------------------------------------------------------------------
+
+  C&R cadastra o cargo e preenche a parte dela
+        |  e-mail automatico ao gestor, com o codigo de acesso
+        v
+  Gestor entra com o codigo e preenche a parte dele
+        |
+        v
+  C&R analisa:  devolve com motivo  ->  volta ao gestor
+                aprova              ->  documento pronto
+                                        (o codigo do gestor expira)
+
+O aprovador e opcional: deixe o campo em branco no cadastro e o
+descritivo vai do gestor direto para C&R.
+
+
+ARQUIVOS UTEIS
+--------------------------------------------------------------------
+
+  Descritivos.vbs ................ abre a ferramenta (sem janela preta)
+  Parar.vbs ...................... encerra
+  Instalar atalhos.vbs ........... atalho + inicio automatico
+  Gerar arquivo para compartilhar.vbs .. gera um HTML unico com seus
+                                   dados dentro, para enviar a alguem
+  abrir.bat ...................... alternativa, se .vbs for bloqueado
+
+  README.md ...................... manual completo
+  HOSPEDAR.md .................... colocar num servidor de verdade
+  PILOTO-INTERNET.md ............. acesso externo para testar
+
+
+BACKUP
+--------------------------------------------------------------------
+
+Copie a pasta  data\  — sao dois arquivos e contem tudo:
+cargos, historico, codigos de acesso e o modelo.
+
+
+PRECISA DE AJUDA?
+--------------------------------------------------------------------
+
+Cada tela tem textos de apoio. O manual completo esta no README.md,
+que abre em qualquer editor de texto.
