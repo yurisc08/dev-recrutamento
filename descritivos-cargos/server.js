@@ -248,6 +248,33 @@ async function handleApi(req, res, pathname) {
     }
   }
 
+  /*
+   * Arquivo único para enviar a alguém: o index.html com os dados de hoje
+   * embutidos. Quem receber abre e encontra o modelo e os cargos como estão,
+   * sem servidor. A senha do SMTP fica de fora — não pode viajar no arquivo.
+   */
+  if (pathname === '/api/share' && req.method === 'GET') {
+    if (!requireHr()) return fail(res, 403, 'Apenas C&R pode gerar o arquivo');
+
+    const html = await fsp.readFile(path.join(ROOT, 'index.html'), 'utf8');
+    const { smtp, ...config } = db.config;
+    const seed = {
+      jobs: db.jobs,
+      keys: db.keys,
+      model: db.model,
+      config: { ...config, notificationsEnabled: false, remindersEnabled: false }
+    };
+
+    const bloco = `<script>window.DC_SEED = ${JSON.stringify(seed).replace(/</g, '\\u003c')};</script>`;
+    const saida = html.replace('<script>\n/* shared/model.js */', () => `${bloco}\n<script>\n/* shared/model.js */`);
+
+    res.writeHead(200, {
+      'Content-Type': 'text/html; charset=utf-8',
+      'Content-Disposition': 'attachment; filename="Descritivos-de-Cargos.html"'
+    });
+    return res.end(saida);
+  }
+
   if (pathname === '/api/export.csv' && req.method === 'GET') {
     if (!requireHr()) return fail(res, 403, 'Apenas C&R pode exportar');
     return exportCsv(res);

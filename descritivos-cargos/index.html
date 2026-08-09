@@ -1181,10 +1181,30 @@ const LocalStore = {
       stored.model = stored.model || Model.DEFAULT_SECTIONS;
       return stored;
     } catch {
-      const fresh = { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig(), model: Model.DEFAULT_SECTIONS };
+      const fresh = this.firstRun();
       this.write(fresh);
       return fresh;
     }
+  },
+
+  /*
+   * Primeira abertura. Se o arquivo foi gerado para compartilhar, ele traz os
+   * dados reais embutidos (window.DC_SEED) — quem recebeu abre e encontra o
+   * modelo e os cargos como estavam. Caso contrário, entra a demonstração.
+   */
+  firstRun() {
+    const embutido = typeof window !== 'undefined' ? window.DC_SEED : null;
+
+    if (embutido && Array.isArray(embutido.jobs) && Array.isArray(embutido.keys)) {
+      return {
+        jobs: embutido.jobs.map(normalizeJob),
+        keys: embutido.keys,
+        model: embutido.model || Model.DEFAULT_SECTIONS,
+        config: { ...this.defaultConfig(), ...(embutido.config || {}) }
+      };
+    }
+
+    return { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig(), model: Model.DEFAULT_SECTIONS };
   },
 
   write(data) {
@@ -1346,6 +1366,10 @@ const LocalStore = {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+  },
+
+  async downloadShare() {
+    throw new Error('Para gerar o arquivo compartilhável, rode a ferramenta pelo atalho (com servidor).');
   },
 
   /* ---------------------------- Modelo do cargo -------------------------- */
@@ -1577,6 +1601,19 @@ const RemoteStore = {
       href: url,
       download: `descritivos-${new Date().toISOString().slice(0, 10)}.csv`
     });
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
+
+  /* Baixa o arquivo único com os dados de hoje embutidos. */
+  async downloadShare() {
+    const response = await fetch('/api/share', { headers: { 'X-Session': this.token } });
+    if (!response.ok) throw new Error('Não foi possível gerar o arquivo');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = Object.assign(document.createElement('a'), { href: url, download: 'Descritivos-de-Cargos.html' });
     document.body.appendChild(anchor);
     anchor.click();
     anchor.remove();
@@ -2203,6 +2240,7 @@ function adminView() {
   $('#topActions').innerHTML = `
     <button class="btn primary" data-action="new">Novo cargo</button>
     <button class="btn secondary" data-action="export">Exportar CSV</button>
+    ${API.mode === 'server' ? '<button class="btn secondary" data-action="share">Arquivo para compartilhar</button>' : ''}
     <button class="btn outline" data-action="reset">Restaurar dados de teste</button>`;
 
   $('#content').innerHTML = `
@@ -2815,6 +2853,8 @@ async function handleAction(action, id, element) {
       return run(API.resendCode(id));
     case 'export':
       return run(API.exportCsv(), 'Arquivo gerado');
+    case 'share':
+      return run(API.downloadShare(), 'Arquivo gerado — envie o Descritivos-de-Cargos.html');
     case 'new':
       return newJobModal();
 

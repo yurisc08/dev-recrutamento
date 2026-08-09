@@ -247,6 +247,31 @@ aprovador nunca edita conteúdo: apenas aprova ou devolve.
 | Configurações | C&R | e-mail (SMTP), avisos automáticos e cobrança de prazo |
 | Documento | todos (aprovado) | MAPA DE CARREIRA pronto para imprimir ou salvar em PDF |
 
+## Enviar a ferramenta para alguém
+
+Dá para gerar **um único arquivo** com os seus cargos e o seu modelo dentro, para
+mandar por e-mail ou Teams. Quem receber abre com um duplo clique, sem instalar
+nada e sem servidor.
+
+Dois caminhos, o mesmo resultado:
+
+- na tela **Administração**, botão **Arquivo para compartilhar** (com o servidor
+  rodando); ou
+- duplo clique em **`Gerar arquivo para compartilhar.vbs`**.
+
+Sai o `Descritivos-de-Cargos.html`. É esse arquivo que você envia.
+
+**Entenda o que ele é — e o que não é.** O arquivo é uma **fotografia**: leva o
+modelo, os cargos, o histórico e os códigos como estão hoje. Quem abrir tem a
+ferramenta inteira funcionando, mas **o que essa pessoa preencher fica no
+arquivo dela e não volta para você**. Serve para mostrar o processo, colher
+opinião ou entregar um pacote fechado — não para tocar o fluxo a quatro mãos.
+Para isso, o caminho é o servidor, onde todo mundo mexe na mesma base.
+
+Duas coisas ficam de fora do arquivo, de propósito: a **senha do SMTP** e os
+avisos automáticos, que dependem do servidor. E vale lembrar que ele **carrega
+os códigos de acesso**, inclusive o de C&R — envie só a quem pode ver tudo.
+
 ## Onde ficam os dados
 
 Na pasta `data/`, no computador que roda o servidor:
@@ -272,6 +297,7 @@ dela, o gestor abre da máquina dele e enxerga o mesmo cargo.
 | `Descritivos.vbs` | Inicia a ferramenta sem janela (Windows) |
 | `Parar.vbs` | Encerra a ferramenta |
 | `Instalar atalhos.vbs` | Cria o atalho na Área de Trabalho e o início automático |
+| `Gerar arquivo para compartilhar.vbs` | Gera o `Descritivos-de-Cargos.html` com os dados de hoje |
 | `build.js` | Gera o `index.html` a partir de `src/`, `assets/` e `shared/` |
 | `src/index.html` | Estrutura da página (fonte) |
 | `server.js` | Servidor HTTP e rotas da API |

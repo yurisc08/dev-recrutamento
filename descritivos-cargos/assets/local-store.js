@@ -88,10 +88,30 @@ const LocalStore = {
       stored.model = stored.model || Model.DEFAULT_SECTIONS;
       return stored;
     } catch {
-      const fresh = { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig(), model: Model.DEFAULT_SECTIONS };
+      const fresh = this.firstRun();
       this.write(fresh);
       return fresh;
     }
+  },
+
+  /*
+   * Primeira abertura. Se o arquivo foi gerado para compartilhar, ele traz os
+   * dados reais embutidos (window.DC_SEED) — quem recebeu abre e encontra o
+   * modelo e os cargos como estavam. Caso contrário, entra a demonstração.
+   */
+  firstRun() {
+    const embutido = typeof window !== 'undefined' ? window.DC_SEED : null;
+
+    if (embutido && Array.isArray(embutido.jobs) && Array.isArray(embutido.keys)) {
+      return {
+        jobs: embutido.jobs.map(normalizeJob),
+        keys: embutido.keys,
+        model: embutido.model || Model.DEFAULT_SECTIONS,
+        config: { ...this.defaultConfig(), ...(embutido.config || {}) }
+      };
+    }
+
+    return { jobs: seedJobs(), keys: seedKeys(), config: this.defaultConfig(), model: Model.DEFAULT_SECTIONS };
   },
 
   write(data) {
@@ -253,6 +273,10 @@ const LocalStore = {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+  },
+
+  async downloadShare() {
+    throw new Error('Para gerar o arquivo compartilhável, rode a ferramenta pelo atalho (com servidor).');
   },
 
   /* ---------------------------- Modelo do cargo -------------------------- */

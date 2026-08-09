@@ -119,6 +119,19 @@ const RemoteStore = {
     URL.revokeObjectURL(url);
   },
 
+  /* Baixa o arquivo único com os dados de hoje embutidos. */
+  async downloadShare() {
+    const response = await fetch('/api/share', { headers: { 'X-Session': this.token } });
+    if (!response.ok) throw new Error('Não foi possível gerar o arquivo');
+    const blob = await response.blob();
+    const url = URL.createObjectURL(blob);
+    const anchor = Object.assign(document.createElement('a'), { href: url, download: 'Descritivos-de-Cargos.html' });
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(url);
+  },
+
   /* ---------------------------- Modelo do cargo -------------------------- */
   async loadModel() {
     const data = await this.request('GET', '/api/model');

@@ -557,6 +557,7 @@ function adminView() {
   $('#topActions').innerHTML = `
     <button class="btn primary" data-action="new">Novo cargo</button>
     <button class="btn secondary" data-action="export">Exportar CSV</button>
+    ${API.mode === 'server' ? '<button class="btn secondary" data-action="share">Arquivo para compartilhar</button>' : ''}
     <button class="btn outline" data-action="reset">Restaurar dados de teste</button>`;
 
   $('#content').innerHTML = `
@@ -1169,6 +1170,8 @@ async function handleAction(action, id, element) {
       return run(API.resendCode(id));
     case 'export':
       return run(API.exportCsv(), 'Arquivo gerado');
+    case 'share':
+      return run(API.downloadShare(), 'Arquivo gerado — envie o Descritivos-de-Cargos.html');
     case 'new':
       return newJobModal();
 
