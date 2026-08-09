@@ -15,6 +15,7 @@ const crypto = require('node:crypto');
 
 const Model = require('../shared/model.js');
 const Flow = require('../shared/flow.js');
+const Hash = require('../shared/hash.js');
 const seedData = require('../shared/seed.js');
 
 const ROOT = path.join(__dirname, '..');
@@ -73,6 +74,24 @@ function normalize() {
 
   db.jobs = (db.jobs || []).map(Flow.normalizeJob);
   db.keys = db.keys || [];
+
+  /* Versões anteriores gravavam o código em texto. Aqui ele vira hash e some do
+   * arquivo — os códigos já entregues continuam valendo, porque o hash é
+   * calculado sobre o mesmo texto. */
+  db.keys.forEach(k => { if (!k.id) k.id = crypto.randomUUID(); });
+
+  let protegidos = 0;
+  [...db.keys, ...db.jobs].forEach(registro => {
+    if (registro.code && !registro.codeHash) {
+      Object.assign(registro, Hash.protect(registro.code));
+      delete registro.code;
+      protegidos++;
+    }
+  });
+  if (protegidos) {
+    console.log(`${protegidos} código(s) de acesso passaram a ser guardados como hash.`);
+    persist();
+  }
 
   /* Bancos da versão com e-mail e senha viram códigos de acesso, preservando
    * nome e papel de cada pessoa. O código novo aparece em "Códigos de acesso". */
@@ -161,7 +180,11 @@ module.exports = {
 
   /* Aceita o código como a pessoa digitou: sem hífen, minúsculo, com espaços. */
   findKey(code) {
-    return db.keys.find(k => Flow.sameCode(k.code, code));
+    return db.keys.find(k => Hash.matches(k, code));
+  },
+
+  findKeyById(id) {
+    return db.keys.find(k => k.id === id);
   },
 
   addJob(job) {
@@ -174,8 +197,8 @@ module.exports = {
     return key;
   },
 
-  removeKey(code) {
-    const index = db.keys.findIndex(k => Flow.sameCode(k.code, code));
+  removeKey(id) {
+    const index = db.keys.findIndex(k => k.id === id);
     if (index < 0) return false;
     db.keys.splice(index, 1);
     return true;

@@ -123,6 +123,8 @@ const RemoteStore = {
   async downloadShare() {
     const response = await fetch('/api/share', { headers: { 'X-Session': this.token } });
     if (!response.ok) throw new Error('Não foi possível gerar o arquivo');
+    // O acesso da cópia vem no cabeçalho: é mostrado uma vez a quem gerou.
+    const codigo = response.headers.get('X-Share-Code');
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const anchor = Object.assign(document.createElement('a'), { href: url, download: 'Descritivos-de-Cargos.html' });
@@ -130,6 +132,7 @@ const RemoteStore = {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+    return codigo;
   },
 
   /* ---------------------------- Modelo do cargo -------------------------- */

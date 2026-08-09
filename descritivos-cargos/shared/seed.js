@@ -9,25 +9,30 @@
  *
  *   CR-00001  Carreira & Recompensa (administrativo, é quem aprova)
  *   AP-00001  Aprovador (etapa opcional, usada quando o cargo indica um)
- *   DC-00001  Responsável — Gestor Demonstração (2 cargos)
- *   DC-00002  Responsável — Gestora Demonstração (1 cargo já aprovado)
+ *   DC-00001  Gestor Demonstração — cargo "Analista de Dados e BI"
+ *   DC-00002  Gestor Demonstração — cargo "Especialista de Processos" (devolvido)
+ *   DC-00003  Gestora Demonstração — cargo já aprovado (código encerrado)
+ *
+ * Os códigos não ficam guardados: o que vai para o banco é o hash (shared/hash.js).
+ * Cada atribuição tem o seu código — um código abre um descritivo, só ele.
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory(require('./model.js'), require('./flow.js'));
+    module.exports = factory(require('./model.js'), require('./flow.js'), require('./hash.js'));
   } else {
-    const api = factory(root.Model, root.Flow);
+    const api = factory(root.Model, root.Flow, root.Hash);
     root.Seed = api;
     Object.assign(root, api);
   }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Model, Flow) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Model, Flow, Hash) {
 
 /* Chaves administrativas: C&R e aprovadores. Os responsáveis não entram aqui —
  * o código deles nasce junto com o cargo. */
 function seedKeys() {
+  const agora = new Date().toISOString();
   return [
-    { code: 'CR-00001', name: 'Carreira & Recompensa',  role: 'hr',       createdAt: new Date().toISOString(), lastUsedAt: '' },
-    { code: 'AP-00001', name: 'Aprovador Demonstração', role: 'approver', createdAt: new Date().toISOString(), lastUsedAt: '' }
+    { id: 'demo-cr', name: 'Carreira & Recompensa',  role: 'hr',       createdAt: agora, lastUsedAt: '', ...Hash.protect('CR-00001') },
+    { id: 'demo-ap', name: 'Aprovador Demonstração', role: 'approver', createdAt: agora, lastUsedAt: '', ...Hash.protect('AP-00001') }
   ];
 }
 
@@ -37,7 +42,8 @@ function seedJobs() {
   return [
     Flow.normalizeJob({
       id: 1,
-      code: 'DC-00001',
+      ...Hash.protect('DC-00001'),
+      codeSentAt: Model.isoToday(),
       jobCode: 'AN-0421',
       name: 'Analista de Dados e BI',
       company: 'Empresa Exemplo',
@@ -57,7 +63,8 @@ function seedJobs() {
 
     Flow.normalizeJob({
       id: 2,
-      code: 'DC-00001',
+      ...Hash.protect('DC-00002'),
+      codeSentAt: Model.isoToday(),
       jobCode: 'ES-0118',
       name: 'Especialista de Processos',
       company: 'Empresa Exemplo',
@@ -92,7 +99,8 @@ function seedJobs() {
     /* Um cargo já aprovado, para o documento poder ser visto de imediato. */
     Flow.normalizeJob({
       id: 3,
-      code: 'DC-00002',
+      ...Hash.protect('DC-00003'),
+      codeSentAt: Model.isoToday(),
       jobCode: 'CO-0307',
       name: 'Comprador Pleno',
       company: 'Empresa Exemplo',

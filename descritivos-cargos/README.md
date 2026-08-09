@@ -35,7 +35,8 @@ C&R cadastra na máquina dela e o gestor abre da dele, pelo IP da máquina que
 está rodando (`http://192.168.0.42:3000`, por exemplo — descubra o seu com
 `ipconfig`).
 
-Dois caminhos a partir daqui:
+As opções completas, com custo e esforço de cada uma, estão em
+**[IMPLANTAR.md](IMPLANTAR.md)**. Em resumo:
 
 - **Testar com gestores de fora da rede, sem contratar nada** →
   **[PILOTO-INTERNET.md](PILOTO-INTERNET.md)** (túnel a partir da sua máquina).
@@ -167,15 +168,29 @@ Regras aplicadas no servidor (`shared/flow.js`):
 
 ### O código de acesso do gestor
 
-É a única credencial dele: sem usuário, sem senha, sem cadastro. O código:
+É a única credencial dele: sem usuário, sem senha, sem cadastro. Quatro regras
+definem como ele se comporta:
 
-- é **por pessoa**, não por cargo — três cargos para o mesmo gestor entram sob o
-  mesmo código e aparecem juntos quando ele entra;
-- vai por e-mail **a cada envio para ele**: na criação do cargo, na devolução e
-  na reabertura, sempre com o prazo e o endereço da ferramenta;
-- **deixa de valer quando o descritivo é aprovado**. Se o gestor não tiver mais
-  nenhum cargo pendente, o código para de dar acesso e a tela explica isso.
-  Enquanto houver um cargo em aberto, o mesmo código continua servindo.
+**1. É exclusivo da atribuição.** Um código abre **um** descritivo. Se o mesmo
+gestor recebe três cargos, recebe três códigos — um vazamento expõe um cargo,
+não a carteira inteira.
+
+**2. Vai por e-mail, direto ao gestor.** No momento em que o cargo é atribuído,
+o código é gerado e enviado. Ele **não aparece na tela de ninguém** — nem para
+quem cadastrou. As telas mostram apenas *quando* o código foi enviado.
+
+**3. Não fica guardado.** O que vai para o arquivo de dados é uma verificação
+matemática (hash SHA-256 com sal), não o código. Dá para conferir quem digitou
+o código certo, mas não dá para descobrir o código a partir do arquivo — nem
+com acesso ao servidor. É por isso que um código perdido não é consultado:
+gera-se outro, e o anterior morre na hora, junto com a sessão de quem o usava.
+
+**4. Expira na aprovação.** Aprovado o descritivo, o código para de valer e a
+tela explica isso a quem tentar entrar.
+
+> Quando não há SMTP configurado, o código é mostrado **uma única vez** a quem
+> cadastrou o cargo, com um botão para copiar e outro para abrir o e-mail já
+> escrito. Fechou a caixa, acabou: só gerando outro.
 
 ### E-mails automáticos
 
@@ -183,9 +198,9 @@ Com o SMTP configurado (**Configurações**), sai um aviso a cada passo:
 
 | Quando | Para quem | Contém |
 | --- | --- | --- |
-| Cargo cadastrado | Gestor | prazo, endereço e **código de acesso** |
+| Cargo atribuído | Gestor | prazo, endereço e o **código exclusivo** daquele descritivo |
 | Enviado para aprovação | Aprovador (se houver) ou C&R | o que analisar |
-| Devolvido | Gestor | **motivo** e o código novamente |
+| Devolvido | Gestor | **motivo** (o código dele continua o mesmo) |
 | Aprovado | Gestor | aviso de conclusão |
 | Reaberto / cancelado | Gestor | motivo |
 | Prazo perto ou vencido | Quem está devendo a ação | lembrete, 1× por dia |
@@ -246,6 +261,21 @@ aprovador nunca edita conteúdo: apenas aprova ou devolve.
 | Modelo | C&R | montar as seções e os campos do descritivo, e quem preenche cada um |
 | Configurações | C&R | e-mail (SMTP), avisos automáticos e cobrança de prazo |
 | Documento | todos (aprovado) | MAPA DE CARREIRA pronto para imprimir ou salvar em PDF |
+
+## Segurança
+
+| Risco | O que a ferramenta faz |
+| --- | --- |
+| Código exposto na tela | nunca é exibido: vai por e-mail e, sem SMTP, aparece uma vez só a quem cadastrou |
+| Alguém lê o arquivo de dados | os códigos não estão lá — só o hash com sal |
+| Código vazado | abre só aquele descritivo, e expira na aprovação |
+| Pessoa saiu da função | gerar novo código invalida o anterior e derruba a sessão |
+| Gestor bisbilhotando outros cargos | o servidor filtra por atribuição; a tela nem chega a receber os demais |
+| Alguém tentando editar campo alheio | o servidor recusa por papel, mesmo fora da tela |
+| Cópia compartilhada vazando acessos | a cópia vai sem os códigos e sem a senha do SMTP; ganha um acesso próprio |
+
+Duas coisas que **dependem de você**: revogar os acessos de demonstração antes
+de usar para valer, e usar HTTPS se a ferramenta sair da rede interna.
 
 ## Enviar a ferramenta para alguém
 

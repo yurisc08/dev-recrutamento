@@ -34,12 +34,13 @@ function closeSession(token) {
   sessions.delete(token);
 }
 
-/* Derruba as sessões abertas com um código — usado ao revogar ou trocar. */
-function closeSessionsOf(code) {
-  const wanted = String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+/* Derruba as sessões abertas de uma chave ou de um cargo — usado ao revogar um
+ * acesso ou ao gerar um código novo, que invalida o anterior na hora. */
+function closeSessionsOf({ keyId, jobId } = {}) {
   for (const [token, entry] of sessions) {
-    const current = String(entry.data.code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (wanted && current === wanted) sessions.delete(token);
+    const dados = entry.data;
+    if (keyId && dados.keyId === keyId) sessions.delete(token);
+    if (jobId && (dados.jobIds || []).includes(String(jobId))) sessions.delete(token);
   }
 }
 

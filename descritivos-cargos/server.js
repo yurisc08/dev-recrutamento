@@ -21,6 +21,7 @@ const crypto = require('node:crypto');
 
 const Model = require('./shared/model.js');
 const Flow = require('./shared/flow.js');
+const Hash = require('./shared/hash.js');
 const db = require('./server/db.js');
 const auth = require('./server/auth.js');
 const notify = require('./server/notify.js');
@@ -141,19 +142,25 @@ async function handleApi(req, res, pathname) {
     if (key) {
       key.lastUsedAt = new Date().toISOString();
       await db.persist();
-      const session = { role: key.role, name: key.name, code: key.code };
+      const session = { role: key.role, name: key.name, keyId: key.id };
       return ok(res, { token: auth.openSession(session), session });
     }
 
+    /* O código do gestor é exclusivo da atribuição: abre os cargos ligados a
+     * ele, e a sessão guarda quais são. */
     const open = Flow.openForCode(db.jobs, code);
     if (open.length) {
-      const session = { role: 'manager', name: open[0].manager, code: open[0].code };
+      const session = {
+        role: 'manager',
+        name: open[0].manager,
+        jobIds: open.map(j => String(j.id))
+      };
       return ok(res, { token: auth.openSession(session), session });
     }
 
-    // O código existe, mas já cumpriu seu papel: todos os cargos dele saíram do
-    // fluxo. Melhor dizer isso do que "código inválido".
-    const encerrados = db.jobs.filter(j => Flow.sameCode(j.code, code));
+    // O código existe, mas já cumpriu seu papel: o cargo saiu do fluxo.
+    // Melhor dizer isso do que "código inválido".
+    const encerrados = Flow.anyForCode(db.jobs, code);
     if (encerrados.length) {
       return fail(res, 401, 'Este código já foi encerrado: os descritivos ligados a ele foram concluídos.');
     }
@@ -187,25 +194,34 @@ async function handleApi(req, res, pathname) {
     const missing = required.filter(f => !String(data[f.key] || '').trim()).map(f => f.label);
     if (missing.length) return fail(res, 400, 'Preencha: ' + missing.join(', '));
 
-    // Um mesmo responsável mantém um único código, para todos os seus cargos.
-    const email = String(data.managerEmail).toLowerCase();
-    const existing = db.jobs.find(j => String(j.managerEmail).toLowerCase() === email);
-    const code = existing ? existing.code : Flow.newAccessCode(randomInt, 'manager');
+    /* Cada atribuição tem o seu código, gerado agora e guardado apenas como
+     * hash. O texto do código existe somente nesta requisição: vai no e-mail
+     * ao gestor e, se não houver e-mail configurado, é devolvido uma única vez
+     * para quem cadastrou repassar. Depois disso, ninguém mais o recupera. */
+    const code = Flow.newAccessCode(randomInt, 'manager');
 
     const job = Flow.normalizeJob({
       ...data,
       id: crypto.randomUUID(),
-      code,
+      ...Hash.protect(code),
       status: 'editing',
       creationDate: data.creationDate || Model.isoToday(),
-      history: [Flow.entry('Cargo criado e código de acesso enviado ao responsável', session.name, session.role)],
+      history: [Flow.entry('Cargo criado e código de acesso gerado', session.name, session.role)],
       comments: []
     });
 
     db.addJob(job);
     await db.persist();
-    const mail = await notify.onTransition(job, 'created');
-    return ok(res, { job, mail });
+
+    const mail = await notify.onTransition(job, 'created', '', code);
+    if (mail.sent) {
+      job.codeSentAt = new Date().toISOString();
+      job.history.push(Flow.entry(`Código de acesso enviado para ${job.managerEmail}`, session.name, session.role));
+      await db.persist();
+    }
+
+    // Só devolve o código quando ele não pôde ser entregue por e-mail.
+    return ok(res, { job, mail, code: mail.sent ? undefined : code });
   }
 
   const jobRoute = pathname.match(/^\/api\/jobs\/([^/]+)\/(fields|transition|resend-code)$/);
@@ -237,14 +253,39 @@ async function handleApi(req, res, pathname) {
       return ok(res, { job, mail });
     }
 
+    /*
+     * "Reenviar" é sempre gerar de novo: como só guardamos o hash, o código
+     * antigo não pode ser consultado — ele é substituído e perde a validade na
+     * hora, junto com a sessão de quem estivesse usando.
+     */
     if (operation === 'resend-code' && req.method === 'POST') {
-      if (!requireHr()) return fail(res, 403, 'Apenas C&R pode reenviar o código');
+      if (!requireHr()) return fail(res, 403, 'Apenas C&R pode gerar o código');
+
+      const code = Flow.newAccessCode(randomInt, 'manager');
+      Object.assign(job, Hash.protect(code));
+      auth.closeSessionsOf({ jobId: job.id });
+
+      let enviado = false;
+      let erro = '';
       try {
-        await notify.resendCode(job);
-        return ok(res, { message: `Código reenviado para ${job.managerEmail}` });
+        await notify.sendCode(job, code);
+        enviado = true;
+        job.codeSentAt = new Date().toISOString();
       } catch (err) {
-        return fail(res, 400, err.message);
+        erro = err.message;
       }
+
+      job.history.push(Flow.entry(
+        enviado ? `Novo código gerado e enviado para ${job.managerEmail}` : 'Novo código de acesso gerado',
+        session.name, session.role
+      ));
+      await db.persist();
+
+      return ok(res, {
+        message: enviado ? `Novo código enviado para ${job.managerEmail}` : '',
+        code: enviado ? undefined : code,
+        aviso: enviado ? '' : `O e-mail não pôde ser enviado (${erro}). Repasse o código você mesmo.`
+      });
     }
   }
 
@@ -258,9 +299,31 @@ async function handleApi(req, res, pathname) {
 
     const html = await fsp.readFile(path.join(ROOT, 'index.html'), 'utf8');
     const { smtp, ...config } = db.config;
+
+    /*
+     * A cópia não leva os códigos de ninguém — eles só existem como hash e não
+     * podem ser recuperados. Em vez disso, criamos um acesso novo, exclusivo
+     * daquela cópia, e devolvemos o código no cabeçalho para a tela mostrar
+     * uma única vez a quem gerou.
+     */
+    const codigoDaCopia = Flow.newAccessCode(randomInt, 'hr');
+    const acessoDaCopia = {
+      id: crypto.randomUUID(),
+      name: 'Acesso da cópia compartilhada',
+      role: 'hr',
+      email: '',
+      createdAt: new Date().toISOString(),
+      lastUsedAt: '',
+      ...Hash.protect(codigoDaCopia)
+    };
+
+    /* Os cargos vão sem a verificação do código: na cópia, o único acesso é o
+     * que acabamos de criar para ela. */
+    const semCodigo = db.jobs.map(({ codeHash, codeSalt, codeSentAt, ...job }) => job);
+
     const seed = {
-      jobs: db.jobs,
-      keys: db.keys,
+      jobs: semCodigo,
+      keys: [acessoDaCopia],
       model: db.model,
       config: { ...config, notificationsEnabled: false, remindersEnabled: false }
     };
@@ -270,7 +333,8 @@ async function handleApi(req, res, pathname) {
 
     res.writeHead(200, {
       'Content-Type': 'text/html; charset=utf-8',
-      'Content-Disposition': 'attachment; filename="Descritivos-de-Cargos.html"'
+      'Content-Disposition': 'attachment; filename="Descritivos-de-Cargos.html"',
+      'X-Share-Code': codigoDaCopia
     });
     return res.end(saida);
   }
@@ -305,7 +369,16 @@ async function handleApi(req, res, pathname) {
   if (pathname === '/api/keys') {
     if (!requireHr()) return fail(res, 403, 'Apenas C&R pode gerenciar os códigos');
 
-    if (req.method === 'GET') return ok(res, { keys: db.keys });
+    /* A lista nunca devolve código nem hash — só o que a tela precisa mostrar. */
+    if (req.method === 'GET') {
+      return ok(res, {
+        keys: db.keys.map(k => ({
+          id: k.id, name: k.name, role: k.role, email: k.email || '',
+          createdAt: k.createdAt, lastUsedAt: k.lastUsedAt || '',
+          mask: Hash.maskFor(k.role)
+        }))
+      });
+    }
 
     if (req.method === 'POST') {
       const name = String(body.name || '').trim();
@@ -318,23 +391,26 @@ async function handleApi(req, res, pathname) {
         return fail(res, 400, 'Já existe um código para essa pessoa neste perfil');
       }
 
+      const code = Flow.newAccessCode(randomInt, role);
       const key = db.addKey({
-        code: Flow.newAccessCode(randomInt, role),
+        id: crypto.randomUUID(),
         name, role, email,
         createdAt: new Date().toISOString(),
-        lastUsedAt: ''
+        lastUsedAt: '',
+        ...Hash.protect(code)
       });
 
       await db.persist();
-      return ok(res, { key, message: `Código criado: ${key.code}` });
+      // Único momento em que o código aparece. Depois, só gerando outro.
+      return ok(res, { key: { id: key.id, name, role, email }, code });
     }
   }
 
   const keyRoute = pathname.match(/^\/api\/keys\/([^/]+)$/);
   if (keyRoute) {
     if (!requireHr()) return fail(res, 403, 'Apenas C&R pode gerenciar os códigos');
-    const key = db.findKey(decodeURIComponent(keyRoute[1]));
-    if (!key) return fail(res, 404, 'Código não encontrado');
+    const key = db.findKeyById(decodeURIComponent(keyRoute[1]));
+    if (!key) return fail(res, 404, 'Acesso não encontrado');
 
     if (req.method === 'PATCH') {
       if (body.name !== undefined) {
@@ -353,25 +429,32 @@ async function handleApi(req, res, pathname) {
         key.email = email;
       }
 
-      // Trocar o código é o equivalente a trocar a senha: o antigo deixa de valer.
+      // Trocar o código é o equivalente a trocar a senha: o antigo deixa de
+      // valer na hora, e o novo aparece uma única vez.
+      let novoCodigo;
       if (body.regenerate) {
-        auth.closeSessionsOf(key.code);
-        key.code = Flow.newAccessCode(randomInt, key.role);
+        novoCodigo = Flow.newAccessCode(randomInt, key.role);
+        Object.assign(key, Hash.protect(novoCodigo));
+        auth.closeSessionsOf({ keyId: key.id });
       }
 
       await db.persist();
-      return ok(res, { key, message: body.regenerate ? `Novo código: ${key.code}` : 'Código atualizado' });
+      return ok(res, {
+        key: { id: key.id, name: key.name, role: key.role, email: key.email || '' },
+        code: novoCodigo,
+        message: novoCodigo ? '' : 'Acesso atualizado'
+      });
     }
 
     if (req.method === 'DELETE') {
-      if (Flow.sameCode(key.code, session.code)) return fail(res, 400, 'Você não pode revogar o próprio código');
-      const remainingHr = db.keys.filter(k => k.role === 'hr' && !Flow.sameCode(k.code, key.code));
-      if (key.role === 'hr' && !remainingHr.length) return fail(res, 400, 'É preciso manter ao menos um código de C&R');
+      if (key.id === session.keyId) return fail(res, 400, 'Você não pode revogar o próprio acesso');
+      const remainingHr = db.keys.filter(k => k.role === 'hr' && k.id !== key.id);
+      if (key.role === 'hr' && !remainingHr.length) return fail(res, 400, 'É preciso manter ao menos um acesso de C&R');
 
-      db.removeKey(key.code);
-      auth.closeSessionsOf(key.code);
+      db.removeKey(key.id);
+      auth.closeSessionsOf({ keyId: key.id });
       await db.persist();
-      return ok(res, { message: 'Código revogado' });
+      return ok(res, { message: 'Acesso revogado' });
     }
   }
 

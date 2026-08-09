@@ -306,6 +306,13 @@ table.list .btn{padding:7px 12px;font-size:13px}
 .check{display:flex;gap:10px;align-items:flex-start;margin:12px 0;font-size:14px;line-height:1.4;cursor:pointer}
 .check input{margin-top:2px;width:17px;height:17px;accent-color:var(--accent);flex:0 0 auto}
 
+/* Código revelado uma única vez: grande, legível, fácil de copiar. */
+.reveal{
+  background:var(--surface-2);border:1px dashed var(--accent);border-radius:var(--radius-sm);
+  padding:18px;text-align:center;margin:14px 0;
+}
+.reveal .code{font-size:26px;letter-spacing:.14em;font-variant-numeric:tabular-nums}
+
 /* -------------------------------- Overlays ------------------------------- */
 .modal{position:fixed;inset:0;background:rgba(9,12,20,.55);backdrop-filter:blur(3px);display:grid;place-items:center;padding:20px;z-index:40}
 .modal .panel{width:min(720px,100%);max-height:90vh;overflow:auto;margin:0}
@@ -380,7 +387,7 @@ table.list .btn{padding:7px 12px;font-size:13px}
   <main class="login-main">
     <div class="login-card">
       <h1>Entrar com o código</h1>
-      <p class="lead">Todo acesso é por código — responsáveis, aprovadores e Carreira &amp; Recompensa. Não há usuário nem senha.</p>
+      <p class="lead">Todo acesso é por código. O gestor recebe o dele por e-mail, exclusivo de cada descritivo — ninguém mais o vê.</p>
 
       <div class="panel">
         <div class="field">
@@ -398,8 +405,8 @@ table.list .btn{padding:7px 12px;font-size:13px}
         <div class="demo-codes">
           <button class="btn secondary" data-demo-code="CR-00001"><b>CR-00001</b><span>Carreira &amp; Recompensa</span></button>
           <button class="btn secondary" data-demo-code="AP-00001"><b>AP-00001</b><span>Aprovador (opcional)</span></button>
-          <button class="btn secondary" data-demo-code="DC-00001"><b>DC-00001</b><span>Gestor — 2 cargos</span></button>
-          <button class="btn secondary" data-demo-code="DC-00002"><b>DC-00002</b><span>Gestor — código já encerrado</span></button>
+          <button class="btn secondary" data-demo-code="DC-00001"><b>DC-00001</b><span>Gestor — em preenchimento</span></button>
+          <button class="btn secondary" data-demo-code="DC-00002"><b>DC-00002</b><span>Gestor — devolvido</span></button>
         </div>
       </div>
 
@@ -445,6 +452,168 @@ table.list .btn{padding:7px 12px;font-size:13px}
 </div>
 <div id="toast" class="toast hide" role="status" aria-live="polite"></div>
 
+<script>
+/* shared/hash.js */
+/*
+ * shared/hash.js
+ * -----------------------------------------------------------------------------
+ * Guarda de códigos de acesso.
+ *
+ * O código nunca é gravado. O que fica no banco é o resultado de SHA-256 sobre
+ * "sal + código": dá para conferir quem digitou o código certo, mas não dá para
+ * descobrir o código a partir do arquivo. Quem abrir o data/db.json não
+ * consegue entrar no lugar de ninguém.
+ *
+ * Por isso um código perdido não é "consultado", é **substituído**: gera-se um
+ * novo e reenvia-se por e-mail.
+ *
+ * A implementação de SHA-256 é feita aqui, em JavaScript puro, para que o
+ * navegador (modo local, sem servidor) e o Node cheguem exatamente ao mesmo
+ * resultado. No servidor, usamos o módulo nativo, que é mais rápido — o
+ * resultado é idêntico, é o mesmo algoritmo.
+ */
+(function (root, factory) {
+  const api = factory();
+  if (typeof module !== 'undefined' && module.exports) module.exports = api;
+  else { root.Hash = api; Object.assign(root, api); }
+})(typeof globalThis !== 'undefined' ? globalThis : this, function () {
+
+/* ------------------------------- SHA-256 --------------------------------- */
+const K = [
+  0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b, 0x59f111f1, 0x923f82a4, 0xab1c5ed5,
+  0xd807aa98, 0x12835b01, 0x243185be, 0x550c7dc3, 0x72be5d74, 0x80deb1fe, 0x9bdc06a7, 0xc19bf174,
+  0xe49b69c1, 0xefbe4786, 0x0fc19dc6, 0x240ca1cc, 0x2de92c6f, 0x4a7484aa, 0x5cb0a9dc, 0x76f988da,
+  0x983e5152, 0xa831c66d, 0xb00327c8, 0xbf597fc7, 0xc6e00bf3, 0xd5a79147, 0x06ca6351, 0x14292967,
+  0x27b70a85, 0x2e1b2138, 0x4d2c6dfc, 0x53380d13, 0x650a7354, 0x766a0abb, 0x81c2c92e, 0x92722c85,
+  0xa2bfe8a1, 0xa81a664b, 0xc24b8b70, 0xc76c51a3, 0xd192e819, 0xd6990624, 0xf40e3585, 0x106aa070,
+  0x19a4c116, 0x1e376c08, 0x2748774c, 0x34b0bcb5, 0x391c0cb3, 0x4ed8aa4a, 0x5b9cca4f, 0x682e6ff3,
+  0x748f82ee, 0x78a5636f, 0x84c87814, 0x8cc70208, 0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
+];
+
+const rotr = (x, n) => (x >>> n) | (x << (32 - n));
+
+/* Texto UTF-8 em bytes, sem depender de TextEncoder. */
+function utf8Bytes(text) {
+  const out = [];
+  for (const char of String(text)) {
+    let code = char.codePointAt(0);
+    if (code < 0x80) out.push(code);
+    else if (code < 0x800) out.push(0xc0 | (code >> 6), 0x80 | (code & 63));
+    else if (code < 0x10000) out.push(0xe0 | (code >> 12), 0x80 | ((code >> 6) & 63), 0x80 | (code & 63));
+    else out.push(0xf0 | (code >> 18), 0x80 | ((code >> 12) & 63), 0x80 | ((code >> 6) & 63), 0x80 | (code & 63));
+  }
+  return out;
+}
+
+function sha256(text) {
+  const bytes = utf8Bytes(text);
+  const bitLength = bytes.length * 8;
+
+  bytes.push(0x80);
+  while (bytes.length % 64 !== 56) bytes.push(0);
+
+  // Comprimento em 64 bits, big-endian. Textos aqui são curtos, então os
+  // 32 bits altos são sempre zero.
+  bytes.push(0, 0, 0, 0, (bitLength >>> 24) & 255, (bitLength >>> 16) & 255, (bitLength >>> 8) & 255, bitLength & 255);
+
+  let [h0, h1, h2, h3, h4, h5, h6, h7] =
+    [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19];
+
+  const w = new Array(64);
+
+  for (let i = 0; i < bytes.length; i += 64) {
+    for (let t = 0; t < 16; t++) {
+      w[t] = (bytes[i + t * 4] << 24) | (bytes[i + t * 4 + 1] << 16) | (bytes[i + t * 4 + 2] << 8) | bytes[i + t * 4 + 3];
+    }
+    for (let t = 16; t < 64; t++) {
+      const s0 = rotr(w[t - 15], 7) ^ rotr(w[t - 15], 18) ^ (w[t - 15] >>> 3);
+      const s1 = rotr(w[t - 2], 17) ^ rotr(w[t - 2], 19) ^ (w[t - 2] >>> 10);
+      w[t] = (w[t - 16] + s0 + w[t - 7] + s1) | 0;
+    }
+
+    let [a, b, c, d, e, f, g, h] = [h0, h1, h2, h3, h4, h5, h6, h7];
+
+    for (let t = 0; t < 64; t++) {
+      const S1 = rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25);
+      const ch = (e & f) ^ (~e & g);
+      const temp1 = (h + S1 + ch + K[t] + w[t]) | 0;
+      const S0 = rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22);
+      const maj = (a & b) ^ (a & c) ^ (b & c);
+      const temp2 = (S0 + maj) | 0;
+
+      h = g; g = f; f = e; e = (d + temp1) | 0;
+      d = c; c = b; b = a; a = (temp1 + temp2) | 0;
+    }
+
+    h0 = (h0 + a) | 0; h1 = (h1 + b) | 0; h2 = (h2 + c) | 0; h3 = (h3 + d) | 0;
+    h4 = (h4 + e) | 0; h5 = (h5 + f) | 0; h6 = (h6 + g) | 0; h7 = (h7 + h) | 0;
+  }
+
+  return [h0, h1, h2, h3, h4, h5, h6, h7]
+    .map(n => (n >>> 0).toString(16).padStart(8, '0'))
+    .join('');
+}
+
+/* No servidor, o módulo nativo faz o mesmo cálculo mais rápido. */
+let digest = sha256;
+if (typeof module !== 'undefined' && module.exports) {
+  try {
+    const crypto = require('node:crypto');
+    digest = text => crypto.createHash('sha256').update(String(text), 'utf8').digest('hex');
+  } catch { /* segue com a implementação em JavaScript */ }
+}
+
+/* ------------------------------ Uso na ferramenta ------------------------ */
+/* Códigos são comparados sem hífen, espaço ou maiúsculas — igual à digitação
+ * tolerante da tela de entrada. */
+const canonical = code => String(code || '').toUpperCase().replace(/[^A-Z0-9]/g, '');
+
+function hashCode(code, salt) {
+  return digest(`${salt}:${canonical(code)}`);
+}
+
+function newSalt(random = randomHex) {
+  return random(16);
+}
+
+/* Guarda pronta para gravar: { salt, hash }, sem o código em lugar nenhum. */
+function protect(code, random = randomHex) {
+  const salt = newSalt(random);
+  return { codeSalt: salt, codeHash: hashCode(code, salt) };
+}
+
+/* Confere o código digitado contra um registro protegido. */
+function matches(record, code) {
+  if (!record || !record.codeHash || !record.codeSalt) return false;
+  if (!canonical(code)) return false;
+  return hashCode(code, record.codeSalt) === record.codeHash;
+}
+
+/* Aleatoriedade: no servidor vem do módulo nativo; no navegador, do crypto do
+ * próprio navegador. Math.random só entraria em cenário sem nenhum dos dois. */
+function randomHex(bytes) {
+  if (typeof module !== 'undefined' && module.exports) {
+    try { return require('node:crypto').randomBytes(bytes).toString('hex'); } catch { /* abaixo */ }
+  }
+  if (typeof globalThis !== 'undefined' && globalThis.crypto && globalThis.crypto.getRandomValues) {
+    const buffer = new Uint8Array(bytes);
+    globalThis.crypto.getRandomValues(buffer);
+    return Array.from(buffer, b => b.toString(16).padStart(2, '0')).join('');
+  }
+  return Array.from({ length: bytes }, () => Math.floor(Math.random() * 256).toString(16).padStart(2, '0')).join('');
+}
+
+/* Só para a tela: mostra o formato sem revelar nada. */
+function maskFor(role) {
+  const prefixo = { hr: 'CR', approver: 'AP', manager: 'DC' }[role] || 'DC';
+  return `${prefixo}-••••-••••`;
+}
+
+return { sha256, hashCode, protect, matches, maskFor, canonical, randomHex };
+
+});
+
+</script>
 <script>
 /* shared/model.js */
 /*
@@ -777,13 +946,13 @@ return {
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory(require('./model.js'));
+    module.exports = factory(require('./model.js'), require('./hash.js'));
   } else {
-    const api = factory(root.Model);
+    const api = factory(root.Model, root.Hash);
     root.Flow = api;
     Object.assign(root, api);
   }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Model) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Model, Hash) {
 
 const { STAGES, fieldsOf, missingFields, canEdit, blankJob, isoToday } = Model;
 
@@ -846,12 +1015,26 @@ function sameCode(a, b) {
  */
 const CLOSED_STAGES = ['approved', 'canceled'];
 
+/* Cargos que aquele código abre — e só enquanto houver trabalho a fazer. */
 function openForCode(jobs, code) {
-  return jobs.filter(j => sameCode(j.code, code) && !CLOSED_STAGES.includes(j.status));
+  return jobs.filter(j => Hash.matches(j, code) && !CLOSED_STAGES.includes(j.status));
+}
+
+/* Os cargos ligados ao código, inclusive os já encerrados: serve para
+ * distinguir "código inexistente" de "código que já cumpriu seu papel". */
+function anyForCode(jobs, code) {
+  return jobs.filter(j => Hash.matches(j, code));
 }
 
 function visibleTo(jobs, session) {
-  if (session.role === 'manager') return openForCode(jobs, session.code);
+  /*
+   * O código do gestor é exclusivo da atribuição: a sessão carrega os cargos
+   * que aquele código abriu na entrada, e nada além deles.
+   */
+  if (session.role === 'manager') {
+    const permitidos = session.jobIds || [];
+    return jobs.filter(j => permitidos.includes(String(j.id)) && !CLOSED_STAGES.includes(j.status));
+  }
   if (session.role === 'approver') return jobs.filter(j => j.approver === session.name);
   return jobs;
 }
@@ -946,7 +1129,7 @@ function applyFields(job, session, values) {
 return {
   entry, comment, normalizeJob,
   newAccessCode, normalizeCode, sameCode, CODE_PREFIX,
-  visibleTo, isPending, openForCode, CLOSED_STAGES,
+  visibleTo, isPending, openForCode, anyForCode, CLOSED_STAGES,
   TRANSITIONS, applyTransition, applyFields
 };
 
@@ -966,25 +1149,30 @@ return {
  *
  *   CR-00001  Carreira & Recompensa (administrativo, é quem aprova)
  *   AP-00001  Aprovador (etapa opcional, usada quando o cargo indica um)
- *   DC-00001  Responsável — Gestor Demonstração (2 cargos)
- *   DC-00002  Responsável — Gestora Demonstração (1 cargo já aprovado)
+ *   DC-00001  Gestor Demonstração — cargo "Analista de Dados e BI"
+ *   DC-00002  Gestor Demonstração — cargo "Especialista de Processos" (devolvido)
+ *   DC-00003  Gestora Demonstração — cargo já aprovado (código encerrado)
+ *
+ * Os códigos não ficam guardados: o que vai para o banco é o hash (shared/hash.js).
+ * Cada atribuição tem o seu código — um código abre um descritivo, só ele.
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory(require('./model.js'), require('./flow.js'));
+    module.exports = factory(require('./model.js'), require('./flow.js'), require('./hash.js'));
   } else {
-    const api = factory(root.Model, root.Flow);
+    const api = factory(root.Model, root.Flow, root.Hash);
     root.Seed = api;
     Object.assign(root, api);
   }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Model, Flow) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Model, Flow, Hash) {
 
 /* Chaves administrativas: C&R e aprovadores. Os responsáveis não entram aqui —
  * o código deles nasce junto com o cargo. */
 function seedKeys() {
+  const agora = new Date().toISOString();
   return [
-    { code: 'CR-00001', name: 'Carreira & Recompensa',  role: 'hr',       createdAt: new Date().toISOString(), lastUsedAt: '' },
-    { code: 'AP-00001', name: 'Aprovador Demonstração', role: 'approver', createdAt: new Date().toISOString(), lastUsedAt: '' }
+    { id: 'demo-cr', name: 'Carreira & Recompensa',  role: 'hr',       createdAt: agora, lastUsedAt: '', ...Hash.protect('CR-00001') },
+    { id: 'demo-ap', name: 'Aprovador Demonstração', role: 'approver', createdAt: agora, lastUsedAt: '', ...Hash.protect('AP-00001') }
   ];
 }
 
@@ -994,7 +1182,8 @@ function seedJobs() {
   return [
     Flow.normalizeJob({
       id: 1,
-      code: 'DC-00001',
+      ...Hash.protect('DC-00001'),
+      codeSentAt: Model.isoToday(),
       jobCode: 'AN-0421',
       name: 'Analista de Dados e BI',
       company: 'Empresa Exemplo',
@@ -1014,7 +1203,8 @@ function seedJobs() {
 
     Flow.normalizeJob({
       id: 2,
-      code: 'DC-00001',
+      ...Hash.protect('DC-00002'),
+      codeSentAt: Model.isoToday(),
       jobCode: 'ES-0118',
       name: 'Especialista de Processos',
       company: 'Empresa Exemplo',
@@ -1049,7 +1239,8 @@ function seedJobs() {
     /* Um cargo já aprovado, para o documento poder ser visto de imediato. */
     Flow.normalizeJob({
       id: 3,
-      code: 'DC-00002',
+      ...Hash.protect('DC-00003'),
+      codeSentAt: Model.isoToday(),
       jobCode: 'CO-0307',
       name: 'Comprador Pleno',
       company: 'Empresa Exemplo',
@@ -1244,19 +1435,19 @@ const LocalStore = {
   async login(code) {
     const db = this.read();
 
-    const key = db.keys.find(k => sameCode(k.code, code));
+    const key = db.keys.find(k => Hash.matches(k, code));
     if (key) {
       key.lastUsedAt = new Date().toISOString();
       this.write(db);
-      return this.remember({ role: key.role, name: key.name, code: key.code });
+      return this.remember({ role: key.role, name: key.name, keyId: key.id });
     }
 
     const open = openForCode(db.jobs, code);
     if (open.length) {
-      return this.remember({ role: 'manager', name: open[0].manager, code: open[0].code });
+      return this.remember({ role: 'manager', name: open[0].manager, jobIds: open.map(j => String(j.id)) });
     }
 
-    if (db.jobs.some(j => sameCode(j.code, code))) {
+    if (anyForCode(db.jobs, code).length) {
       throw new Error('Este código já foi encerrado: os descritivos ligados a ele foram concluídos.');
     }
 
@@ -1289,18 +1480,18 @@ const LocalStore = {
     const missing = required.filter(f => !String(data[f.key] || '').trim()).map(f => f.label);
     if (missing.length) throw new Error('Preencha: ' + missing.join(', '));
 
-    const job = this.change(db => {
-      const email = String(data.managerEmail).toLowerCase();
-      const existing = db.jobs.find(j => String(j.managerEmail).toLowerCase() === email);
-      const code = existing ? existing.code : newAccessCode(max => Math.floor(Math.random() * max), 'manager');
+    // Sem servidor não há envio de e-mail: o código aparece uma vez para quem
+    // cadastrou repassar ao gestor.
+    const code = newAccessCode(max => Math.floor(Math.random() * max), 'manager');
 
+    const job = this.change(db => {
       const created = normalizeJob({
         ...data,
         id: 'local-' + Date.now(),
-        code,
+        ...Hash.protect(code),
         status: 'editing',
         creationDate: data.creationDate || isoToday(),
-        history: [entry('Cargo criado e código de acesso enviado ao responsável', this.session.name, 'hr')],
+        history: [entry('Cargo criado e código de acesso gerado', this.session.name, 'hr')],
         comments: []
       });
 
@@ -1309,7 +1500,7 @@ const LocalStore = {
     });
 
     await this.loadJobs();
-    return { job, mail: { sent: 0, failed: 0 } };
+    return { job, mail: { sent: 0, failed: 0 }, code };
   },
 
   async saveFields(id, fields) {
@@ -1337,8 +1528,17 @@ const LocalStore = {
     return { mail: { sent: 0, failed: 0 } };
   },
 
-  async resendCode() {
-    throw new Error('Sem servidor não há envio automático. Use "Preparar e-mail".');
+  /* Gera um código novo para o cargo; o anterior perde a validade na hora. */
+  async resendCode(id) {
+    const code = newAccessCode(max => Math.floor(Math.random() * max), 'manager');
+    this.change(db => {
+      const job = db.jobs.find(j => String(j.id) === String(id));
+      if (!job) throw new Error('Cargo não encontrado');
+      Object.assign(job, Hash.protect(code));
+      job.history.push(entry('Novo código de acesso gerado', this.session.name, 'hr'));
+    });
+    await this.loadJobs();
+    return { code, aviso: 'Sem servidor não há envio automático: repasse o código você mesmo.' };
   },
 
   async exportCsv() {
@@ -1394,8 +1594,12 @@ const LocalStore = {
   },
 
   /* --------------------------- Códigos de acesso ------------------------- */
+  /* A lista nunca devolve o código: ele não existe guardado, só o hash. */
   async listKeys() {
-    return this.read().keys;
+    return this.read().keys.map(k => ({
+      id: k.id, name: k.name, role: k.role, email: k.email || '',
+      createdAt: k.createdAt, lastUsedAt: k.lastUsedAt || '', mask: Hash.maskFor(k.role)
+    }));
   },
 
   async createKey({ name, role, email }) {
@@ -1403,28 +1607,28 @@ const LocalStore = {
     if (!clean) throw new Error('Informe o nome');
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('E-mail inválido');
 
+    const kind = role === 'hr' ? 'hr' : 'approver';
+    const code = newAccessCode(max => Math.floor(Math.random() * max), kind);
+
     return this.change(db => {
-      const kind = role === 'hr' ? 'hr' : 'approver';
       if (db.keys.some(k => k.name === clean && k.role === kind)) {
-        throw new Error('Já existe um código para essa pessoa neste perfil');
+        throw new Error('Já existe um acesso para essa pessoa neste perfil');
       }
-      const key = {
-        code: newAccessCode(max => Math.floor(Math.random() * max), kind),
-        name: clean,
-        role: kind,
-        email: String(email || '').trim(),
-        createdAt: new Date().toISOString(),
-        lastUsedAt: ''
-      };
-      db.keys.push(key);
-      return { key, message: `Código criado: ${key.code}` };
+      db.keys.push({
+        id: 'key-' + Date.now(),
+        name: clean, role: kind, email: String(email || '').trim(),
+        createdAt: new Date().toISOString(), lastUsedAt: '',
+        ...Hash.protect(code)
+      });
+      return { code };
     });
   },
 
-  async updateKey(code, patch) {
-    return this.change(db => {
-      const key = db.keys.find(k => sameCode(k.code, code));
-      if (!key) throw new Error('Código não encontrado');
+  async updateKey(id, patch) {
+    let novoCodigo;
+    const resultado = this.change(db => {
+      const key = db.keys.find(k => k.id === id);
+      if (!key) throw new Error('Acesso não encontrado');
 
       if (patch.name !== undefined) {
         const name = String(patch.name).trim();
@@ -1436,22 +1640,25 @@ const LocalStore = {
         key.name = name;
       }
       if (patch.email !== undefined) key.email = String(patch.email).trim();
-      if (patch.regenerate) key.code = newAccessCode(max => Math.floor(Math.random() * max), key.role);
-
-      return { key, message: patch.regenerate ? `Novo código: ${key.code}` : 'Código atualizado' };
+      if (patch.regenerate) {
+        novoCodigo = newAccessCode(max => Math.floor(Math.random() * max), key.role);
+        Object.assign(key, Hash.protect(novoCodigo));
+      }
+      return { message: patch.regenerate ? '' : 'Acesso atualizado' };
     });
+    return { ...resultado, code: novoCodigo };
   },
 
-  async deleteKey(code) {
+  async deleteKey(id) {
     return this.change(db => {
-      const key = db.keys.find(k => sameCode(k.code, code));
-      if (!key) throw new Error('Código não encontrado');
-      if (sameCode(key.code, this.session.code)) throw new Error('Você não pode revogar o próprio código');
-      const remaining = db.keys.filter(k => k.role === 'hr' && !sameCode(k.code, key.code));
-      if (key.role === 'hr' && !remaining.length) throw new Error('É preciso manter ao menos um código de C&R');
+      const key = db.keys.find(k => k.id === id);
+      if (!key) throw new Error('Acesso não encontrado');
+      if (key.id === this.session.keyId) throw new Error('Você não pode revogar o próprio acesso');
+      const remaining = db.keys.filter(k => k.role === 'hr' && k.id !== key.id);
+      if (key.role === 'hr' && !remaining.length) throw new Error('É preciso manter ao menos um acesso de C&R');
 
       db.keys = db.keys.filter(k => k !== key);
-      return { message: 'Código revogado' };
+      return { message: 'Acesso revogado' };
     });
   },
 
@@ -1611,6 +1818,8 @@ const RemoteStore = {
   async downloadShare() {
     const response = await fetch('/api/share', { headers: { 'X-Session': this.token } });
     if (!response.ok) throw new Error('Não foi possível gerar o arquivo');
+    // O acesso da cópia vem no cabeçalho: é mostrado uma vez a quem gerou.
+    const codigo = response.headers.get('X-Share-Code');
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
     const anchor = Object.assign(document.createElement('a'), { href: url, download: 'Descritivos-de-Cargos.html' });
@@ -1618,6 +1827,7 @@ const RemoteStore = {
     anchor.click();
     anchor.remove();
     URL.revokeObjectURL(url);
+    return codigo;
   },
 
   /* ---------------------------- Modelo do cargo -------------------------- */
@@ -1754,6 +1964,26 @@ function askText(title, label, onConfirm) {
     closeModal();
     onConfirm(value);
   };
+}
+
+/*
+ * O código só existe neste instante: o servidor guarda apenas o hash. Esta
+ * caixa é a única chance de copiá-lo — por isso ela é explícita quanto a isso.
+ */
+function revealCode(titulo, code, { job, aviso } = {}) {
+  openModal(`
+    <h2>${esc(titulo)}</h2>
+    ${aviso ? `<div class="banner warn">${esc(aviso)}</div>` : ''}
+    <p class="muted">Este código aparece <b>uma única vez</b>. Ele não fica guardado em lugar nenhum: se for perdido, o caminho é gerar outro.</p>
+    <div class="reveal"><b class="code">${esc(code)}</b></div>
+    <div class="actions mt">
+      <button class="btn primary" data-action="copy" data-code="${esc(code)}">Copiar código</button>
+      ${job ? `<button class="btn secondary" data-modal-action="mail">Abrir e-mail para ${esc(job.manager)}</button>` : ''}
+    </div>
+  `);
+
+  const botaoEmail = $('#modalContent').querySelector('[data-modal-action="mail"]');
+  if (botaoEmail) botaoEmail.onclick = () => prepareMail(job, code);
 }
 
 /* ================================ LOGIN ================================== */
@@ -2285,14 +2515,16 @@ function renderAdminList() {
             <div>
               <b>${esc(j.name)}</b>
               <p class="muted">${esc(j.manager)} • ${esc(j.managerEmail)}</p>
-              <p class="muted">Código de acesso: <b class="code">${esc(j.code)}</b></p>
+              <p class="muted">${j.codeSentAt
+                ? 'Código enviado ao gestor em ' + formatDateTime(j.codeSentAt)
+                : 'Código gerado na criação do cargo'}</p>
             </div>
             ${badge(j.status)}
           </div>
           <div class="job-meta">${deadlineTag(j)}${mailNote}</div>
           <div class="actions mt-sm">
             <button class="btn primary" data-action="open" data-id="${j.id}">Abrir</button>
-            <button class="btn secondary" data-action="${API.smtpReady ? 'resend' : 'mail'}" data-id="${j.id}">${API.smtpReady ? 'Reenviar código' : 'Preparar e-mail'}</button>
+            <button class="btn secondary" data-action="resend" data-id="${j.id}">Gerar novo código</button>
             <button class="btn outline" data-action="doc" data-id="${j.id}">Documento</button>
             ${j.status === 'canceled'
               ? `<button class="btn outline" data-action="reopen" data-id="${j.id}">Reabrir</button>`
@@ -2356,16 +2588,18 @@ async function newJobModal() {
 
     button.disabled = true;
     try {
-      const { job, mail } = await API.createJob(data);
+      const { job, mail, code } = await API.createJob(data);
       closeModal();
-      show('admin');
+      show('flow');
 
       if (mail && mail.sent) {
-        toast(`Cargo criado (${job.code}) e código enviado para ${job.managerEmail}`, 'success');
+        // O código foi direto para o gestor: ninguém mais precisa vê-lo.
+        toast(`Cargo criado e código de acesso enviado para ${job.managerEmail}`, 'success');
       } else {
-        // Sem envio automático, abre o e-mail já escrito no cliente da pessoa.
-        toast('Cargo criado com o código ' + job.code, 'success');
-        prepareMail(job.id);
+        revealCode('Cargo criado — repasse o código ao gestor', code, {
+          job,
+          aviso: 'O envio automático de e-mail não está configurado, então o código não foi entregue.'
+        });
       }
     } catch (err) {
       toast(err.message, 'error');
@@ -2374,15 +2608,15 @@ async function newJobModal() {
   };
 }
 
-function prepareMail(id) {
-  const job = API.getJob(id);
+function prepareMail(job, code) {
   const subject = encodeURIComponent(`Preenchimento de descritivo de cargo: ${job.name}`);
   const body = encodeURIComponent(
     `Olá, ${job.manager}!\n\n` +
     `Foi atribuído a você o preenchimento do descritivo do cargo ${job.name}.\n` +
     `Prazo: ${formatDate(job.deadline)}\n\n` +
     `Acesse ${location.origin} e informe o código abaixo — não é necessário usuário nem senha.\n\n` +
-    `Código de acesso: ${job.code}\n\n` +
+    `Código de acesso: ${code}\n\n` +
+    `Esse código é exclusivo deste descritivo e deixa de valer quando ele for aprovado.\n\n` +
     `Carreira & Recompensa`
   );
   window.location.href = `mailto:${job.managerEmail}?subject=${subject}&body=${body}`;
@@ -2410,22 +2644,17 @@ async function usersView() {
   }
   usersView.cache = keys;
 
-  /* Um código por responsável, com os cargos que ele abre. */
-  const managers = [];
-  API.jobs.forEach(job => {
-    const found = managers.find(m => m.code === job.code);
-    if (found) found.jobs.push(job);
-    else managers.push({ code: job.code, name: job.manager, email: job.managerEmail, jobs: [job] });
-  });
-
-  const codeCell = code => `<b class="code">${esc(code)}</b>
-    <button class="btn outline" data-action="copy" data-code="${esc(code)}" title="Copiar">Copiar</button>`;
+  /* Um cargo por linha: o código é individual, então cada atribuição tem o seu. */
+  const atribuicoes = API.jobs.filter(j => !['approved', 'canceled'].includes(j.status));
 
   $('#content').innerHTML = `
-    <div class="banner">Quem recebe um código entra direto com ele. Perdeu o código? Gere um novo — o antigo deixa de valer na hora.</div>
+    <div class="banner">
+      <b>Os códigos não ficam guardados.</b> A ferramenta grava apenas uma verificação (hash), então nem quem tem acesso ao arquivo de dados descobre o código de alguém.
+      Perdeu o código? Gere outro: o anterior deixa de valer na hora.
+    </div>
 
     <div class="card">
-      <div class="head"><b>Acesso administrativo</b><span class="muted">${keys.length} código(s)</span></div>
+      <div class="head"><b>Acesso administrativo</b><span class="muted">${keys.length} acesso(s)</span></div>
       <div class="body">
         <table class="list">
           <thead><tr><th>Pessoa</th><th>Perfil</th><th>Código</th><th>Último acesso</th><th></th></tr></thead>
@@ -2433,11 +2662,11 @@ async function usersView() {
             <tr>
               <td><b>${esc(k.name)}</b>${k.email ? `<br><span class="muted">${esc(k.email)}</span>` : ''}</td>
               <td>${ROLES[k.role].label}</td>
-              <td>${codeCell(k.code)}</td>
+              <td><span class="code muted">${esc(k.mask)}</span></td>
               <td class="muted">${k.lastUsedAt ? formatDateTime(k.lastUsedAt) : 'nunca usado'}</td>
               <td class="right">
-                <button class="btn secondary" data-action="key-edit" data-code="${esc(k.code)}">Editar</button>
-                <button class="btn danger" data-action="key-delete" data-code="${esc(k.code)}">Revogar</button>
+                <button class="btn secondary" data-action="key-edit" data-id="${esc(k.id)}">Editar</button>
+                <button class="btn danger" data-action="key-delete" data-id="${esc(k.id)}">Revogar</button>
               </td>
             </tr>`).join('')}
           </tbody>
@@ -2446,23 +2675,21 @@ async function usersView() {
     </div>
 
     <div class="card">
-      <div class="head"><b>Códigos dos responsáveis</b><span class="muted">gerados com o cargo</span></div>
+      <div class="head"><b>Códigos dos gestores</b><span class="muted">um por atribuição</span></div>
       <div class="body">
-        ${managers.length ? `<table class="list">
-          <thead><tr><th>Responsável</th><th>Cargos</th><th>Código</th><th></th></tr></thead>
-          <tbody>${managers.map(m => `
+        ${atribuicoes.length ? `<table class="list">
+          <thead><tr><th>Cargo</th><th>Gestor</th><th>Código enviado</th><th></th></tr></thead>
+          <tbody>${atribuicoes.map(j => `
             <tr>
-              <td><b>${esc(m.name)}</b><br><span class="muted">${esc(m.email)}</span></td>
-              <td class="muted">${m.jobs.map(j => esc(j.name)).join('<br>')}</td>
-              <td>${codeCell(m.code)}</td>
+              <td><b>${esc(j.name)}</b><br><span class="muted">${STAGES[j.status].label}</span></td>
+              <td>${esc(j.manager)}<br><span class="muted">${esc(j.managerEmail)}</span></td>
+              <td class="muted">${j.codeSentAt ? formatDateTime(j.codeSentAt) : 'não enviado por e-mail'}</td>
               <td class="right">
-                <button class="btn secondary" data-action="${API.smtpReady ? 'resend' : 'mail'}" data-id="${m.jobs[0].id}">
-                  ${API.smtpReady ? 'Reenviar por e-mail' : 'Preparar e-mail'}
-                </button>
+                <button class="btn secondary" data-action="resend" data-id="${j.id}">Gerar novo código</button>
               </td>
             </tr>`).join('')}
           </tbody>
-        </table>` : '<div class="empty">Nenhum cargo cadastrado ainda.</div>'}
+        </table>` : '<div class="empty">Nenhuma atribuição em aberto.</div>'}
       </div>
     </div>`;
 }
@@ -2485,10 +2712,10 @@ function userModal(key) {
     </div>
     ${editing ? `
       <div class="field full">
-        <label>Código atual</label>
-        <p><b class="code">${esc(key.code)}</b></p>
+        <label>Código de acesso</label>
+        <p class="muted">Não é possível consultar o código atual — ele não fica guardado.</p>
         <label class="check"><input type="checkbox" id="uRegenerate"> Gerar um código novo (o atual deixa de valer imediatamente)</label>
-      </div>` : '<p class="muted">O código é sorteado ao salvar e aparece na lista, pronto para copiar.</p>'}
+      </div>` : '<p class="muted">O código é sorteado ao salvar e mostrado uma única vez, para você repassar à pessoa.</p>'}
     <p class="muted">Aprovador: o nome precisa ser o mesmo escolhido no cadastro do cargo — a fila de aprovação usa esse vínculo. Ao renomear aqui, os cargos são atualizados junto.</p>
     <button class="btn primary full mt" data-modal-action="save-user">Salvar</button>
   `);
@@ -2500,10 +2727,12 @@ function userModal(key) {
     button.disabled = true;
     try {
       const result = editing
-        ? await API.updateKey(key.code, { ...data, regenerate: $('#uRegenerate').checked })
+        ? await API.updateKey(key.id, { ...data, regenerate: $('#uRegenerate').checked })
         : await API.createKey({ ...data, role: $('#uRole').value });
       closeModal();
-      toast(result.message || 'Código salvo', 'success');
+
+      if (result.code) revealCode(`Código de ${data.name}`, result.code);
+      else toast(result.message || 'Acesso salvo', 'success');
       usersView();
     } catch (err) {
       toast(err.message, 'error');
@@ -2847,14 +3076,30 @@ async function handleAction(action, id, element) {
       return show('document', id);
     case 'print':
       return window.print();
-    case 'mail':
-      return prepareMail(id);
-    case 'resend':
-      return run(API.resendCode(id));
+    case 'resend': {
+      const job = API.getJob(id) || (API.jobs || []).find(j => String(j.id) === String(id));
+      return askText('Gerar novo código',
+        `Digite GERAR para criar um código novo para "${job ? job.name : 'este cargo'}". O código atual deixa de valer na hora.`,
+        async text => {
+          if (text.trim().toUpperCase() !== 'GERAR') return toast('Confirmação inválida', 'error');
+          try {
+            const resultado = await API.resendCode(id);
+            if (resultado.code) revealCode('Novo código de acesso', resultado.code, { job, aviso: resultado.aviso });
+            else toast(resultado.message, 'success');
+            show(state.view);
+          } catch (err) {
+            toast(err.message, 'error');
+          }
+        });
+    }
     case 'export':
       return run(API.exportCsv(), 'Arquivo gerado');
     case 'share':
-      return run(API.downloadShare(), 'Arquivo gerado — envie o Descritivos-de-Cargos.html');
+      return API.downloadShare()
+        .then(codigo => revealCode('Arquivo gerado — guarde o código de acesso dele', codigo, {
+          aviso: 'A cópia não leva os códigos de ninguém. Este é o acesso de C&R exclusivo do arquivo que você vai enviar.'
+        }))
+        .catch(err => toast(err.message, 'error'));
     case 'new':
       return newJobModal();
 
@@ -2862,12 +3107,12 @@ async function handleAction(action, id, element) {
     case 'key-new':
       return userModal();
     case 'key-edit':
-      return userModal((usersView.cache || []).find(k => k.code === code));
+      return userModal((usersView.cache || []).find(k => k.id === id));
     case 'key-delete': {
-      const key = (usersView.cache || []).find(k => k.code === code);
-      return askText('Revogar código', `Digite REVOGAR para tirar o acesso de ${key ? key.name : code}`, text => {
+      const key = (usersView.cache || []).find(k => k.id === id);
+      return askText('Revogar acesso', `Digite REVOGAR para tirar o acesso de ${key ? key.name : 'esta pessoa'}`, text => {
         if (text.trim().toUpperCase() !== 'REVOGAR') return toast('Confirmação inválida', 'error');
-        run(API.deleteKey(code), 'Código revogado');
+        run(API.deleteKey(id), 'Acesso revogado');
       });
     }
     case 'copy':

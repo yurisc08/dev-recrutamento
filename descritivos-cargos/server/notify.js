@@ -55,14 +55,17 @@ const signature = '\n\nCarreira & Recompensa\n(mensagem automática — não res
 
 /* Cada aviso devolve { role, subject, body } ou nulo quando não há aviso. */
 const MESSAGES = {
-  created: job => ({
+  /* Único e-mail que carrega o código: é o momento em que ele é gerado. */
+  created: (job, note, code) => ({
     role: 'manager',
     subject: `Preenchimento de descritivo de cargo: ${job.name}`,
     body: `Olá, ${job.manager}!\n\n` +
       `Foi atribuído a você o preenchimento do descritivo do cargo ${job.name}.\n` +
       `Prazo: ${formatDate(job.deadline)}\n` + link() +
-      `\nCódigo de acesso: ${job.code}\n\n` +
-      `Informe somente esse código para entrar — não é necessário usuário nem senha.` + signature
+      `\nCódigo de acesso: ${code}\n\n` +
+      `Esse código é exclusivo deste descritivo e pessoal: não o repasse. ` +
+      `Informe somente ele para entrar — não é necessário usuário nem senha. ` +
+      `Depois da aprovação, o código deixa de valer.` + signature
   }),
 
   submit: job => ({
@@ -94,7 +97,8 @@ const MESSAGES = {
       `O descritivo do cargo ${job.name} foi devolvido para ajustes.\n\n` +
       `Motivo:\n${note}\n\n` +
       `Prazo: ${formatDate(job.deadline)}\n` + link() +
-      `\nCódigo de acesso: ${job.code}` + signature
+      `\nUse o mesmo código de acesso que você recebeu quando o cargo foi atribuído. ` +
+      `Se não o encontrar, peça a Carreira & Recompensa um novo.` + signature
   }),
 
   reopen: (job, note) => ({
@@ -103,7 +107,8 @@ const MESSAGES = {
     body: `Olá, ${job.manager}!\n\n` +
       `O descritivo do cargo ${job.name} foi reaberto para revisão.\n\n` +
       `Motivo:\n${note}\n` + link() +
-      `\nCódigo de acesso: ${job.code}` + signature
+      `\nUse o mesmo código de acesso que você recebeu. Se não o encontrar, ` +
+      `peça a Carreira & Recompensa um novo.` + signature
   }),
 
   cancel: (job, note) => ({
@@ -129,7 +134,7 @@ function reminderMessage(job, role, left) {
   return {
     subject: `Lembrete — ${job.name} (prazo ${prazo})`,
     body: `Olá!\n\nUm lembrete de que ${pedido}. O prazo ${prazo} (${formatDate(job.deadline)}).\n` + link() +
-      (role === 'manager' ? `\nCódigo de acesso: ${job.code}` : '') + signature
+      (role === 'manager' ? '\nUse o código de acesso que você recebeu por e-mail.' : '') + signature
   };
 }
 
@@ -162,7 +167,7 @@ async function deliver(job, recipients, { subject, body }) {
  * Dispara o aviso correspondente a uma transição do fluxo.
  * Devolve { sent, failed } para a interface avisar C&R quando algo falhar.
  */
-async function onTransition(job, action, note) {
+async function onTransition(job, action, note, code) {
   const idle = { sent: 0, failed: 0 };
   if (!db.config.notificationsEnabled) return idle;
   if (!mailer.isConfigured(db.config.smtp)) return idle;
@@ -170,7 +175,7 @@ async function onTransition(job, action, note) {
   const build = MESSAGES[action];
   if (!build) return idle;
 
-  const message = build(job, note);
+  const message = build(job, note, code);
   const recipients = recipientsFor(message.role, job);
   if (!recipients.length) return idle;
 
@@ -183,11 +188,10 @@ async function onTransition(job, action, note) {
   };
 }
 
-/* Reenvia o código de acesso ao responsável, a pedido de C&R. */
-async function resendCode(job) {
+/* Envia ao responsável o código recém-gerado. */
+async function sendCode(job, code) {
   if (!mailer.isConfigured(db.config.smtp)) throw new Error('SMTP não configurado');
-  const message = MESSAGES.created(job);
-  const [result] = await deliver(job, managerOf(job), message);
+  const [result] = await deliver(job, managerOf(job), MESSAGES.created(job, '', code));
   await db.persist();
   if (!result) throw new Error('Cargo sem e-mail do responsável');
   if (!result.ok) throw new Error(result.error);
@@ -240,4 +244,4 @@ function startReminders() {
   setInterval(tick, 60 * 60 * 1000).unref?.();
 }
 
-module.exports = { onTransition, resendCode, sendTest, runReminders, startReminders };
+module.exports = { onTransition, sendCode, sendTest, runReminders, startReminders };

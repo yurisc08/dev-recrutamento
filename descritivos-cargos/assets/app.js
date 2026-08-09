@@ -73,6 +73,26 @@ function askText(title, label, onConfirm) {
   };
 }
 
+/*
+ * O código só existe neste instante: o servidor guarda apenas o hash. Esta
+ * caixa é a única chance de copiá-lo — por isso ela é explícita quanto a isso.
+ */
+function revealCode(titulo, code, { job, aviso } = {}) {
+  openModal(`
+    <h2>${esc(titulo)}</h2>
+    ${aviso ? `<div class="banner warn">${esc(aviso)}</div>` : ''}
+    <p class="muted">Este código aparece <b>uma única vez</b>. Ele não fica guardado em lugar nenhum: se for perdido, o caminho é gerar outro.</p>
+    <div class="reveal"><b class="code">${esc(code)}</b></div>
+    <div class="actions mt">
+      <button class="btn primary" data-action="copy" data-code="${esc(code)}">Copiar código</button>
+      ${job ? `<button class="btn secondary" data-modal-action="mail">Abrir e-mail para ${esc(job.manager)}</button>` : ''}
+    </div>
+  `);
+
+  const botaoEmail = $('#modalContent').querySelector('[data-modal-action="mail"]');
+  if (botaoEmail) botaoEmail.onclick = () => prepareMail(job, code);
+}
+
 /* ================================ LOGIN ================================== */
 /*
  * Uma porta só: a pessoa digita o código que recebeu e a ferramenta descobre
@@ -602,14 +622,16 @@ function renderAdminList() {
             <div>
               <b>${esc(j.name)}</b>
               <p class="muted">${esc(j.manager)} • ${esc(j.managerEmail)}</p>
-              <p class="muted">Código de acesso: <b class="code">${esc(j.code)}</b></p>
+              <p class="muted">${j.codeSentAt
+                ? 'Código enviado ao gestor em ' + formatDateTime(j.codeSentAt)
+                : 'Código gerado na criação do cargo'}</p>
             </div>
             ${badge(j.status)}
           </div>
           <div class="job-meta">${deadlineTag(j)}${mailNote}</div>
           <div class="actions mt-sm">
             <button class="btn primary" data-action="open" data-id="${j.id}">Abrir</button>
-            <button class="btn secondary" data-action="${API.smtpReady ? 'resend' : 'mail'}" data-id="${j.id}">${API.smtpReady ? 'Reenviar código' : 'Preparar e-mail'}</button>
+            <button class="btn secondary" data-action="resend" data-id="${j.id}">Gerar novo código</button>
             <button class="btn outline" data-action="doc" data-id="${j.id}">Documento</button>
             ${j.status === 'canceled'
               ? `<button class="btn outline" data-action="reopen" data-id="${j.id}">Reabrir</button>`
@@ -673,16 +695,18 @@ async function newJobModal() {
 
     button.disabled = true;
     try {
-      const { job, mail } = await API.createJob(data);
+      const { job, mail, code } = await API.createJob(data);
       closeModal();
-      show('admin');
+      show('flow');
 
       if (mail && mail.sent) {
-        toast(`Cargo criado (${job.code}) e código enviado para ${job.managerEmail}`, 'success');
+        // O código foi direto para o gestor: ninguém mais precisa vê-lo.
+        toast(`Cargo criado e código de acesso enviado para ${job.managerEmail}`, 'success');
       } else {
-        // Sem envio automático, abre o e-mail já escrito no cliente da pessoa.
-        toast('Cargo criado com o código ' + job.code, 'success');
-        prepareMail(job.id);
+        revealCode('Cargo criado — repasse o código ao gestor', code, {
+          job,
+          aviso: 'O envio automático de e-mail não está configurado, então o código não foi entregue.'
+        });
       }
     } catch (err) {
       toast(err.message, 'error');
@@ -691,15 +715,15 @@ async function newJobModal() {
   };
 }
 
-function prepareMail(id) {
-  const job = API.getJob(id);
+function prepareMail(job, code) {
   const subject = encodeURIComponent(`Preenchimento de descritivo de cargo: ${job.name}`);
   const body = encodeURIComponent(
     `Olá, ${job.manager}!\n\n` +
     `Foi atribuído a você o preenchimento do descritivo do cargo ${job.name}.\n` +
     `Prazo: ${formatDate(job.deadline)}\n\n` +
     `Acesse ${location.origin} e informe o código abaixo — não é necessário usuário nem senha.\n\n` +
-    `Código de acesso: ${job.code}\n\n` +
+    `Código de acesso: ${code}\n\n` +
+    `Esse código é exclusivo deste descritivo e deixa de valer quando ele for aprovado.\n\n` +
     `Carreira & Recompensa`
   );
   window.location.href = `mailto:${job.managerEmail}?subject=${subject}&body=${body}`;
@@ -727,22 +751,17 @@ async function usersView() {
   }
   usersView.cache = keys;
 
-  /* Um código por responsável, com os cargos que ele abre. */
-  const managers = [];
-  API.jobs.forEach(job => {
-    const found = managers.find(m => m.code === job.code);
-    if (found) found.jobs.push(job);
-    else managers.push({ code: job.code, name: job.manager, email: job.managerEmail, jobs: [job] });
-  });
-
-  const codeCell = code => `<b class="code">${esc(code)}</b>
-    <button class="btn outline" data-action="copy" data-code="${esc(code)}" title="Copiar">Copiar</button>`;
+  /* Um cargo por linha: o código é individual, então cada atribuição tem o seu. */
+  const atribuicoes = API.jobs.filter(j => !['approved', 'canceled'].includes(j.status));
 
   $('#content').innerHTML = `
-    <div class="banner">Quem recebe um código entra direto com ele. Perdeu o código? Gere um novo — o antigo deixa de valer na hora.</div>
+    <div class="banner">
+      <b>Os códigos não ficam guardados.</b> A ferramenta grava apenas uma verificação (hash), então nem quem tem acesso ao arquivo de dados descobre o código de alguém.
+      Perdeu o código? Gere outro: o anterior deixa de valer na hora.
+    </div>
 
     <div class="card">
-      <div class="head"><b>Acesso administrativo</b><span class="muted">${keys.length} código(s)</span></div>
+      <div class="head"><b>Acesso administrativo</b><span class="muted">${keys.length} acesso(s)</span></div>
       <div class="body">
         <table class="list">
           <thead><tr><th>Pessoa</th><th>Perfil</th><th>Código</th><th>Último acesso</th><th></th></tr></thead>
@@ -750,11 +769,11 @@ async function usersView() {
             <tr>
               <td><b>${esc(k.name)}</b>${k.email ? `<br><span class="muted">${esc(k.email)}</span>` : ''}</td>
               <td>${ROLES[k.role].label}</td>
-              <td>${codeCell(k.code)}</td>
+              <td><span class="code muted">${esc(k.mask)}</span></td>
               <td class="muted">${k.lastUsedAt ? formatDateTime(k.lastUsedAt) : 'nunca usado'}</td>
               <td class="right">
-                <button class="btn secondary" data-action="key-edit" data-code="${esc(k.code)}">Editar</button>
-                <button class="btn danger" data-action="key-delete" data-code="${esc(k.code)}">Revogar</button>
+                <button class="btn secondary" data-action="key-edit" data-id="${esc(k.id)}">Editar</button>
+                <button class="btn danger" data-action="key-delete" data-id="${esc(k.id)}">Revogar</button>
               </td>
             </tr>`).join('')}
           </tbody>
@@ -763,23 +782,21 @@ async function usersView() {
     </div>
 
     <div class="card">
-      <div class="head"><b>Códigos dos responsáveis</b><span class="muted">gerados com o cargo</span></div>
+      <div class="head"><b>Códigos dos gestores</b><span class="muted">um por atribuição</span></div>
       <div class="body">
-        ${managers.length ? `<table class="list">
-          <thead><tr><th>Responsável</th><th>Cargos</th><th>Código</th><th></th></tr></thead>
-          <tbody>${managers.map(m => `
+        ${atribuicoes.length ? `<table class="list">
+          <thead><tr><th>Cargo</th><th>Gestor</th><th>Código enviado</th><th></th></tr></thead>
+          <tbody>${atribuicoes.map(j => `
             <tr>
-              <td><b>${esc(m.name)}</b><br><span class="muted">${esc(m.email)}</span></td>
-              <td class="muted">${m.jobs.map(j => esc(j.name)).join('<br>')}</td>
-              <td>${codeCell(m.code)}</td>
+              <td><b>${esc(j.name)}</b><br><span class="muted">${STAGES[j.status].label}</span></td>
+              <td>${esc(j.manager)}<br><span class="muted">${esc(j.managerEmail)}</span></td>
+              <td class="muted">${j.codeSentAt ? formatDateTime(j.codeSentAt) : 'não enviado por e-mail'}</td>
               <td class="right">
-                <button class="btn secondary" data-action="${API.smtpReady ? 'resend' : 'mail'}" data-id="${m.jobs[0].id}">
-                  ${API.smtpReady ? 'Reenviar por e-mail' : 'Preparar e-mail'}
-                </button>
+                <button class="btn secondary" data-action="resend" data-id="${j.id}">Gerar novo código</button>
               </td>
             </tr>`).join('')}
           </tbody>
-        </table>` : '<div class="empty">Nenhum cargo cadastrado ainda.</div>'}
+        </table>` : '<div class="empty">Nenhuma atribuição em aberto.</div>'}
       </div>
     </div>`;
 }
@@ -802,10 +819,10 @@ function userModal(key) {
     </div>
     ${editing ? `
       <div class="field full">
-        <label>Código atual</label>
-        <p><b class="code">${esc(key.code)}</b></p>
+        <label>Código de acesso</label>
+        <p class="muted">Não é possível consultar o código atual — ele não fica guardado.</p>
         <label class="check"><input type="checkbox" id="uRegenerate"> Gerar um código novo (o atual deixa de valer imediatamente)</label>
-      </div>` : '<p class="muted">O código é sorteado ao salvar e aparece na lista, pronto para copiar.</p>'}
+      </div>` : '<p class="muted">O código é sorteado ao salvar e mostrado uma única vez, para você repassar à pessoa.</p>'}
     <p class="muted">Aprovador: o nome precisa ser o mesmo escolhido no cadastro do cargo — a fila de aprovação usa esse vínculo. Ao renomear aqui, os cargos são atualizados junto.</p>
     <button class="btn primary full mt" data-modal-action="save-user">Salvar</button>
   `);
@@ -817,10 +834,12 @@ function userModal(key) {
     button.disabled = true;
     try {
       const result = editing
-        ? await API.updateKey(key.code, { ...data, regenerate: $('#uRegenerate').checked })
+        ? await API.updateKey(key.id, { ...data, regenerate: $('#uRegenerate').checked })
         : await API.createKey({ ...data, role: $('#uRole').value });
       closeModal();
-      toast(result.message || 'Código salvo', 'success');
+
+      if (result.code) revealCode(`Código de ${data.name}`, result.code);
+      else toast(result.message || 'Acesso salvo', 'success');
       usersView();
     } catch (err) {
       toast(err.message, 'error');
@@ -1164,14 +1183,30 @@ async function handleAction(action, id, element) {
       return show('document', id);
     case 'print':
       return window.print();
-    case 'mail':
-      return prepareMail(id);
-    case 'resend':
-      return run(API.resendCode(id));
+    case 'resend': {
+      const job = API.getJob(id) || (API.jobs || []).find(j => String(j.id) === String(id));
+      return askText('Gerar novo código',
+        `Digite GERAR para criar um código novo para "${job ? job.name : 'este cargo'}". O código atual deixa de valer na hora.`,
+        async text => {
+          if (text.trim().toUpperCase() !== 'GERAR') return toast('Confirmação inválida', 'error');
+          try {
+            const resultado = await API.resendCode(id);
+            if (resultado.code) revealCode('Novo código de acesso', resultado.code, { job, aviso: resultado.aviso });
+            else toast(resultado.message, 'success');
+            show(state.view);
+          } catch (err) {
+            toast(err.message, 'error');
+          }
+        });
+    }
     case 'export':
       return run(API.exportCsv(), 'Arquivo gerado');
     case 'share':
-      return run(API.downloadShare(), 'Arquivo gerado — envie o Descritivos-de-Cargos.html');
+      return API.downloadShare()
+        .then(codigo => revealCode('Arquivo gerado — guarde o código de acesso dele', codigo, {
+          aviso: 'A cópia não leva os códigos de ninguém. Este é o acesso de C&R exclusivo do arquivo que você vai enviar.'
+        }))
+        .catch(err => toast(err.message, 'error'));
     case 'new':
       return newJobModal();
 
@@ -1179,12 +1214,12 @@ async function handleAction(action, id, element) {
     case 'key-new':
       return userModal();
     case 'key-edit':
-      return userModal((usersView.cache || []).find(k => k.code === code));
+      return userModal((usersView.cache || []).find(k => k.id === id));
     case 'key-delete': {
-      const key = (usersView.cache || []).find(k => k.code === code);
-      return askText('Revogar código', `Digite REVOGAR para tirar o acesso de ${key ? key.name : code}`, text => {
+      const key = (usersView.cache || []).find(k => k.id === id);
+      return askText('Revogar acesso', `Digite REVOGAR para tirar o acesso de ${key ? key.name : 'esta pessoa'}`, text => {
         if (text.trim().toUpperCase() !== 'REVOGAR') return toast('Confirmação inválida', 'error');
-        run(API.deleteKey(code), 'Código revogado');
+        run(API.deleteKey(id), 'Acesso revogado');
       });
     }
     case 'copy':

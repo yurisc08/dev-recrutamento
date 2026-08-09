@@ -32,6 +32,7 @@ const DATA_DIR = process.env.DATA_DIR ? path.resolve(process.env.DATA_DIR) : pat
 
 /* A ordem importa: modelo e fluxo primeiro, interface por último. */
 const SCRIPTS = [
+  'shared/hash.js',
   'shared/model.js',
   'shared/flow.js',
   'shared/seed.js',
@@ -65,7 +66,32 @@ function embedData() {
     config = { ...resto, notificationsEnabled: false, remindersEnabled: false };
   } catch { /* sem config, tudo bem */ }
 
-  const seed = { jobs: db.jobs || [], keys: db.keys || [], model: db.model, config };
+  /* A cópia não pode levar os códigos de ninguém: eles só existem como hash.
+   * Criamos um acesso novo, exclusivo do arquivo, e mostramos o código uma vez
+   * no terminal para quem for enviá-lo. */
+  const Hash = require('./shared/hash.js');
+  const Flow = require('./shared/flow.js');
+  const crypto = require('node:crypto');
+
+  const codigoDaCopia = Flow.newAccessCode(max => crypto.randomInt(max), 'hr');
+  const acessoDaCopia = {
+    id: crypto.randomUUID(),
+    name: 'Acesso da cópia compartilhada',
+    role: 'hr',
+    email: '',
+    createdAt: new Date().toISOString(),
+    lastUsedAt: '',
+    ...Hash.protect(codigoDaCopia)
+  };
+
+  console.log(`\n  Código de acesso desta cópia: ${codigoDaCopia}`);
+  console.log('  Guarde agora — ele não fica gravado em lugar nenhum.\n');
+
+  /* Os cargos vão sem a verificação do código: na cópia, o único acesso é o
+   * que acabamos de criar para ela. */
+  const semCodigo = (db.jobs || []).map(({ codeHash, codeSalt, codeSentAt, ...job }) => job);
+
+  const seed = { jobs: semCodigo, keys: [acessoDaCopia], model: db.model, config };
   return `<script>window.DC_SEED = ${JSON.stringify(seed).replace(/</g, '\\u003c')};</script>`;
 }
 

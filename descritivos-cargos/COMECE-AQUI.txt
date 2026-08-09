@@ -29,6 +29,8 @@ a) Administracao  -> "Restaurar dados de teste"
 b) Codigos        -> crie o SEU codigo de C&R e o dos aprovadores.
    Depois revogue CR-00001 e AP-00001.
    ATENCAO: crie o seu antes de revogar, senao voce fica sem acesso.
+   O codigo aparece UMA VEZ ao ser criado: copie na hora.
+   Ele nao fica guardado e nao pode ser consultado depois.
 
 c) Ajustes        -> endereco da ferramenta e servidor de e-mail (SMTP).
    Use "Enviar e-mail de teste" para confirmar.
@@ -45,7 +47,7 @@ COMO O FLUXO FUNCIONA
   C&R cadastra o cargo e preenche a parte dela
         |  e-mail automatico ao gestor, com o codigo de acesso
         v
-  Gestor entra com o codigo e preenche a parte dele
+  Gestor entra com o codigo exclusivo daquele cargo e preenche
         |
         v
   C&R analisa:  devolve com motivo  ->  volta ao gestor
@@ -67,6 +69,7 @@ ARQUIVOS UTEIS
   abrir.bat ...................... alternativa, se .vbs for bloqueado
 
   README.md ...................... manual completo
+  IMPLANTAR.md ................... as 4 opcoes de uso, com custo e esforco
   HOSPEDAR.md .................... colocar num servidor de verdade
   PILOTO-INTERNET.md ............. acesso externo para testar
 

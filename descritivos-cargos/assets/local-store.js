@@ -151,19 +151,19 @@ const LocalStore = {
   async login(code) {
     const db = this.read();
 
-    const key = db.keys.find(k => sameCode(k.code, code));
+    const key = db.keys.find(k => Hash.matches(k, code));
     if (key) {
       key.lastUsedAt = new Date().toISOString();
       this.write(db);
-      return this.remember({ role: key.role, name: key.name, code: key.code });
+      return this.remember({ role: key.role, name: key.name, keyId: key.id });
     }
 
     const open = openForCode(db.jobs, code);
     if (open.length) {
-      return this.remember({ role: 'manager', name: open[0].manager, code: open[0].code });
+      return this.remember({ role: 'manager', name: open[0].manager, jobIds: open.map(j => String(j.id)) });
     }
 
-    if (db.jobs.some(j => sameCode(j.code, code))) {
+    if (anyForCode(db.jobs, code).length) {
       throw new Error('Este código já foi encerrado: os descritivos ligados a ele foram concluídos.');
     }
 
@@ -196,18 +196,18 @@ const LocalStore = {
     const missing = required.filter(f => !String(data[f.key] || '').trim()).map(f => f.label);
     if (missing.length) throw new Error('Preencha: ' + missing.join(', '));
 
-    const job = this.change(db => {
-      const email = String(data.managerEmail).toLowerCase();
-      const existing = db.jobs.find(j => String(j.managerEmail).toLowerCase() === email);
-      const code = existing ? existing.code : newAccessCode(max => Math.floor(Math.random() * max), 'manager');
+    // Sem servidor não há envio de e-mail: o código aparece uma vez para quem
+    // cadastrou repassar ao gestor.
+    const code = newAccessCode(max => Math.floor(Math.random() * max), 'manager');
 
+    const job = this.change(db => {
       const created = normalizeJob({
         ...data,
         id: 'local-' + Date.now(),
-        code,
+        ...Hash.protect(code),
         status: 'editing',
         creationDate: data.creationDate || isoToday(),
-        history: [entry('Cargo criado e código de acesso enviado ao responsável', this.session.name, 'hr')],
+        history: [entry('Cargo criado e código de acesso gerado', this.session.name, 'hr')],
         comments: []
       });
 
@@ -216,7 +216,7 @@ const LocalStore = {
     });
 
     await this.loadJobs();
-    return { job, mail: { sent: 0, failed: 0 } };
+    return { job, mail: { sent: 0, failed: 0 }, code };
   },
 
   async saveFields(id, fields) {
@@ -244,8 +244,17 @@ const LocalStore = {
     return { mail: { sent: 0, failed: 0 } };
   },
 
-  async resendCode() {
-    throw new Error('Sem servidor não há envio automático. Use "Preparar e-mail".');
+  /* Gera um código novo para o cargo; o anterior perde a validade na hora. */
+  async resendCode(id) {
+    const code = newAccessCode(max => Math.floor(Math.random() * max), 'manager');
+    this.change(db => {
+      const job = db.jobs.find(j => String(j.id) === String(id));
+      if (!job) throw new Error('Cargo não encontrado');
+      Object.assign(job, Hash.protect(code));
+      job.history.push(entry('Novo código de acesso gerado', this.session.name, 'hr'));
+    });
+    await this.loadJobs();
+    return { code, aviso: 'Sem servidor não há envio automático: repasse o código você mesmo.' };
   },
 
   async exportCsv() {
@@ -301,8 +310,12 @@ const LocalStore = {
   },
 
   /* --------------------------- Códigos de acesso ------------------------- */
+  /* A lista nunca devolve o código: ele não existe guardado, só o hash. */
   async listKeys() {
-    return this.read().keys;
+    return this.read().keys.map(k => ({
+      id: k.id, name: k.name, role: k.role, email: k.email || '',
+      createdAt: k.createdAt, lastUsedAt: k.lastUsedAt || '', mask: Hash.maskFor(k.role)
+    }));
   },
 
   async createKey({ name, role, email }) {
@@ -310,28 +323,28 @@ const LocalStore = {
     if (!clean) throw new Error('Informe o nome');
     if (email && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) throw new Error('E-mail inválido');
 
+    const kind = role === 'hr' ? 'hr' : 'approver';
+    const code = newAccessCode(max => Math.floor(Math.random() * max), kind);
+
     return this.change(db => {
-      const kind = role === 'hr' ? 'hr' : 'approver';
       if (db.keys.some(k => k.name === clean && k.role === kind)) {
-        throw new Error('Já existe um código para essa pessoa neste perfil');
+        throw new Error('Já existe um acesso para essa pessoa neste perfil');
       }
-      const key = {
-        code: newAccessCode(max => Math.floor(Math.random() * max), kind),
-        name: clean,
-        role: kind,
-        email: String(email || '').trim(),
-        createdAt: new Date().toISOString(),
-        lastUsedAt: ''
-      };
-      db.keys.push(key);
-      return { key, message: `Código criado: ${key.code}` };
+      db.keys.push({
+        id: 'key-' + Date.now(),
+        name: clean, role: kind, email: String(email || '').trim(),
+        createdAt: new Date().toISOString(), lastUsedAt: '',
+        ...Hash.protect(code)
+      });
+      return { code };
     });
   },
 
-  async updateKey(code, patch) {
-    return this.change(db => {
-      const key = db.keys.find(k => sameCode(k.code, code));
-      if (!key) throw new Error('Código não encontrado');
+  async updateKey(id, patch) {
+    let novoCodigo;
+    const resultado = this.change(db => {
+      const key = db.keys.find(k => k.id === id);
+      if (!key) throw new Error('Acesso não encontrado');
 
       if (patch.name !== undefined) {
         const name = String(patch.name).trim();
@@ -343,22 +356,25 @@ const LocalStore = {
         key.name = name;
       }
       if (patch.email !== undefined) key.email = String(patch.email).trim();
-      if (patch.regenerate) key.code = newAccessCode(max => Math.floor(Math.random() * max), key.role);
-
-      return { key, message: patch.regenerate ? `Novo código: ${key.code}` : 'Código atualizado' };
+      if (patch.regenerate) {
+        novoCodigo = newAccessCode(max => Math.floor(Math.random() * max), key.role);
+        Object.assign(key, Hash.protect(novoCodigo));
+      }
+      return { message: patch.regenerate ? '' : 'Acesso atualizado' };
     });
+    return { ...resultado, code: novoCodigo };
   },
 
-  async deleteKey(code) {
+  async deleteKey(id) {
     return this.change(db => {
-      const key = db.keys.find(k => sameCode(k.code, code));
-      if (!key) throw new Error('Código não encontrado');
-      if (sameCode(key.code, this.session.code)) throw new Error('Você não pode revogar o próprio código');
-      const remaining = db.keys.filter(k => k.role === 'hr' && !sameCode(k.code, key.code));
-      if (key.role === 'hr' && !remaining.length) throw new Error('É preciso manter ao menos um código de C&R');
+      const key = db.keys.find(k => k.id === id);
+      if (!key) throw new Error('Acesso não encontrado');
+      if (key.id === this.session.keyId) throw new Error('Você não pode revogar o próprio acesso');
+      const remaining = db.keys.filter(k => k.role === 'hr' && k.id !== key.id);
+      if (key.role === 'hr' && !remaining.length) throw new Error('É preciso manter ao menos um acesso de C&R');
 
       db.keys = db.keys.filter(k => k !== key);
-      return { message: 'Código revogado' };
+      return { message: 'Acesso revogado' };
     });
   },
 

@@ -10,13 +10,13 @@
  */
 (function (root, factory) {
   if (typeof module !== 'undefined' && module.exports) {
-    module.exports = factory(require('./model.js'));
+    module.exports = factory(require('./model.js'), require('./hash.js'));
   } else {
-    const api = factory(root.Model);
+    const api = factory(root.Model, root.Hash);
     root.Flow = api;
     Object.assign(root, api);
   }
-})(typeof globalThis !== 'undefined' ? globalThis : this, function (Model) {
+})(typeof globalThis !== 'undefined' ? globalThis : this, function (Model, Hash) {
 
 const { STAGES, fieldsOf, missingFields, canEdit, blankJob, isoToday } = Model;
 
@@ -79,12 +79,26 @@ function sameCode(a, b) {
  */
 const CLOSED_STAGES = ['approved', 'canceled'];
 
+/* Cargos que aquele código abre — e só enquanto houver trabalho a fazer. */
 function openForCode(jobs, code) {
-  return jobs.filter(j => sameCode(j.code, code) && !CLOSED_STAGES.includes(j.status));
+  return jobs.filter(j => Hash.matches(j, code) && !CLOSED_STAGES.includes(j.status));
+}
+
+/* Os cargos ligados ao código, inclusive os já encerrados: serve para
+ * distinguir "código inexistente" de "código que já cumpriu seu papel". */
+function anyForCode(jobs, code) {
+  return jobs.filter(j => Hash.matches(j, code));
 }
 
 function visibleTo(jobs, session) {
-  if (session.role === 'manager') return openForCode(jobs, session.code);
+  /*
+   * O código do gestor é exclusivo da atribuição: a sessão carrega os cargos
+   * que aquele código abriu na entrada, e nada além deles.
+   */
+  if (session.role === 'manager') {
+    const permitidos = session.jobIds || [];
+    return jobs.filter(j => permitidos.includes(String(j.id)) && !CLOSED_STAGES.includes(j.status));
+  }
   if (session.role === 'approver') return jobs.filter(j => j.approver === session.name);
   return jobs;
 }
@@ -179,7 +193,7 @@ function applyFields(job, session, values) {
 return {
   entry, comment, normalizeJob,
   newAccessCode, normalizeCode, sameCode, CODE_PREFIX,
-  visibleTo, isPending, openForCode, CLOSED_STAGES,
+  visibleTo, isPending, openForCode, anyForCode, CLOSED_STAGES,
   TRANSITIONS, applyTransition, applyFields
 };
 
