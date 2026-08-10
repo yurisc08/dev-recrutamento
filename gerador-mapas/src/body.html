@@ -304,7 +304,16 @@
         </div>
         <div class="card-body">
           <div id="exportInfo"></div>
-          <div class="inline" style="margin-top:14px">
+          <label class="check" style="margin-top:14px">
+            <input type="checkbox" id="chkIncluirDistribuicao">
+            Deixar esta tela na cópia gerada
+          </label>
+          <p class="help" style="margin:6px 0 0 23px">
+            Desmarcado, quem receber o arquivo não vê a tela <b>Salvar e distribuir</b> e não
+            consegue gerar novas cópias — recebe a ferramenta pronta para usar. Marque apenas se
+            a pessoa também for configurar e repassar adiante.
+          </p>
+          <div class="inline" style="margin-top:16px">
             <button class="btn" id="btnExportTool">Gerar ferramenta com a base</button>
             <button class="btn sec" id="btnExportToolSemBase">Gerar sem a base</button>
           </div>

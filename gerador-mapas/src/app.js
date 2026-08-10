@@ -831,10 +831,11 @@ async function logoEmbutido() {
   }
 }
 
-async function gerarFerramenta({ comBase }) {
+async function gerarFerramenta({ comBase, incluirDistribuicao }) {
   if (!podeExportarFerramenta) throw new Error('Esta cópia não sabe se regerar. Use o build.py.');
 
   const fontes = {
+    semDistribuicao: !incluirDistribuicao,
     logo: await logoEmbutido(),
     base: comBase && state.baseBytes
       ? { tipo: 'base64', nome: state.baseLabel || 'Base incorporada', dados: paraB64(state.baseBytes) }
@@ -848,7 +849,12 @@ async function gerarFerramenta({ comBase }) {
   };
 
   const literalFontes = 'window.GMC=' + JSON.stringify(fontes) + ';';
-  const literalShell = JSON.stringify(SHELL_SRC).replace(/<\//g, '<\\/');
+  // Sem a tela de distribuição, a cópia não leva o esqueleto embutido: além de
+  // esconder a tela, ela fica de fato incapaz de gerar outras cópias — e sai
+  // uns 200 KB menor.
+  const literalShell = incluirDistribuicao
+    ? JSON.stringify(SHELL_SRC).replace(/<\//g, '<\\/')
+    : '""';
 
   return SHELL_SRC
     .replace('/*__GMC_FONTES__*/', () => literalFontes)
@@ -1459,6 +1465,7 @@ function printPdf(itens) {
 
 /* ---------------- salvar e distribuir ---------------- */
 function renderDistribuir() {
+  if (!$('view-distribuir')) return;
   const perfis = listarPerfis();
   const nomes = Object.keys(perfis);
   $('listaPerfis').innerHTML = nomes.length ? nomes.map(n => `
@@ -1490,14 +1497,17 @@ function renderDistribuir() {
 
 async function exportarFerramenta(comBase) {
   const botao = comBase ? $('btnExportTool') : $('btnExportToolSemBase');
+  const incluirDistribuicao = !!($('chkIncluirDistribuicao') || {}).checked;
   const original = botao.textContent;
   botao.disabled = true;
   botao.textContent = 'Gerando…';
   try {
     await sleep(30);
-    const html = await gerarFerramenta({ comBase });
+    const html = await gerarFerramenta({ comBase, incluirDistribuicao });
     download(new Blob([html], { type: 'text/html;charset=utf-8' }), 'Gerador_Mapas_Carreira.html');
-    toast('Ferramenta gerada. Envie o arquivo para quem vai usar.', 'ok');
+    toast(incluirDistribuicao
+      ? 'Ferramenta gerada, com a tela de distribuição.'
+      : 'Ferramenta gerada, pronta para uso. Envie o arquivo para quem vai usar.', 'ok');
   } catch (e) {
     toast('Erro ao gerar a ferramenta: ' + e.message, 'err');
   } finally {
@@ -1606,7 +1616,8 @@ function renderAll() {
   renderModelos();
   renderGeracaoModelos();
   if (!$('view-mapeamento').hidden) renderMapping();
-  if (!$('view-distribuir').hidden) renderDistribuir();
+  const vd = $('view-distribuir');
+  if (vd && !vd.hidden) renderDistribuir();
 }
 
 function renderGeracaoModelos() {
@@ -1616,8 +1627,21 @@ function renderGeracaoModelos() {
     `<option value="${m.id}"${m.id === atual ? ' selected' : ''}>${esc(m.nome)}</option>`).join('');
 }
 
+/**
+ * Cópias geradas "para uso" não têm a tela de distribuição: ela é retirada
+ * do documento, e não apenas escondida.
+ */
+function removerDistribuicao() {
+  if (!SRC.semDistribuicao) return;
+  const nav = document.querySelector('.nav-item[data-view="distribuir"]');
+  if (nav) nav.remove();
+  const view = $('view-distribuir');
+  if (view) view.remove();
+}
+
 function wire() {
   $('brandLogo').src = LOGO;
+  removerDistribuicao();
 
   document.addEventListener('click', e => {
     const nav = e.target.closest('[data-view]');
@@ -1799,7 +1823,8 @@ function wire() {
   $('btnPdfEscolhido').onclick = () => printPdf(state.sel.escolhido);
   $('selModeloGeracao').onchange = () => { if (state.sel.escolhido.length) searchEscolhido(); };
 
-  // ---- salvar e distribuir ----
+  // ---- salvar e distribuir (a tela some nas cópias geradas para uso) ----
+  if ($('view-distribuir')) {
   $('btnExportTool').onclick = () => exportarFerramenta(true);
   $('btnExportToolSemBase').onclick = () => exportarFerramenta(false);
   $('btnProfileSave').onclick = () => {
@@ -1831,6 +1856,7 @@ function wire() {
     salvarConfiguracao(); renderAll();
     toast('Mapeamento padrão restaurado.', 'ok');
   };
+  }
 
   $('modalClose').onclick = () => { $('modalBg').hidden = true; };
   $('modalBg').onclick = e => { if (e.target === $('modalBg')) $('modalBg').hidden = true; };
