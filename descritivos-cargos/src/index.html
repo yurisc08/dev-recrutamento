@@ -33,16 +33,16 @@
       <div class="panel">
         <div class="field">
           <label for="accessCode">Código de acesso</label>
-          <input id="accessCode" placeholder="Ex.: DC-00001" autocomplete="off" spellcheck="false"
+          <input id="accessCode" placeholder="Ex.: DC-XXXX-XXXX" autocomplete="off" spellcheck="false"
                  autocapitalize="characters" style="font-size:19px;letter-spacing:.1em">
           <small class="muted">Pode digitar com ou sem hífen, maiúsculas ou minúsculas.</small>
         </div>
         <button id="enter" class="btn primary full">Entrar</button>
       </div>
 
-      <div class="test">
+      <div class="test hide" id="demoCodes">
         <b>Códigos de demonstração</b>
-        <p class="muted">Clique para preencher e ver a ferramenta pelos olhos de cada papel.</p>
+        <p class="muted">Este bloco desaparece sozinho quando você revogar os acessos de demonstração em <b>Códigos</b>.</p>
         <div class="demo-codes">
           <button class="btn secondary" data-demo-code="CR-00001"><b>CR-00001</b><span>Carreira &amp; Recompensa</span></button>
           <button class="btn secondary" data-demo-code="AP-00001"><b>AP-00001</b><span>Aprovador (opcional)</span></button>

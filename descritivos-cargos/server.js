@@ -168,6 +168,16 @@ async function handleApi(req, res, pathname) {
     return fail(res, 401, 'Código não encontrado. Confira com Carreira & Recompensa.');
   }
 
+  /*
+   * Único ponto público além do login: diz se os acessos de demonstração ainda
+   * existem, para a tela de entrada saber se deve mostrá-los. Não revela mais
+   * nada — nem quantidade de cargos, nem nomes.
+   */
+  if (pathname === '/api/status' && req.method === 'GET') {
+    const demo = db.keys.some(k => k.id === 'demo-cr' || k.id === 'demo-ap');
+    return ok(res, { demo });
+  }
+
   /* Daqui em diante, tudo exige sessão. */
   const token = req.headers['x-session'];
   const session = auth.readSession(token);

@@ -98,7 +98,9 @@ minúsculas, com espaços (`cr 00001`, `CR-00001` e `cr00001` são o mesmo códi
 
 ### Códigos de demonstração
 
-Aparecem como botões na tela de entrada, é só clicar:
+Aparecem como botões na tela de entrada, é só clicar. **Eles desaparecem
+sozinhos** assim que você revogar os acessos de demonstração em *Códigos* —
+não é preciso lembrar de apagar nada do código-fonte.
 
 | Código | Quem é |
 | --- | --- |
@@ -247,6 +249,27 @@ o que identifica o descritivo na lista, no e-mail e no documento) e precisa ter
 Campos que não pertencem ao papel logado aparecem bloqueados (🔒) na tela — e são
 **recusados pelo servidor** mesmo que alguém tente enviá-los por fora. O
 aprovador nunca edita conteúdo: apenas aprova ou devolve.
+
+## Três painéis, três códigos
+
+Cada perfil entra com o seu código e cai num painel diferente — ninguém vê o
+que não é da sua alçada.
+
+| Perfil | Prefixo | O que enxerga |
+| --- | --- | --- |
+| **Carreira & Recompensa** | `CR-` | painel administrativo completo: Fluxo, Aprovações, Administração, Códigos, Modelo e Ajustes. **É quem aprova.** |
+| **Gestor** | `DC-` | apenas o descritivo daquela atribuição: preenche, envia e acompanha em que etapa está |
+| **Aprovador** | `AP-` | painel enxuto — Fluxo e Aprovações. **Etapa opcional** |
+
+**O aprovador não é o mesmo que C&R, mas pode nem existir.** Deixando o campo
+*Aprovador* em branco no cadastro do cargo, o descritivo vai do gestor direto
+para C&R, e o fluxo fica com dois lados apenas. Indicando um aprovador, ele
+entra no meio do caminho — útil quando um cargo específico precisa do aval de
+um diretor.
+
+O gestor **acompanha o andamento** sem precisar perguntar nada: ao abrir o
+descritivo ele vê a trilha do fluxo com a etapa atual destacada, e o cargo
+continua na lista dele até ser aprovado.
 
 ## O que cada tela faz
 

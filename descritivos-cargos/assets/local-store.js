@@ -131,6 +131,10 @@ const LocalStore = {
     return result;
   },
 
+  async isDemo() {
+    return this.read().keys.some(k => k.id === 'demo-cr' || k.id === 'demo-ap');
+  },
+
   /* ------------------------------- Sessão -------------------------------- */
   remember(session) {
     this.token = 'local';

@@ -39,6 +39,17 @@ const RemoteStore = {
     return data;
   },
 
+  /* A tela de entrada só mostra os códigos de demonstração enquanto eles
+   * existirem de fato. */
+  async isDemo() {
+    try {
+      const data = await this.request('GET', '/api/status');
+      return Boolean(data.demo);
+    } catch {
+      return false;
+    }
+  },
+
   /* ------------------------------- Sessão -------------------------------- */
   remember(data) {
     this.token = data.token;

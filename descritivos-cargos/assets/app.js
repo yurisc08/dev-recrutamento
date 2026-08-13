@@ -100,6 +100,15 @@ function revealCode(titulo, code, { job, aviso } = {}) {
  */
 $('#accessCode').addEventListener('keydown', e => { if (e.key === 'Enter') $('#enter').click(); });
 
+/*
+ * Os códigos de demonstração só aparecem enquanto a demonstração existir.
+ * Revogados os acessos CR-00001 e AP-00001, o bloco some — ninguém precisa
+ * lembrar de apagar nada.
+ */
+API.isDemo().then(demo => {
+  if (demo) $('#demoCodes').classList.remove('hide');
+});
+
 /* Os códigos de demonstração preenchem o campo com um clique. */
 $$('[data-demo-code]').forEach(button => {
   button.onclick = () => {
