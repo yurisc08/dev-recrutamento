@@ -466,12 +466,22 @@
     }
   });
 
-  canvas.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    if (state === STATE.MENU) return play();
-    if (state === STATE.DEAD) return;
-    swat();
+  // Tocar golpeia; arrastar também reposiciona o colosso na torre.
+  A.bindPointer(view, {
+    down(p) {
+      if (state === STATE.MENU) return play();
+      if (state === STATE.DEAD) return;
+      aimTo(p);
+      swat();
+    },
+    move(p, e, apertado) {
+      if (apertado && state === STATE.PLAY) aimTo(p);
+    },
   });
+
+  function aimTo(p) {
+    ape.x = A.clamp((p.x - towerX()) / towerW(), 0.08, 0.92);
+  }
 
   reset();
   A.loop(update, draw);

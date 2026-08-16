@@ -444,18 +444,20 @@
     if (code === "ShiftLeft" || code === "ShiftRight" || code === "KeyK") dash();
   });
 
-  // mouse mira e atira; no toque, arrastar mira e dispara sozinho
-  canvas.addEventListener("pointermove", (e) => {
-    aimTarget = A.pointerPos(view, e);
+  // mouse mira e atira; no toque, arrastar mira e dispara junto
+  A.bindPointer(view, {
+    down(p) {
+      if (state === STATE.MENU || state === STATE.OVER) return;
+      aimTarget = p;
+      A.keys.press("Space");
+    },
+    move(p) {
+      aimTarget = p;
+    },
+    up() {
+      A.keys.release("Space");
+    },
   });
-  canvas.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    if (state === STATE.MENU || state === STATE.OVER) return;
-    aimTarget = A.pointerPos(view, e);
-    A.keys.press("Space");
-  });
-  canvas.addEventListener("pointerup", () => A.keys.release("Space"));
-  canvas.addEventListener("pointerleave", () => A.keys.release("Space"));
 
   view.onResize(() => {
     you.x = A.clamp(you.x, R, view.w - R);

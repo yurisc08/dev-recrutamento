@@ -123,6 +123,7 @@ o site avisa no console e volta a usar as matérias locais em vez de quebrar.
 | **Fliperama** | Pinball | Física de segmentos e círculos; bumpers, slingshots, alvos e multiplicador de combo |
 | **Colosso** | Escalada | Gorila gigante subindo a torre, desviando de entulho e derrubando aviões |
 | **Linha de Frente** | Tiro | Arena em vista de cima, ondas convergentes, avanço com invulnerabilidade breve |
+| **Guardiões** | Estratégia | Defesa de torre: três guardiões, três níveis cada, ondas com velozes, blindados e chefes |
 | **Voo Rasante** | Habilidade | Quatro mundos com arte própria e recorde separado por mundo |
 | **Serpente Neon** | Arcade | O tabuleiro ganha casas em telas maiores |
 | **Quebra-Blocos** | Arcade | A parede ganha colunas em telas largas |
@@ -131,6 +132,22 @@ o site avisa no console e volta a usar as matérias locais em vez de quebrar.
 
 Todos rodam **em tela cheia**, com teclado no computador e toque no celular,
 e têm botão de tela cheia nativa. O recorde fica no `localStorage`.
+
+### Controles: por que existe `bindPointer`
+
+Todo jogo liga o ponteiro por `Arcade.bindPointer(view, { down, move, up })`,
+que usa **captura de ponteiro**. Sem ela, arrastar o dedo (ou o mouse com o
+botão apertado) para fora do canvas fazia o `pointerup` se perder — e o
+controle ficava travado apertado. Era um defeito silencioso que afetava
+vários jogos, no toque e no mouse.
+
+```js
+Arcade.bindPointer(view, {
+  down(p) { /* p já vem em coordenadas do mundo */ },
+  move(p, e, apertado) {},
+  up() { /* sempre chamado, mesmo saindo do canvas */ },
+});
+```
 
 ### Como funciona a tela cheia
 

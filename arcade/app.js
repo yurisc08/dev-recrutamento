@@ -46,6 +46,34 @@
       `,
     },
     {
+      id: "guardioes", name: "Guardiões", genre: "Estratégia", tint: "#5ec9a7",
+      desc: "Defesa de torre: posicione guardiões, melhore com o ouro dos abates e segure ondas que evoluem a cada rodada.",
+      path: "games/guardioes/", unit: "pts", best: ["guardioes"],
+      thumb: `
+        <rect width="320" height="180" fill="#141a16"/>
+        <g fill="rgba(255,255,255,.04)">
+          ${[0,1,2,3,4].map((r) => [0,1,2,3,4,5,6,7].map((c) =>
+            (r + c) % 2 ? `<rect x="${c * 40 + 1}" y="${r * 36 + 1}" width="38" height="34"/>` : "").join("")).join("")}
+        </g>
+        <path d="M0 90 L96 90 L96 26 L200 26 L200 148 L272 148 L272 74 L320 74"
+              stroke="#3d3222" stroke-width="26" fill="none" stroke-linejoin="round"/>
+        <path d="M0 90 L96 90 L96 26 L200 26 L200 148 L272 148 L272 74 L320 74"
+              stroke="rgba(255,176,58,.22)" stroke-width="2" fill="none" stroke-dasharray="6 9"/>
+        <g>
+          <circle cx="48" cy="42" r="14" fill="#22262e" stroke="#5ec9a7" stroke-width="2.5"/>
+          <circle cx="48" cy="42" r="6" fill="#5ec9a7"/><rect x="48" y="39" width="16" height="6" fill="#5ec9a7"/>
+          <circle cx="150" cy="112" r="14" fill="#22262e" stroke="#62a8ff" stroke-width="2.5"/>
+          <circle cx="150" cy="112" r="6" fill="#62a8ff"/><rect x="150" y="109" width="16" height="6" fill="#62a8ff"/>
+          <circle cx="240" cy="42" r="14" fill="#22262e" stroke="#ff5c39" stroke-width="2.5"/>
+          <circle cx="240" cy="42" r="6" fill="#ff5c39"/><rect x="240" y="39" width="16" height="6" fill="#ff5c39"/>
+        </g>
+        <g><circle cx="120" cy="26" r="9" fill="#c9a227"/><circle cx="200" cy="80" r="8" fill="#5ec9a7"/>
+           <circle cx="236" cy="148" r="10" fill="#8d9aa8"/><circle cx="236" cy="148" r="5" fill="none" stroke="#dfe6ef" stroke-width="2"/></g>
+        <path d="M300 60 L316 74 L300 88 L284 74Z" fill="#ffb03a"/>
+        <circle cx="300" cy="74" r="5" fill="#141a16"/>
+      `,
+    },
+    {
       id: "fliperama", name: "Fliperama", genre: "Pinball", tint: "#ff5c39",
       desc: "Pinball com física de verdade: bumpers, alvos que apagam e multiplicador por acertos seguidos.",
       path: "games/fliperama/", unit: "pts", best: ["fliperama"],

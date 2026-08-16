@@ -525,18 +525,19 @@
     if (state === STATE.MENU || state === STATE.OVER) play();
   });
 
-  // no celular, cada metade da tela aciona uma palheta
-  canvas.addEventListener("pointerdown", (e) => {
-    if (state === STATE.MENU || state === STATE.OVER) return;
-    e.preventDefault();
-    const p = A.pointerPos(view, e);
-    if (state === STATE.READY) return A.keys.press("Space");
-    A.keys.press(p.x < view.w / 2 ? "ArrowLeft" : "ArrowRight");
-  });
-  canvas.addEventListener("pointerup", () => {
-    A.keys.release("Space");
-    A.keys.release("ArrowLeft");
-    A.keys.release("ArrowRight");
+  // Cada metade da tela aciona uma palheta. Com captura, soltar o dedo
+  // fora do canvas ainda solta a palheta — antes ela ficava travada em cima.
+  A.bindPointer(view, {
+    down(p) {
+      if (state === STATE.MENU || state === STATE.OVER) return;
+      if (state === STATE.READY) return A.keys.press("Space");
+      A.keys.press(p.x < view.w / 2 ? "ArrowLeft" : "ArrowRight");
+    },
+    up() {
+      A.keys.release("Space");
+      A.keys.release("ArrowLeft");
+      A.keys.release("ArrowRight");
+    },
   });
 
   resetTargets();

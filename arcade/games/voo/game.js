@@ -835,7 +835,7 @@
     } else flap();
   }
 
-  canvas.addEventListener("pointerdown", tap);
+  A.bindPointer(view, { down: (p, e) => tap(e) });
   el.start.addEventListener("pointerdown", tap);
   el.over.addEventListener("pointerdown", tap);
 

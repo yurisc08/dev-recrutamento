@@ -316,15 +316,17 @@
   el.play.addEventListener("click", play);
   el.again.addEventListener("click", play);
 
-  function movePaddle(e) {
+  function movePaddle(p) {
     if (state === STATE.MENU || state === STATE.OVER) return;
-    paddleX = A.clamp(A.pointerPos(view, e).x, paddleW / 2, view.w - paddleW / 2);
+    paddleX = A.clamp(p.x, paddleW / 2, view.w - paddleW / 2);
   }
 
-  canvas.addEventListener("pointermove", movePaddle);
-  canvas.addEventListener("pointerdown", (e) => {
-    movePaddle(e);
-    launch();
+  A.bindPointer(view, {
+    down(p) {
+      movePaddle(p);
+      launch();
+    },
+    move: movePaddle,
   });
 
   A.onPress((code) => {

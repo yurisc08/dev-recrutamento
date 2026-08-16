@@ -191,6 +191,54 @@
     };
   }
 
+  /**
+   * Liga o ponteiro ao canvas COM CAPTURA. Sem isso, arrastar o dedo (ou o
+   * mouse com o botão apertado) para fora do canvas fazia o `pointerup` se
+   * perder — e o controle ficava travado apertado. Era o defeito que
+   * aparecia em vários jogos, tanto no toque quanto no mouse.
+   *
+   * handlers: { down(p, e), move(p, e, apertado), up(p, e) }
+   */
+  function bindPointer(view, handlers) {
+    const canvas = view.canvas;
+    const at = (e) => pointerPos(view, e);
+    let down = false;
+
+    canvas.addEventListener("pointerdown", (e) => {
+      e.preventDefault();
+      down = true;
+      try {
+        canvas.setPointerCapture(e.pointerId);
+      } catch (_) {
+        /* navegador sem captura: os eventos seguem sem ela */
+      }
+      if (handlers.down) handlers.down(at(e), e);
+    });
+
+    canvas.addEventListener("pointermove", (e) => {
+      if (handlers.move) handlers.move(at(e), e, down);
+    });
+
+    const end = (e) => {
+      if (!down) return;
+      down = false;
+      try {
+        if (e && e.pointerId != null) canvas.releasePointerCapture(e.pointerId);
+      } catch (_) {
+        /* já liberado */
+      }
+      if (handlers.up) handlers.up(e ? at(e) : null, e);
+    };
+
+    canvas.addEventListener("pointerup", end);
+    canvas.addEventListener("pointercancel", end);
+    canvas.addEventListener("lostpointercapture", end);
+    // rede de segurança: trocar de aba com o dedo apoiado não pode travar
+    global.addEventListener("blur", () => end(null));
+
+    return { isDown: () => down };
+  }
+
   // ------------------------------------------------------------- tela cheia
 
   const fullscreen = {
@@ -359,7 +407,7 @@
   global.Arcade = {
     store, getBest, saveBest,
     sfx, tone, noise, isMuted, setMuted,
-    createView, pointerPos, fullscreen, loop,
+    createView, pointerPos, bindPointer, fullscreen, loop,
     keys, onPress, bindTouchButtons,
     clamp, lerp, damp, rand, randInt, fmt,
     mountShell,

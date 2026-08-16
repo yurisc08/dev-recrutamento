@@ -273,18 +273,25 @@
   });
 
   // deslizar o dedo tambem vira a cobra
+  // Deslizar vira a cobra. O giro sai já no meio do movimento: esperar o
+  // dedo levantar deixava a virada atrasada demais para ser útil.
   let swipe = null;
-  canvas.addEventListener("pointerdown", (e) => {
-    swipe = { x: e.clientX, y: e.clientY };
-  });
-  canvas.addEventListener("pointerup", (e) => {
-    if (!swipe) return;
-    const dx = e.clientX - swipe.x;
-    const dy = e.clientY - swipe.y;
-    swipe = null;
-    if (Math.abs(dx) < 18 && Math.abs(dy) < 18) return;
-    if (Math.abs(dx) > Math.abs(dy)) turn(Math.sign(dx), 0);
-    else turn(0, Math.sign(dy));
+  A.bindPointer(view, {
+    down(p) {
+      swipe = p;
+    },
+    move(p, e, apertado) {
+      if (!apertado || !swipe) return;
+      const dx = p.x - swipe.x;
+      const dy = p.y - swipe.y;
+      if (Math.abs(dx) < 22 && Math.abs(dy) < 22) return;
+      if (Math.abs(dx) > Math.abs(dy)) turn(Math.sign(dx), 0);
+      else turn(0, Math.sign(dy));
+      swipe = p;
+    },
+    up() {
+      swipe = null;
+    },
   });
 
   reset();

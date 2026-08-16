@@ -891,16 +891,18 @@
     }
   });
 
-  canvas.addEventListener("pointerdown", (e) => {
-    e.preventDefault();
-    if (state === STATE.MENU) return play();
-    if (state === STATE.DEAD) return;
-    // metade de baixo abaixa, metade de cima pula
-    const p = A.pointerPos(view, e);
-    if (p.y > view.h * 0.62) A.keys.press("ArrowDown");
-    else jump();
+  A.bindPointer(view, {
+    down(p) {
+      if (state === STATE.MENU) return play();
+      if (state === STATE.DEAD) return;
+      // metade de baixo abaixa, metade de cima pula
+      if (p.y > view.h * 0.62) A.keys.press("ArrowDown");
+      else jump();
+    },
+    up() {
+      A.keys.release("ArrowDown");
+    },
   });
-  canvas.addEventListener("pointerup", () => A.keys.release("ArrowDown"));
 
   view.onResize(() => {
     if (state === STATE.MENU) cart.y = trackY(scrollX + cartX());

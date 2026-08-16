@@ -310,11 +310,12 @@
     if (state === STATE.MENU || state === STATE.OVER) play();
   });
 
-  canvas.addEventListener("pointermove", (e) => {
+  const movePad = (p) => {
     if (state === STATE.MENU || state === STATE.OVER) return;
-    if (e.pointerType === "mouse" && !e.buttons && !e.isPrimary) return;
-    playerY = A.clamp(A.pointerPos(view, e).y, PAD_H / 2, H() - PAD_H / 2);
-  });
+    playerY = A.clamp(p.y, PAD_H / 2, H() - PAD_H / 2);
+  };
+
+  A.bindPointer(view, { down: movePad, move: movePad });
 
   buildLevels();
   A.loop(update, draw);

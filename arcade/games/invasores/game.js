@@ -365,11 +365,23 @@
     if (state === STATE.MENU || state === STATE.OVER) play();
   });
 
-  // arrastar o dedo move a nave
-  canvas.addEventListener("pointermove", (e) => {
+  // O ponteiro move a nave e o toque também atira. Antes o mouse só
+  // funcionava com o botão apertado, e no desktop parecia que a nave
+  // tinha travado.
+  const aim = (p) => {
     if (state !== STATE.PLAY) return;
-    if (e.pointerType === "mouse" && !e.buttons) return;
-    shipX = A.clamp(A.pointerPos(view, e).x, SHIP_W / 2, W() - SHIP_W / 2);
+    shipX = A.clamp(p.x, SHIP_W / 2, W() - SHIP_W / 2);
+  };
+
+  A.bindPointer(view, {
+    down(p) {
+      aim(p);
+      A.keys.press("Space");
+    },
+    move: aim,
+    up() {
+      A.keys.release("Space");
+    },
   });
 
   makeStars();
