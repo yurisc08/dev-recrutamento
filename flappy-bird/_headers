@@ -1,0 +1,15 @@
+/*
+  X-Content-Type-Options: nosniff
+  X-Frame-Options: SAMEORIGIN
+  Referrer-Policy: strict-origin-when-cross-origin
+
+# Os arquivos nao tem hash no nome, entao um cache curto evita
+# servir uma versao velha depois de um deploy.
+/index.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.css
+  Cache-Control: public, max-age=600
+
+/*.js
+  Cache-Control: public, max-age=600
