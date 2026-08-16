@@ -1,0 +1,28 @@
+{
+  "name": "presenca-treinamentos",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Controle de presenca em treinamentos via leitor de cracha em rede (Cloudflare Workers + D1)",
+  "type": "module",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "db:create": "wrangler d1 create presenca",
+    "db:migrate:local": "wrangler d1 migrations apply presenca --local",
+    "db:migrate": "wrangler d1 migrations apply presenca --remote",
+    "db:seed:local": "wrangler d1 execute presenca --local --file=./seed/demo.sql",
+    "db:seed": "wrangler d1 execute presenca --remote --file=./seed/demo.sql",
+    "setup": "npm run db:migrate:local && npm run db:seed:local",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "hono": "^4.9.10"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^4.20250109.0",
+    "typescript": "^5.7.3",
+    "vitest": "^3.0.0",
+    "wrangler": "^4.0.0"
+  }
+}

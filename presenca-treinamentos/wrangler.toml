@@ -1,0 +1,29 @@
+name = "presenca-treinamentos"
+main = "src/index.ts"
+compatibility_date = "2025-06-01"
+
+# Painel web (HTML/CSS/JS estatico). O Worker responde /api/* e faz fallback
+# para o index.html quando a rota nao existe nos assets.
+[assets]
+directory = "./public"
+binding = "ASSETS"
+
+[vars]
+# Fuso usado para exibir/relatorios. Os horarios sao gravados em UTC.
+APP_TIMEZONE = "America/Sao_Paulo"
+# Janela (minutos) antes/depois da aula em que uma leitura de cracha ainda
+# e considerada como pertencente aquela aula (chegou cedo / saiu depois).
+MATCH_WINDOW_BEFORE_MIN = "60"
+MATCH_WINDOW_AFTER_MIN = "60"
+# Segredo do cookie de sessao do painel. Em producao use:
+#   wrangler secret put SESSION_SECRET
+SESSION_SECRET = "troque-este-segredo-em-producao"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "presenca"
+# Rode `npm run db:create` e cole o id retornado aqui.
+database_id = "PREENCHER_COM_O_ID_DO_D1"
+
+[observability]
+enabled = true
