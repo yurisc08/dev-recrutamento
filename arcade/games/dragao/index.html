@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#05060f">
+<meta name="description" content="Fuga do Dragão: acelere de carrinho pelos trilhos da caverna com um dragão cuspindo fogo na sua cola.">
+<title>Fuga do Dragão — Magicine</title>
+<link rel="stylesheet" href="../../shared/ui.css">
+<link rel="icon" href="../../icon.svg">
+</head>
+<body>
+  <div class="stage">
+    <canvas id="c" aria-label="Carrinho fugindo de um dragão numa caverna"></canvas>
+
+    <header class="hud">
+      <a class="pill" href="../../index.html">← Sair</a>
+      <h1>Fuga do Dragão</h1>
+      <span class="pill"><span class="label">Recorde</span><b id="best">0</b></span>
+      <button class="pill icon" id="mute" type="button" aria-label="Som">🔊</button>
+      <button class="pill icon" id="fs" type="button" aria-label="Tela cheia">⛶</button>
+    </header>
+
+    <div class="screen" id="start">
+      <h2>Fuga do Dragão</h2>
+      <p>
+        O carrinho não para. <b>Pule</b> as pedras e os buracos dos trilhos,
+        <b>abaixe</b> nas estalactites. Cada batida deixa o dragão colar —
+        e quando ele encosta, o fogo alcança você.
+      </p>
+      <button class="btn" id="play" type="button">Soltar o freio</button>
+    </div>
+
+    <div class="screen hidden" id="over">
+      <h2 id="over-title">Virou churrasco</h2>
+      <div class="result">
+        <div><span>Distância</span><b id="r-dist">0</b></div>
+        <div><span>Gemas</span><b id="r-gems">0</b></div>
+        <div><span>Pontos</span><b id="r-score">0</b></div>
+      </div>
+      <p class="record" id="record"></p>
+      <button class="btn" id="again" type="button">Correr de novo</button>
+    </div>
+
+    <div class="touch">
+      <div class="pad"><div class="tbtn" data-key="ArrowDown">⤓</div></div>
+      <div class="pad"><div class="tbtn" data-key="Space">⤒</div></div>
+    </div>
+
+    <p class="hint" id="hint">
+      <kbd>Espaço</kbd> ou <kbd>↑</kbd> pula · <kbd>↓</kbd> abaixa
+    </p>
+  </div>
+
+  <script src="../../shared/engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

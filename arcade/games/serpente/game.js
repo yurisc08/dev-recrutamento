@@ -1,19 +1,17 @@
-/* Serpente Neon - o jogo da cobrinha com visual de circuito. */
+/* Serpente Neon - a cobrinha, dentro de um circuito luminoso.
+   Em tela cheia o tabuleiro GANHA CASAS em vez de esticar as existentes:
+   a casa tem tamanho fixo, entao a cobra nunca fica desproporcional. */
 (() => {
   "use strict";
 
   const A = window.Arcade;
-  const CELL = 20;
-  const COLS = 21;
-  const ROWS = 21;
-  const W = COLS * CELL;
-  const H = ROWS * CELL;
-
-  const START_STEP = 0.15;   // segundos por movimento
+  const CELL = 24;
+  const START_STEP = 0.15;
   const MIN_STEP = 0.062;
 
   const canvas = document.getElementById("c");
-  const ctx = A.fitCanvas(canvas, W, H);
+  const view = A.createView(canvas, { minW: 420, minH: 380 });
+  const ctx = view.ctx;
   const shell = A.mountShell("serpente");
 
   const el = {
@@ -29,9 +27,14 @@
   const STATE = { MENU: "menu", PLAY: "play", DEAD: "dead" };
   let state = STATE.MENU;
 
+  let cols = 0;
+  let rows = 0;
+  let ox = 0;
+  let oy = 0;
+
   let snake = [];
   let dir = { x: 1, y: 0 };
-  let queued = [];           // viradas pedidas antes do proximo passo
+  let queued = [];
   let food = { x: 0, y: 0 };
   let score = 0;
   let timer = 0;
@@ -39,11 +42,30 @@
   let pulse = 0;
   let deathAt = 0;
 
+  /** Recalcula o tabuleiro para o tamanho atual da tela. */
+  function layout() {
+    cols = Math.max(12, Math.floor(view.w / CELL));
+    rows = Math.max(11, Math.floor(view.h / CELL));
+    ox = Math.round((view.w - cols * CELL) / 2);
+    oy = Math.round((view.h - rows * CELL) / 2);
+
+    // se a tela encolheu, traz a cobra de volta para dentro
+    for (const s of snake) {
+      s.x = A.clamp(s.x, 0, cols - 1);
+      s.y = A.clamp(s.y, 0, rows - 1);
+    }
+    if (food.x >= cols || food.y >= rows) placeFood();
+  }
+
+  view.onResize(layout);
+  layout();
+
   function reset() {
+    const cy = Math.floor(rows / 2);
     snake = [
-      { x: 8, y: 10 },
-      { x: 7, y: 10 },
-      { x: 6, y: 10 },
+      { x: 5, y: cy },
+      { x: 4, y: cy },
+      { x: 3, y: cy },
     ];
     dir = { x: 1, y: 0 };
     queued = [];
@@ -55,8 +77,8 @@
 
   function placeFood() {
     const free = [];
-    for (let y = 0; y < ROWS; y++) {
-      for (let x = 0; x < COLS; x++) {
+    for (let y = 0; y < rows; y++) {
+      for (let x = 0; x < cols; x++) {
         if (!snake.some((s) => s.x === x && s.y === y)) free.push({ x, y });
       }
     }
@@ -73,11 +95,9 @@
 
   function step() {
     if (queued.length) dir = queued.shift();
-
     const head = { x: snake[0].x + dir.x, y: snake[0].y + dir.y };
 
-    if (head.x < 0 || head.y < 0 || head.x >= COLS || head.y >= ROWS) return die();
-    // a cauda sai no mesmo passo, entao bater nela nao mata
+    if (head.x < 0 || head.y < 0 || head.x >= cols || head.y >= rows) return die();
     if (snake.some((s, i) => i < snake.length - 1 && s.x === head.x && s.y === head.y)) return die();
 
     snake.unshift(head);
@@ -125,33 +145,44 @@
   // ---------------------------------------------------------------- desenho
 
   function draw() {
-    ctx.fillStyle = "#070b16";
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#05070f";
+    ctx.fillRect(0, 0, view.w, view.h);
 
-    // grade de circuito
-    ctx.strokeStyle = "rgba(76,201,240,0.09)";
+    ctx.save();
+    ctx.translate(ox, oy);
+    const w = cols * CELL;
+    const h = rows * CELL;
+
+    ctx.fillStyle = "#070b16";
+    ctx.fillRect(0, 0, w, h);
+
+    ctx.strokeStyle = "rgba(63,216,255,0.08)";
     ctx.lineWidth = 1;
-    for (let i = 1; i < COLS; i++) {
-      ctx.beginPath();
+    ctx.beginPath();
+    for (let i = 1; i < cols; i++) {
       ctx.moveTo(i * CELL, 0);
-      ctx.lineTo(i * CELL, H);
-      ctx.moveTo(0, i * CELL);
-      ctx.lineTo(W, i * CELL);
-      ctx.stroke();
+      ctx.lineTo(i * CELL, h);
     }
-    ctx.strokeStyle = "rgba(76,201,240,0.35)";
+    for (let i = 1; i < rows; i++) {
+      ctx.moveTo(0, i * CELL);
+      ctx.lineTo(w, i * CELL);
+    }
+    ctx.stroke();
+
+    ctx.strokeStyle = "rgba(63,216,255,0.4)";
     ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, W - 2, H - 2);
+    ctx.strokeRect(1, 1, w - 2, h - 2);
 
     drawFood();
     drawSnake();
+    ctx.restore();
 
-    if (state === STATE.PLAY || state === STATE.DEAD) {
-      ctx.font = "bold 16px 'Segoe UI', system-ui, sans-serif";
+    if (state !== STATE.MENU) {
+      ctx.font = "700 17px 'Segoe UI', system-ui, sans-serif";
       ctx.textAlign = "left";
       ctx.textBaseline = "top";
-      ctx.fillStyle = "rgba(232,236,248,0.85)";
-      ctx.fillText(A.fmt(score), 12, 10);
+      ctx.fillStyle = "rgba(238,241,251,0.9)";
+      ctx.fillText(A.fmt(score), ox + 12, oy + 10);
     }
   }
 
@@ -159,11 +190,11 @@
     if (food.x < 0) return;
     const cx = food.x * CELL + CELL / 2;
     const cy = food.y * CELL + CELL / 2;
-    const r = CELL * 0.34 * (1 + Math.sin(performance.now() / 200) * 0.1);
+    const r = CELL * 0.32 * (1 + Math.sin(performance.now() / 200) * 0.1);
     ctx.save();
-    ctx.shadowColor = "#f72585";
-    ctx.shadowBlur = 16;
-    ctx.fillStyle = "#f72585";
+    ctx.shadowColor = "#ff2e88";
+    ctx.shadowBlur = 18;
+    ctx.fillStyle = "#ff2e88";
     ctx.beginPath();
     ctx.arc(cx, cy, r, 0, Math.PI * 2);
     ctx.fill();
@@ -175,8 +206,7 @@
   }
 
   function drawSnake() {
-    const dying = state === STATE.DEAD;
-    const blink = dying && Math.floor((performance.now() - deathAt) / 90) % 2 === 0;
+    const blink = state === STATE.DEAD && Math.floor((performance.now() - deathAt) / 90) % 2 === 0;
 
     for (let i = snake.length - 1; i >= 0; i--) {
       const s = snake[i];
@@ -188,28 +218,27 @@
 
       ctx.save();
       if (head) {
-        ctx.shadowColor = "#4cc9f0";
-        ctx.shadowBlur = 14 + pulse * 12;
+        ctx.shadowColor = "#3fd8ff";
+        ctx.shadowBlur = 16 + pulse * 14;
       }
       ctx.fillStyle = blink
         ? "#ff5c6c"
-        : `rgb(${Math.round(60 + 20 * t)}, ${Math.round(150 + 70 * t)}, ${Math.round(200 + 40 * t)})`;
-      roundRect(x + pad, y + pad, CELL - pad * 2, CELL - pad * 2, head ? 6 : 4);
+        : `rgb(${Math.round(55 + 20 * t)}, ${Math.round(150 + 70 * t)}, ${Math.round(205 + 40 * t)})`;
+      roundRect(x + pad, y + pad, CELL - pad * 2, CELL - pad * 2, head ? 7 : 5);
       ctx.fill();
       ctx.restore();
 
       if (head) {
-        // olhos apontando para onde a cobra vai
         ctx.fillStyle = "#061018";
-        const ex = dir.x * 3.4;
-        const ey = dir.y * 3.4;
-        const px = -dir.y * 3.6;
-        const py = dir.x * 3.6;
+        const ex = dir.x * 4;
+        const ey = dir.y * 4;
+        const px = -dir.y * 4.2;
+        const py = dir.x * 4.2;
         const cx = x + CELL / 2 + ex;
         const cy = y + CELL / 2 + ey;
         ctx.beginPath();
-        ctx.arc(cx + px, cy + py, 2, 0, Math.PI * 2);
-        ctx.arc(cx - px, cy - py, 2, 0, Math.PI * 2);
+        ctx.arc(cx + px, cy + py, 2.2, 0, Math.PI * 2);
+        ctx.arc(cx - px, cy - py, 2.2, 0, Math.PI * 2);
         ctx.fill();
       }
     }
@@ -238,10 +267,9 @@
   el.again.addEventListener("click", play);
 
   A.onPress((code) => {
-    if (state !== STATE.MENU && state !== STATE.DEAD) return;
-    if (code === "Space" || code === "Enter") {
-      if (state === STATE.MENU || !el.over.classList.contains("hidden")) play();
-    }
+    if (code !== "Space" && code !== "Enter") return;
+    if (state === STATE.MENU) play();
+    else if (state === STATE.DEAD && !el.over.classList.contains("hidden")) play();
   });
 
   // deslizar o dedo tambem vira a cobra

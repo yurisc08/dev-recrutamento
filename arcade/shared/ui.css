@@ -1,14 +1,21 @@
-/* Estilos compartilhados pelas paginas de jogo. */
+/* Magicine - paginas de jogo em tela cheia. */
+
+@property --ring {
+  syntax: "<angle>";
+  initial-value: 0deg;
+  inherits: false;
+}
 
 :root {
-  --bg: #0b1020;
-  --bg-soft: #141b33;
-  --line: rgba(255, 255, 255, 0.1);
-  --text: #e8ecf8;
-  --muted: #94a0c0;
-  --accent: #4cc9f0;
-  --accent-2: #f72585;
-  --radius: 14px;
+  --bg: #05060f;
+  --text: #eef1fb;
+  --muted: #939ec4;
+  --line: rgba(255, 255, 255, 0.12);
+  --cyan: #3fd8ff;
+  --magenta: #ff2e88;
+  --violet: #9b6cff;
+  --gold: #ffce4d;
+  --glass: rgba(10, 14, 30, 0.55);
 }
 
 *,
@@ -21,107 +28,23 @@
 
 html,
 body {
-  min-height: 100%;
+  height: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 14px;
-  padding: 14px;
-  background:
-    radial-gradient(1100px 620px at 50% -12%, #1d2a55 0%, transparent 60%),
-    var(--bg);
+  background: var(--bg);
   color: var(--text);
   font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
   -webkit-tap-highlight-color: transparent;
 }
 
-/* ------------------------------------------------------------ barra do topo */
-
-.bar {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  width: 100%;
-  max-width: 900px;
-}
-
-.bar h1 {
-  flex: 1;
-  font-size: clamp(16px, 4vw, 22px);
-  font-weight: 700;
-  letter-spacing: 0.3px;
-  white-space: nowrap;
+/* O palco ocupa a viewport inteira, inclusive sob os notches do celular. */
+.stage {
+  position: fixed;
+  inset: 0;
   overflow: hidden;
-  text-overflow: ellipsis;
-}
-
-.back,
-.icon-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 6px;
-  height: 38px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  color: var(--text);
-  font: inherit;
-  font-size: 14px;
-  text-decoration: none;
-  cursor: pointer;
-  transition: background 0.15s, border-color 0.15s;
-}
-
-.back:hover,
-.icon-btn:hover {
-  background: rgba(255, 255, 255, 0.13);
-  border-color: rgba(255, 255, 255, 0.28);
-}
-
-.icon-btn {
-  width: 38px;
-  padding: 0;
-  font-size: 16px;
-}
-
-.score-chip {
-  display: inline-flex;
-  align-items: baseline;
-  gap: 6px;
-  height: 38px;
-  padding: 0 14px;
-  border: 1px solid var(--line);
-  border-radius: 999px;
-  background: rgba(255, 255, 255, 0.06);
-  font-size: 12px;
-  line-height: 38px;
-  text-transform: uppercase;
-  letter-spacing: 0.6px;
-  color: var(--muted);
-}
-
-.score-chip b {
-  font-size: 15px;
-  color: var(--accent);
-  letter-spacing: 0;
-}
-
-/* ----------------------------------------------------------------- palco */
-
-.frame {
-  position: relative;
-  width: min(100%, var(--frame-w, 900px), calc((100vh - 210px) * var(--ar)));
-  aspect-ratio: var(--ar);
-  border: 1px solid var(--line);
-  border-radius: var(--radius);
-  background: #05070f;
-  overflow: hidden;
-  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.55);
   touch-action: none;
 }
 
@@ -131,22 +54,116 @@ canvas {
   height: 100%;
 }
 
-/* --------------------------------------------------------------- telas */
+/* ------------------------------------------------------ barra flutuante */
+
+.hud {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 4;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
+    10px max(12px, env(safe-area-inset-left));
+  background: linear-gradient(to bottom, rgba(5, 6, 15, 0.72), transparent);
+  pointer-events: none;
+}
+
+.hud > * {
+  pointer-events: auto;
+}
+
+.hud h1 {
+  flex: 1;
+  min-width: 0;
+  font-size: clamp(14px, 3.4vw, 19px);
+  font-weight: 700;
+  letter-spacing: 0.2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  text-shadow: 0 2px 12px rgba(0, 0, 0, 0.8);
+}
+
+.pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--glass);
+  backdrop-filter: blur(10px) saturate(1.3);
+  -webkit-backdrop-filter: blur(10px) saturate(1.3);
+  color: var(--text);
+  font: inherit;
+  font-size: 13px;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 0.16s, border-color 0.16s, transform 0.12s;
+}
+
+.pill:hover {
+  background: rgba(24, 32, 60, 0.75);
+  border-color: rgba(255, 255, 255, 0.3);
+}
+
+.pill:active {
+  transform: scale(0.96);
+}
+
+.pill.icon {
+  width: 36px;
+  padding: 0;
+  font-size: 15px;
+}
+
+.pill b {
+  color: var(--cyan);
+  font-size: 14px;
+}
+
+.pill .label {
+  color: var(--muted);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
+}
+
+@media (max-width: 520px) {
+  .pill .label {
+    display: none;
+  }
+}
+
+/* ---------------------------------------------------------------- telas */
 
 .screen {
   position: absolute;
   inset: 0;
-  z-index: 2;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 14px;
-  padding: 20px;
+  z-index: 6;
+  display: grid;
+  place-content: center;
+  justify-items: center;
+  gap: 16px;
+  padding: 26px;
   text-align: center;
-  background: rgba(6, 10, 22, 0.78);
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  background:
+    radial-gradient(circle at 50% 42%, rgba(155, 108, 255, 0.16), transparent 60%),
+    rgba(5, 7, 18, 0.82);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  animation: screen-in 0.32s ease both;
+}
+
+@keyframes screen-in {
+  from { opacity: 0; backdrop-filter: blur(0); }
+  to { opacity: 1; }
 }
 
 .screen.hidden {
@@ -154,82 +171,106 @@ canvas {
 }
 
 .screen h2 {
-  font-size: clamp(22px, 6vw, 34px);
-  letter-spacing: 0.5px;
+  font-size: clamp(26px, 7vw, 46px);
+  font-weight: 800;
+  letter-spacing: -0.8px;
+  text-wrap: balance;
+  background: linear-gradient(110deg, var(--cyan), var(--violet) 50%, var(--magenta));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
 }
 
 .screen p {
-  max-width: 42ch;
+  max-width: 44ch;
   color: var(--muted);
-  font-size: 14px;
-  line-height: 1.55;
+  font-size: clamp(13.5px, 2.6vw, 15.5px);
+  line-height: 1.6;
+  text-wrap: pretty;
 }
 
+/* Botao com anel girando, feito com @property. */
 .btn {
-  padding: 12px 30px;
+  position: relative;
+  padding: 14px 36px;
   border: none;
   border-radius: 999px;
-  background: linear-gradient(135deg, var(--accent), var(--accent-2));
-  color: #07101e;
+  background:
+    linear-gradient(var(--bg), var(--bg)) padding-box,
+    conic-gradient(from var(--ring), var(--cyan), var(--violet), var(--magenta), var(--cyan)) border-box;
+  border: 2px solid transparent;
+  color: var(--text);
   font: inherit;
   font-size: 16px;
   font-weight: 700;
-  letter-spacing: 0.4px;
+  letter-spacing: 0.3px;
   cursor: pointer;
-  transition: transform 0.08s, filter 0.15s;
+  animation: spin-ring 4s linear infinite;
+  transition: transform 0.12s, box-shadow 0.2s;
+}
+
+@keyframes spin-ring {
+  to { --ring: 360deg; }
 }
 
 .btn:hover {
-  filter: brightness(1.1);
+  box-shadow: 0 0 34px -6px var(--violet);
 }
 
 .btn:active {
-  transform: translateY(2px);
+  transform: translateY(2px) scale(0.98);
 }
 
 .result {
   display: flex;
-  gap: 26px;
-  padding: 14px 24px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: rgba(255, 255, 255, 0.05);
+  gap: 12px;
 }
 
 .result div {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
+  min-width: 96px;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: rgba(255, 255, 255, 0.04);
 }
 
 .result span {
-  font-size: 11px;
-  text-transform: uppercase;
-  letter-spacing: 0.8px;
+  display: block;
   color: var(--muted);
+  font-size: 10.5px;
+  text-transform: uppercase;
+  letter-spacing: 0.9px;
 }
 
 .result b {
-  font-size: 24px;
-  color: var(--accent);
+  font-size: clamp(20px, 5vw, 27px);
+  color: var(--cyan);
 }
 
 .record {
   min-height: 20px;
-  color: #ffd166 !important;
+  color: var(--gold) !important;
   font-weight: 600;
 }
 
-/* ------------------------------------------------------- controles toque */
+.screen .row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 9px;
+  justify-content: center;
+}
+
+/* ------------------------------------------------------ controles toque */
 
 .touch {
   position: absolute;
   inset: auto 0 0 0;
-  z-index: 3;
+  z-index: 5;
   display: flex;
   justify-content: space-between;
   gap: 10px;
-  padding: 12px;
+  padding: 14px max(14px, env(safe-area-inset-right)) max(14px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
   pointer-events: none;
 }
 
@@ -243,88 +284,87 @@ canvas {
 }
 
 .tbtn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 56px;
-  height: 56px;
-  border: 1px solid rgba(255, 255, 255, 0.22);
+  display: grid;
+  place-items: center;
+  width: 58px;
+  height: 58px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 50%;
-  background: rgba(10, 16, 34, 0.5);
+  background: var(--glass);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   color: #fff;
-  font-size: 20px;
+  font-size: 21px;
   user-select: none;
   touch-action: none;
   transition: background 0.1s, transform 0.1s;
 }
 
 .tbtn.is-active {
-  background: rgba(76, 201, 240, 0.45);
-  transform: scale(0.94);
+  background: rgba(63, 216, 255, 0.4);
+  transform: scale(0.93);
 }
 
-/* Some com os controles de toque em telas com teclado. */
+/* Sem controles de toque quando ha teclado e mouse. */
 @media (hover: hover) and (pointer: fine) {
   .touch {
     display: none;
   }
 }
 
-/* Em telas estreitas os botoes ocupavam boa parte do palco. */
-@media (max-width: 520px) {
-  .touch {
-    padding: 9px;
-  }
+@media (max-width: 420px) {
   .tbtn {
-    width: 50px;
-    height: 50px;
-    font-size: 18px;
+    width: 52px;
+    height: 52px;
+    font-size: 19px;
   }
 }
 
-/* Aviso de girar o aparelho, usado nos jogos de tela larga. */
-.rotate-tip {
-  display: none;
-  color: #ffd166;
-  font-size: 12.6px;
-  text-align: center;
-}
+/* --------------------------------------------------------------- dicas */
 
-@media (orientation: portrait) and (max-width: 620px) {
-  .rotate-tip {
-    display: block;
-  }
-}
-
-/* ------------------------------------------------------------- rodape */
-
-.tip {
-  max-width: 640px;
+.hint {
+  position: absolute;
+  left: 50%;
+  bottom: max(12px, env(safe-area-inset-bottom));
+  z-index: 3;
+  translate: -50% 0;
+  padding: 7px 16px;
+  border-radius: 999px;
+  background: rgba(5, 7, 18, 0.5);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
   color: var(--muted);
-  font-size: 13px;
-  line-height: 1.6;
-  text-align: center;
+  font-size: 12.4px;
+  white-space: nowrap;
+  pointer-events: none;
+  transition: opacity 0.5s;
 }
 
-.tip kbd {
-  display: inline-block;
+.hint.fade {
+  opacity: 0;
+}
+
+.hint kbd {
   padding: 1px 6px;
   border: 1px solid var(--line);
   border-radius: 5px;
-  background: rgba(255, 255, 255, 0.07);
+  background: rgba(255, 255, 255, 0.08);
   font-family: inherit;
   font-size: 0.92em;
   color: var(--text);
 }
 
-/* Espaco de anuncio: some enquanto nao houver uma tag colada dentro. */
-.ad-slot {
-  width: 100%;
-  max-width: 900px;
-  margin: 4px auto 0;
-  text-align: center;
+@media (hover: none) {
+  .hint {
+    display: none;
+  }
 }
 
-.ad-slot:empty {
-  display: none;
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

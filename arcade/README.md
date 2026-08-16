@@ -1,177 +1,243 @@
-# Nébula Arcade
+# Magicine
 
-Portal de jogos em HTML5 Canvas para rodar direto no navegador. Sem build, sem
-dependências, sem imagens externas — todo o cenário é desenhado em código e os
+Site de cinema, séries e arcade em HTML5. Sem build, sem dependências, sem
+imagens externas — os cenários dos jogos são desenhados em código e os
 efeitos sonoros são gerados via WebAudio. É só subir os arquivos estáticos.
 
-## Os jogos
+---
+
+## 1. As notícias (o foco do site)
+
+### Publicando hoje
+
+As matérias moram no array `MAGICINE_POSTS`, em `shared/news-data.js`. Cada
+objeto vira um card na home, uma entrada em `/noticias/` e uma página em
+`/noticias/artigo.html?slug=...`.
+
+```js
+{
+  slug: "meu-endereco-na-url",
+  title: "Título da matéria",
+  excerpt: "Uma ou duas frases de chamada.",
+  category: "Cinema",              // vira filtro sozinho
+  tags: ["fantasia", "estreia"],   // usado na busca
+  author: "Seu nome",
+  published_at: "2026-08-16",
+  cover: "img/capa.jpg",           // opcional
+  featured: true,                  // sobe para o destaque da home
+  status: "draft",                 // opcional: esconde do site
+  body: [
+    { type: "p", text: "Um parágrafo." },
+    { type: "h2", text: "Um subtítulo" },
+    { type: "quote", text: "Uma citação.", cite: "Quem disse" },
+    { type: "list", items: ["Primeiro", "Segundo"] },
+    { type: "img", src: "img/cena.jpg", alt: "Descrição", caption: "Legenda" },
+  ],
+}
+```
+
+As três matérias que vêm no pacote são exemplos. Apague quando publicar as
+suas.
+
+### Migrando para o Supabase
+
+O site nunca fala direto com os dados: tudo passa por `shared/news.js`. Por
+isso a migração não encosta em nenhuma página.
+
+**Passo 1 — crie a tabela.** No SQL Editor do Supabase:
+
+```sql
+create table posts (
+  slug         text primary key,
+  title        text not null,
+  excerpt      text,
+  cover        text,
+  category     text,
+  tags         text[],
+  author       text,
+  published_at date not null default current_date,
+  featured     boolean not null default false,
+  status       text   not null default 'published',
+  body         jsonb  not null default '[]'::jsonb,
+  created_at   timestamptz not null default now()
+);
+
+create index posts_publicadas_idx
+  on posts (published_at desc)
+  where status = 'published';
+
+-- O site é público e só lê. Ligue o RLS e libere apenas a leitura
+-- das matérias já publicadas: sem isso, a chave anônima enxergaria
+-- também os rascunhos.
+alter table posts enable row level security;
+
+create policy "leitura publica das publicadas"
+  on posts for select
+  to anon
+  using (status = 'published');
+```
+
+**Passo 2 — aponte o site para lá.** No topo de `shared/news.js`:
+
+```js
+const SOURCE = "supabase";
+
+const SUPABASE = {
+  url: "https://xxxxxxxxxxxx.supabase.co",
+  anonKey: "eyJhbGciOi...",   // a chave "anon public"
+  table: "posts",
+};
+```
+
+Só isso. A home, a listagem, a busca, os filtros e o artigo continuam
+funcionando.
+
+Dois pontos que valem atenção:
+
+- A chave **anon** pode ficar no código do site — ela é pública por
+  natureza. O que protege os dados é o RLS acima, não o segredo da chave.
+  **Nunca** use a `service_role` no navegador: ela ignora o RLS.
+- O campo `body` é `jsonb` com exatamente o mesmo formato de blocos de hoje,
+  então dá para copiar as matérias existentes sem conversão.
+
+Se `SOURCE` estiver como `"supabase"` mas a URL ou a chave estiverem vazias,
+o site avisa no console e volta a usar as matérias locais em vez de quebrar.
+
+---
+
+## 2. Os jogos
 
 | Jogo | Gênero | Destaque |
 | --- | --- | --- |
-| **Trilha Radical** | Corrida | Moto de trilha com física de duas rodas e terreno gerado na hora |
+| **Fuga do Dragão** | Corrida | Carrinho nos trilhos de uma caverna, dragão cuspindo fogo atrás; partículas aditivas e luz dinâmica |
 | **Voo Rasante** | Habilidade | Quatro mundos com arte própria e recorde separado por mundo |
-| **Serpente Neon** | Arcade | A cobrinha, com visual de circuito |
-| **Quebra-Blocos** | Arcade | Fases progressivas, ângulo de rebatida pela raquete |
+| **Serpente Neon** | Arcade | O tabuleiro ganha casas em telas maiores |
+| **Quebra-Blocos** | Arcade | A parede ganha colunas em telas largas |
 | **Invasores** | Tiro | Formação que acelera conforme você derruba os inimigos |
 | **Rebatida** | Duelo | Três níveis de computador, melhor de 7 |
 
-Todos funcionam com teclado no computador e com toque no celular. O recorde de
-cada um fica salvo no `localStorage` do navegador.
+Todos rodam **em tela cheia**, com teclado no computador e toque no celular,
+e têm botão de tela cheia nativa. O recorde fica no `localStorage`.
 
-## Sobre os mundos do Voo Rasante (direitos autorais)
+### Como funciona a tela cheia
 
-Os quatro mundos são **criações originais inspiradas em gêneros**, não em obras
-específicas:
+`shared/engine.js` expõe `createView(canvas, { minW, minH })`. A escala é a
+menor entre `larguraDaTela/minW` e `alturaDaTela/minH`, então a área mínima
+sempre cabe e o que sobra vira mundo de verdade — sem tarjas pretas e sem
+esticar a arte.
 
-| Mundo | No que se inspira | Por que é seguro |
-| --- | --- | --- |
-| Clássico | O gênero "bater asas entre canos" | Mecânica de jogo não é protegida por direito autoral |
-| Escola de Magia | Bruxos, vassouras e castelos | Elementos folclóricos de domínio público |
-| Olimpo | Mitologia grega | Domínio público há milênios |
-| Reino de Pedra | Alta fantasia (dragões, montanhas) | Arquétipos de domínio público |
-
-O que **não** foi usado, de propósito: nomes de obras, personagens, casas,
-escolas, feitiços, criaturas inventadas por um autor específico, trilhas
-sonoras, tipografia de marca ou qualquer logotipo. Nomes e arte são próprios.
-
-Essa é a linha que mantém o projeto do lado seguro: **gênero e arquétipo podem;
-nome próprio, personagem e marca registrada, não.** Se quiser criar novos
-mundos, siga a mesma regra — e evite também "evocar" uma obra específica
-combinando vários elementos característicos dela ao mesmo tempo.
-
-## Rodando localmente
-
-```bash
-npx serve .
-# ou
-python3 -m http.server 8080
+```js
+const view = Arcade.createView(canvas, { minW: 540, minH: 310 });
+const ctx  = view.ctx;
+// nos jogos, use view.w e view.h a cada quadro; nunca constantes
 ```
 
-Depois acesse `http://localhost:8080`.
+O Voo Rasante é a exceção proposital: a **coluna de jogo** fica travada em
+360×640 e o resto da tela recebe um fundo ambiente. Se a coluna esticasse, o
+vão entre os obstáculos mudaria de tamanho e o recorde feito no monitor não
+valeria o mesmo no celular.
 
-## Deploy no Cloudflare Pages
+### Sobre os mundos e cenários (direitos autorais)
+
+Tudo é criação original **inspirada em gêneros**, não em obras específicas:
+
+| Mundo / jogo | Inspiração | Por que é seguro |
+| --- | --- | --- |
+| Escola de Magia | Bruxos, vassouras, castelos | Folclore de domínio público |
+| Olimpo | Mitologia grega | Domínio público há milênios |
+| Reino de Pedra | Alta fantasia | Arquétipos de domínio público |
+| Fuga do Dragão | Caverna, carrinho de mina, dragão | Arquétipos de domínio público |
+
+O que **não** foi usado, de propósito: nomes de obras, personagens, escolas,
+casas, feitiços, criaturas inventadas por um autor específico, trilhas
+sonoras, tipografia de marca e logotipos.
+
+A regra que mantém o projeto seguro: **gênero e arquétipo podem; nome
+próprio, personagem e marca registrada, não.** Ao criar mundos novos, evite
+também "evocar" uma obra específica empilhando vários elementos
+característicos dela ao mesmo tempo — é aí que uma releitura genérica passa
+a ser reconhecível como cópia.
+
+---
+
+## 3. Deploy no Cloudflare Pages
 
 Site 100% estático — não há etapa de build.
 
-### Opção 1: upload direto (mais rápido)
+**Upload direto (mais rápido):** Dashboard → Workers & Pages → Create →
+Pages → **Upload assets** → envie o conteúdo desta pasta (ou o `.zip`) →
+Deploy.
 
-1. **Cloudflare Dashboard → Workers & Pages → Create → Pages → Upload assets**.
-2. Envie o conteúdo desta pasta (ou o `.zip` inteiro).
-3. **Deploy.** Fica no ar em `https://<projeto>.pages.dev`.
+**Conectado ao Git:** Create → Pages → Connect to Git. Framework preset
+`None`, build command vazio, output directory `arcade`.
 
-### Opção 2: conectado ao Git
-
-1. **Create → Pages → Connect to Git** e escolha o repositório.
-2. Configuração de build:
-   - **Framework preset:** `None`
-   - **Build command:** *(vazio)*
-   - **Build output directory:** `arcade`
-3. **Save and Deploy.** Cada push gera um deploy novo.
-
-### Opção 3: Wrangler
+**Wrangler:**
 
 ```bash
 npm install -g wrangler
 wrangler login
-wrangler pages deploy . --project-name=nebula-arcade
+wrangler pages deploy . --project-name=magicine
 ```
 
-## Colocando o AdSense
+---
 
-Os espaços já estão prontos. Cada página tem uma `div` marcada:
+## 4. AdSense
+
+Os espaços já estão prontos em todas as páginas:
 
 ```html
-<!-- AdSense: cole aqui a tag do bloco de anúncio desta página -->
+<!-- AdSense: bloco de topo da home -->
 <div class="ad-slot" data-ad="home-topo"></div>
 ```
 
-Passo a passo:
+1. **Publique o site antes.** O AdSense só aprova domínios no ar com
+   conteúdo — por isso vale subir e publicar algumas matérias primeiro.
+2. Cadastre o domínio e copie o código do editor (`pub-XXXXXXXXXXXXXXXX`).
+3. Edite o `ads.txt` da raiz: descomente a linha e ponha o seu código. Ele
+   precisa responder em `https://seusite.com/ads.txt`.
+4. Cole o script antes de `</head>` e a tag `<ins class="adsbygoogle">`
+   dentro da `div.ad-slot`.
 
-1. **Publique o site primeiro.** O AdSense só aprova domínios que já estão no ar
-   com conteúdo — por isso vale subir para o Cloudflare antes de pedir a
-   aprovação.
-2. No AdSense, cadastre o domínio e copie o **código do editor**
-   (`pub-XXXXXXXXXXXXXXXX`).
-3. Edite o `ads.txt` na raiz: descomente a linha e coloque o seu código.
-   O arquivo precisa responder em `https://seusite.com/ads.txt`.
-4. Cole o script do AdSense antes de `</head>` em cada página, e a tag
-   `<ins class="adsbygoogle">` dentro da `div.ad-slot` correspondente.
-
-A `div.ad-slot` fica invisível enquanto estiver vazia (`.ad-slot:empty`), então
-o layout não abre buracos antes de os anúncios entrarem.
+A `.ad-slot` fica invisível enquanto vazia, então o layout não abre buracos.
 
 Dois detalhes que evitam dor de cabeça:
 
-- **Não coloque anúncio por cima do canvas.** Cliques acidentais durante o jogo
-  são a causa mais comum de suspensão de conta.
+- **Não coloque anúncio dentro das páginas de jogo.** Elas são tela cheia e
+  um clique acidental durante a partida é a causa mais comum de suspensão de
+  conta. Os anúncios estão só na home, na listagem e no artigo — onde o
+  leitor está parado lendo, que também rende mais.
 - O `_headers` **não** define `Content-Security-Policy` de propósito: uma CSP
-  restritiva bloquearia os scripts do Google. Se for adicionar uma depois,
-  libere `pagead2.googlesyndication.com`, `googleads.g.doubleclick.net` e
-  `tpc.googlesyndication.com`.
+  restritiva bloquearia os scripts do Google.
 
-## Publicando notícias de cinema e séries
+---
 
-A seção já está montada, responsiva e vazia. Para publicar, adicione itens no
-array `NOTICIAS` no topo do `app.js`:
-
-```js
-const NOTICIAS = [
-  {
-    kicker: "Série",
-    title: "Título da sua matéria",
-    excerpt: "Uma ou duas frases de chamada.",
-    date: "2026-08-16",
-    url: "noticias/minha-materia.html",  // opcional
-    cover: "img/capa.jpg",               // opcional
-  },
-];
-```
-
-Os cards aparecem sozinhos, ordenados como estiverem no array, e o texto
-"Em breve" some assim que houver pelo menos uma notícia.
-
-Ao publicar, escreva texto próprio: copiar matéria de outro site é violação de
-direito autoral e o AdSense recusa sites com conteúdo copiado. Para imagens, use
-banco livre (Unsplash, Pexels) ou material oficial de divulgação, sempre com o
-crédito pedido pelo estúdio.
-
-## Estrutura
+## 5. Estrutura
 
 ```
 arcade/
-├── index.html            portal (hero, grade de jogos, notícias)
-├── style.css             estilo do portal
-├── app.js                cards, filtros, recordes e notícias
-├── icon.svg              ícone do site
-├── manifest.webmanifest  instalável como app
-├── ads.txt               modelo para o AdSense
-├── _headers              cache e segurança (Cloudflare Pages)
+├── index.html              home (destaques + arcade)
+├── style.css               estilo do site
+├── app.js                  home: notícias, cards e recordes
+├── noticias/
+│   ├── index.html          listagem com busca e filtros
+│   └── artigo.html         leitor de matéria
 ├── shared/
-│   ├── engine.js         base: loop, canvas, entrada, áudio, recordes
-│   └── ui.css            estilo comum das páginas de jogo
-└── games/
-    ├── trilha/  voo/  serpente/  blocos/  invasores/  rebatida/
+│   ├── news.js             camada de dados (local ↔ Supabase)
+│   ├── news-data.js        suas matérias
+│   ├── engine.js           base dos jogos
+│   └── ui.css              estilo das páginas de jogo
+├── games/
+│   └── dragao/ voo/ serpente/ blocos/ invasores/ rebatida/
+├── icon.svg  manifest.webmanifest  ads.txt  _headers
 ```
 
-### Como o `shared/engine.js` ajuda
+### Adicionando um jogo novo
 
-Todo jogo novo ganha de graça: escala de canvas com `devicePixelRatio`, loop de
-passo fixo (imune a variação de FPS), teclado + botões de toque no mesmo estado
-de entrada, efeitos sonoros e recordes no `localStorage`.
-
-```js
-const ctx   = Arcade.fitCanvas(canvas, LARGURA, ALTURA);
-const shell = Arcade.mountShell("meu-jogo");   // recorde + som + toque
-Arcade.loop(update, draw);                     // update(dt) e draw()
-```
-
-## Adicionando um jogo novo
-
-1. Crie `games/meu-jogo/` com um `index.html` (copie o de outro jogo — a
-   estrutura da barra e das telas é a mesma) e um `game.js`.
-2. Ajuste `--ar` no `<style>` da página para a proporção da sua tela.
-3. Acrescente uma entrada no array `GAMES` do `app.js`, com `id`, `name`,
-   `genre`, `tint`, `desc`, `path`, `unit`, `best` e o `thumb` (um SVG
+1. Crie `games/meu-jogo/` copiando o `index.html` de outro (a estrutura de
+   HUD e telas é a mesma) e escreva o `game.js`.
+2. Use `Arcade.createView` e leia `view.w`/`view.h` — nada de tamanho fixo.
+3. Acrescente uma entrada no array `GAMES` do `app.js` com `id`, `name`,
+   `genre`, `tint`, `desc`, `path`, `unit`, `best` e o `thumb` (SVG
    `viewBox="0 0 320 180"`).
 
-O filtro por gênero na home se monta sozinho a partir do campo `genre`.
+O filtro por gênero da home se monta sozinho a partir do campo `genre`.

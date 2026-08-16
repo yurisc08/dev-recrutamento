@@ -2,26 +2,24 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0b1020">
-<meta name="description" content="Quebra-Blocos: rebata a bola e destrua todos os blocos, fase após fase.">
-<title>Quebra-Blocos — Arcade</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#05060f">
+<meta name="description" content="Quebra-Blocos: rebata a bola e destrua a parede, fase após fase, em tela cheia.">
+<title>Quebra-Blocos — Magicine</title>
 <link rel="stylesheet" href="../../shared/ui.css">
 <link rel="icon" href="../../icon.svg">
-<style>
-  .frame { --ar: 4 / 3; --frame-w: 720px; }
-</style>
 </head>
 <body>
-  <header class="bar">
-    <a class="back" href="../../index.html">← Início</a>
-    <h1>🧱 Quebra-Blocos</h1>
-    <span class="score-chip">Recorde <b id="best">0</b></span>
-    <button class="icon-btn" id="mute" type="button" aria-label="Ligar ou desligar o som">🔊</button>
-  </header>
-
-  <div class="frame">
+  <div class="stage">
     <canvas id="c" aria-label="Jogo de rebater a bola e quebrar blocos"></canvas>
+
+    <header class="hud">
+      <a class="pill" href="../../index.html">← Sair</a>
+      <h1>Quebra-Blocos</h1>
+      <span class="pill"><span class="label">Recorde</span><b id="best">0</b></span>
+      <button class="pill icon" id="mute" type="button" aria-label="Som">🔊</button>
+      <button class="pill icon" id="fs" type="button" aria-label="Tela cheia">⛶</button>
+    </header>
 
     <div class="screen" id="start">
       <h2>Quebra-Blocos</h2>
@@ -33,7 +31,7 @@
       <h2 id="over-title">Fim de jogo</h2>
       <div class="result">
         <div><span>Pontos</span><b id="r-score">0</b></div>
-        <div><span>Fase</span><b id="r-level">1</b></div>
+        <div><span>Fase</span><b id="r-level">0</b></div>
       </div>
       <p class="record" id="record"></p>
       <button class="btn" id="again" type="button">Jogar de novo</button>
@@ -43,16 +41,9 @@
       <div class="pad"><div class="tbtn" data-key="ArrowLeft">◀</div></div>
       <div class="pad"><div class="tbtn" data-key="ArrowRight">▶</div></div>
     </div>
+
+    <p class="hint">Mova o mouse ou o dedo · <kbd>Espaço</kbd> lança a bola</p>
   </div>
-
-  <p class="tip">
-    Mova o mouse ou o dedo para controlar a raquete — as setas também funcionam.
-    <kbd>Espaço</kbd> lança a bola.
-  </p>
-  <p class="rotate-tip">📱 Vire o celular na horizontal para jogar numa tela maior.</p>
-
-  <!-- AdSense: cole aqui a tag do bloco de anúncio desta página -->
-  <div class="ad-slot" data-ad="blocos-rodape"></div>
 
   <script src="../../shared/engine.js"></script>
   <script src="game.js"></script>

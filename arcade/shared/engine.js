@@ -1,6 +1,6 @@
-/* Arcade - base compartilhada pelos jogos.
-   Cuida de: armazenamento, audio, escala do canvas, loop de passo fixo,
-   teclado, botoes de toque e a barra superior de cada jogo. */
+/* Magicine - base compartilhada pelos jogos.
+   Cuida de: armazenamento, audio, viewport fluido, loop de passo fixo,
+   teclado, botoes de toque, tela cheia e a barra flutuante de cada jogo. */
 (function (global) {
   "use strict";
 
@@ -24,7 +24,7 @@
     },
   };
 
-  const bestKey = (id) => "arcade.best." + id;
+  const bestKey = (id) => "magicine.best." + id;
 
   function getBest(id) {
     return Number(store.get(bestKey(id), 0)) || 0;
@@ -43,7 +43,7 @@
   // ------------------------------------------------------------------ audio
 
   let ac = null;
-  let muted = store.get("arcade.muted", false) === true;
+  let muted = store.get("magicine.muted", false) === true;
 
   function ensureAudio() {
     if (muted) return null;
@@ -56,7 +56,6 @@
     }
   }
 
-  /** Um bip simples. `sweepTo` faz a frequencia deslizar ate o valor dado. */
   function tone(freq, dur, type, gain, sweepTo) {
     const c = ensureAudio();
     if (!c) return;
@@ -76,12 +75,12 @@
     }
   }
 
-  /** Ruido curto, usado em explosoes e derrapagens. */
+  /** Ruido filtrado - base de explosoes, fogo e trepidacao. */
   function noise(dur, gain, filterFreq) {
     const c = ensureAudio();
     if (!c) return;
     try {
-      const frames = Math.floor(c.sampleRate * dur);
+      const frames = Math.max(1, Math.floor(c.sampleRate * dur));
       const buf = c.createBuffer(1, frames, c.sampleRate);
       const data = buf.getChannelData(0);
       for (let i = 0; i < frames; i++) {
@@ -111,6 +110,8 @@
     power: () => tone(300, 0.22, "triangle", 0.05, 1200),
     hit: () => tone(160, 0.18, "sawtooth", 0.05),
     explode: () => noise(0.3, 0.07, 900),
+    fire: () => noise(0.5, 0.05, 480),
+    rumble: () => noise(0.22, 0.035, 260),
     crash: () => {
       tone(120, 0.3, "sawtooth", 0.05);
       noise(0.35, 0.07, 700);
@@ -121,59 +122,97 @@
     },
   };
 
-  function isMuted() {
-    return muted;
-  }
+  const isMuted = () => muted;
 
   function setMuted(v) {
     muted = !!v;
-    store.set("arcade.muted", muted);
+    store.set("magicine.muted", muted);
   }
 
-  // ----------------------------------------------------------------- canvas
+  // --------------------------------------------------------------- viewport
 
   /**
-   * Mantem o canvas nitido em qualquer tela: o backing store acompanha o
-   * devicePixelRatio e o desenho continua usando as coordenadas do mundo.
+   * Viewport fluido: o canvas ocupa todo o espaco disponivel e o MUNDO se
+   * adapta ao formato da tela, em vez de ficar com tarjas pretas.
+   *
+   * `minW`/`minH` sao a area que sempre precisa caber. A escala e a menor
+   * entre as duas razoes, entao numa tela mais larga sobra mundo na
+   * horizontal (e vice-versa). Os jogos leem `view.w` e `view.h` a cada
+   * quadro, nunca constantes.
    */
-  function fitCanvas(canvas, W, H) {
+  function createView(canvas, opts) {
+    const minW = opts.minW;
+    const minH = opts.minH;
+    const maxScale = opts.maxScale || Infinity;
     const ctx = canvas.getContext("2d");
+    const listeners = [];
+
+    const view = { ctx, canvas, w: minW, h: minH, scale: 1, dpr: 1 };
 
     function resize() {
       const rect = canvas.getBoundingClientRect();
-      if (!rect.width || !rect.height) return;
-      const dpr = Math.min(global.devicePixelRatio || 1, 3);
-      canvas.width = Math.max(1, Math.round(rect.width * dpr));
-      canvas.height = Math.max(1, Math.round(rect.height * dpr));
-      const scale = canvas.width / W;
-      ctx.setTransform(scale, 0, 0, scale, 0, 0);
+      const cssW = Math.max(1, rect.width);
+      const cssH = Math.max(1, rect.height);
+      const dpr = Math.min(global.devicePixelRatio || 1, 2.5);
+
+      const scale = Math.min(cssW / minW, cssH / minH, maxScale);
+      view.scale = scale;
+      view.dpr = dpr;
+      view.w = cssW / scale;
+      view.h = cssH / scale;
+
+      canvas.width = Math.round(cssW * dpr);
+      canvas.height = Math.round(cssH * dpr);
+      ctx.setTransform(scale * dpr, 0, 0, scale * dpr, 0, 0);
+
+      listeners.forEach((fn) => fn(view));
     }
+
+    view.onResize = (fn) => {
+      listeners.push(fn);
+      return view;
+    };
+    view.refresh = resize;
 
     resize();
     global.addEventListener("resize", resize);
-    global.addEventListener("orientationchange", () => setTimeout(resize, 150));
+    global.addEventListener("orientationchange", () => setTimeout(resize, 160));
     if (global.ResizeObserver) new ResizeObserver(resize).observe(canvas);
 
-    ctx.worldWidth = W;
-    ctx.worldHeight = H;
-    return ctx;
+    return view;
   }
 
   /** Converte um evento de ponteiro para coordenadas do mundo. */
-  function pointerPos(canvas, e, W, H) {
-    const rect = canvas.getBoundingClientRect();
+  function pointerPos(view, e) {
+    const rect = view.canvas.getBoundingClientRect();
     return {
-      x: ((e.clientX - rect.left) / rect.width) * W,
-      y: ((e.clientY - rect.top) / rect.height) * H,
+      x: (e.clientX - rect.left) / view.scale,
+      y: (e.clientY - rect.top) / view.scale,
     };
   }
 
+  // ------------------------------------------------------------- tela cheia
+
+  const fullscreen = {
+    supported: () =>
+      !!(document.fullscreenEnabled || document.webkitFullscreenEnabled),
+    active: () => !!(document.fullscreenElement || document.webkitFullscreenElement),
+    toggle(el) {
+      const target = el || document.documentElement;
+      try {
+        if (fullscreen.active()) {
+          (document.exitFullscreen || document.webkitExitFullscreen).call(document);
+        } else {
+          (target.requestFullscreen || target.webkitRequestFullscreen).call(target);
+        }
+      } catch (_) {
+        /* alguns navegadores de iOS nao expoem a API */
+      }
+    },
+  };
+
   // ------------------------------------------------------------------- loop
 
-  /**
-   * Loop de passo fixo. O acumulador e limitado para que uma aba em segundo
-   * plano nao gere uma enxurrada de updates ao voltar.
-   */
   function loop(update, draw, step) {
     const dtStep = step || 1 / 120;
     let last = performance.now();
@@ -196,11 +235,7 @@
     }
 
     requestAnimationFrame(frame);
-    return {
-      stop() {
-        running = false;
-      },
-    };
+    return { stop: () => { running = false; } };
   }
 
   // ---------------------------------------------------------------- entrada
@@ -209,7 +244,6 @@
   const pressHandlers = [];
 
   const keys = {
-    /** true se qualquer um dos codigos estiver pressionado. */
     down(...codes) {
       return codes.some((c) => held.has(c));
     },
@@ -227,29 +261,21 @@
     },
   };
 
-  /** Chamado no instante em que uma tecla (ou botao de toque) e apertada. */
-  function onPress(fn) {
-    pressHandlers.push(fn);
-  }
+  const onPress = (fn) => pressHandlers.push(fn);
 
-  const BLOCKED = new Set([
-    "Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight",
-  ]);
+  const BLOCKED = new Set(["Space", "ArrowUp", "ArrowDown", "ArrowLeft", "ArrowRight"]);
 
   global.addEventListener("keydown", (e) => {
     if (e.repeat) return;
     if (BLOCKED.has(e.code)) e.preventDefault();
     keys.press(e.code);
   });
-
   global.addEventListener("keyup", (e) => keys.release(e.code));
-  // Ao trocar de aba as teclas "travariam" pressionadas.
   global.addEventListener("blur", () => keys.clear());
 
   /** Liga botoes com [data-key] ao mesmo estado do teclado. */
   function bindTouchButtons(root) {
-    const buttons = (root || document).querySelectorAll("[data-key]");
-    buttons.forEach((btn) => {
+    (root || document).querySelectorAll("[data-key]").forEach((btn) => {
       const code = btn.dataset.key;
       const press = (e) => {
         e.preventDefault();
@@ -274,27 +300,23 @@
   const lerp = (a, b, t) => a + (b - a) * t;
   const rand = (min, max) => min + Math.random() * (max - min);
   const randInt = (min, max) => Math.floor(rand(min, max + 1));
+  const fmt = (n) => Math.floor(n).toLocaleString("pt-BR");
 
-  /** Formata numero com separador de milhar pt-BR. */
-  function fmt(n) {
-    return Math.floor(n).toLocaleString("pt-BR");
-  }
+  /** Suavizacao independente de framerate. */
+  const damp = (a, b, lambda, dt) => lerp(a, b, 1 - Math.exp(-lambda * dt));
 
   // ------------------------------------------------------------------ shell
 
-  /**
-   * Prepara a barra superior comum: recorde, botao de som e botoes de toque.
-   * Retorna helpers para o jogo atualizar o placar.
-   */
+  /** Barra flutuante comum: recorde, som, tela cheia e botoes de toque. */
   function mountShell(id) {
     const bestEl = document.getElementById("best");
     const muteBtn = document.getElementById("mute");
-    // `id` pode ser uma funcao, para jogos com recorde separado por modo
+    const fsBtn = document.getElementById("fs");
+
     const gid = () => (typeof id === "function" ? id() : id);
     const refresh = () => {
       if (bestEl) bestEl.textContent = fmt(getBest(gid()));
     };
-
     refresh();
 
     if (muteBtn) {
@@ -310,10 +332,20 @@
       });
     }
 
+    if (fsBtn) {
+      if (!fullscreen.supported()) fsBtn.hidden = true;
+      const paint = () => {
+        fsBtn.textContent = fullscreen.active() ? "🗗" : "⛶";
+      };
+      paint();
+      fsBtn.addEventListener("click", () => fullscreen.toggle(document.documentElement));
+      document.addEventListener("fullscreenchange", paint);
+      document.addEventListener("webkitfullscreenchange", paint);
+    }
+
     bindTouchButtons(document);
 
     return {
-      /** Registra a pontuacao final e devolve true se for recorde. */
       submit(score) {
         const record = saveBest(gid(), score);
         refresh();
@@ -327,9 +359,9 @@
   global.Arcade = {
     store, getBest, saveBest,
     sfx, tone, noise, isMuted, setMuted,
-    fitCanvas, pointerPos, loop,
+    createView, pointerPos, fullscreen, loop,
     keys, onPress, bindTouchButtons,
-    clamp, lerp, rand, randInt, fmt,
+    clamp, lerp, damp, rand, randInt, fmt,
     mountShell,
   };
 })(window);

@@ -3,8 +3,6 @@
   "use strict";
 
   const A = window.Arcade;
-  const W = 380;
-  const H = 507;
 
   const COLS = 7;
   const ROWS = 4;
@@ -15,14 +13,19 @@
 
   const SHIP_W = 30;
   const SHIP_H = 16;
-  const SHIP_Y = H - 44;
   const SHIP_SPEED = 240;
   const SHOT_SPEED = 420;
   const COOLDOWN = 0.32;
 
   const canvas = document.getElementById("c");
-  const ctx = A.fitCanvas(canvas, W, H);
+  const view = A.createView(canvas, { minW: 420, minH: 480 });
+  const ctx = view.ctx;
   const shell = A.mountShell("invasores");
+
+  // O mundo acompanha a tela: tudo abaixo le view.w / view.h a cada quadro.
+  const W = () => view.w;
+  const H = () => view.h;
+  const SHIP_Y = () => view.h - view.h * 0.09;
 
   const el = {
     start: document.getElementById("start"),
@@ -38,7 +41,7 @@
   const STATE = { MENU: "menu", PLAY: "play", OVER: "over" };
   let state = STATE.MENU;
 
-  let shipX = W / 2;
+  let shipX = W() / 2;
   let enemies = [];
   let shots = [];
   let bombs = [];
@@ -55,13 +58,13 @@
   function makeStars() {
     stars = [];
     for (let i = 0; i < 60; i++) {
-      stars.push({ x: A.rand(0, W), y: A.rand(0, H), s: A.rand(0.25, 1), r: A.rand(0.6, 1.6) });
+      stars.push({ x: A.rand(0, W()), y: A.rand(0, H()), s: A.rand(0.25, 1), r: A.rand(0.6, 1.6) });
     }
   }
 
   function buildWave() {
     enemies = [];
-    const left = (W - (COLS - 1) * GAP_X) / 2;
+    const left = (W() - (COLS - 1) * GAP_X) / 2;
     for (let r = 0; r < ROWS; r++) {
       for (let c = 0; c < COLS; c++) {
         enemies.push({
@@ -77,7 +80,7 @@
   }
 
   function reset() {
-    shipX = W / 2;
+    shipX = W() / 2;
     shots = [];
     bombs = [];
     particles = [];
@@ -99,7 +102,7 @@
 
   function shoot() {
     if (state !== STATE.PLAY || cooldown > 0) return;
-    shots.push({ x: shipX, y: SHIP_Y - 10 });
+    shots.push({ x: shipX, y: SHIP_Y() - 10 });
     cooldown = COOLDOWN;
     A.sfx.shoot();
   }
@@ -122,7 +125,7 @@
   function hitShip() {
     lives--;
     hurt = 0.6;
-    boom(shipX, SHIP_Y, "#4cc9f0", 20);
+    boom(shipX, SHIP_Y(), "#3fd8ff", 20);
     A.sfx.explode();
     bombs = [];
     if (lives <= 0) finish("Nave destruída");
@@ -144,9 +147,9 @@
   function update(dt) {
     for (const s of stars) {
       s.y += s.s * 22 * dt;
-      if (s.y > H) {
+      if (s.y > H()) {
         s.y = 0;
-        s.x = A.rand(0, W);
+        s.x = A.rand(0, W());
       }
     }
 
@@ -163,7 +166,7 @@
     cooldown = Math.max(0, cooldown - dt);
 
     const move = (A.keys.down("ArrowRight", "KeyD") ? 1 : 0) - (A.keys.down("ArrowLeft", "KeyA") ? 1 : 0);
-    shipX = A.clamp(shipX + move * SHIP_SPEED * dt, SHIP_W / 2, W - SHIP_W / 2);
+    shipX = A.clamp(shipX + move * SHIP_SPEED * dt, SHIP_W / 2, W() - SHIP_W / 2);
     if (A.keys.down("Space")) shoot();
 
     // formacao anda de lado e desce ao encostar na borda
@@ -180,7 +183,7 @@
     let bumped = false;
     for (const e of alive) {
       e.x += dir * speed * dt;
-      if (e.x < 16 || e.x > W - 16) bumped = true;
+      if (e.x < 16 || e.x > W() - 16) bumped = true;
     }
     if (bumped) {
       dir *= -1;
@@ -192,7 +195,7 @@
     }
 
     // quem chega embaixo encerra a partida
-    if (alive.some((e) => e.y + E_H / 2 >= SHIP_Y - 6)) return finish("Eles chegaram!");
+    if (alive.some((e) => e.y + E_H / 2 >= SHIP_Y() - 6)) return finish("Eles chegaram!");
 
     // tiros do jogador
     for (const s of shots) s.y -= SHOT_SPEED * dt;
@@ -203,7 +206,7 @@
           e.alive = false;
           s.y = -99;
           score += e.points;
-          boom(e.x, e.y, ["#f72585", "#b5179e", "#4ad66d"][e.kind]);
+          boom(e.x, e.y, ["#ff2e88", "#b5179e", "#4ad66d"][e.kind]);
           A.sfx.explode();
           break;
         }
@@ -229,17 +232,17 @@
     }
     const bombSpeed = 150 + wave * 12;
     for (const b of bombs) b.y += bombSpeed * dt;
-    bombs = bombs.filter((b) => b.y < H + 10);
+    bombs = bombs.filter((b) => b.y < H() + 10);
 
     if (hurt <= 0) {
       for (const b of bombs) {
-        if (Math.abs(b.x - shipX) < SHIP_W / 2 && Math.abs(b.y - SHIP_Y) < SHIP_H) {
-          b.y = H + 99;
+        if (Math.abs(b.x - shipX) < SHIP_W / 2 && Math.abs(b.y - SHIP_Y()) < SHIP_H) {
+          b.y = H() + 99;
           hitShip();
           break;
         }
       }
-      bombs = bombs.filter((b) => b.y < H + 10);
+      bombs = bombs.filter((b) => b.y < H() + 10);
     }
   }
 
@@ -247,7 +250,7 @@
 
   function draw() {
     ctx.fillStyle = "#05070f";
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, W(), H());
 
     for (const s of stars) {
       ctx.fillStyle = `rgba(200,220,255,${0.25 + s.s * 0.5})`;
@@ -256,9 +259,9 @@
 
     // superficie a defender
     ctx.fillStyle = "#14204a";
-    ctx.fillRect(0, H - 16, W, 16);
+    ctx.fillRect(0, H() - 16, W(), 16);
     ctx.fillStyle = "#1d2c63";
-    for (let x = 0; x < W; x += 18) ctx.fillRect(x, H - 20, 10, 5);
+    for (let x = 0; x < W(); x += 18) ctx.fillRect(x, H() - 20, 10, 5);
 
     for (const e of enemies) {
       if (e.alive) drawEnemy(e);
@@ -267,7 +270,7 @@
     ctx.fillStyle = "#ffd166";
     for (const s of shots) ctx.fillRect(s.x - 1.5, s.y - 8, 3, 10);
 
-    ctx.fillStyle = "#f72585";
+    ctx.fillStyle = "#ff2e88";
     for (const b of bombs) {
       ctx.beginPath();
       ctx.ellipse(b.x, b.y, 3, 6, 0, 0, Math.PI * 2);
@@ -287,19 +290,19 @@
     ctx.font = "bold 13px 'Segoe UI', system-ui, sans-serif";
     ctx.textBaseline = "top";
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(232,236,248,0.9)";
+    ctx.fillStyle = "rgba(238,241,251,0.9)";
     ctx.fillText(A.fmt(score), 12, 12);
     ctx.textAlign = "center";
     ctx.fillStyle = "rgba(148,160,192,0.9)";
-    ctx.fillText("ONDA " + wave, W / 2, 12);
+    ctx.fillText("ONDA " + wave, W() / 2, 12);
     ctx.textAlign = "right";
-    ctx.fillStyle = "#4cc9f0";
-    ctx.fillText("▲".repeat(Math.max(0, lives)), W - 12, 12);
+    ctx.fillStyle = "#3fd8ff";
+    ctx.fillText("▲".repeat(Math.max(0, lives)), W() - 12, 12);
   }
 
   function drawEnemy(e) {
     const wob = Math.floor(performance.now() / 340) % 2 === 0 ? 1 : -1;
-    const colors = ["#4ad66d", "#b5179e", "#f72585"];
+    const colors = ["#4ad66d", "#b5179e", "#ff2e88"];
     ctx.fillStyle = colors[e.kind];
     const x = e.x - E_W / 2;
     const y = e.y - E_H / 2;
@@ -319,8 +322,8 @@
 
   function drawShip() {
     const x = shipX;
-    const y = SHIP_Y;
-    ctx.fillStyle = "#4cc9f0";
+    const y = SHIP_Y();
+    ctx.fillStyle = "#3fd8ff";
     ctx.beginPath();
     ctx.moveTo(x, y - SHIP_H / 2 - 4);
     ctx.lineTo(x + SHIP_W / 2, y + SHIP_H / 2);
@@ -366,7 +369,7 @@
   canvas.addEventListener("pointermove", (e) => {
     if (state !== STATE.PLAY) return;
     if (e.pointerType === "mouse" && !e.buttons) return;
-    shipX = A.clamp(A.pointerPos(canvas, e, W, H).x, SHIP_W / 2, W - SHIP_W / 2);
+    shipX = A.clamp(A.pointerPos(view, e).x, SHIP_W / 2, W() - SHIP_W / 2);
   });
 
   makeStars();

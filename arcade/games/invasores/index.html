@@ -2,26 +2,24 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0b1020">
-<meta name="description" content="Invasores: segure a formação alienígena o máximo que puder neste clássico de nave.">
-<title>Invasores — Arcade</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#05060f">
+<meta name="description" content="Invasores: segure a formação alienígena onda após onda, em tela cheia.">
+<title>Invasores — Magicine</title>
 <link rel="stylesheet" href="../../shared/ui.css">
 <link rel="icon" href="../../icon.svg">
-<style>
-  .frame { --ar: 3 / 4; --frame-w: 520px; }
-</style>
 </head>
 <body>
-  <header class="bar">
-    <a class="back" href="../../index.html">← Início</a>
-    <h1>👾 Invasores</h1>
-    <span class="score-chip">Recorde <b id="best">0</b></span>
-    <button class="icon-btn" id="mute" type="button" aria-label="Ligar ou desligar o som">🔊</button>
-  </header>
-
-  <div class="frame">
+  <div class="stage">
     <canvas id="c" aria-label="Jogo de nave contra invasores"></canvas>
+
+    <header class="hud">
+      <a class="pill" href="../../index.html">← Sair</a>
+      <h1>Invasores</h1>
+      <span class="pill"><span class="label">Recorde</span><b id="best">0</b></span>
+      <button class="pill icon" id="mute" type="button" aria-label="Som">🔊</button>
+      <button class="pill icon" id="fs" type="button" aria-label="Tela cheia">⛶</button>
+    </header>
 
     <div class="screen" id="start">
       <h2>Invasores</h2>
@@ -33,28 +31,19 @@
       <h2 id="over-title">Nave destruída</h2>
       <div class="result">
         <div><span>Pontos</span><b id="r-score">0</b></div>
-        <div><span>Onda</span><b id="r-wave">1</b></div>
+        <div><span>Onda</span><b id="r-wave">0</b></div>
       </div>
       <p class="record" id="record"></p>
       <button class="btn" id="again" type="button">Tentar de novo</button>
     </div>
 
     <div class="touch">
-      <div class="pad">
-        <div class="tbtn" data-key="ArrowLeft">◀</div>
-        <div class="tbtn" data-key="ArrowRight">▶</div>
-      </div>
+      <div class="pad"><div class="tbtn" data-key="ArrowLeft">◀</div><div class="tbtn" data-key="ArrowRight">▶</div></div>
       <div class="pad"><div class="tbtn" data-key="Space">🔫</div></div>
     </div>
+
+    <p class="hint"><kbd>←</kbd> <kbd>→</kbd> movem a nave · <kbd>Espaço</kbd> atira</p>
   </div>
-
-  <p class="tip">
-    <kbd>←</kbd> <kbd>→</kbd> movem a nave · <kbd>Espaço</kbd> atira.
-    No celular, arraste o dedo para mover e toque no botão para atirar.
-  </p>
-
-  <!-- AdSense: cole aqui a tag do bloco de anúncio desta página -->
-  <div class="ad-slot" data-ad="invasores-rodape"></div>
 
   <script src="../../shared/engine.js"></script>
   <script src="game.js"></script>

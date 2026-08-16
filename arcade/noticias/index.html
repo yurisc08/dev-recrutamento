@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#05060f">
+<title>Notícias — Magicine</title>
+<meta name="description" content="Todas as matérias do Magicine sobre cinema e séries.">
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../icon.svg">
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb orb-a" aria-hidden="true"></div>
+
+  <header class="nav">
+    <div class="nav-in">
+      <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"></span>Magi<b>cine</b></a>
+      <nav class="nav-links">
+        <a href="./" aria-current="page">Notícias</a>
+        <a href="../#jogos">Jogos</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <section class="section" style="padding-bottom:14px">
+      <div class="section-head">
+        <h2>Cinema &amp; Séries</h2>
+        <input class="search" id="search" type="search" placeholder="Buscar matéria…" aria-label="Buscar matéria">
+      </div>
+      <div class="filters" id="filters"></div>
+    </section>
+
+    <!-- AdSense: bloco de topo da listagem -->
+    <div class="ad-slot" data-ad="noticias-topo"></div>
+
+    <section class="section" style="padding-top:20px">
+      <div class="grid" id="grid"></div>
+      <div style="display:flex;justify-content:center;margin-top:26px">
+        <button class="cta" id="more" type="button" hidden>Carregar mais</button>
+      </div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p><b>Magicine</b> — cinema, séries e arcade.</p>
+    <p class="fine">Matérias escritas para este site. Imagens de divulgação pertencem aos seus detentores.</p>
+  </footer>
+
+  <script src="../shared/news-data.js"></script>
+  <script src="../shared/news.js"></script>
+  <script>
+  (() => {
+    "use strict";
+    const News = window.MagicineNews;
+    const grid = document.getElementById("grid");
+    const filters = document.getElementById("filters");
+    const search = document.getElementById("search");
+    const more = document.getElementById("more");
+
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+    let category = new URLSearchParams(location.search).get("cat") || "Todas";
+    let query = "";
+    let shown = News.PAGE_SIZE;
+
+    function card(p) {
+      const cover = p.cover ? ` style="background-image:url('${esc(p.cover)}')"` : "";
+      return `
+        <a class="post" href="artigo.html?slug=${encodeURIComponent(p.slug)}">
+          <div class="cover"${cover}></div>
+          <div class="post-body">
+            <span class="kicker">${esc(p.category || "Matéria")}</span>
+            <h3>${esc(p.title)}</h3>
+            <p>${esc(p.excerpt || "")}</p>
+            <div class="meta">
+              <span>${esc(News.formatDate(p.published_at))}</span>
+              <span>${News.readingTime(p)} min</span>
+            </div>
+          </div>
+        </a>`;
+    }
+
+    async function render() {
+      const { items, total } = await News.list({ category, search: query, limit: shown });
+
+      grid.innerHTML = items.length
+        ? items.map(card).join("")
+        : `<div class="empty"><h3>Nada encontrado</h3><p>${
+            query || category !== "Todas"
+              ? "Tente outra busca ou volte para todas as categorias."
+              : "Adicione a primeira matéria em <code>shared/news-data.js</code>."
+          }</p></div>`;
+
+      more.hidden = items.length >= total;
+    }
+
+    async function buildFilters() {
+      const cats = await News.categories();
+      filters.innerHTML = "";
+      for (const c of cats) {
+        const b = document.createElement("button");
+        b.type = "button";
+        b.className = "filter";
+        b.textContent = c;
+        b.setAttribute("aria-pressed", String(c === category));
+        b.addEventListener("click", () => {
+          category = c;
+          shown = News.PAGE_SIZE;
+          buildFilters();
+          render();
+        });
+        filters.appendChild(b);
+      }
+    }
+
+    let timer;
+    search.addEventListener("input", () => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        query = search.value.trim();
+        shown = News.PAGE_SIZE;
+        render();
+      }, 180);
+    });
+
+    more.addEventListener("click", () => {
+      shown += News.PAGE_SIZE;
+      render();
+    });
+
+    buildFilters();
+    render();
+  })();
+  </script>
+</body>
+</html>

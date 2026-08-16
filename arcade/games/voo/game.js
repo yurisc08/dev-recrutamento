@@ -594,7 +594,12 @@
   let theme = THEMES[themeKey];
 
   const canvas = document.getElementById("c");
-  const ctx = A.fitCanvas(canvas, W, H);
+  // O jogo ocupa a tela toda, mas a COLUNA de jogo continua com 360x640: se
+  // ela esticasse junto com a tela, o vao entre obstaculos mudaria de tamanho
+  // e o recorde de um monitor nao valeria no celular. O que sobra dos lados
+  // recebe um fundo ambiente do proprio mundo.
+  const view = A.createView(canvas, { minW: W, minH: H });
+  const ctx = view.ctx;
   const shell = A.mountShell(() => "voo." + themeKey);
 
   const el = {
@@ -708,6 +713,34 @@
 
   function draw() {
     const t = performance.now();
+    const ox = Math.round((view.w - W) / 2);
+    const oy = Math.round((view.h - H) / 2);
+
+    // fundo ambiente atras da coluna, com a paleta do mundo escolhido
+    ctx.save();
+    ctx.scale(view.w / W, view.h / H);
+    theme.sky(ctx);
+    ctx.restore();
+    ctx.fillStyle = "rgba(5,6,15,0.55)";
+    ctx.fillRect(0, 0, view.w, view.h);
+
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.beginPath();
+    ctx.rect(0, 0, W, H);
+    ctx.clip();
+
+    drawWorld(t);
+
+    ctx.restore();
+
+    // moldura sutil separando a coluna do fundo
+    ctx.strokeStyle = "rgba(255,255,255,0.12)";
+    ctx.lineWidth = 1;
+    ctx.strokeRect(ox + 0.5, oy + 0.5, W - 1, H - 1);
+  }
+
+  function drawWorld(t) {
     theme.sky(ctx);
     theme.back(ctx, scroll, t);
     for (const o of obstacles) theme.obstacle(ctx, o.x, o.top);

@@ -3,8 +3,6 @@
   "use strict";
 
   const A = window.Arcade;
-  const W = 640;
-  const H = 400;
 
   const PAD_W = 11;
   const PAD_H = 74;
@@ -21,8 +19,12 @@
   ];
 
   const canvas = document.getElementById("c");
-  const ctx = A.fitCanvas(canvas, W, H);
+  const view = A.createView(canvas, { minW: 620, minH: 360 });
+  const ctx = view.ctx;
   const shell = A.mountShell("rebatida");
+
+  const W = () => view.w;
+  const H = () => view.h;
 
   const el = {
     start: document.getElementById("start"),
@@ -43,10 +45,10 @@
   if (!LEVELS.some((l) => l.key === levelKey)) levelKey = "medio";
   const level = () => LEVELS.find((l) => l.key === levelKey);
 
-  let playerY = H / 2;
-  let cpuY = H / 2;
-  let cpuTarget = H / 2;
-  let ball = { x: W / 2, y: H / 2, vx: 0, vy: 0 };
+  let playerY = H() / 2;
+  let cpuY = H() / 2;
+  let cpuTarget = H() / 2;
+  let ball = { x: W() / 2, y: H() / 2, vx: 0, vy: 0 };
   let scoreYou = 0;
   let scoreCpu = 0;
   let serveTimer = 0;
@@ -56,7 +58,7 @@
   function reset() {
     scoreYou = 0;
     scoreCpu = 0;
-    playerY = cpuY = H / 2;
+    playerY = cpuY = H() / 2;
     serveDir = Math.random() < 0.5 ? -1 : 1;
     startServe();
   }
@@ -64,8 +66,8 @@
   function startServe() {
     state = STATE.SERVE;
     serveTimer = 0.85;
-    ball.x = W / 2;
-    ball.y = H / 2;
+    ball.x = W() / 2;
+    ball.y = H() / 2;
     ball.vx = 0;
     ball.vy = 0;
     trail = [];
@@ -100,7 +102,7 @@
     if (won) {
       // o "recorde" aqui e o total de vitorias acumuladas
       const wins = A.getBest("rebatida") + 1;
-      A.store.set("arcade.best.rebatida", wins);
+      A.store.set("magicine.best.rebatida", wins);
       shell.refresh();
       record = true;
     }
@@ -116,7 +118,7 @@
     const angle = rel * 0.92;
     ball.vx = Math.cos(angle) * speed * (fromLeft ? 1 : -1);
     ball.vy = Math.sin(angle) * speed;
-    ball.x = fromLeft ? PAD_MARGIN + PAD_W + BALL_R : W - PAD_MARGIN - PAD_W - BALL_R;
+    ball.x = fromLeft ? PAD_MARGIN + PAD_W + BALL_R : W() - PAD_MARGIN - PAD_W - BALL_R;
     A.sfx.bounce();
   }
 
@@ -125,28 +127,28 @@
 
     const move = (A.keys.down("ArrowDown", "KeyS") ? 1 : 0) - (A.keys.down("ArrowUp", "KeyW") ? 1 : 0);
     if (move) playerY += move * PLAYER_SPEED * dt;
-    playerY = A.clamp(playerY, PAD_H / 2, H - PAD_H / 2);
+    playerY = A.clamp(playerY, PAD_H / 2, H() - PAD_H / 2);
 
     // a CPU mira num ponto com erro proprio do nivel, e so reage quando a
     // bola vem na direcao dela
     const L = level();
     if (ball.vx > 0) {
-      const travel = (W - PAD_MARGIN - ball.x) / Math.max(ball.vx, 1);
+      const travel = (W() - PAD_MARGIN - ball.x) / Math.max(ball.vx, 1);
       cpuTarget = ball.y + ball.vy * travel * 0.55;
-      cpuTarget = A.clamp(cpuTarget, PAD_H / 2, H - PAD_H / 2);
+      cpuTarget = A.clamp(cpuTarget, PAD_H / 2, H() - PAD_H / 2);
     } else {
-      cpuTarget = A.lerp(cpuTarget, H / 2, dt * 0.8);
+      cpuTarget = A.lerp(cpuTarget, H() / 2, dt * 0.8);
     }
     const diff = cpuTarget - cpuY;
     if (Math.abs(diff) > L.error * 0.35) {
       cpuY += A.clamp(diff, -L.speed * dt, L.speed * dt);
     }
-    cpuY = A.clamp(cpuY, PAD_H / 2, H - PAD_H / 2);
+    cpuY = A.clamp(cpuY, PAD_H / 2, H() - PAD_H / 2);
 
     if (state === STATE.SERVE) {
       serveTimer -= dt;
-      ball.x = W / 2;
-      ball.y = H / 2;
+      ball.x = W() / 2;
+      ball.y = H() / 2;
       if (serveTimer <= 0) launch();
       return;
     }
@@ -161,8 +163,8 @@
         ball.y = BALL_R;
         ball.vy = Math.abs(ball.vy);
         A.sfx.blip();
-      } else if (ball.y + BALL_R > H) {
-        ball.y = H - BALL_R;
+      } else if (ball.y + BALL_R > H()) {
+        ball.y = H() - BALL_R;
         ball.vy = -Math.abs(ball.vy);
         A.sfx.blip();
       }
@@ -178,15 +180,15 @@
 
       if (
         ball.vx > 0 &&
-        ball.x + BALL_R >= W - PAD_MARGIN - PAD_W &&
-        ball.x < W - PAD_MARGIN &&
+        ball.x + BALL_R >= W() - PAD_MARGIN - PAD_W &&
+        ball.x < W() - PAD_MARGIN &&
         Math.abs(ball.y - cpuY) < PAD_H / 2 + BALL_R
       ) {
         bounce(cpuY, false);
       }
 
       if (ball.x < -20) return point(false);
-      if (ball.x > W + 20) return point(true);
+      if (ball.x > W() + 20) return point(true);
     }
 
     trail.unshift({ x: ball.x, y: ball.y });
@@ -196,44 +198,44 @@
   // -------------------------------------------------------------- desenho
 
   function draw() {
-    const g = ctx.createLinearGradient(0, 0, 0, H);
+    const g = ctx.createLinearGradient(0, 0, 0, H());
     g.addColorStop(0, "#0c1330");
     g.addColorStop(1, "#060a18");
     ctx.fillStyle = g;
-    ctx.fillRect(0, 0, W, H);
+    ctx.fillRect(0, 0, W(), H());
 
     // rede central
     ctx.fillStyle = "rgba(255,255,255,0.14)";
-    for (let y = 8; y < H; y += 26) ctx.fillRect(W / 2 - 2, y, 4, 14);
+    for (let y = 8; y < H(); y += 26) ctx.fillRect(W() / 2 - 2, y, 4, 14);
 
-    ctx.strokeStyle = "rgba(76,201,240,0.2)";
+    ctx.strokeStyle = "rgba(63,216,255,0.2)";
     ctx.lineWidth = 2;
-    ctx.strokeRect(1, 1, W - 2, H - 2);
+    ctx.strokeRect(1, 1, W() - 2, H() - 2);
 
     // placar
     ctx.font = "bold 46px 'Segoe UI', system-ui, sans-serif";
     ctx.textAlign = "center";
     ctx.textBaseline = "top";
-    ctx.fillStyle = "rgba(232,236,248,0.2)";
-    ctx.fillText(String(scoreYou), W / 2 - 62, 22);
-    ctx.fillText(String(scoreCpu), W / 2 + 62, 22);
+    ctx.fillStyle = "rgba(238,241,251,0.2)";
+    ctx.fillText(String(scoreYou), W() / 2 - 62, 22);
+    ctx.fillText(String(scoreCpu), W() / 2 + 62, 22);
 
     ctx.font = "11px 'Segoe UI', system-ui, sans-serif";
     ctx.fillStyle = "rgba(148,160,192,0.6)";
-    ctx.fillText("VOCÊ", W / 2 - 62, 74);
-    ctx.fillText("CPU", W / 2 + 62, 74);
+    ctx.fillText("VOCÊ", W() / 2 - 62, 74);
+    ctx.fillText("CPU", W() / 2 + 62, 74);
 
     for (let i = 0; i < trail.length; i++) {
       ctx.globalAlpha = (1 - i / trail.length) * 0.35;
-      ctx.fillStyle = "#4cc9f0";
+      ctx.fillStyle = "#3fd8ff";
       ctx.beginPath();
       ctx.arc(trail[i].x, trail[i].y, BALL_R * (1 - i / trail.length), 0, Math.PI * 2);
       ctx.fill();
     }
     ctx.globalAlpha = 1;
 
-    paddle(PAD_MARGIN, playerY, "#4cc9f0");
-    paddle(W - PAD_MARGIN - PAD_W, cpuY, "#f72585");
+    paddle(PAD_MARGIN, playerY, "#3fd8ff");
+    paddle(W() - PAD_MARGIN - PAD_W, cpuY, "#ff2e88");
 
     ctx.save();
     ctx.shadowColor = "#fff";
@@ -246,9 +248,9 @@
 
     if (state === STATE.SERVE) {
       ctx.font = "bold 15px 'Segoe UI', system-ui, sans-serif";
-      ctx.fillStyle = "rgba(232,236,248,0.75)";
+      ctx.fillStyle = "rgba(238,241,251,0.75)";
       ctx.textAlign = "center";
-      ctx.fillText("Preparar…", W / 2, H - 46);
+      ctx.fillText("Preparar…", W() / 2, H() - 46);
     }
   }
 
@@ -277,12 +279,12 @@
     for (const L of LEVELS) {
       const b = document.createElement("button");
       b.type = "button";
-      b.className = "back";
+      b.className = "pill";
       b.textContent = L.name;
       b.setAttribute("aria-pressed", String(L.key === levelKey));
       if (L.key === levelKey) {
-        b.style.borderColor = "#4cc9f0";
-        b.style.background = "rgba(76,201,240,0.2)";
+        b.style.borderColor = "var(--cyan)";
+        b.style.background = "color-mix(in srgb, var(--cyan) 22%, transparent)";
       }
       b.addEventListener("click", () => {
         levelKey = L.key;
@@ -311,7 +313,7 @@
   canvas.addEventListener("pointermove", (e) => {
     if (state === STATE.MENU || state === STATE.OVER) return;
     if (e.pointerType === "mouse" && !e.buttons && !e.isPrimary) return;
-    playerY = A.clamp(A.pointerPos(canvas, e, W, H).y, PAD_H / 2, H - PAD_H / 2);
+    playerY = A.clamp(A.pointerPos(view, e).y, PAD_H / 2, H() - PAD_H / 2);
   });
 
   buildLevels();

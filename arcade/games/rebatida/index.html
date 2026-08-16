@@ -2,31 +2,29 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#0b1020">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#05060f">
 <meta name="description" content="Rebatida: duelo de raquetes contra o computador, melhor de 7 pontos.">
-<title>Rebatida — Arcade</title>
+<title>Rebatida — Magicine</title>
 <link rel="stylesheet" href="../../shared/ui.css">
 <link rel="icon" href="../../icon.svg">
-<style>
-  .frame { --ar: 16 / 10; --frame-w: 760px; }
-</style>
 </head>
 <body>
-  <header class="bar">
-    <a class="back" href="../../index.html">← Início</a>
-    <h1>🏓 Rebatida</h1>
-    <span class="score-chip">Vitórias <b id="best">0</b></span>
-    <button class="icon-btn" id="mute" type="button" aria-label="Ligar ou desligar o som">🔊</button>
-  </header>
-
-  <div class="frame">
+  <div class="stage">
     <canvas id="c" aria-label="Duelo de raquetes contra o computador"></canvas>
+
+    <header class="hud">
+      <a class="pill" href="../../index.html">← Sair</a>
+      <h1>Rebatida</h1>
+      <span class="pill"><span class="label">Vitórias</span><b id="best">0</b></span>
+      <button class="pill icon" id="mute" type="button" aria-label="Som">🔊</button>
+      <button class="pill icon" id="fs" type="button" aria-label="Tela cheia">⛶</button>
+    </header>
 
     <div class="screen" id="start">
       <h2>Rebatida</h2>
       <p>Duelo de raquetes: quem fizer <b>7 pontos</b> primeiro leva. Escolha a dificuldade.</p>
-      <div class="themes" id="levels" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div>
+      <div class="row" id="levels"></div>
       <button class="btn" id="play" type="button">Jogar</button>
     </div>
 
@@ -41,20 +39,11 @@
     </div>
 
     <div class="touch">
-      <div class="pad">
-        <div class="tbtn" data-key="ArrowUp">▲</div>
-        <div class="tbtn" data-key="ArrowDown">▼</div>
-      </div>
+      <div class="pad"><div class="tbtn" data-key="ArrowUp">▲</div><div class="tbtn" data-key="ArrowDown">▼</div></div>
     </div>
+
+    <p class="hint"><kbd>↑</kbd> <kbd>↓</kbd> ou mova o mouse/dedo</p>
   </div>
-
-  <p class="tip">
-    <kbd>↑</kbd> <kbd>↓</kbd> ou mova o mouse/dedo para controlar sua raquete (a da esquerda).
-  </p>
-  <p class="rotate-tip">📱 Vire o celular na horizontal para jogar numa tela maior.</p>
-
-  <!-- AdSense: cole aqui a tag do bloco de anúncio desta página -->
-  <div class="ad-slot" data-ad="rebatida-rodape"></div>
 
   <script src="../../shared/engine.js"></script>
   <script src="game.js"></script>

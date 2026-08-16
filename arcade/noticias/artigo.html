@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#05060f">
+<title>Matéria — Magicine</title>
+<link rel="stylesheet" href="../style.css">
+<link rel="icon" href="../icon.svg">
+</head>
+<body>
+  <div class="progress" aria-hidden="true"></div>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb orb-a" aria-hidden="true"></div>
+
+  <header class="nav">
+    <div class="nav-in">
+      <a class="brand" href="../"><span class="brand-mark" aria-hidden="true"></span>Magi<b>cine</b></a>
+      <nav class="nav-links">
+        <a href="./">Notícias</a>
+        <a href="../#jogos">Jogos</a>
+      </nav>
+    </div>
+  </header>
+
+  <main>
+    <article class="article" id="article">
+      <p class="lede" style="text-align:center;padding:60px 0">Carregando…</p>
+    </article>
+
+    <!-- AdSense: bloco no fim da matéria -->
+    <div class="ad-slot" data-ad="artigo-rodape"></div>
+
+    <section class="section" id="related-wrap" hidden>
+      <div class="section-head"><h2>Leia também</h2></div>
+      <div class="grid" id="related"></div>
+    </section>
+  </main>
+
+  <footer class="foot">
+    <p><b>Magicine</b> — cinema, séries e arcade.</p>
+  </footer>
+
+  <script src="../shared/news-data.js"></script>
+  <script src="../shared/news.js"></script>
+  <script>
+  (() => {
+    "use strict";
+    const News = window.MagicineNews;
+    const box = document.getElementById("article");
+
+    const esc = (s) => String(s == null ? "" : s).replace(/[&<>"']/g, (c) =>
+      ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+    /** Converte os blocos do campo `body` em HTML. */
+    function renderBlocks(body) {
+      return (body || []).map((b) => {
+        switch (b.type) {
+          case "h2":
+            return `<h2>${esc(b.text)}</h2>`;
+          case "quote":
+            return `<blockquote>${esc(b.text)}${
+              b.cite ? `<cite>${esc(b.cite)}</cite>` : ""
+            }</blockquote>`;
+          case "list":
+            return `<ul>${(b.items || []).map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
+          case "img":
+            return `<figure><img src="${esc(b.src)}" alt="${esc(b.alt || "")}" loading="lazy">${
+              b.caption ? `<figcaption>${esc(b.caption)}</figcaption>` : ""
+            }</figure>`;
+          default:
+            return `<p>${esc(b.text)}</p>`;
+        }
+      }).join("");
+    }
+
+    function notFound(msg) {
+      box.innerHTML = `
+        <div class="empty">
+          <h3>Matéria não encontrada</h3>
+          <p>${esc(msg)}</p>
+          <p style="margin-top:16px"><a class="more" href="./">← Ver todas as matérias</a></p>
+        </div>`;
+    }
+
+    async function load() {
+      const slug = new URLSearchParams(location.search).get("slug");
+      if (!slug) return notFound("Nenhum endereço de matéria foi informado.");
+
+      let post;
+      try {
+        post = await News.get(slug);
+      } catch (err) {
+        return notFound("Não foi possível carregar a matéria: " + err.message);
+      }
+      if (!post) return notFound("O endereço pedido não existe ou a matéria saiu do ar.");
+
+      document.title = post.title + " — Magicine";
+      const desc = document.createElement("meta");
+      desc.name = "description";
+      desc.content = post.excerpt || "";
+      document.head.appendChild(desc);
+
+      box.innerHTML = `
+        <header class="article-head">
+          <span class="kicker">${esc(post.category || "Matéria")}</span>
+          <h1>${esc(post.title)}</h1>
+          <div class="article-meta">
+            ${post.author ? `<span>Por ${esc(post.author)}</span>` : ""}
+            <span>${esc(News.formatDate(post.published_at))}</span>
+            <span>${News.readingTime(post)} min de leitura</span>
+          </div>
+        </header>
+        <div class="article-cover"${
+          post.cover ? ` style="background-image:url('${esc(post.cover)}')"` : ""
+        }></div>
+        ${post.excerpt ? `<p class="lede" style="text-align:left;margin:0 0 22px">${esc(post.excerpt)}</p>` : ""}
+        <div class="article-body">${renderBlocks(post.body)}</div>
+        <p style="margin-top:34px"><a class="more" href="./">← Todas as matérias</a></p>`;
+
+      const rel = await News.related(post, 3);
+      if (rel.length) {
+        document.getElementById("related-wrap").hidden = false;
+        document.getElementById("related").innerHTML = rel.map((p) => `
+          <a class="post" href="artigo.html?slug=${encodeURIComponent(p.slug)}">
+            <div class="cover"${p.cover ? ` style="background-image:url('${esc(p.cover)}')"` : ""}></div>
+            <div class="post-body">
+              <span class="kicker">${esc(p.category || "")}</span>
+              <h3>${esc(p.title)}</h3>
+              <div class="meta"><span>${esc(News.formatDate(p.published_at))}</span></div>
+            </div>
+          </a>`).join("");
+      }
+    }
+
+    load();
+  })();
+  </script>
+</body>
+</html>

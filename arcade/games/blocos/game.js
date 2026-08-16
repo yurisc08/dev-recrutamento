@@ -1,29 +1,22 @@
-/* Quebra-Blocos - raquete, bola e paredes de blocos. */
+/* Quebra-Blocos - raquete, bola e paredes de blocos, em tela cheia.
+   A parede GANHA COLUNAS em telas largas em vez de esticar os blocos. */
 (() => {
   "use strict";
 
   const A = window.Arcade;
-  const W = 480;
-  const H = 360;
-
-  const COLS = 10;
-  const ROWS = 6;
-  const BRICK_W = 42;
-  const BRICK_H = 15;
-  const BRICK_TOP = 46;
-  const BRICK_LEFT = (W - COLS * (BRICK_W + 2)) / 2;
-
-  const PADDLE_W = 76;
-  const PADDLE_H = 11;
-  const PADDLE_Y = H - 28;
-  const BALL_R = 5.5;
-  const BASE_SPEED = 210;
-
-  const COLORS = ["#f72585", "#b5179e", "#7209b7", "#4361ee", "#4cc9f0", "#4ad66d"];
-
   const canvas = document.getElementById("c");
-  const ctx = A.fitCanvas(canvas, W, H);
+  const view = A.createView(canvas, { minW: 520, minH: 340 });
+  const ctx = view.ctx;
   const shell = A.mountShell("blocos");
+
+  const ROWS = 6;
+  const BRICK_H = 17;
+  const BRICK_GAP = 3;
+  const TARGET_BRICK_W = 62;
+  const PADDLE_H = 12;
+  const BALL_R = 6;
+  const BASE_SPEED = 235;
+  const COLORS = ["#ff2e88", "#b5179e", "#7209b7", "#4361ee", "#3fd8ff", "#4ad66d"];
 
   const el = {
     start: document.getElementById("start"),
@@ -39,7 +32,13 @@
   const STATE = { MENU: "menu", SERVE: "serve", PLAY: "play", OVER: "over" };
   let state = STATE.MENU;
 
-  let paddleX = W / 2;
+  let cols = 8;
+  let brickW = TARGET_BRICK_W;
+  let brickLeft = 0;
+  let paddleW = 96;
+  let paddleY = 0;
+
+  let paddleX = 0;
   let ball = { x: 0, y: 0, vx: 0, vy: 0 };
   let bricks = [];
   let particles = [];
@@ -48,34 +47,56 @@
   let level = 1;
   let shake = 0;
 
+  function layout() {
+    cols = A.clamp(Math.round(view.w / TARGET_BRICK_W), 6, 16);
+    const usable = view.w * 0.92;
+    brickW = usable / cols - BRICK_GAP;
+    brickLeft = (view.w - cols * (brickW + BRICK_GAP)) / 2;
+    paddleW = A.clamp(view.w * 0.16, 70, 150);
+    paddleY = view.h - 34;
+    paddleX = A.clamp(paddleX || view.w / 2, paddleW / 2, view.w - paddleW / 2);
+    if (bricks.length) positionBricks();
+  }
+
+  /** Recoloca a parede quando a tela muda de tamanho no meio da partida. */
+  function positionBricks() {
+    for (const b of bricks) {
+      b.x = brickLeft + b.col * (brickW + BRICK_GAP);
+      b.y = view.h * 0.12 + b.row * (BRICK_H + 5);
+      b.w = brickW;
+    }
+  }
+
+  view.onResize(layout);
+  layout();
+
   function buildLevel() {
     bricks = [];
     for (let r = 0; r < ROWS; r++) {
-      for (let c = 0; c < COLS; c++) {
-        // a partir da fase 2 aparecem buracos, mudando o desenho da parede
-        if (level > 1 && (r * COLS + c + level) % 11 === 0) continue;
+      for (let c = 0; c < cols; c++) {
+        if (level > 1 && (r * cols + c + level) % 11 === 0) continue;
         bricks.push({
-          x: BRICK_LEFT + c * (BRICK_W + 2),
-          y: BRICK_TOP + r * (BRICK_H + 4),
+          col: c, row: r, x: 0, y: 0, w: brickW,
           color: COLORS[r % COLORS.length],
           points: (ROWS - r) * 5,
           alive: true,
         });
       }
     }
+    positionBricks();
   }
 
   function serve() {
     state = STATE.SERVE;
     ball.x = paddleX;
-    ball.y = PADDLE_Y - BALL_R - 2;
+    ball.y = paddleY - BALL_R - 2;
     ball.vx = 0;
     ball.vy = 0;
   }
 
   function launch() {
     if (state !== STATE.SERVE) return;
-    const speed = BASE_SPEED + (level - 1) * 22;
+    const speed = BASE_SPEED + (level - 1) * 24;
     const angle = -Math.PI / 2 + A.rand(-0.5, 0.5);
     ball.vx = Math.cos(angle) * speed;
     ball.vy = Math.sin(angle) * speed;
@@ -87,22 +108,19 @@
     score = 0;
     lives = 3;
     level = 1;
-    paddleX = W / 2;
     particles = [];
+    layout();
     buildLevel();
     serve();
   }
 
-  // --------------------------------------------------------------- colisao
-
   function bounceOffPaddle() {
-    // o ponto da raquete define o angulo de saida
-    const rel = A.clamp((ball.x - paddleX) / (PADDLE_W / 2), -1, 1);
+    const rel = A.clamp((ball.x - paddleX) / (paddleW / 2), -1, 1);
     const speed = Math.max(Math.hypot(ball.vx, ball.vy), BASE_SPEED);
     const angle = -Math.PI / 2 + rel * 1.05;
     ball.vx = Math.cos(angle) * speed;
     ball.vy = Math.sin(angle) * speed;
-    ball.y = PADDLE_Y - BALL_R - 0.1;
+    ball.y = paddleY - BALL_R - 0.1;
     A.sfx.bounce();
   }
 
@@ -111,26 +129,20 @@
     score += b.points;
     shake = 0.12;
     A.sfx.blip();
-    for (let i = 0; i < 7; i++) {
+    for (let i = 0; i < 8; i++) {
       particles.push({
-        x: b.x + BRICK_W / 2,
-        y: b.y + BRICK_H / 2,
-        vx: A.rand(-90, 90),
-        vy: A.rand(-90, 40),
-        life: A.rand(0.25, 0.55),
-        max: 0.55,
-        color: b.color,
+        x: b.x + b.w / 2, y: b.y + BRICK_H / 2,
+        vx: A.rand(-100, 100), vy: A.rand(-100, 40),
+        life: A.rand(0.25, 0.55), max: 0.55, color: b.color,
       });
     }
-    if (!bricks.some((k) => k.alive)) nextLevel();
-  }
-
-  function nextLevel() {
-    level++;
-    score += 100;
-    A.sfx.power();
-    buildLevel();
-    serve();
+    if (!bricks.some((k) => k.alive)) {
+      level++;
+      score += 100;
+      A.sfx.power();
+      buildLevel();
+      serve();
+    }
   }
 
   function loseLife() {
@@ -152,13 +164,10 @@
     A.sfx.over();
   }
 
-  // --------------------------------------------------------------- update
-
   function update(dt) {
     shake = Math.max(0, shake - dt);
-
     for (const p of particles) {
-      p.vy += 420 * dt;
+      p.vy += 440 * dt;
       p.x += p.vx * dt;
       p.y += p.vy * dt;
       p.life -= dt;
@@ -167,18 +176,17 @@
 
     if (state === STATE.MENU || state === STATE.OVER) return;
 
-    // teclado move a raquete; o ponteiro e tratado no evento
     const kb = (A.keys.down("ArrowRight", "KeyD") ? 1 : 0) - (A.keys.down("ArrowLeft", "KeyA") ? 1 : 0);
-    if (kb) paddleX += kb * 340 * dt;
-    paddleX = A.clamp(paddleX, PADDLE_W / 2, W - PADDLE_W / 2);
+    if (kb) paddleX += kb * 420 * dt;
+    paddleX = A.clamp(paddleX, paddleW / 2, view.w - paddleW / 2);
 
     if (state === STATE.SERVE) {
       ball.x = paddleX;
-      ball.y = PADDLE_Y - BALL_R - 2;
+      ball.y = paddleY - BALL_R - 2;
       return;
     }
 
-    // passos menores evitam que a bola atravesse um bloco em alta velocidade
+    // passos menores evitam a bola atravessar um bloco em alta velocidade
     const steps = 3;
     const h = dt / steps;
     for (let s = 0; s < steps; s++) {
@@ -189,8 +197,8 @@
         ball.x = BALL_R;
         ball.vx = Math.abs(ball.vx);
         A.sfx.bounce();
-      } else if (ball.x + BALL_R > W) {
-        ball.x = W - BALL_R;
+      } else if (ball.x + BALL_R > view.w) {
+        ball.x = view.w - BALL_R;
         ball.vx = -Math.abs(ball.vx);
         A.sfx.bounce();
       }
@@ -202,64 +210,57 @@
 
       if (
         ball.vy > 0 &&
-        ball.y + BALL_R >= PADDLE_Y &&
-        ball.y - BALL_R <= PADDLE_Y + PADDLE_H &&
-        ball.x >= paddleX - PADDLE_W / 2 - BALL_R &&
-        ball.x <= paddleX + PADDLE_W / 2 + BALL_R
-      ) {
-        bounceOffPaddle();
-      }
+        ball.y + BALL_R >= paddleY &&
+        ball.y - BALL_R <= paddleY + PADDLE_H &&
+        ball.x >= paddleX - paddleW / 2 - BALL_R &&
+        ball.x <= paddleX + paddleW / 2 + BALL_R
+      ) bounceOffPaddle();
 
       for (const b of bricks) {
         if (!b.alive) continue;
         if (
-          ball.x + BALL_R < b.x ||
-          ball.x - BALL_R > b.x + BRICK_W ||
-          ball.y + BALL_R < b.y ||
-          ball.y - BALL_R > b.y + BRICK_H
+          ball.x + BALL_R < b.x || ball.x - BALL_R > b.x + b.w ||
+          ball.y + BALL_R < b.y || ball.y - BALL_R > b.y + BRICK_H
         ) continue;
 
-        // reflete pelo lado de menor sobreposicao
-        const overlapX = Math.min(ball.x + BALL_R - b.x, b.x + BRICK_W - (ball.x - BALL_R));
-        const overlapY = Math.min(ball.y + BALL_R - b.y, b.y + BRICK_H - (ball.y - BALL_R));
-        if (overlapX < overlapY) {
+        const ox = Math.min(ball.x + BALL_R - b.x, b.x + b.w - (ball.x - BALL_R));
+        const oy = Math.min(ball.y + BALL_R - b.y, b.y + BRICK_H - (ball.y - BALL_R));
+        if (ox < oy) {
           ball.vx = -ball.vx;
-          ball.x += ball.vx > 0 ? overlapX : -overlapX;
+          ball.x += ball.vx > 0 ? ox : -ox;
         } else {
           ball.vy = -ball.vy;
-          ball.y += ball.vy > 0 ? overlapY : -overlapY;
+          ball.y += ball.vy > 0 ? oy : -oy;
         }
         hitBrick(b);
         break;
       }
 
-      if (ball.y - BALL_R > H) {
-        loseLife();
-        return;
-      }
+      if (ball.y - BALL_R > view.h) return loseLife();
     }
   }
 
-  // -------------------------------------------------------------- desenho
-
   function draw() {
+    const w = view.w;
+    const h = view.h;
+
     ctx.save();
     if (shake > 0) ctx.translate(A.rand(-2, 2) * shake * 8, A.rand(-2, 2) * shake * 8);
 
-    const g = ctx.createLinearGradient(0, 0, 0, H);
+    const g = ctx.createLinearGradient(0, 0, 0, h);
     g.addColorStop(0, "#0d1430");
-    g.addColorStop(1, "#070a18");
+    g.addColorStop(1, "#05070f");
     ctx.fillStyle = g;
-    ctx.fillRect(-10, -10, W + 20, H + 20);
+    ctx.fillRect(-14, -14, w + 28, h + 28);
 
     for (const b of bricks) {
       if (!b.alive) continue;
       ctx.fillStyle = b.color;
-      ctx.fillRect(b.x, b.y, BRICK_W, BRICK_H);
+      ctx.fillRect(b.x, b.y, b.w, BRICK_H);
       ctx.fillStyle = "rgba(255,255,255,0.28)";
-      ctx.fillRect(b.x, b.y, BRICK_W, 3);
+      ctx.fillRect(b.x, b.y, b.w, 3);
       ctx.fillStyle = "rgba(0,0,0,0.22)";
-      ctx.fillRect(b.x, b.y + BRICK_H - 3, BRICK_W, 3);
+      ctx.fillRect(b.x, b.y + BRICK_H - 3, b.w, 3);
     }
 
     for (const p of particles) {
@@ -269,47 +270,42 @@
     }
     ctx.globalAlpha = 1;
 
-    // raquete
-    const pg = ctx.createLinearGradient(paddleX - PADDLE_W / 2, 0, paddleX + PADDLE_W / 2, 0);
-    pg.addColorStop(0, "#4cc9f0");
-    pg.addColorStop(1, "#f72585");
+    const pg = ctx.createLinearGradient(paddleX - paddleW / 2, 0, paddleX + paddleW / 2, 0);
+    pg.addColorStop(0, "#3fd8ff");
+    pg.addColorStop(1, "#ff2e88");
     ctx.fillStyle = pg;
-    ctx.fillRect(paddleX - PADDLE_W / 2, PADDLE_Y, PADDLE_W, PADDLE_H);
+    ctx.fillRect(paddleX - paddleW / 2, paddleY, paddleW, PADDLE_H);
 
-    // bola
     ctx.save();
-    ctx.shadowColor = "#ffffff";
-    ctx.shadowBlur = 12;
+    ctx.shadowColor = "#fff";
+    ctx.shadowBlur = 14;
     ctx.fillStyle = "#fff";
     ctx.beginPath();
     ctx.arc(ball.x, ball.y, BALL_R, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
 
-    // hud
-    ctx.font = "bold 14px 'Segoe UI', system-ui, sans-serif";
+    ctx.font = "700 15px 'Segoe UI', system-ui, sans-serif";
     ctx.textBaseline = "top";
     ctx.textAlign = "left";
-    ctx.fillStyle = "rgba(232,236,248,0.9)";
-    ctx.fillText(A.fmt(score), 12, 12);
+    ctx.fillStyle = "rgba(238,241,251,0.9)";
+    ctx.fillText(A.fmt(score), 16, h * 0.055);
     ctx.textAlign = "center";
     ctx.fillStyle = "rgba(148,160,192,0.9)";
-    ctx.fillText("FASE " + level, W / 2, 12);
+    ctx.fillText("FASE " + level, w / 2, h * 0.055);
     ctx.textAlign = "right";
-    ctx.fillStyle = "#f72585";
-    ctx.fillText("♥".repeat(Math.max(0, lives)), W - 12, 12);
+    ctx.fillStyle = "#ff2e88";
+    ctx.fillText("♥".repeat(Math.max(0, lives)), w - 16, h * 0.055);
 
     if (state === STATE.SERVE) {
       ctx.textAlign = "center";
-      ctx.fillStyle = "rgba(232,236,248,0.85)";
-      ctx.font = "13px 'Segoe UI', system-ui, sans-serif";
-      ctx.fillText("Clique, toque ou aperte espaço para lançar", W / 2, PADDLE_Y - 34);
+      ctx.fillStyle = "rgba(238,241,251,0.85)";
+      ctx.font = "14px 'Segoe UI', system-ui, sans-serif";
+      ctx.fillText("Clique, toque ou aperte espaço para lançar", w / 2, paddleY - 40);
     }
 
     ctx.restore();
   }
-
-  // ----------------------------------------------------------------- fluxo
 
   function play() {
     reset();
@@ -322,7 +318,7 @@
 
   function movePaddle(e) {
     if (state === STATE.MENU || state === STATE.OVER) return;
-    paddleX = A.clamp(A.pointerPos(canvas, e, W, H).x, PADDLE_W / 2, W - PADDLE_W / 2);
+    paddleX = A.clamp(A.pointerPos(view, e).x, paddleW / 2, view.w - paddleW / 2);
   }
 
   canvas.addEventListener("pointermove", movePaddle);
@@ -333,8 +329,7 @@
 
   A.onPress((code) => {
     if (code !== "Space" && code !== "Enter") return;
-    if (state === STATE.MENU) play();
-    else if (state === STATE.OVER) play();
+    if (state === STATE.MENU || state === STATE.OVER) play();
     else launch();
   });
 
