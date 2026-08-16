@@ -1,0 +1,27 @@
+/*
+  X-Content-Type-Options: nosniff
+  Referrer-Policy: strict-origin-when-cross-origin
+  Permissions-Policy: geolocation=(), microphone=(), camera=()
+
+# Sem Content-Security-Policy de propósito: uma CSP restritiva bloquearia
+# as tags do AdSense. Se quiser adicionar uma depois, libere os domínios
+# do Google (pagead2.googlesyndication.com, googleads.g.doubleclick.net,
+# tpc.googlesyndication.com) antes de publicar.
+
+# HTML sempre revalidado, para um deploy novo aparecer na hora.
+/
+  Cache-Control: public, max-age=0, must-revalidate
+
+/*.html
+  Cache-Control: public, max-age=0, must-revalidate
+
+# Os arquivos não têm hash no nome, então cache curto evita servir
+# uma versão velha logo depois de publicar.
+/*.css
+  Cache-Control: public, max-age=600
+
+/*.js
+  Cache-Control: public, max-age=600
+
+/*.svg
+  Cache-Control: public, max-age=86400

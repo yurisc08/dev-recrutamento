@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Serpente Neon: o clássico jogo da cobrinha com visual futurista.">
+<title>Serpente Neon — Arcade</title>
+<link rel="stylesheet" href="../../shared/ui.css">
+<link rel="icon" href="../../icon.svg">
+<style>
+  .frame { --ar: 1 / 1; --frame-w: 520px; }
+  .touch { justify-content: center; }
+  .dpad { display: grid; grid-template-columns: repeat(3, 56px); gap: 6px; }
+  .dpad .tbtn:nth-child(1) { grid-column: 2; }
+</style>
+</head>
+<body>
+  <header class="bar">
+    <a class="back" href="../../index.html">← Início</a>
+    <h1>🐍 Serpente Neon</h1>
+    <span class="score-chip">Recorde <b id="best">0</b></span>
+    <button class="icon-btn" id="mute" type="button" aria-label="Ligar ou desligar o som">🔊</button>
+  </header>
+
+  <div class="frame">
+    <canvas id="c" aria-label="Jogo da cobrinha"></canvas>
+
+    <div class="screen" id="start">
+      <h2>Serpente Neon</h2>
+      <p>Coma os núcleos de energia e cresça. Bater na parede ou no próprio corpo encerra a corrida.</p>
+      <button class="btn" id="play" type="button">Começar</button>
+    </div>
+
+    <div class="screen hidden" id="over">
+      <h2>Fim de linha</h2>
+      <div class="result">
+        <div><span>Pontos</span><b id="r-score">0</b></div>
+        <div><span>Tamanho</span><b id="r-len">0</b></div>
+      </div>
+      <p class="record" id="record"></p>
+      <button class="btn" id="again" type="button">Jogar de novo</button>
+    </div>
+
+    <div class="touch">
+      <div class="dpad">
+        <div class="tbtn" data-key="ArrowUp">▲</div>
+        <div class="tbtn" data-key="ArrowLeft">◀</div>
+        <div class="tbtn" data-key="ArrowDown">▼</div>
+        <div class="tbtn" data-key="ArrowRight">▶</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="tip">
+    Setas ou <kbd>W</kbd><kbd>A</kbd><kbd>S</kbd><kbd>D</kbd> para virar.
+    No celular, deslize o dedo na tela ou use o direcional.
+  </p>
+
+  <!-- AdSense: cole aqui a tag do bloco de anúncio desta página -->
+  <div class="ad-slot" data-ad="serpente-rodape"></div>
+
+  <script src="../../shared/engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

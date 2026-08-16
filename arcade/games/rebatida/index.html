@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Rebatida: duelo de raquetes contra o computador, melhor de 7 pontos.">
+<title>Rebatida — Arcade</title>
+<link rel="stylesheet" href="../../shared/ui.css">
+<link rel="icon" href="../../icon.svg">
+<style>
+  .frame { --ar: 16 / 10; --frame-w: 760px; }
+</style>
+</head>
+<body>
+  <header class="bar">
+    <a class="back" href="../../index.html">← Início</a>
+    <h1>🏓 Rebatida</h1>
+    <span class="score-chip">Vitórias <b id="best">0</b></span>
+    <button class="icon-btn" id="mute" type="button" aria-label="Ligar ou desligar o som">🔊</button>
+  </header>
+
+  <div class="frame">
+    <canvas id="c" aria-label="Duelo de raquetes contra o computador"></canvas>
+
+    <div class="screen" id="start">
+      <h2>Rebatida</h2>
+      <p>Duelo de raquetes: quem fizer <b>7 pontos</b> primeiro leva. Escolha a dificuldade.</p>
+      <div class="themes" id="levels" style="display:flex;gap:8px;flex-wrap:wrap;justify-content:center"></div>
+      <button class="btn" id="play" type="button">Jogar</button>
+    </div>
+
+    <div class="screen hidden" id="over">
+      <h2 id="over-title">Você venceu!</h2>
+      <div class="result">
+        <div><span>Você</span><b id="r-you">0</b></div>
+        <div><span>CPU</span><b id="r-cpu">0</b></div>
+      </div>
+      <p class="record" id="record"></p>
+      <button class="btn" id="again" type="button">Revanche</button>
+    </div>
+
+    <div class="touch">
+      <div class="pad">
+        <div class="tbtn" data-key="ArrowUp">▲</div>
+        <div class="tbtn" data-key="ArrowDown">▼</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="tip">
+    <kbd>↑</kbd> <kbd>↓</kbd> ou mova o mouse/dedo para controlar sua raquete (a da esquerda).
+  </p>
+  <p class="rotate-tip">📱 Vire o celular na horizontal para jogar numa tela maior.</p>
+
+  <!-- AdSense: cole aqui a tag do bloco de anúncio desta página -->
+  <div class="ad-slot" data-ad="rebatida-rodape"></div>
+
+  <script src="../../shared/engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

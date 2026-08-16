@@ -1,0 +1,10 @@
+# ads.txt — precisa ficar na RAIZ do domínio (https://seusite.com/ads.txt)
+#
+# Depois de aprovar sua conta no Google AdSense, descomente a linha abaixo
+# e troque pub-0000000000000000 pelo SEU código de editor (Publisher ID),
+# que aparece em AdSense > Conta > Informações da conta.
+#
+# google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0
+#
+# Enquanto só houver comentários, este arquivo é válido e inofensivo.
+# Se usar outras redes de anúncio, cada uma fornece a própria linha.

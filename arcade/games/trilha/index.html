@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Trilha Radical: pilote uma moto de trilha por montanhas geradas na hora, faça manobras e vá o mais longe possível.">
+<title>Trilha Radical — Arcade</title>
+<link rel="stylesheet" href="../../shared/ui.css">
+<link rel="icon" href="../../icon.svg">
+<style>
+  .frame { --ar: 16 / 9; --frame-w: 900px; }
+</style>
+</head>
+<body>
+  <header class="bar">
+    <a class="back" href="../../index.html">← Início</a>
+    <h1>🏍️ Trilha Radical</h1>
+    <span class="score-chip">Recorde <b id="best">0</b></span>
+    <button class="icon-btn" id="mute" type="button" aria-label="Ligar ou desligar o som">🔊</button>
+  </header>
+
+  <div class="frame">
+    <canvas id="c" aria-label="Jogo de moto de trilha"></canvas>
+
+    <div class="screen" id="start">
+      <h2>Trilha Radical</h2>
+      <p>
+        Acelere pelas montanhas sem capotar. Incline a moto no ar para cair
+        com as duas rodas — cada manobra completa vale pontos extras.
+      </p>
+      <button class="btn" id="play" type="button">Acelerar</button>
+    </div>
+
+    <div class="screen hidden" id="over">
+      <h2 id="over-title">Capotou!</h2>
+      <div class="result">
+        <div><span>Distância</span><b id="r-dist">0 m</b></div>
+        <div><span>Estrelas</span><b id="r-stars">0</b></div>
+        <div><span>Pontos</span><b id="r-score">0</b></div>
+      </div>
+      <p class="record" id="record"></p>
+      <button class="btn" id="again" type="button">Correr de novo</button>
+    </div>
+
+    <div class="touch">
+      <div class="pad">
+        <div class="tbtn" data-key="ArrowLeft">↺</div>
+        <div class="tbtn" data-key="ArrowRight">↻</div>
+      </div>
+      <div class="pad">
+        <div class="tbtn" data-key="ArrowDown">🛑</div>
+        <div class="tbtn" data-key="ArrowUp">🔥</div>
+      </div>
+    </div>
+  </div>
+
+  <p class="tip">
+    <kbd>↑</kbd> acelera · <kbd>↓</kbd> freia · <kbd>←</kbd> <kbd>→</kbd> inclinam a moto no ar.
+    No celular, use os botões na tela.
+  </p>
+  <p class="rotate-tip">📱 Vire o celular na horizontal para jogar numa tela maior.</p>
+
+  <!-- AdSense: cole aqui a tag do bloco de anúncio desta página -->
+  <div class="ad-slot" data-ad="trilha-rodape"></div>
+
+  <script src="../../shared/engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

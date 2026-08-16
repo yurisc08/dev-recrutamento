@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#0b1020">
+<meta name="description" content="Voo Rasante: desvie dos obstáculos em quatro mundos diferentes — clássico, escola de magia, mitologia grega e alta fantasia.">
+<title>Voo Rasante — Arcade</title>
+<link rel="stylesheet" href="../../shared/ui.css">
+<link rel="icon" href="../../icon.svg">
+<style>
+  .frame { --ar: 9 / 16; --frame-w: 420px; }
+
+  .themes {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 8px;
+    width: min(100%, 320px);
+  }
+
+  .theme {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 9px 6px;
+    border: 1px solid var(--line);
+    border-radius: 11px;
+    background: rgba(255, 255, 255, 0.05);
+    color: var(--text);
+    font: inherit;
+    font-size: 12.5px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s, transform 0.1s;
+  }
+
+  .theme:hover { background: rgba(255, 255, 255, 0.11); }
+  .theme:active { transform: scale(0.97); }
+
+  .theme[aria-pressed="true"] {
+    border-color: var(--tint, var(--accent));
+    background: color-mix(in srgb, var(--tint, #4cc9f0) 22%, transparent);
+    box-shadow: 0 0 0 1px var(--tint, var(--accent)) inset;
+  }
+
+  .theme .emoji { font-size: 19px; line-height: 1; }
+  .theme small { color: var(--muted); font-size: 10.5px; font-weight: 400; }
+</style>
+</head>
+<body>
+  <header class="bar">
+    <a class="back" href="../../index.html">← Início</a>
+    <h1>🪶 Voo Rasante</h1>
+    <span class="score-chip">Recorde <b id="best">0</b></span>
+    <button class="icon-btn" id="mute" type="button" aria-label="Ligar ou desligar o som">🔊</button>
+  </header>
+
+  <div class="frame">
+    <canvas id="c" aria-label="Jogo de voar desviando de obstáculos"></canvas>
+
+    <div class="screen" id="start">
+      <h2>Voo Rasante</h2>
+      <p>Escolha o mundo e atravesse o máximo de passagens que conseguir.</p>
+      <div class="themes" id="themes"></div>
+      <button class="btn" id="play" type="button">Voar</button>
+    </div>
+
+    <div class="screen hidden" id="over">
+      <h2>Você caiu!</h2>
+      <div class="result">
+        <div><span>Pontos</span><b id="r-score">0</b></div>
+        <div><span>Recorde</span><b id="r-best">0</b></div>
+      </div>
+      <p class="record" id="record"></p>
+      <button class="btn" id="again" type="button">Voar de novo</button>
+      <button class="back" id="change" type="button">Trocar de mundo</button>
+    </div>
+  </div>
+
+  <p class="tip">
+    <kbd>Espaço</kbd>, clique ou toque na tela para bater as asas.
+    Cada mundo guarda seu próprio recorde.
+  </p>
+
+  <!-- AdSense: cole aqui a tag do bloco de anúncio desta página -->
+  <div class="ad-slot" data-ad="voo-rodape"></div>
+
+  <script src="../../shared/engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

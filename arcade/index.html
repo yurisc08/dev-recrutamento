@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#070b18">
+<title>Nébula Arcade — releituras de clássicos para jogar no navegador</title>
+<meta name="description" content="Releituras modernas de jogos clássicos para jogar direto no navegador, de graça e sem instalar nada: moto de trilha, voo rasante em quatro mundos, cobrinha, quebra-blocos, invasores e rebatida.">
+<meta property="og:title" content="Nébula Arcade">
+<meta property="og:description" content="Releituras modernas de clássicos para jogar no navegador, de graça.">
+<meta property="og:type" content="website">
+<link rel="stylesheet" href="style.css">
+<link rel="icon" href="icon.svg">
+<link rel="manifest" href="manifest.webmanifest">
+</head>
+<body>
+  <div class="bg-grid" aria-hidden="true"></div>
+  <div class="bg-orb orb-a" aria-hidden="true"></div>
+  <div class="bg-orb orb-b" aria-hidden="true"></div>
+
+  <header class="nav">
+    <a class="brand" href="#top">
+      <span class="brand-mark" aria-hidden="true"></span>
+      <span>Nébula<b>Arcade</b></span>
+    </a>
+    <nav class="nav-links">
+      <a href="#jogos">Jogos</a>
+      <a href="#noticias">Notícias</a>
+    </nav>
+  </header>
+
+  <main id="top">
+    <section class="hero">
+      <p class="eyebrow">Jogue no navegador · sem instalar · de graça</p>
+      <h1>Clássicos <span>reimaginados</span></h1>
+      <p class="lede">
+        Seis releituras feitas do zero em HTML5 — física própria, arte própria
+        e placar que fica salvo no seu navegador. Funciona no computador e no
+        celular.
+      </p>
+      <div class="hero-actions">
+        <a class="cta" href="#jogos">Ver os jogos</a>
+        <a class="cta ghost" href="games/trilha/">🏍️ Jogar Trilha Radical</a>
+      </div>
+      <dl class="stats">
+        <div><dt>Jogos</dt><dd id="stat-games">6</dd></div>
+        <div><dt>Mundos no Voo</dt><dd>4</dd></div>
+        <div><dt>Seu total de pontos</dt><dd id="stat-points">0</dd></div>
+      </dl>
+    </section>
+
+    <!-- AdSense: bloco de topo da home -->
+    <div class="ad-slot" data-ad="home-topo"></div>
+
+    <section id="jogos" class="section">
+      <div class="section-head">
+        <h2>Os jogos</h2>
+        <div class="filters" id="filters"></div>
+      </div>
+      <div class="grid" id="grid"></div>
+    </section>
+
+    <section id="noticias" class="section">
+      <div class="section-head">
+        <h2>Cinema &amp; Séries</h2>
+        <span class="tag-soon">Em breve</span>
+      </div>
+      <div class="news" id="news"></div>
+    </section>
+
+    <!-- AdSense: bloco de rodapé da home -->
+    <div class="ad-slot" data-ad="home-rodape"></div>
+  </main>
+
+  <footer class="foot">
+    <p>
+      <b>Nébula Arcade</b> — releituras originais de gêneros clássicos de
+      videogame. Todo o código, a arte e os sons foram criados para este
+      projeto.
+    </p>
+    <p class="mini">
+      Não somos afiliados a nenhuma marca, editora ou estúdio. Os mundos do
+      Voo Rasante são criações próprias inspiradas em temas de domínio
+      público (magia, mitologia grega e alta fantasia).
+    </p>
+    <button class="reset" id="reset" type="button">Apagar meus recordes</button>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
