@@ -18,7 +18,7 @@
   const MAX_SPEED = 1150;
   const WALL_BOUNCE = 0.42;
   const BUMPER_BOUNCE = 340;
-  const FLIP_LEN = 74;
+  const FLIP_LEN = 64;
   const FLIP_UP = -0.52;
   const FLIP_DOWN = 0.42;
   const FLIP_SPEED = 15;
@@ -44,17 +44,20 @@
   // ------------------------------------------------------------- geometria
 
   /** Paredes da mesa: pares de pontos. */
+  const LANE_TOP = 300;   // altura onde o corredor desemboca na mesa
+
   const WALLS = [
     // laterais
-    [18, 90, 18, 560], [402, 90, 402, 470],
-    // topo arredondado
+    [18, 90, 18, 560], [402, 90, 402, 700],
+    // topo arredondado — a diagonal da direita é o que joga a bola
+    // lançada de volta para dentro da mesa
     [18, 90, 60, 40], [60, 40, 360, 40], [360, 40, 402, 90],
-    // corredor do lançador, à direita
-    [370, 470, 370, 700], [402, 470, 402, 700],
+    // parede interna do corredor: sobe até LANE_TOP e ali termina
+    [370, LANE_TOP, 370, 700],
     // funis inferiores até as palhetas
-    [18, 560, 128, 648], [402, 470, 348, 520], [348, 520, 292, 648],
+    [18, 560, 126, 640], [370, 470, 348, 520], [348, 520, 294, 640],
     // paredes curtas ao lado das palhetas
-    [128, 648, 128, 676], [292, 648, 292, 676],
+    [126, 640, 126, 672], [294, 640, 294, 672],
     // defletores superiores
     [96, 176, 150, 138], [324, 176, 270, 138],
   ];
@@ -86,8 +89,8 @@
   }
 
   const flippers = [
-    { pivot: { x: 150, y: 656 }, dir: 1, angle: FLIP_DOWN, av: 0, key: ["ArrowLeft", "KeyA", "KeyZ"] },
-    { pivot: { x: 270, y: 656 }, dir: -1, angle: FLIP_DOWN, av: 0, key: ["ArrowRight", "KeyD", "KeyM"] },
+    { pivot: { x: 140, y: 648 }, dir: 1, angle: FLIP_DOWN, av: 0, key: ["ArrowLeft", "KeyA", "KeyZ"] },
+    { pivot: { x: 280, y: 648 }, dir: -1, angle: FLIP_DOWN, av: 0, key: ["ArrowRight", "KeyD", "KeyM"] },
   ];
 
   const ball = { x: 386, y: 640, vx: 0, vy: 0, stuck: true };
@@ -209,7 +212,7 @@
         plunger = Math.min(1, plunger + dt * 1.3);
       } else if (plunger > 0.05) {
         ball.stuck = false;
-        ball.vy = -A.lerp(420, 1080, plunger);
+        ball.vy = -A.lerp(900, 1320, plunger);
         state = STATE.PLAY;
         A.sfx.power();
         plunger = 0;
@@ -259,6 +262,10 @@
         spark(b.x + nx * b.r, b.y + ny * b.r, "#ffb03a");
       }
     }
+
+    // Portão de mão única: a bola sobe o corredor e sai para a mesa, mas não
+    // consegue voltar por ali — cair no corredor seria um ralo sem defesa.
+    if (ball.vy > 0) hitSegment(370, LANE_TOP, 402, LANE_TOP, 0, 0.15);
 
     for (const sl of SLINGS) {
       if (hitSegment(sl.a[0], sl.a[1], sl.b[0], sl.b[1], sl.push, 0.3)) {
@@ -374,6 +381,15 @@
       ctx.lineTo(w[2], w[3]);
       ctx.stroke();
     }
+
+    ctx.strokeStyle = "rgba(94,201,167,0.5)";
+    ctx.lineWidth = 3;
+    ctx.setLineDash([7, 7]);
+    ctx.beginPath();
+    ctx.moveTo(370, LANE_TOP);
+    ctx.lineTo(402, LANE_TOP);
+    ctx.stroke();
+    ctx.setLineDash([]);
 
     for (const sl of SLINGS) {
       ctx.strokeStyle = sl.hit > 0 ? "#fff3d0" : "#ff5c39";

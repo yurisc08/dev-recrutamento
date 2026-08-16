@@ -11,9 +11,9 @@
    originais de análise atemporal, o tipo de conteúdo que continua recebendo
    visita meses depois. Edite, reaproveite ou apague à vontade.
 
-   No fim do arquivo há 3 MODELOS de Celebridades em rascunho, para notícia
-   factual. Eles não aparecem no site até você trocar status para
-   "published".
+   No fim do arquivo há 3 MODELOS em rascunho, para notícia factual (estreia,
+   elenco e premiação). Eles não aparecem no site até você trocar o status
+   para "published".
 
    Regra que vale para qualquer notícia: escreva apenas o que apurou em
    fonte primária. Inventar declaração ou acontecimento sobre pessoa real é
@@ -527,13 +527,13 @@ window.MAGICINE_POSTS = [
     ],
   },
 
-  // ------------------------------------------------------- CELEBRIDADES
+  // ------------------------------------------- CINEMA (notícia factual)
   {
     slug: "bilheteria-homem-aranha-novo-dia",
     title: "Homem-Aranha: Um Novo Dia entra no top 5 de bilheteria dos EUA",
     excerpt:
       "O longa deve fechar o domingo na quinta posição do ranking doméstico e já tem o quarto melhor terceiro fim de semana da história nos cinemas americanos.",
-    category: "Celebridades",
+    category: "Cinema",
     tags: ["bilheteria", "homem-aranha", "marvel", "cinema"],
     author: A,
     published_at: "2026-08-16",
@@ -558,7 +558,8 @@ window.MAGICINE_POSTS = [
       { type: "p", text: "Dois marcos estão em jogo nas próximas semanas: a ultrapassagem de Avatar no ranking doméstico, que parece questão de dias, e o comportamento da quarta semana — historicamente, o ponto em que a curva de um blockbuster começa a ceder de vez." },
     ],
   },
-  // Três MODELOS marcados como rascunho (status: "draft"), então não
+  // ------------------------------------------ MODELOS DE NOTÍCIA (rascunho)
+  // Três modelos marcados como rascunho (status: "draft"), então não
   // aparecem no site. Preencha com um fato real e apurado, troque o status
   // para "published" e a matéria entra sozinha na capa e no menu.
   //
@@ -570,7 +571,7 @@ window.MAGICINE_POSTS = [
     slug: "modelo-estreia",
     title: "MODELO — [Filme] chega aos cinemas em [data]",
     excerpt: "Uma ou duas frases com o essencial: o que estreia, quando, e por que interessa.",
-    category: "Celebridades",
+    category: "Cinema",
     tags: ["estreia", "cinema"],
     author: A,
     published_at: "2026-08-17",
@@ -593,7 +594,7 @@ window.MAGICINE_POSTS = [
     slug: "modelo-elenco",
     title: "MODELO — [Ator] entra para o elenco de [obra]",
     excerpt: "O anúncio, quem confirmou e o que se sabe sobre o papel.",
-    category: "Celebridades",
+    category: "Séries",
     tags: ["elenco", "séries"],
     author: A,
     published_at: "2026-08-17",
@@ -610,7 +611,7 @@ window.MAGICINE_POSTS = [
     slug: "modelo-premiacao",
     title: "MODELO — [Prêmio]: os vencedores da noite",
     excerpt: "A lista completa e o que chamou atenção na cerimônia.",
-    category: "Celebridades",
+    category: "Cinema",
     tags: ["prêmios", "cinema"],
     author: A,
     published_at: "2026-08-17",

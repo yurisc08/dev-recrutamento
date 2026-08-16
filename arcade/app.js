@@ -9,7 +9,6 @@
     Cinema: "var(--c-cinema)",
     "Séries": "var(--c-series)",
     Games: "var(--c-games)",
-    Celebridades: "var(--c-celebridades)",
     Bastidores: "var(--c-bastidores)",
   };
 

@@ -45,7 +45,7 @@ se montam sozinhas.
 | --- | --- |
 | `slug` | Sem acento, sem espaço, sem maiúscula. Use hífen. **Nunca repita** um slug já usado. |
 | `published_at` | Sempre `"AAAA-MM-DD"`. É por ele que o site ordena. |
-| `category` | Uma de: **Cinema, Séries, Games, Bastidores, Celebridades**. Uma categoria nova aparece sozinha no menu e nos filtros — para criar uma, basta usar o nome novo e dar a ela uma cor em `--c-...` no `style.css`. |
+| `category` | Uma de: **Cinema, Séries, Games, Bastidores**. Uma categoria nova aparece sozinha no menu e nos filtros — para criar uma, basta usar o nome novo e dar a ela uma cor em `--c-...` no `style.css`. |
 | `featured` | `true` manda para a capa grande. Se houver várias, ganha a mais recente. |
 | `status` | `"draft"` esconde do site. Serve para deixar meio escrito. |
 
@@ -130,10 +130,11 @@ existe sem converter nada.
 
 ---
 
-## Publicando notícia factual (Celebridades)
+## Publicando notícia factual
 
-No fim do `news-data.js` há **três modelos em rascunho** — estreia, elenco e
-premiação. Eles não aparecem no site enquanto `status` for `"draft"`.
+No fim do `news-data.js` há **três modelos em rascunho** — estreia (Cinema),
+elenco (Séries) e premiação (Cinema). Eles não aparecem no site enquanto o
+`status` for `"draft"`.
 
 Para usar: copie o modelo, troque o `slug` e o `title`, preencha, mude o
 `status` para `"published"` e ajuste a data.
