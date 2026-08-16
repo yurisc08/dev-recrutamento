@@ -1,24 +1,27 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" width="512" height="512">
   <defs>
     <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#141c3d"/>
-      <stop offset="1" stop-color="#070b18"/>
+      <stop offset="0" stop-color="#1a1512"/>
+      <stop offset="1" stop-color="#0c0c10"/>
     </linearGradient>
-    <linearGradient id="stick" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#4cc9f0"/>
-      <stop offset="0.5" stop-color="#8b5cf6"/>
-      <stop offset="1" stop-color="#f72585"/>
+    <linearGradient id="beam" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffb03a" stop-opacity=".95"/>
+      <stop offset="1" stop-color="#ff5c39" stop-opacity=".15"/>
     </linearGradient>
   </defs>
   <rect width="512" height="512" rx="112" fill="url(#bg)"/>
-  <g stroke="#4cc9f0" stroke-opacity="0.16" stroke-width="3">
-    <path d="M0 128H512M0 256H512M0 384H512M128 0V512M256 0V512M384 0V512"/>
+  <!-- facho de projetor -->
+  <path d="M196 150 L232 150 L360 400 L96 400 Z" fill="url(#beam)"/>
+  <!-- lente -->
+  <circle cx="214" cy="150" r="52" fill="#ffb03a"/>
+  <circle cx="214" cy="150" r="26" fill="#0c0c10"/>
+  <circle cx="226" cy="138" r="9" fill="#ffe0a8"/>
+  <!-- marcas de rolo de filme -->
+  <g fill="#ff5c39">
+    <rect x="112" y="418" width="30" height="18" rx="4"/>
+    <rect x="164" y="418" width="30" height="18" rx="4"/>
+    <rect x="216" y="418" width="30" height="18" rx="4"/>
+    <rect x="268" y="418" width="30" height="18" rx="4"/>
+    <rect x="320" y="418" width="30" height="18" rx="4"/>
   </g>
-  <rect x="88" y="196" width="336" height="192" rx="72" fill="url(#stick)"/>
-  <g fill="#0b1020">
-    <rect x="140" y="272" width="88" height="26" rx="13"/>
-    <rect x="171" y="241" width="26" height="88" rx="13"/>
-  </g>
-  <circle cx="330" cy="268" r="24" fill="#0b1020"/>
-  <circle cx="378" cy="316" r="24" fill="#0b1020"/>
 </svg>

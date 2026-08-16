@@ -3,72 +3,45 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<meta name="theme-color" content="#05060f">
-<title>Magicine — cinema, séries e clássicos para jogar no navegador</title>
-<meta name="description" content="Magicine: matérias sobre cinema e séries, e releituras modernas de jogos clássicos para jogar direto no navegador, de graça e sem instalar nada.">
+<meta name="theme-color" content="#0c0c10">
+<title>Magicine — cinema, séries, games e arcade</title>
+<meta name="description" content="Magicine: análises de cinema, séries, games, anime e quadrinhos — e releituras de clássicos para jogar no navegador, de graça.">
 <meta property="og:title" content="Magicine">
-<meta property="og:description" content="Cinema, séries e clássicos para jogar no navegador.">
+<meta property="og:description" content="Cinema, séries, games e clássicos para jogar no navegador.">
 <meta property="og:type" content="website">
 <link rel="stylesheet" href="style.css">
 <link rel="icon" href="icon.svg">
 <link rel="manifest" href="manifest.webmanifest">
 </head>
 <body>
-  <div class="bg-grid" aria-hidden="true"></div>
-  <div class="bg-orb orb-a" aria-hidden="true"></div>
-  <div class="bg-orb orb-b" aria-hidden="true"></div>
+  <canvas id="bg" aria-hidden="true"></canvas>
+  <div class="grain" aria-hidden="true"></div>
 
   <header class="nav">
     <div class="nav-in">
-      <a class="brand" href="./"><span class="brand-mark" aria-hidden="true"></span>Magi<b>cine</b></a>
-      <nav class="nav-links">
-        <a href="noticias/">Notícias</a>
-        <a href="#jogos">Jogos</a>
+      <a class="brand" href="./">magi<b>cine</b></a>
+      <nav class="nav-links" id="nav-cats">
+        <a href="noticias/">Todas</a>
       </nav>
     </div>
   </header>
 
   <main>
-    <section class="hero">
-      <p class="eyebrow">Cinema · Séries · Arcade</p>
-      <h1>Histórias que valem <em>o seu tempo</em></h1>
-      <p class="lede">
-        Matérias sobre o que assistir — e seis releituras de clássicos feitas
-        do zero para jogar no navegador, sem instalar nada.
-      </p>
-      <div class="hero-actions">
-        <a class="cta solid" href="noticias/">Ler as matérias</a>
-        <a class="cta" href="#jogos">Ver os jogos</a>
-      </div>
-    </section>
+    <!-- capa: destaque principal + últimas -->
+    <section class="top" id="top"></section>
 
     <!-- AdSense: bloco de topo da home -->
     <div class="ad-slot" data-ad="home-topo"></div>
 
-    <section class="section" id="destaques">
-      <div class="section-head">
-        <h2>Em destaque</h2>
-        <a class="more" href="noticias/">Todas as matérias →</a>
-      </div>
-      <div class="featured" id="featured"></div>
-    </section>
+    <!-- seções por editoria, montadas pelo app.js -->
+    <div id="editorias"></div>
 
-    <section class="section" id="recentes">
-      <div class="section-head"><h2>Publicado recentemente</h2></div>
-      <div class="stack" id="recent" style="grid-template-columns:repeat(auto-fill,minmax(320px,1fr))"></div>
-    </section>
-
-    <section class="section" id="jogos">
+    <section class="section" id="jogos" style="--tint:var(--ember)">
       <div class="section-head">
         <h2>Arcade</h2>
         <div class="filters" id="filters"></div>
       </div>
       <div class="grid" id="grid"></div>
-      <dl class="stats">
-        <div><dt>Jogos</dt><dd id="stat-games">0</dd></div>
-        <div><dt>Mundos no Voo</dt><dd>4</dd></div>
-        <div><dt>Seus pontos</dt><dd id="stat-points">0</dd></div>
-      </dl>
     </section>
 
     <!-- AdSense: bloco de rodapé da home -->
@@ -76,16 +49,17 @@
   </main>
 
   <footer class="foot">
-    <p><b>Magicine</b> — cinema, séries e releituras originais de gêneros clássicos de videogame.</p>
+    <p><b>Magicine</b> — cinema, séries, games e releituras originais de gêneros clássicos de videogame.</p>
     <p class="fine">
-      Todo o código, a arte e os sons dos jogos foram criados para este
-      projeto. Não somos afiliados a nenhuma marca, editora ou estúdio: os
-      mundos e cenários são criações próprias inspiradas em temas de domínio
-      público.
+      Textos escritos para este site. Todo o código, a arte e os sons dos
+      jogos foram criados para este projeto. Não somos afiliados a nenhuma
+      marca, editora ou estúdio: os mundos e cenários são criações próprias
+      inspiradas em temas de domínio público.
     </p>
     <button class="ghost-btn" id="reset" type="button">Apagar meus recordes</button>
   </footer>
 
+  <script src="shared/bg.js"></script>
   <script src="shared/news-data.js"></script>
   <script src="shared/news.js"></script>
   <script src="app.js"></script>

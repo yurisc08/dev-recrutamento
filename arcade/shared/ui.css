@@ -1,21 +1,15 @@
 /* Magicine - paginas de jogo em tela cheia. */
 
-@property --ring {
-  syntax: "<angle>";
-  initial-value: 0deg;
-  inherits: false;
-}
-
 :root {
-  --bg: #05060f;
-  --text: #eef1fb;
-  --muted: #939ec4;
-  --line: rgba(255, 255, 255, 0.12);
-  --cyan: #3fd8ff;
-  --magenta: #ff2e88;
-  --violet: #9b6cff;
-  --gold: #ffce4d;
-  --glass: rgba(10, 14, 30, 0.55);
+  --bg: #0c0c10;
+  --text: #f4f2ef;
+  --muted: #a3a09b;
+  --line: rgba(255, 255, 255, 0.11);
+  --amber: #ffb03a;
+  --ember: #ff5c39;
+  --wine: #c1121f;
+  --sand: #e8dcc8;
+  --glass: rgba(18, 16, 20, 0.6);
 }
 
 *,
@@ -67,7 +61,7 @@ canvas {
   gap: 9px;
   padding: max(10px, env(safe-area-inset-top)) max(12px, env(safe-area-inset-right))
     10px max(12px, env(safe-area-inset-left));
-  background: linear-gradient(to bottom, rgba(5, 6, 15, 0.72), transparent);
+  background: linear-gradient(to bottom, rgba(10, 9, 12, 0.75), transparent);
   pointer-events: none;
 }
 
@@ -95,7 +89,7 @@ canvas {
   height: 36px;
   padding: 0 14px;
   border: 1px solid var(--line);
-  border-radius: 999px;
+  border-radius: 10px;
   background: var(--glass);
   backdrop-filter: blur(10px) saturate(1.3);
   -webkit-backdrop-filter: blur(10px) saturate(1.3);
@@ -109,7 +103,7 @@ canvas {
 }
 
 .pill:hover {
-  background: rgba(24, 32, 60, 0.75);
+  background: rgba(40, 32, 26, 0.8);
   border-color: rgba(255, 255, 255, 0.3);
 }
 
@@ -124,7 +118,7 @@ canvas {
 }
 
 .pill b {
-  color: var(--cyan);
+  color: var(--amber);
   font-size: 14px;
 }
 
@@ -154,8 +148,8 @@ canvas {
   padding: 26px;
   text-align: center;
   background:
-    radial-gradient(circle at 50% 42%, rgba(155, 108, 255, 0.16), transparent 60%),
-    rgba(5, 7, 18, 0.82);
+    radial-gradient(circle at 50% 42%, rgba(255, 176, 58, 0.13), transparent 60%),
+    rgba(10, 9, 12, 0.84);
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   animation: screen-in 0.32s ease both;
@@ -175,7 +169,7 @@ canvas {
   font-weight: 800;
   letter-spacing: -0.8px;
   text-wrap: balance;
-  background: linear-gradient(110deg, var(--cyan), var(--violet) 50%, var(--magenta));
+  background: linear-gradient(100deg, var(--amber), var(--ember));
   -webkit-background-clip: text;
   background-clip: text;
   color: transparent;
@@ -189,32 +183,22 @@ canvas {
   text-wrap: pretty;
 }
 
-/* Botao com anel girando, feito com @property. */
 .btn {
-  position: relative;
   padding: 14px 36px;
   border: none;
-  border-radius: 999px;
-  background:
-    linear-gradient(var(--bg), var(--bg)) padding-box,
-    conic-gradient(from var(--ring), var(--cyan), var(--violet), var(--magenta), var(--cyan)) border-box;
-  border: 2px solid transparent;
-  color: var(--text);
+  border-radius: 10px;
+  background: var(--amber);
+  color: #1a1206;
   font: inherit;
   font-size: 16px;
   font-weight: 700;
   letter-spacing: 0.3px;
   cursor: pointer;
-  animation: spin-ring 4s linear infinite;
-  transition: transform 0.12s, box-shadow 0.2s;
-}
-
-@keyframes spin-ring {
-  to { --ring: 360deg; }
+  transition: transform 0.12s, filter 0.16s;
 }
 
 .btn:hover {
-  box-shadow: 0 0 34px -6px var(--violet);
+  filter: brightness(1.08);
 }
 
 .btn:active {
@@ -244,12 +228,12 @@ canvas {
 
 .result b {
   font-size: clamp(20px, 5vw, 27px);
-  color: var(--cyan);
+  color: var(--amber);
 }
 
 .record {
   min-height: 20px;
-  color: var(--gold) !important;
+  color: var(--amber) !important;
   font-weight: 600;
 }
 
@@ -301,7 +285,7 @@ canvas {
 }
 
 .tbtn.is-active {
-  background: rgba(63, 216, 255, 0.4);
+  background: rgba(255, 176, 58, 0.42);
   transform: scale(0.93);
 }
 
@@ -330,7 +314,7 @@ canvas {
   translate: -50% 0;
   padding: 7px 16px;
   border-radius: 999px;
-  background: rgba(5, 7, 18, 0.5);
+  background: rgba(10, 9, 12, 0.55);
   backdrop-filter: blur(6px);
   -webkit-backdrop-filter: blur(6px);
   color: var(--muted);

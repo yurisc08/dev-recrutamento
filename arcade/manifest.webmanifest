@@ -1,12 +1,12 @@
 {
-  "name": "Nébula Arcade",
-  "short_name": "Nébula",
-  "description": "Releituras modernas de jogos clássicos para jogar no navegador.",
+  "name": "Magicine",
+  "short_name": "Magicine",
+  "description": "Cinema, séries, games e clássicos para jogar no navegador.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
-  "background_color": "#070b18",
-  "theme_color": "#070b18",
+  "background_color": "#0c0c10",
+  "theme_color": "#0c0c10",
   "icons": [
     {
       "src": "icon.svg",

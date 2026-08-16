@@ -8,6 +8,9 @@ efeitos sonoros são gerados via WebAudio. É só subir os arquivos estáticos.
 
 ## 1. As notícias (o foco do site)
 
+> Para o dia a dia de publicação, veja **[COMO-PUBLICAR.md](COMO-PUBLICAR.md)** —
+> é o guia curto. Esta seção cobre o formato e a migração.
+
 ### Publicando hoje
 
 As matérias moram no array `MAGICINE_POSTS`, em `shared/news-data.js`. Cada
@@ -36,8 +39,9 @@ objeto vira um card na home, uma entrada em `/noticias/` e uma página em
 }
 ```
 
-As três matérias que vêm no pacote são exemplos. Apague quando publicar as
-suas.
+O pacote já vem com oito matérias escritas para este site — textos originais
+de análise atemporal, para o site não nascer vazio e para você ver o layout
+cheio. Edite, reaproveite ou apague à vontade.
 
 ### Migrando para o Supabase
 
@@ -160,6 +164,29 @@ a ser reconhecível como cópia.
 
 ---
 
+## 2.5. Sobre o visual
+
+O movimento do site acontece em **um lugar só**: o canvas `#bg`
+(`shared/bg.js`), com luz de projetor varrendo devagar, poeira subindo no
+facho e manchas quentes que respiram. Nenhum card, botão ou título anima
+sozinho — só transições curtas de hover.
+
+O fundo se desliga inteiro quando a pessoa tem "reduzir movimento" ligado no
+sistema, e pausa quando a aba sai de foco.
+
+Para mudar a paleta, mexa nas variáveis no topo do `style.css`:
+
+```css
+--bg: #0c0c10;      /* fundo */
+--amber: #ffb03a;   /* acento principal */
+--ember: #ff5c39;   /* acento secundário */
+```
+
+As cores por editoria (`--c-cinema`, `--c-series`, ...) tingem os cards, os
+selos dos títulos e a numeração das "Últimas".
+
+---
+
 ## 3. Deploy no Cloudflare Pages
 
 Site 100% estático — não há etapa de build.
@@ -215,15 +242,17 @@ Dois detalhes que evitam dor de cabeça:
 
 ```
 arcade/
-├── index.html              home (destaques + arcade)
+├── index.html              home (capa + editorias + arcade)
 ├── style.css               estilo do site
 ├── app.js                  home: notícias, cards e recordes
+├── COMO-PUBLICAR.md        guia de publicação do dia a dia
 ├── noticias/
 │   ├── index.html          listagem com busca e filtros
 │   └── artigo.html         leitor de matéria
 ├── shared/
 │   ├── news.js             camada de dados (local ↔ Supabase)
 │   ├── news-data.js        suas matérias
+│   ├── bg.js               fundo animado (único movimento do site)
 │   ├── engine.js           base dos jogos
 │   └── ui.css              estilo das páginas de jogo
 ├── games/
