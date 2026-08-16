@@ -120,6 +120,9 @@ o site avisa no console e volta a usar as matérias locais em vez de quebrar.
 | Jogo | Gênero | Destaque |
 | --- | --- | --- |
 | **Fuga do Dragão** | Corrida | Carrinho nos trilhos de uma caverna, dragão cuspindo fogo atrás; partículas aditivas e luz dinâmica |
+| **Fliperama** | Pinball | Física de segmentos e círculos; bumpers, slingshots, alvos e multiplicador de combo |
+| **Colosso** | Escalada | Gorila gigante subindo a torre, desviando de entulho e derrubando aviões |
+| **Linha de Frente** | Tiro | Arena em vista de cima, ondas convergentes, avanço com invulnerabilidade breve |
 | **Voo Rasante** | Habilidade | Quatro mundos com arte própria e recorde separado por mundo |
 | **Serpente Neon** | Arcade | O tabuleiro ganha casas em telas maiores |
 | **Quebra-Blocos** | Arcade | A parede ganha colunas em telas largas |
@@ -157,6 +160,9 @@ Tudo é criação original **inspirada em gêneros**, não em obras específicas
 | Olimpo | Mitologia grega | Domínio público há milênios |
 | Reino de Pedra | Alta fantasia | Arquétipos de domínio público |
 | Fuga do Dragão | Caverna, carrinho de mina, dragão | Arquétipos de domínio público |
+| Colosso | Macaco gigante em arranha-céu | Arquétipo kaiju de domínio público |
+| Fliperama | Pinball | Gênero, não uma mesa específica |
+| Linha de Frente | Tiro em arena | Gênero, sem cenário ou arma de obra existente |
 
 O que **não** foi usado, de propósito: nomes de obras, personagens, escolas,
 casas, feitiços, criaturas inventadas por um autor específico, trilhas
@@ -197,6 +203,22 @@ geométricos originais — pesam poucos KB e ficam nítidas em qualquer tela.
 Nas matérias, o caminho é sempre relativo à raiz (`img/arquivo.svg`); cada
 página declara a própria base em `MAGICINE_BASE` e o `News.media()` resolve,
 para a mesma matéria funcionar na home e em `/noticias/`.
+
+---
+
+## 2.6. Páginas institucionais
+
+`sobre.html`, `privacidade.html` e `contato.html` já existem e estão ligadas
+no rodapé de todas as páginas. **A falta delas é um dos motivos mais comuns
+de reprovação no AdSense.**
+
+Elas vêm com o texto pronto e com comentários HTML marcando o que só você
+pode preencher: seu nome, e-mail, cidade e a data da política. Procure por
+`<!--` nos três arquivos — cada comentário é um campo a completar.
+
+A política de privacidade já cobre o que o AdSense exige: uso de cookies por
+Google e parceiros, link para as configurações de anúncios do Google e para
+o aboutads.info, além dos direitos previstos na LGPD.
 
 ---
 

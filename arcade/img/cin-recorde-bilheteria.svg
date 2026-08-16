@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c1713"/><stop offset="1" stop-color="#0c0c10"/></linearGradient>
+<radialGradient id="gl"><stop offset="0" stop-color="#ffb03a" stop-opacity=".28"/><stop offset="1" stop-color="#ffb03a" stop-opacity="0"/></radialGradient></defs>
+<rect width="1200" height="675" fill="url(#bg)"/><ellipse cx="900" cy="110" rx="520" ry="340" fill="url(#gl)"/>
+<g opacity=".5"><line x1="140" y1="470" x2="1080" y2="470" stroke="#3a322b" stroke-width="1"/><line x1="140" y1="388" x2="1080" y2="388" stroke="#3a322b" stroke-width="1"/><line x1="140" y1="306" x2="1080" y2="306" stroke="#3a322b" stroke-width="1"/><line x1="140" y1="224" x2="1080" y2="224" stroke="#3a322b" stroke-width="1"/><line x1="140" y1="142" x2="1080" y2="142" stroke="#3a322b" stroke-width="1"/></g>
+<rect x="168" y="140" width="118" height="330" rx="8" fill="#5a5148"/><text x="227" y="500" font-family="Segoe UI,sans-serif" font-size="20" fill="#a3a09b" text-anchor="middle">1º</text><rect x="344" y="168" width="118" height="302" rx="8" fill="#5a5148"/><text x="403" y="500" font-family="Segoe UI,sans-serif" font-size="20" fill="#a3a09b" text-anchor="middle">2º</text><rect x="520" y="183" width="118" height="287" rx="8" fill="#5a5148"/><text x="579" y="500" font-family="Segoe UI,sans-serif" font-size="20" fill="#a3a09b" text-anchor="middle">3º</text><rect x="696" y="193" width="118" height="277" rx="8" fill="#5a5148"/><text x="755" y="500" font-family="Segoe UI,sans-serif" font-size="20" fill="#a3a09b" text-anchor="middle">4º</text><rect x="872" y="199" width="118" height="271" rx="8" fill="#ff5c39"/><rect x="872" y="199" width="118" height="271" rx="8" fill="#ff5c39" opacity=".35"/><path d="M931 153 l16 30 l-32 0 z" fill="#ffb03a"/><text x="931" y="500" font-family="Segoe UI,sans-serif" font-size="20" fill="#a3a09b" text-anchor="middle">5º</text>
+<line x1="140" y1="474" x2="1080" y2="474" stroke="#4a3a2c" stroke-width="3"/>
+<g transform="translate(140 96)">
+  <rect width="200" height="74" rx="10" fill="#241d18" stroke="#ffb03a" stroke-width="3"/>
+  <circle cx="0" cy="37" r="11" fill="#0c0c10"/><circle cx="200" cy="37" r="11" fill="#0c0c10"/>
+  <text x="100" y="49" font-family="Segoe UI,sans-serif" font-size="26" font-weight="800" fill="#ffb03a" text-anchor="middle">BILHETERIA</text>
+</g>
+<text x="1080" y="140" font-family="Segoe UI,sans-serif" font-size="24" fill="#a3a09b" text-anchor="end">ranking doméstico · EUA</text>
+</svg>

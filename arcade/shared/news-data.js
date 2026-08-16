@@ -7,13 +7,17 @@
            cover, featured, status ("draft" esconde), body (blocos).
    Blocos: p | h2 | quote | list | img
 
-   As 25 matérias abaixo são textos originais escritos para este site, de
-   análise atemporal — o tipo de conteúdo que continua recebendo visita
-   meses depois. Edite, reaproveite ou apague à vontade.
+   São 27 matérias publicadas (Cinema, Séries, Games e Bastidores): textos
+   originais de análise atemporal, o tipo de conteúdo que continua recebendo
+   visita meses depois. Edite, reaproveite ou apague à vontade.
 
-   Para NOTÍCIA do dia (estreia anunciada, elenco confirmado, data de
-   lançamento), escreva você quando o fato acontecer: invenção sobre pessoa
-   ou obra real é declaração falsa, e o AdSense reprova o site.
+   No fim do arquivo há 3 MODELOS de Celebridades em rascunho, para notícia
+   factual. Eles não aparecem no site até você trocar status para
+   "published".
+
+   Regra que vale para qualquer notícia: escreva apenas o que apurou em
+   fonte primária. Inventar declaração ou acontecimento sobre pessoa real é
+   notícia falsa — reprova no AdSense e cria risco jurídico de verdade.
    ========================================================================= */
 const A = "Redação Magicine";
 
@@ -520,6 +524,108 @@ window.MAGICINE_POSTS = [
       { type: "img", src: "img/bas-publicar.svg", alt: "Blocos de dados virando uma página montada", caption: "Os mesmos blocos alimentam o card, a listagem e a página." },
       { type: "h2", text: "Quando migrar" },
       { type: "p", text: "Enquanto forem poucas matérias por semana, editar o arquivo e publicar resolve. A troca compensa quando você quiser escrever de outro computador, ter mais de uma pessoa publicando ou agendar publicações. O arquivo COMO-PUBLICAR.md tem o passo a passo do dia a dia; o README traz o SQL da tabela." },
+    ],
+  },
+
+  // ------------------------------------------------------- CELEBRIDADES
+  {
+    slug: "bilheteria-homem-aranha-novo-dia",
+    title: "Homem-Aranha: Um Novo Dia entra no top 5 de bilheteria dos EUA",
+    excerpt:
+      "O longa deve fechar o domingo na quinta posição do ranking doméstico e já tem o quarto melhor terceiro fim de semana da história nos cinemas americanos.",
+    category: "Celebridades",
+    tags: ["bilheteria", "homem-aranha", "marvel", "cinema"],
+    author: A,
+    published_at: "2026-08-16",
+    featured: true,
+    cover: "img/cin-recorde-bilheteria.svg",
+    body: [
+      { type: "p", text: "Homem-Aranha: Um Novo Dia deve encerrar este domingo (16) como a quinta maior bilheteria da história nos Estados Unidos. À frente dele restam apenas quatro títulos, e a distância para o quarto colocado é curta o bastante para cair nos próximos dias." },
+      { type: "p", text: "O ranking doméstico até aqui tem Star Wars: O Despertar da Força na liderança, com US$ 936,6 milhões, seguido por Vingadores: Ultimato (US$ 858,3 milhões), Homem-Aranha: Sem Volta Para Casa (US$ 814,8 milhões) e Avatar (US$ 785,2 milhões) — este último, o alvo mais imediato." },
+      { type: "h2", text: "O terceiro fim de semana é o dado mais impressionante" },
+      { type: "p", text: "Mais do que o total acumulado, o que chama atenção é a resistência. O filme registrou a quarta maior arrecadação de um terceiro fim de semana já vista nos cinemas americanos, passando por Pantera Negra (US$ 66,3 milhões) e Vingadores: Ultimato (US$ 63,2 milhões). Só O Despertar da Força segue acima, com US$ 90,2 milhões no mesmo intervalo." },
+      { type: "p", text: "A comparação mais reveladora é interna: Sem Volta Para Casa, o capítulo anterior do personagem, havia feito US$ 56 milhões no terceiro fim de semana. Estreias enormes são relativamente comuns; sustentar público na terceira semana é o que separa um sucesso de um fenômeno." },
+      { type: "img", src: "img/cin-recorde-bilheteria.svg", alt: "Gráfico de barras comparando as maiores bilheterias domésticas dos Estados Unidos", caption: "O ranking doméstico e a posição que o filme deve ocupar ao fim do domingo." },
+      { type: "h2", text: "Quem está no filme" },
+      { type: "p", text: "Tom Holland volta ao papel principal, ao lado de Jacob Batalon como Ned e Zendaya como MJ. Entre os nomes novos está Sadie Sink, cujo personagem não foi revelado." },
+      { type: "p", text: "O elenco traz ainda Jon Bernthal como o Justiceiro — primeira aparição do personagem em um filme da Marvel — e Mark Ruffalo como o Hulk." },
+      { type: "list", items: [
+        "Direção: Destin Daniel Cretton",
+        "Roteiro: Erik Sommers e Chris McKenna",
+        "Em cartaz nos cinemas",
+      ] },
+      { type: "h2", text: "O que observar a partir daqui" },
+      { type: "p", text: "Dois marcos estão em jogo nas próximas semanas: a ultrapassagem de Avatar no ranking doméstico, que parece questão de dias, e o comportamento da quarta semana — historicamente, o ponto em que a curva de um blockbuster começa a ceder de vez." },
+    ],
+  },
+  // Três MODELOS marcados como rascunho (status: "draft"), então não
+  // aparecem no site. Preencha com um fato real e apurado, troque o status
+  // para "published" e a matéria entra sozinha na capa e no menu.
+  //
+  // Regra que não dá para contornar: só escreva o que você conferiu em
+  // fonte primária (comunicado oficial, entrevista, perfil verificado do
+  // artista). Inventar declaração ou acontecimento sobre pessoa real é
+  // notícia falsa — e o AdSense reprova o site.
+  {
+    slug: "modelo-estreia",
+    title: "MODELO — [Filme] chega aos cinemas em [data]",
+    excerpt: "Uma ou duas frases com o essencial: o que estreia, quando, e por que interessa.",
+    category: "Celebridades",
+    tags: ["estreia", "cinema"],
+    author: A,
+    published_at: "2026-08-17",
+    status: "draft",
+    cover: "img/bas-trailer.svg",
+    body: [
+      { type: "p", text: "PRIMEIRO PARÁGRAFO: responda o quê, quem, quando e onde. O leitor tem que sair daqui já sabendo a notícia, mesmo que não leia o resto." },
+      { type: "p", text: "SEGUNDO PARÁGRAFO: a fonte. \"Segundo comunicado divulgado pelo estúdio\", \"em entrevista ao veículo tal\". Nunca escreva um fato sem poder dizer de onde ele veio." },
+      { type: "h2", text: "O contexto" },
+      { type: "p", text: "Aqui entra o que só você tem: por que isso importa, o que veio antes, o que muda. É a parte que separa a sua matéria do release que todo mundo recebeu." },
+      { type: "h2", text: "Ficha" },
+      { type: "list", items: [
+        "Direção: [nome]",
+        "Elenco: [nomes]",
+        "Estreia: [data] · [cinema ou plataforma]",
+      ] },
+    ],
+  },
+  {
+    slug: "modelo-elenco",
+    title: "MODELO — [Ator] entra para o elenco de [obra]",
+    excerpt: "O anúncio, quem confirmou e o que se sabe sobre o papel.",
+    category: "Celebridades",
+    tags: ["elenco", "séries"],
+    author: A,
+    published_at: "2026-08-17",
+    status: "draft",
+    cover: "img/bas-elenco.svg",
+    body: [
+      { type: "p", text: "PRIMEIRO PARÁGRAFO: quem foi escalado, para qual produção, e quem anunciou." },
+      { type: "p", text: "Se o papel não foi detalhado, diga isso com todas as letras — \"o estúdio não informou qual personagem\" é melhor do que especular." },
+      { type: "h2", text: "O que já se sabe da produção" },
+      { type: "p", text: "Datas confirmadas, quem mais está no elenco, onde grava." },
+    ],
+  },
+  {
+    slug: "modelo-premiacao",
+    title: "MODELO — [Prêmio]: os vencedores da noite",
+    excerpt: "A lista completa e o que chamou atenção na cerimônia.",
+    category: "Celebridades",
+    tags: ["prêmios", "cinema"],
+    author: A,
+    published_at: "2026-08-17",
+    status: "draft",
+    cover: "img/bas-bilheteria.svg",
+    body: [
+      { type: "p", text: "PRIMEIRO PARÁGRAFO: o grande vencedor e o número de estatuetas." },
+      { type: "h2", text: "Principais categorias" },
+      { type: "list", items: [
+        "Melhor filme: [obra]",
+        "Direção: [nome]",
+        "Atuação: [nome]",
+      ] },
+      { type: "h2", text: "O que ficou da noite" },
+      { type: "p", text: "Sua leitura da cerimônia — a parte autoral, que ninguém copia." },
     ],
   },
 ];

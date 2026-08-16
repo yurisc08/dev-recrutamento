@@ -77,7 +77,9 @@
       return sortByDate(posts.filter((p) => p.status !== "draft"));
     },
     async get(slug) {
-      return (global.MAGICINE_POSTS || []).find((p) => p.slug === slug) || null;
+      // rascunho não pode abrir nem por link direto
+      const post = (global.MAGICINE_POSTS || []).find((p) => p.slug === slug);
+      return post && post.status !== "draft" ? post : null;
     },
   };
 
@@ -100,9 +102,11 @@
       return await res.json();
     },
     async get(slug) {
+      // o filtro de status repete o RLS de propósito: se a policy for
+      // afrouxada um dia, o rascunho ainda não vaza pela página
       const url =
         `${SUPABASE.url}/rest/v1/${SUPABASE.table}` +
-        `?select=*&slug=eq.${encodeURIComponent(slug)}&limit=1`;
+        `?select=*&status=eq.published&slug=eq.${encodeURIComponent(slug)}&limit=1`;
       const res = await fetch(url, { headers: this.headers() });
       if (!res.ok) throw new Error("Supabase respondeu " + res.status);
       const rows = await res.json();

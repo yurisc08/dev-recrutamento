@@ -9,8 +9,7 @@
     Cinema: "var(--c-cinema)",
     "Séries": "var(--c-series)",
     Games: "var(--c-games)",
-    Anime: "var(--c-anime)",
-    Quadrinhos: "var(--c-quadrinhos)",
+    Celebridades: "var(--c-celebridades)",
     Bastidores: "var(--c-bastidores)",
   };
 
@@ -45,6 +44,78 @@
           <path d="M0 -18 L0 -34 M0 -30 L-9 -40 M0 -30 L9 -40" stroke="#e9dcc8" stroke-width="3.4" stroke-linecap="round"/>
           <circle cx="0" cy="-41" r="5.5" fill="#f0c9a0"/></g>
         <path d="M258 96 L265 106 L258 117 L251 106Z" fill="#6ee7ff"/>
+      `,
+    },
+    {
+      id: "fliperama", name: "Fliperama", genre: "Pinball", tint: "#ff5c39",
+      desc: "Pinball com física de verdade: bumpers, alvos que apagam e multiplicador por acertos seguidos.",
+      path: "games/fliperama/", unit: "pts", best: ["fliperama"],
+      thumb: `
+        <rect width="320" height="180" fill="#141026"/>
+        <g stroke="#4a3a5c" stroke-width="4" stroke-linecap="round" fill="none">
+          <path d="M22 20 L22 118"/><path d="M298 20 L298 96"/>
+          <path d="M22 20 L52 6 L268 6 L298 20"/>
+          <path d="M22 118 L112 158"/><path d="M298 96 L246 122 L208 158"/>
+        </g>
+        <g><circle cx="106" cy="62" r="17" fill="#2a2038" stroke="#ffb03a" stroke-width="3"/>
+           <circle cx="106" cy="62" r="7" fill="#ff5c39"/>
+           <circle cx="214" cy="62" r="17" fill="#2a2038" stroke="#ffb03a" stroke-width="3"/>
+           <circle cx="214" cy="62" r="7" fill="#ff5c39"/>
+           <circle cx="160" cy="34" r="14" fill="#2a2038" stroke="#ffb03a" stroke-width="3"/></g>
+        <g fill="#5ec9a7"><rect x="46" y="88" width="22" height="8"/><rect x="46" y="104" width="22" height="8"/>
+           <rect x="252" y="88" width="22" height="8"/><rect x="252" y="104" width="22" height="8"/></g>
+        <g stroke="#ff5c39" stroke-width="11" stroke-linecap="round">
+          <path d="M120 160 L162 148"/><path d="M200 160 L158 148"/></g>
+        <circle cx="160" cy="104" r="8" fill="#fff"/>
+      `,
+    },
+    {
+      id: "colosso", name: "Colosso", genre: "Escalada", tint: "#ffb03a",
+      desc: "O gorila gigante sobe a torre. Desvie do entulho e derrube os aviões que chegam perto.",
+      path: "games/colosso/", unit: "pts", best: ["colosso"],
+      thumb: `
+        <defs><linearGradient id="k-sky" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0" stop-color="#0b1024"/><stop offset="1" stop-color="#c98b6b"/></linearGradient></defs>
+        <rect width="320" height="180" fill="url(#k-sky)"/>
+        <circle cx="264" cy="34" r="15" fill="#fff0d2" opacity=".9"/>
+        <rect x="110" y="0" width="100" height="180" fill="#20242e"/>
+        <rect x="110" y="0" width="7" height="180" fill="#2b303c"/>
+        <rect x="203" y="0" width="7" height="180" fill="#2b303c"/>
+        ${[0,1,2,3,4].map((r) => [0,1,2,3].map((c) =>
+          `<rect x="${124 + c * 20}" y="${14 + r * 34}" width="13" height="17" fill="${(r + c) % 4 === 0 ? "rgba(255,196,110,.75)" : "rgba(255,255,255,.06)"}"/>`).join("")).join("")}
+        <g transform="translate(160 104)">
+          <ellipse rx="21" ry="25" fill="#4a3b34"/>
+          <ellipse cy="3" rx="13" ry="16" fill="#6b574c"/>
+          <path d="M9 -5 L34 -26" stroke="#3a2f2a" stroke-width="11" stroke-linecap="round"/>
+          <path d="M-10 -2 L-25 15" stroke="#3a2f2a" stroke-width="10" stroke-linecap="round"/>
+          <circle cx="2" cy="-25" r="14" fill="#4a3b34"/>
+          <ellipse cx="5" cy="-22" rx="8" ry="6" fill="#8a7062"/>
+          <circle cx="6" cy="-30" r="2" fill="#1a1410"/><circle cx="0" cy="-30" r="2" fill="#1a1410"/>
+        </g>
+        <g transform="translate(60 60)" fill="#c9d2de">
+          <path d="M-18 0 L12 -4 L20 0 L12 4Z"/><rect x="-8" y="-10" width="6" height="20" fill="#8b96a6"/></g>
+        <g fill="#7c6a58"><rect x="238" y="120" width="14" height="10" transform="rotate(20 245 125)"/></g>
+      `,
+    },
+    {
+      id: "linhafrente", name: "Linha de Frente", genre: "Tiro", tint: "#3fd8ff",
+      desc: "Tiro de arena em vista de cima: ondas convergem para você e apertam a cada rodada.",
+      path: "games/linhafrente/", unit: "pts", best: ["linhafrente"],
+      thumb: `
+        <rect width="320" height="180" fill="#101216"/>
+        <g stroke="#ffb03a" stroke-opacity=".08" stroke-width="1">
+          ${Array.from({ length: 9 }, (_, i) => `<line x1="${i * 36}" y1="0" x2="${i * 36}" y2="180"/>`).join("")}
+          ${Array.from({ length: 5 }, (_, i) => `<line x1="0" y1="${i * 36}" x2="320" y2="${i * 36}"/>`).join("")}</g>
+        <g transform="translate(160 96) rotate(-20)" fill="#3fd8ff">
+          <path d="M19 0 L-12 -13 L-5 0 L-12 13Z"/><rect x="2" y="-3" width="12" height="6" fill="#0f1a20"/></g>
+        <g fill="#ffce4d">
+          <circle cx="196" cy="76" r="3.4"/><circle cx="222" cy="66" r="3.4"/><circle cx="248" cy="56" r="3.4"/></g>
+        <g fill="#ff5c39">
+          <path d="M262 40 L246 32 L250 40 L246 48Z" transform="rotate(160 254 40)"/>
+          <path d="M64 132 L48 124 L52 132 L48 140Z" transform="rotate(-20 56 132)"/>
+          <path d="M78 44 L62 36 L66 44 L62 52Z" transform="rotate(35 70 44)"/></g>
+        <path d="M270 122 L254 114 L258 122 L254 130Z" transform="rotate(200 262 122)" fill="#c1121f"/>
+        <g fill="#5ec9a7"><rect x="92" y="60" width="5" height="16"/><rect x="86" y="66" width="16" height="5"/></g>
       `,
     },
     {
