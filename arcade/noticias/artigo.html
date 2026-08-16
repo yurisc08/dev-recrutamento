@@ -17,8 +17,12 @@
     <div class="nav-in">
       <a class="brand" href="../">magi<b>cine</b></a>
       <nav class="nav-links">
-        <a href="./">Notícias</a>
-        <a href="../#jogos">Jogos</a>
+        <a href="./">Todas</a>
+        <a href="./?cat=Cinema">Cinema</a>
+        <a href="./?cat=S%C3%A9ries">Séries</a>
+        <a href="./?cat=Games">Games</a>
+        <a href="./?cat=Bastidores">Bastidores</a>
+        <a class="is-arcade" href="../#jogos">🎮 Arcade</a>
       </nav>
     </div>
   </header>
@@ -42,6 +46,7 @@
   </footer>
 
   <script src="../shared/bg.js"></script>
+  <script>window.MAGICINE_BASE = "../";</script>
   <script src="../shared/news-data.js"></script>
   <script src="../shared/news.js"></script>
   <script>
@@ -66,7 +71,7 @@
           case "list":
             return `<ul>${(b.items || []).map((i) => `<li>${esc(i)}</li>`).join("")}</ul>`;
           case "img":
-            return `<figure><img src="${esc(b.src)}" alt="${esc(b.alt || "")}" loading="lazy">${
+            return `<figure><img src="${esc(News.media(b.src))}" alt="${esc(b.alt || "")}" loading="lazy">${
               b.caption ? `<figcaption>${esc(b.caption)}</figcaption>` : ""
             }</figure>`;
           default:
@@ -113,7 +118,7 @@
           </div>
         </header>
         <div class="article-cover"${
-          post.cover ? ` style="background-image:url('${esc(post.cover)}')"` : ""
+          post.cover ? ` style="background-image:url('${esc(News.media(post.cover))}')"` : ""
         }></div>
         ${post.excerpt ? `<p class="lede" style="text-align:left;margin:0 0 22px">${esc(post.excerpt)}</p>` : ""}
         <div class="article-body">${renderBlocks(post.body)}</div>
@@ -124,7 +129,7 @@
         document.getElementById("related-wrap").hidden = false;
         document.getElementById("related").innerHTML = rel.map((p) => `
           <a class="post" href="artigo.html?slug=${encodeURIComponent(p.slug)}">
-            <div class="cover"${p.cover ? ` style="background-image:url('${esc(p.cover)}')"` : ""}></div>
+            <div class="cover"${p.cover ? ` style="background-image:url('${esc(News.media(p.cover))}')"` : ""}></div>
             <div class="post-body">
               <span class="kicker">${esc(p.category || "")}</span>
               <h3>${esc(p.title)}</h3>

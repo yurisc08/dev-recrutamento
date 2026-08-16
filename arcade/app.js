@@ -145,7 +145,7 @@
 
   const fmt = (n) => Math.floor(n).toLocaleString("pt-BR");
   const link = (p) => `noticias/artigo.html?slug=${encodeURIComponent(p.slug)}`;
-  const cover = (p) => (p.cover ? ` style="background-image:url('${esc(p.cover)}')"` : "");
+  const cover = (p) => (p.cover ? ` style="background-image:url('${esc(News.media(p.cover))}')"` : "");
 
   function bestOf(keys) {
     return keys.reduce((sum, k) => {
@@ -259,7 +259,7 @@
     const cats = [...porCategoria.keys()].sort();
     nav.innerHTML =
       cats.map((cat) => `<a href="noticias/?cat=${encodeURIComponent(cat)}">${esc(cat)}</a>`).join("") +
-      `<a href="noticias/">Todas</a><a href="#jogos">Arcade</a>`;
+      `<a href="noticias/">Todas</a><a class="is-arcade" href="#jogos">🎮 Arcade</a>`;
   }
 
   // ----------------------------------------------------------------- jogos

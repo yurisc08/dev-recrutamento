@@ -45,7 +45,7 @@ se montam sozinhas.
 | --- | --- |
 | `slug` | Sem acento, sem espaço, sem maiúscula. Use hífen. **Nunca repita** um slug já usado. |
 | `published_at` | Sempre `"AAAA-MM-DD"`. É por ele que o site ordena. |
-| `category` | Uma de: Cinema, Séries, Games, Anime, Quadrinhos, Bastidores. Uma categoria nova aparece sozinha no menu. |
+| `category` | Uma de: **Cinema, Séries, Games, Bastidores**. Uma categoria nova aparece sozinha no menu e nos filtros — para criar uma, basta usar o nome novo e dar a ela uma cor em `--c-...` no `style.css`. |
 | `featured` | `true` manda para a capa grande. Se houver várias, ganha a mais recente. |
 | `status` | `"draft"` esconde do site. Serve para deixar meio escrito. |
 
@@ -81,6 +81,14 @@ O campo `cover` aceita:
 
 Sem `cover`, entra um fundo gerado com a cor da editoria — funciona bem, não
 é obrigatório ter imagem.
+
+As ilustrações que já vêm no site estão em `img/`, em SVG. Você pode
+reaproveitá-las em matérias novas do mesmo assunto: é só apontar o `cover`
+para o arquivo que combina.
+
+**Atenção ao caminho:** escreva sempre relativo à raiz (`img/arquivo.svg`),
+nunca `../img/`. O site resolve o resto sozinho — se você escrever com `../`,
+a imagem some na home.
 
 **Sobre direito de imagem:** use banco livre (Unsplash, Pexels) ou material
 oficial de divulgação do estúdio, com o crédito que eles pedem. Pegar imagem

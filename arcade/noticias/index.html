@@ -17,8 +17,12 @@
     <div class="nav-in">
       <a class="brand" href="../">magi<b>cine</b></a>
       <nav class="nav-links">
-        <a href="./" aria-current="page">Notícias</a>
-        <a href="../#jogos">Jogos</a>
+        <a href="./" aria-current="page">Todas</a>
+        <a href="./?cat=Cinema">Cinema</a>
+        <a href="./?cat=S%C3%A9ries">Séries</a>
+        <a href="./?cat=Games">Games</a>
+        <a href="./?cat=Bastidores">Bastidores</a>
+        <a class="is-arcade" href="../#jogos">🎮 Arcade</a>
       </nav>
     </div>
   </header>
@@ -49,6 +53,7 @@
   </footer>
 
   <script src="../shared/bg.js"></script>
+  <script>window.MAGICINE_BASE = "../";</script>
   <script src="../shared/news-data.js"></script>
   <script src="../shared/news.js"></script>
   <script>
@@ -68,7 +73,7 @@
     let shown = News.PAGE_SIZE;
 
     function card(p) {
-      const cover = p.cover ? ` style="background-image:url('${esc(p.cover)}')"` : "";
+      const cover = p.cover ? ` style="background-image:url('${esc(News.media(p.cover))}')"` : "";
       return `
         <a class="post" href="artigo.html?slug=${encodeURIComponent(p.slug)}">
           <div class="cover"${cover}></div>

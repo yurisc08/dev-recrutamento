@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675" width="1200" height="675" role="img">
+<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#1c1713"/><stop offset="1" stop-color="#0c0c10"/></linearGradient>
+<radialGradient id="gl"><stop offset="0" stop-color="#ffb03a" stop-opacity=".3"/><stop offset="1" stop-color="#ffb03a" stop-opacity="0"/></radialGradient>
+<marker id="ar" markerWidth="12" markerHeight="12" refX="9" refY="6" orient="auto"><path d="M0 0 L12 6 L0 12 Z" fill="#ffb03a"/></marker></defs>
+<rect width="1200" height="675" fill="url(#bg)"/><ellipse cx="900" cy="110" rx="520" ry="340" fill="url(#gl)"/>
+<g transform="translate(370 360)"><circle cy="-118" r="60" fill="#ffb03a"/><path d="M-100 128 C-100 20,-56 -32,0 -32 C56 -32,100 20,100 128 Z" fill="#ffb03a"/></g><g transform="translate(830 360)"><circle cy="-118" r="60" fill="none" stroke="#ff5c39" stroke-width="5" stroke-dasharray="14 12"/><path d="M-100 128 C-100 20,-56 -32,0 -32 C56 -32,100 20,100 128 Z" fill="none" stroke="#ff5c39" stroke-width="5" stroke-dasharray="14 12"/><text x="0" y="20" font-family="Segoe UI,sans-serif" font-size="112" font-weight="800" fill="#ff5c39" text-anchor="middle">?</text></g></svg>

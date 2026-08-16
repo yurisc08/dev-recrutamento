@@ -37,6 +37,20 @@
     return list.slice().sort((a, b) => String(b.published_at).localeCompare(String(a.published_at)));
   }
 
+  /**
+   * Resolve o caminho de uma imagem. As matérias guardam caminhos relativos
+   * à raiz do site ("img/capa.svg"), mas /noticias/ está um nível abaixo —
+   * sem isso, a mesma matéria carregaria a capa na home e daria 404 na
+   * listagem. Cada página declara a própria base em MAGICINE_BASE.
+   */
+  function media(src) {
+    if (!src) return "";
+    if (/^(https?:)?\/\//.test(src) || src.startsWith("/") || src.startsWith("data:")) {
+      return src;
+    }
+    return (global.MAGICINE_BASE || "") + src;
+  }
+
   /** Data por extenso em pt-BR, tolerante a valor ausente. */
   function formatDate(value) {
     if (!value) return "";
@@ -170,6 +184,7 @@
 
     formatDate,
     readingTime,
+    media,
     PAGE_SIZE,
   };
 

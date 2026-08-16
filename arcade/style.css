@@ -91,9 +91,25 @@ img {
   top: 0;
   z-index: 30;
   border-bottom: 1px solid var(--line);
-  background: color-mix(in srgb, var(--bg) 88%, transparent);
-  backdrop-filter: blur(14px) saturate(1.3);
-  -webkit-backdrop-filter: blur(14px) saturate(1.3);
+  background: color-mix(in srgb, var(--bg) 90%, transparent);
+  backdrop-filter: blur(16px) saturate(1.35);
+  -webkit-backdrop-filter: blur(16px) saturate(1.35);
+  box-shadow: 0 12px 30px -22px #000;
+}
+
+/* fita de editorias no topo do menu */
+.nav::before {
+  content: "";
+  display: block;
+  height: 3px;
+  background: linear-gradient(
+    90deg,
+    var(--c-cinema) 0 25%,
+    var(--c-series) 25% 50%,
+    var(--c-games) 50% 75%,
+    var(--c-bastidores) 75% 100%
+  );
+  opacity: 0.9;
 }
 
 .nav-in {
@@ -127,9 +143,10 @@ img {
   content: "";
   width: 7px;
   height: 7px;
-  margin-left: 3px;
+  margin-left: 4px;
   border-radius: 50%;
   background: var(--ember);
+  box-shadow: 0 0 12px 1px color-mix(in srgb, var(--ember) 70%, transparent);
 }
 
 .nav-links {
@@ -145,20 +162,61 @@ img {
 }
 
 .nav-links a {
-  padding: 7px 13px;
-  border-radius: 8px;
+  position: relative;
+  padding: 9px 14px 10px;
   color: var(--muted);
-  font-size: 14px;
-  font-weight: 600;
+  font-size: 13.4px;
+  font-weight: 700;
+  letter-spacing: 0.7px;
+  text-transform: uppercase;
   text-decoration: none;
   white-space: nowrap;
-  transition: color 0.15s, background 0.15s;
+  transition: color 0.16s;
 }
 
-.nav-links a:hover,
+/* sublinhado que cresce do centro, sem animar sozinho */
+.nav-links a::after {
+  content: "";
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: 2px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--amber);
+  scale: 0 1;
+  transition: scale 0.18s ease;
+}
+
+.nav-links a:hover {
+  color: var(--text);
+}
+
+.nav-links a:hover::after,
+.nav-links a[aria-current="page"]::after {
+  scale: 1 1;
+}
+
 .nav-links a[aria-current="page"] {
   color: var(--text);
-  background: var(--surface-2);
+}
+
+/* o item do Arcade se destaca dos demais */
+.nav-links a.is-arcade {
+  margin-left: 6px;
+  padding: 7px 15px;
+  border: 1px solid color-mix(in srgb, var(--ember) 45%, transparent);
+  border-radius: 8px;
+  color: var(--ember);
+}
+
+.nav-links a.is-arcade::after {
+  display: none;
+}
+
+.nav-links a.is-arcade:hover {
+  background: color-mix(in srgb, var(--ember) 14%, transparent);
+  color: var(--ember);
 }
 
 /* -------------------------------------------------------------- layout */
@@ -583,10 +641,18 @@ code {
 
 /* -------------------------------------------------------------- artigo */
 
+/* O corpo do texto precisa de uma superfície própria: solto sobre o fundo
+   animado, a leitura ficava desconfortável. */
 .article {
-  max-width: 730px;
-  margin: 0 auto;
-  padding: clamp(20px, 4vw, 40px) 0;
+  max-width: 800px;
+  margin: clamp(18px, 3vw, 30px) auto;
+  padding: clamp(24px, 5vw, 56px) clamp(20px, 4.5vw, 60px);
+  border: 1px solid var(--line);
+  border-radius: 20px;
+  background: color-mix(in srgb, #14121a 92%, transparent);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
+  box-shadow: 0 30px 70px -30px #000;
 }
 
 .article-head {
@@ -613,7 +679,7 @@ code {
 
 .article-cover {
   aspect-ratio: 16 / 8;
-  margin: 24px 0;
+  margin: 24px 0 28px;
   border: 1px solid var(--line);
   border-radius: var(--radius);
   background:
@@ -676,6 +742,12 @@ code {
   font-style: normal;
 }
 
+.article-body figure img {
+  width: 100%;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+}
+
 .article-body figure figcaption {
   margin-top: 7px;
   color: var(--muted);
@@ -707,6 +779,11 @@ code {
 }
 
 /* ---------------------------------------------------------------- pé */
+
+#related-wrap {
+  max-width: 1000px;
+  margin: 0 auto;
+}
 
 .foot {
   max-width: var(--maxw);

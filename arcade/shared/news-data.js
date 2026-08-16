@@ -3,341 +3,523 @@
    Esta é a sua redação enquanto o Supabase não entra. Cada objeto vira um
    card na home e uma página em /noticias/artigo.html?slug=...
 
-   Campos:
-     slug          endereço na URL (sem acento, sem espaço)   - OBRIGATÓRIO
-     title         título                                      - OBRIGATÓRIO
-     excerpt       uma ou duas frases de chamada
-     category      "Cinema" | "Séries" | "Games" | "Anime" | "Quadrinhos" | "Bastidores"
-     tags          palavras-chave, usadas na busca
-     author        quem assina
-     published_at  "AAAA-MM-DD"
-     cover         caminho ou URL da imagem (opcional; sem ela entra um
-                   fundo gerado com a cor da editoria)
-     featured      true manda para a capa
-     status        "draft" esconde do site
-     body          blocos: p | h2 | quote | list | img
+   Campos: slug, title, excerpt, category, tags, author, published_at,
+           cover, featured, status ("draft" esconde), body (blocos).
+   Blocos: p | h2 | quote | list | img
 
-   As matérias abaixo são textos originais escritos para este site, de
-   análise atemporal — servem para o site não nascer vazio e para você ver
-   o layout cheio. Edite, reaproveite ou apague à vontade.
+   As 25 matérias abaixo são textos originais escritos para este site, de
+   análise atemporal — o tipo de conteúdo que continua recebendo visita
+   meses depois. Edite, reaproveite ou apague à vontade.
+
+   Para NOTÍCIA do dia (estreia anunciada, elenco confirmado, data de
+   lançamento), escreva você quando o fato acontecer: invenção sobre pessoa
+   ou obra real é declaração falsa, e o AdSense reprova o site.
    ========================================================================= */
+const A = "Redação Magicine";
+
 window.MAGICINE_POSTS = [
+  // ------------------------------------------------------------- CINEMA
   {
-    slug: "terceiro-ato-onde-os-filmes-desabam",
+    slug: "cin-terceiro-ato",
     title: "O terceiro ato é onde quase todo filme desaba",
-    excerpt:
-      "Roteiros que passam duas horas construindo uma pergunta interessante costumam gastar os últimos vinte minutos respondendo a pergunta errada.",
-    category: "Cinema",
-    tags: ["roteiro", "análise", "estrutura"],
-    author: "Redação Magicine",
-    published_at: "2026-08-16",
-    featured: true,
+    excerpt: "Roteiros que passam duas horas construindo uma pergunta interessante costumam gastar os últimos vinte minutos respondendo a pergunta errada.",
+    category: "Cinema", tags: ["roteiro", "estrutura"], author: A,
+    published_at: "2026-08-16", featured: true, cover: "img/cin-terceiro-ato.svg",
     body: [
-      {
-        type: "p",
-        text: "Existe um padrão que fica difícil de ignorar depois que você repara nele: filmes que funcionam muito bem até os dois terços frequentemente escorregam no trecho final. Não é falta de orçamento nem pressa de montagem. É uma troca de perguntas.",
-      },
+      { type: "p", text: "Existe um padrão difícil de ignorar depois que você repara nele: filmes que funcionam muito bem até os dois terços escorregam no trecho final. Não é falta de orçamento nem pressa de montagem. É uma troca de perguntas." },
       { type: "h2", text: "A pergunta dramática e a pergunta logística" },
-      {
-        type: "p",
-        text: "Um bom primeiro ato instala uma pergunta dramática: essa pessoa vai conseguir perdoar o irmão? ela vai admitir que estava errada? o grupo sobrevive junto ou se estilhaça? São perguntas sobre gente. O terceiro ato, com uma frequência incômoda, responde outra coisa: quem vence a luta, se o botão é apertado a tempo, se a nave escapa.",
-      },
-      {
-        type: "p",
-        text: "A troca acontece porque a pergunta logística é mais fácil de filmar. Ela tem cronômetro, tem lugar, tem efeito visual. A pergunta dramática precisa de uma cena em que duas pessoas conversam — e isso assusta produção.",
-      },
-      { type: "h2", text: "O sintoma: o clímax que poderia ser trocado" },
-      {
-        type: "p",
-        text: "Um teste rápido: se o clímax do filme pudesse ser transplantado para outro filme do mesmo gênero sem que nada se perdesse, ele não é o clímax daquela história. É só uma sequência de ação ocupando o lugar dela.",
-      },
-      {
-        type: "quote",
-        text: "O final não precisa ser grande. Precisa ser sobre a mesma coisa que o começo prometeu.",
-      },
-      { type: "h2", text: "Quando dá certo" },
-      {
-        type: "p",
-        text: "Os terceiros atos que ficam na memória quase sempre resolvem as duas perguntas ao mesmo tempo, e usam a logística como veículo da emoção. A escolha física que o protagonista faz sob pressão é a resposta à pergunta dramática — não um evento paralelo a ela.",
-      },
-      {
-        type: "list",
-        items: [
-          "A decisão final custa alguma coisa ao protagonista",
-          "A habilidade usada foi estabelecida antes, e não aparece do nada",
-          "Alguém muda de ideia sobre outra pessoa, não só sobre o plano",
-          "O antagonista perde por um motivo ligado ao tema, não por azar",
-        ],
-      },
-      {
-        type: "p",
-        text: "Nada disso exige menos ação. Exige que a ação signifique algo — e isso é decidido no roteiro, muito antes de qualquer explosão entrar no orçamento.",
-      },
+      { type: "p", text: "Um bom primeiro ato instala uma pergunta dramática: essa pessoa vai perdoar o irmão? vai admitir que errou? o grupo sobrevive junto ou se estilhaça? São perguntas sobre gente. O terceiro ato, com frequência incômoda, responde outra coisa: quem vence a luta, se o botão é apertado a tempo, se a nave escapa." },
+      { type: "p", text: "A troca acontece porque a pergunta logística é mais fácil de filmar. Ela tem cronômetro, lugar e efeito visual. A pergunta dramática precisa de uma cena em que duas pessoas conversam — e isso assusta produção." },
+      { type: "img", src: "img/cin-terceiro-ato.svg", alt: "Três blocos representando os atos, o terceiro rachado", caption: "O terceiro ato costuma trincar por dentro antes de quebrar na tela." },
+      { type: "h2", text: "O teste do clímax trocado" },
+      { type: "p", text: "Se o clímax do filme pudesse ser transplantado para outro filme do mesmo gênero sem que nada se perdesse, ele não é o clímax daquela história. É uma sequência de ação ocupando o lugar dela." },
+      { type: "quote", text: "O final não precisa ser grande. Precisa ser sobre a mesma coisa que o começo prometeu." },
+      { type: "list", items: [
+        "A decisão final custa alguma coisa ao protagonista",
+        "A habilidade usada foi estabelecida antes, e não aparece do nada",
+        "Alguém muda de ideia sobre outra pessoa, não só sobre o plano",
+        "O antagonista perde por um motivo ligado ao tema, não por azar",
+      ] },
+      { type: "p", text: "Nada disso exige menos ação. Exige que a ação signifique algo — e isso é decidido no roteiro, muito antes de qualquer explosão entrar no orçamento." },
     ],
   },
   {
-    slug: "por-que-esquecemos-o-meio-da-temporada",
-    title: "Por que você lembra do piloto e esquece o meio da temporada",
-    excerpt:
-      "A memória de uma série não é distribuída por igual: ela se concentra no começo, no fim e nos episódios que quebram a rotina — e os roteiristas sabem disso.",
-    category: "Séries",
-    tags: ["séries", "estrutura", "análise"],
-    author: "Redação Magicine",
-    published_at: "2026-08-15",
-    featured: true,
+    slug: "cin-ritmo",
+    title: "Por que filmes longos parecem curtos (e curtos parecem eternos)",
+    excerpt: "Duração não é a mesma coisa que ritmo. O que cansa o público não é o relógio — é a sensação de que a história parou de avançar.",
+    category: "Cinema", tags: ["ritmo", "montagem"], author: A,
+    published_at: "2026-08-15", featured: true, cover: "img/cin-ritmo.svg",
     body: [
-      {
-        type: "p",
-        text: "Peça a alguém para resumir uma série que a pessoa amou e observe o que sai: o piloto, um ou dois episódios do meio e o final. O resto vira um bloco indistinto de \"aí acontecem umas coisas\". Isso não é defeito de quem assiste.",
-      },
-      { type: "h2", text: "O meio existe para sustentar, não para brilhar" },
-      {
-        type: "p",
-        text: "Uma temporada é montada com funções diferentes por episódio. O piloto vende o mundo. O final paga a promessa. Os episódios do meio, na maior parte, mantêm as peças em movimento: aproximam personagens, plantam informação que só será usada depois, testam relações. É trabalho de fundação, e fundação não aparece na foto.",
-      },
-      { type: "h2", text: "Os que escapam" },
-      {
-        type: "p",
-        text: "Os episódios do meio que grudam são quase sempre os que quebram a fórmula: um capítulo inteiro em um único cenário, um que muda de ponto de vista, um que salta no tempo, um que abandona a trama principal para ficar com um personagem secundário. Eles não avançam mais que os outros — só são estruturalmente diferentes, e a memória guarda diferença.",
-      },
-      {
-        type: "quote",
-        text: "A memória não arquiva por importância. Arquiva por contraste.",
-      },
-      { type: "h2", text: "O que isso muda para quem assiste" },
-      {
-        type: "p",
-        text: "Vale como aviso contra um julgamento comum: dizer que uma temporada \"caiu no meio\" às vezes descreve mais o funcionamento da memória do que a qualidade do texto. O teste honesto é perguntar se o final funcionou — porque se funcionou, o meio fez o trabalho dele, mesmo sem você lembrar.",
-      },
+      { type: "p", text: "Todo mundo já saiu de um filme de duas horas e meia dizendo que passou voando, e de um de noventa minutos com a sensação de ter envelhecido na cadeira. A diferença raramente está na duração." },
+      { type: "h2", text: "Ritmo é expectativa, não velocidade" },
+      { type: "p", text: "Cena rápida não é sinônimo de ritmo bom. O que segura a atenção é ter sempre uma pergunta aberta: o que ele vai fazer agora? ela vai descobrir? dá tempo? Enquanto houver uma pergunta viva, o público espera. Quando todas foram respondidas e a próxima ainda não começou, o filme para — mesmo que a montagem esteja frenética." },
+      { type: "img", src: "img/cin-ritmo.svg", alt: "Linha do tempo com segmentos de tamanhos diferentes", caption: "Blocos longos não cansam; blocos sem pergunta aberta, sim." },
+      { type: "h2", text: "O erro do meio confortável" },
+      { type: "p", text: "É comum um filme resolver cedo demais a tensão inicial e demorar a instalar a próxima. Esse vão — às vezes de dez minutos — é onde o público confere o celular. Um roteiro bem construído abre a pergunta seguinte antes de fechar a anterior." },
+      { type: "p", text: "Por isso obras longas e contemplativas podem funcionar: elas trocam a pergunta de lugar. Em vez de \"o que acontece agora\", instalam \"quem é essa pessoa\" — e mantêm essa pergunta aberta até o fim." },
     ],
   },
   {
-    slug: "o-que-os-jogos-aprenderam-com-o-cinema",
-    title: "O que os jogos aprenderam com o cinema — e o que devolveram",
-    excerpt:
-      "A troca começou com os jogos imitando enquadramentos. Décadas depois, é o cinema que anda pegando emprestada a gramática dos jogos.",
-    category: "Games",
-    tags: ["games", "linguagem", "cinema"],
-    author: "Redação Magicine",
-    published_at: "2026-08-14",
-    featured: true,
-    body: [
-      {
-        type: "p",
-        text: "Por muito tempo a relação foi de mão única e um pouco constrangida: jogos queriam ser filmes. Cutscene era prêmio, e a parte jogável era o intervalo entre os pedaços bonitos.",
-      },
-      { type: "h2", text: "A fase da imitação" },
-      {
-        type: "p",
-        text: "Dessa fase vieram coisas boas — o cuidado com enquadramento, luz e ritmo de montagem — e uma armadilha: cenas em que o jogador vira espectador do próprio personagem, assistindo alguém fazer o que ele estava fazendo até dois segundos atrás, muitas vezes melhor.",
-      },
-      { type: "h2", text: "O que só o jogo faz" },
-      {
-        type: "p",
-        text: "A virada veio quando ficou claro que a mídia tem um recurso que o cinema não tem: tornar o público responsável. Um filme pode mostrar uma escolha difícil. Um jogo pode fazer você tomá-la e depois conviver com ela por dez horas.",
-      },
-      {
-        type: "list",
-        items: [
-          "Cenário que conta história sem diálogo, porque você escolhe onde olhar",
-          "Ritmo controlado pelo jogador, não pela montagem",
-          "Regras como argumento: o que o jogo permite e proíbe é o que ele pensa",
-          "Repetição com sentido — morrer e tentar de novo vira tema, não punição",
-        ],
-      },
-      { type: "h2", text: "A devolução" },
-      {
-        type: "p",
-        text: "Hoje a influência corre nos dois sentidos. Planos-sequência longos que acompanham alguém por trás do ombro, geografia de espaço construída para o público entender rotas de fuga, estruturas narrativas com caminhos alternativos — tudo isso circulou nos jogos antes de virar recurso comum na tela grande.",
-      },
-      {
-        type: "p",
-        text: "A conversa ficou mais interessante quando as duas mídias pararam de tentar ser a outra e começaram a roubar só o que servia.",
-      },
-    ],
-  },
-  {
-    slug: "animacao-japonesa-envelhece-melhor",
-    title: "Por que a animação desenhada à mão envelhece melhor que o CGI da mesma época",
-    excerpt:
-      "Não é nostalgia. É uma diferença técnica entre estilizar e simular — e simulação envelhece contra a memória do real.",
-    category: "Anime",
-    tags: ["animação", "técnica", "anime"],
-    author: "Redação Magicine",
-    published_at: "2026-08-13",
-    featured: false,
-    body: [
-      {
-        type: "p",
-        text: "Assista a uma produção animada à mão de trinta anos atrás e depois a uma computadorizada de vinte. É bem provável que a mais velha pareça mais nova. Isso se repete demais para ser gosto pessoal.",
-      },
-      { type: "h2", text: "Estilizar não tem alvo móvel" },
-      {
-        type: "p",
-        text: "Um desenho estilizado propõe uma convenção: o mundo é assim aqui dentro. Não existe versão \"correta\" com a qual comparar, então ele não pode ficar defasado — só sair de moda, que é outra coisa e costuma voltar.",
-      },
-      {
-        type: "p",
-        text: "A simulação faz a aposta oposta. Ela se mede contra o real, e o real está sempre disponível na sua janela. Cada avanço técnico posterior atualiza a régua e empurra o trabalho antigo para o passado.",
-      },
-      {
-        type: "quote",
-        text: "Quem estiliza combina uma regra com o público. Quem simula assina um contrato com a realidade — e a realidade não renegocia.",
-      },
-      { type: "h2", text: "A exceção que confirma" },
-      {
-        type: "p",
-        text: "Trabalhos digitais que envelheceram bem quase sempre são os que escolheram uma estética assumida em vez de perseguir o fotorrealismo: proporções exageradas, texturas que não fingem ser pele, iluminação que ninguém confundiria com uma fotografia. Eles jogaram o jogo do desenho, e não o da simulação.",
-      },
-    ],
-  },
-  {
-    slug: "a-pagina-conduz-o-olho",
-    title: "O quadro que não se lê: como a página de quadrinhos conduz o olho",
-    excerpt:
-      "Boa parte do trabalho de um quadrinho acontece no espaço branco entre os quadros — o lugar onde o leitor faz o serviço sem perceber.",
-    category: "Quadrinhos",
-    tags: ["quadrinhos", "linguagem", "leitura"],
-    author: "Redação Magicine",
-    published_at: "2026-08-12",
-    featured: false,
-    body: [
-      {
-        type: "p",
-        text: "Quadrinho é a única mídia narrativa em que o público controla o relógio e ainda assim pode ser conduzido com precisão. O truque não está no que é desenhado, mas em como o desenho organiza a ordem de leitura.",
-      },
-      { type: "h2", text: "O intervalo faz o tempo" },
-      {
-        type: "p",
-        text: "Entre dois quadros existe um vão. É ali que o leitor preenche o que não foi mostrado: o soco que conectou, a viagem que aconteceu, os cinco anos que passaram. Quanto maior o salto pedido, mais participação — e mais risco de perder alguém no caminho.",
-      },
-      { type: "h2", text: "Ferramentas de condução" },
-      {
-        type: "list",
-        items: [
-          "Quadro largo e baixo alonga a duração; estreito e alto acelera",
-          "Sangrar a arte até a borda tira a moldura e sugere continuidade",
-          "Balão colocado no caminho do olho define quem fala primeiro",
-          "Virar a página é um corte — o que está no verso chega como surpresa",
-        ],
-      },
-      {
-        type: "p",
-        text: "Nenhuma dessas escolhas aparece para quem está lendo bem. Quando aparecem, é sinal de que alguma delas falhou e o olho parou para procurar o caminho.",
-      },
-    ],
-  },
-  {
-    slug: "trilha-sonora-conta-o-que-a-cena-esconde",
+    slug: "cin-trilha",
     title: "A trilha conta o que a cena está escondendo",
-    excerpt:
-      "Música em filme raramente descreve o que você está vendo. Ela costuma dizer o que os personagens ainda não sabem — ou o que estão mentindo.",
-    category: "Cinema",
-    tags: ["trilha sonora", "análise", "linguagem"],
-    author: "Redação Magicine",
-    published_at: "2026-08-10",
-    featured: false,
+    excerpt: "Música em filme raramente descreve o que você está vendo. Ela costuma dizer o que os personagens ainda não sabem — ou o que estão mentindo.",
+    category: "Cinema", tags: ["trilha sonora", "linguagem"], author: A,
+    published_at: "2026-08-14", featured: false, cover: "img/cin-trilha.svg",
     body: [
-      {
-        type: "p",
-        text: "A ideia de que a trilha \"sublinha a emoção da cena\" descreve o uso mais preguiçoso possível. Quando a música apenas concorda com a imagem, ela é redundante — e redundância em cinema é ruído caro.",
-      },
+      { type: "p", text: "A ideia de que a trilha \"sublinha a emoção da cena\" descreve o uso mais preguiçoso possível. Quando a música apenas concorda com a imagem, ela é redundante — e redundância em cinema é ruído caro." },
       { type: "h2", text: "Música como narrador não confiável" },
-      {
-        type: "p",
-        text: "O uso interessante é o que contradiz. Uma cena feliz com música tensa avisa o público de um perigo que os personagens ignoram, e cria expectativa sem uma linha de diálogo. Uma cena violenta com música doce transforma o espectador em cúmplice desconfortável.",
-      },
+      { type: "p", text: "O uso interessante é o que contradiz. Uma cena feliz com música tensa avisa o público de um perigo que os personagens ignoram, e cria expectativa sem uma linha de diálogo. Uma cena violenta com música doce transforma o espectador em cúmplice desconfortável." },
+      { type: "img", src: "img/cin-trilha.svg", alt: "Onda sonora atravessando uma película", caption: "A trilha é a única camada que pode discordar da imagem sem quebrar a cena." },
       { type: "h2", text: "O tema que muda de significado" },
-      {
-        type: "p",
-        text: "O recurso mais elegante é o tema que retorna alterado. A mesma melodia apresentada no começo como promessa volta no fim em tom menor, mais lenta, com metade dos instrumentos. Nada foi dito, e o público entende exatamente o que se perdeu.",
-      },
-      {
-        type: "quote",
-        text: "Quando a plateia sai cantarolando o tema de um personagem que morreu, a trilha fez um trabalho que o roteiro não teria como fazer sozinho.",
-      },
-      {
-        type: "p",
-        text: "É por isso que silêncio bem colocado costuma ser o gesto mais forte de um compositor. Depois de duas horas ensinando o público a esperar música em determinados momentos, tirá-la é uma frase inteira.",
-      },
+      { type: "p", text: "O recurso mais elegante é o tema que retorna alterado. A melodia apresentada no começo como promessa volta no fim em tom menor, mais lenta, com metade dos instrumentos. Nada foi dito, e o público entende exatamente o que se perdeu." },
+      { type: "quote", text: "Quando a plateia sai cantarolando o tema de um personagem que morreu, a trilha fez um trabalho que o roteiro não teria como fazer sozinho." },
+      { type: "p", text: "É por isso que silêncio bem colocado costuma ser o gesto mais forte de um compositor. Depois de duas horas ensinando o público a esperar música em certos momentos, tirá-la é uma frase inteira." },
     ],
   },
   {
-    slug: "anatomia-de-uma-boa-critica",
-    title: "Anatomia de uma boa crítica de série",
-    excerpt:
-      "O que separa um texto que ajuda o leitor a decidir de um que só reconta a história — cinco escolhas que fazem a diferença.",
-    category: "Bastidores",
-    tags: ["crítica", "escrita", "guia"],
-    author: "Redação Magicine",
-    published_at: "2026-08-09",
-    featured: false,
+    slug: "cin-montagem",
+    title: "A montagem decide o que você sente",
+    excerpt: "As mesmas cenas, em outra ordem e com outra duração, produzem outro filme. É o estágio em que mais obras são salvas — e mais são perdidas.",
+    category: "Cinema", tags: ["montagem", "linguagem"], author: A,
+    published_at: "2026-08-13", featured: false, cover: "img/cin-montagem.svg",
     body: [
-      {
-        type: "p",
-        text: "Toda crítica responde, no fundo, a uma pergunta prática: vale o meu tempo? O texto pode ser bonito e bem construído, mas se o leitor termina sem saber disso, ele não fez o trabalho.",
-      },
+      { type: "p", text: "Um rosto neutro cortado depois de um prato de comida lê como fome. O mesmo rosto depois de um caixão lê como luto. A informação está no corte, não na atuação — e esse é o poder que a montagem exerce sobre tudo." },
+      { type: "h2", text: "Quanto tempo antes de cortar" },
+      { type: "p", text: "Segurar um plano meio segundo a mais transforma reação em reflexão. Cortar meio segundo antes transforma reflexão em impulso. Nenhuma outra etapa muda tanto o sentido com tão pouco material novo." },
+      { type: "img", src: "img/cin-montagem.svg", alt: "Quadros de filme recortados e reordenados", caption: "A mesma matéria-prima, em outra ordem, é outro filme." },
+      { type: "h2", text: "O que a sala de montagem conserta" },
+      { type: "list", items: [
+        "Personagem antipático demais: cortar duas falas costuma resolver",
+        "Reviravolta confusa: adiantar um plano de dois segundos plantado lá atrás",
+        "Meio arrastado: eliminar uma subtrama inteira, não encurtar todas",
+        "Final frio: trocar a última imagem, mantendo o resto",
+      ] },
+      { type: "p", text: "É também onde filmes se perdem. Quando uma produção testa o corte com plateia e reage a cada reclamação, o resultado costuma ser um filme sem arestas — e sem arestas não há nada para lembrar depois." },
+    ],
+  },
+  {
+    slug: "cin-vilao",
+    title: "O vilão que o roteiro esqueceu de escrever",
+    excerpt: "Antagonista mal construído não é o que faz pouca maldade — é o que não quer nada que a gente entenda.",
+    category: "Cinema", tags: ["roteiro", "personagem"], author: A,
+    published_at: "2026-08-12", featured: false, cover: "img/cin-vilao.svg",
+    body: [
+      { type: "p", text: "Um bom antagonista não precisa ser simpático, complexo ou ter um passado trágico. Precisa de uma coisa só: um objetivo que o público consiga formular em uma frase." },
+      { type: "h2", text: "Querer destruir tudo não é querer nada" },
+      { type: "p", text: "Quando o objetivo é abstrato demais — dominar, destruir, vingar-se do mundo — não existe cena possível em que ele chegue perto de conseguir. E sem essa possibilidade, não há tensão: o público sabe desde o começo que aquilo não vai acontecer." },
+      { type: "img", src: "img/cin-vilao.svg", alt: "Duas silhuetas, uma preenchida e outra vazia com um ponto de interrogação", caption: "O protagonista costuma vir pronto; o antagonista, quase sempre, vem oco." },
+      { type: "h2", text: "O teste do outro filme" },
+      { type: "p", text: "Se você contasse a mesma história do ponto de vista do antagonista, ela teria começo, meio e fim? Se a resposta for não, ele não é um personagem — é um obstáculo com fala." },
+      { type: "p", text: "O detalhe que quase sempre resolve é dar a ele uma relação, não uma motivação. Alguém de quem ele gosta, alguém que ele decepcionou, alguém que o vê de outro jeito. Motivação explica; relação faz existir." },
+    ],
+  },
+
+  // -------------------------------------------------------------- SÉRIES
+  {
+    slug: "ser-meio-temporada",
+    title: "Por que você lembra do piloto e esquece o meio da temporada",
+    excerpt: "A memória de uma série não é distribuída por igual: ela se concentra no começo, no fim e nos episódios que quebram a rotina.",
+    category: "Séries", tags: ["estrutura", "memória"], author: A,
+    published_at: "2026-08-16", featured: true, cover: "img/ser-meio-temporada.svg",
+    body: [
+      { type: "p", text: "Peça a alguém para resumir uma série que amou e observe o que sai: o piloto, um ou dois episódios do meio e o final. O resto vira um bloco indistinto de \"aí acontecem umas coisas\". Isso não é defeito de quem assiste." },
+      { type: "h2", text: "O meio existe para sustentar, não para brilhar" },
+      { type: "p", text: "Uma temporada é montada com funções diferentes por episódio. O piloto vende o mundo. O final paga a promessa. Os episódios do meio mantêm as peças em movimento: aproximam personagens, plantam informação que só será usada depois, testam relações. É trabalho de fundação, e fundação não aparece na foto." },
+      { type: "img", src: "img/ser-meio-temporada.svg", alt: "Barras representando episódios, com as pontas destacadas", caption: "A lembrança se concentra nas pontas." },
+      { type: "h2", text: "Os que escapam" },
+      { type: "p", text: "Os episódios do meio que grudam são quase sempre os que quebram a fórmula: um capítulo inteiro em um cenário só, um que muda de ponto de vista, um que salta no tempo, um que abandona a trama principal para ficar com um secundário. Não avançam mais que os outros — são estruturalmente diferentes, e a memória guarda diferença." },
+      { type: "quote", text: "A memória não arquiva por importância. Arquiva por contraste." },
+      { type: "p", text: "Vale como aviso contra um julgamento comum: dizer que uma temporada \"caiu no meio\" às vezes descreve mais o funcionamento da memória do que a qualidade do texto." },
+    ],
+  },
+  {
+    slug: "ser-segunda-temporada",
+    title: "O problema da segunda temporada",
+    excerpt: "A primeira temporada tinha uma pergunta para responder. A segunda precisa inventar outra — e é aí que a maioria escolhe repetir em vez de avançar.",
+    category: "Séries", tags: ["estrutura", "temporadas"], author: A,
+    published_at: "2026-08-15", featured: false, cover: "img/ser-segunda-temporada.svg",
+    body: [
+      { type: "p", text: "Séries costumam nascer de uma premissa fechada: um mistério, uma ameaça, uma transformação. A primeira temporada existe para responder aquilo. Quando responde bem, cria o próprio problema — e agora?" },
+      { type: "h2", text: "Os três caminhos" },
+      { type: "list", items: [
+        "Repetir a fórmula com outro caso: seguro e rapidamente cansativo",
+        "Ampliar a escala: mais inimigos, mais mundo, menos intimidade",
+        "Trocar a pergunta: manter as pessoas e perguntar outra coisa sobre elas",
+      ] },
+      { type: "p", text: "O terceiro é o mais difícil e quase sempre o que funciona. Ele exige admitir que o público não voltou pela trama — voltou pelas pessoas." },
+      { type: "img", src: "img/ser-segunda-temporada.svg", alt: "Dois quadros comparando primeira e segunda temporada", caption: "A segunda temporada herda o elenco, não a pergunta." },
+      { type: "h2", text: "O sintoma clássico" },
+      { type: "p", text: "Quando a segunda temporada começa desfazendo o final da primeira — o casal se separa fora de cena, o vilão derrotado tinha um chefe, a mudança de vida não durou —, ela está dizendo ao público que o esforço anterior não valeu. É a forma mais rápida de perder quem tinha ficado." },
+    ],
+  },
+  {
+    slug: "ser-finais",
+    title: "Por que quase todo mundo odeia o último episódio",
+    excerpt: "Finais de série carregam um peso que nenhum episódio anterior teve: precisam encerrar não só a trama, mas a relação de anos com quem assistiu.",
+    category: "Séries", tags: ["finais", "expectativa"], author: A,
+    published_at: "2026-08-14", featured: false, cover: "img/ser-finais.svg",
+    body: [
+      { type: "p", text: "É quase uma lei: quanto mais amada a série, mais dividido o último episódio. Não é coincidência nem birra de público — é um problema estrutural que o formato cria sozinho." },
+      { type: "h2", text: "O final compete com o imaginado" },
+      { type: "p", text: "Ao longo de anos, cada pessoa construiu uma versão própria de como aquilo deveria terminar. O episódio real precisa competir com milhões de finais imaginados, todos mais ajustados ao gosto de quem os imaginou. Perde por definição." },
+      { type: "img", src: "img/ser-finais.svg", alt: "Uma curva interrompida por uma linha tracejada", caption: "O corte final chega sempre antes do que a expectativa pedia." },
+      { type: "h2", text: "O que os finais que funcionam têm em comum" },
+      { type: "p", text: "Eles resolvem o que a série prometeu no começo, não o que virou popular no meio. E costumam terminar em uma escala menor do que se espera: não com a batalha, mas com a conversa depois dela." },
+      { type: "p", text: "O erro mais comum é tentar dar um encerramento a cada personagem. A generosidade vira lista, e a lista mata o ritmo justo quando ele mais importa." },
+    ],
+  },
+  {
+    slug: "ser-piloto",
+    title: "O que um piloto precisa fazer em 45 minutos",
+    excerpt: "Um episódio de estreia tem quatro trabalhos ao mesmo tempo — e a maioria das séries fracas erra por tentar fazer os quatro na mesma cena.",
+    category: "Séries", tags: ["piloto", "roteiro"], author: A,
+    published_at: "2026-08-13", featured: false, cover: "img/ser-piloto.svg",
+    body: [
+      { type: "p", text: "O piloto é o episódio mais difícil de escrever porque é o único que não pode contar com nada: nem com afeto pelos personagens, nem com conhecimento do mundo, nem com paciência de quem assiste." },
+      { type: "h2", text: "Os quatro trabalhos" },
+      { type: "list", items: [
+        "Apresentar um protagonista que dá vontade de acompanhar",
+        "Estabelecer as regras do mundo, sem aula",
+        "Instalar o motor da série — o que vai gerar episódio toda semana",
+        "Terminar com um motivo concreto para voltar",
+      ] },
+      { type: "img", src: "img/ser-piloto.svg", alt: "Três blocos representando a estrutura do episódio", caption: "Quatro trabalhos, um episódio, nenhuma boa vontade acumulada." },
+      { type: "h2", text: "O erro de empilhar" },
+      { type: "p", text: "Séries fracas tentam resolver tudo na primeira sequência: narração explicando o mundo, personagem contando o próprio passado em voz alta, e um evento gigante para prender. O resultado é que nada tem espaço para respirar e o público não se apega a ninguém." },
+      { type: "p", text: "Pilotos fortes quase sempre escolhem uma coisa só para o primeiro ato — normalmente o protagonista — e deixam o mundo se explicar sozinho pelo que aparece atrás dele." },
+    ],
+  },
+  {
+    slug: "ser-elenco-coral",
+    title: "Elenco coral: quando muita gente vira ninguém",
+    excerpt: "Séries com dez protagonistas prometem profundidade e costumam entregar rodízio. Existe um limite prático — e ele tem a ver com tempo de tela, não com talento.",
+    category: "Séries", tags: ["elenco", "estrutura"], author: A,
+    published_at: "2026-08-11", featured: false, cover: "img/ser-elenco-coral.svg",
+    body: [
+      { type: "p", text: "A promessa é sedutora: um elenco grande permite muitas histórias ao mesmo tempo. Na prática, cada personagem adicional divide o mesmo bolo de minutos, e abaixo de certa fatia ninguém consegue mudar de ideia na frente do público." },
+      { type: "h2", text: "Mudança precisa de tempo" },
+      { type: "p", text: "Um personagem só fica interessante quando vira outra pessoa aos poucos. Isso exige cenas de antes, de dúvida e de depois. Com oito minutos por episódio, dá para mostrar o antes e o depois — a dúvida, que é a parte boa, fica de fora." },
+      { type: "img", src: "img/ser-elenco-coral.svg", alt: "Muitos círculos representando um elenco numeroso", caption: "Cada nome a mais divide o mesmo tempo de tela." },
+      { type: "h2", text: "A solução dos bons corais" },
+      { type: "p", text: "Séries corais que funcionam raramente tratam todo mundo por igual. Elas rodam o foco: um ou dois personagens carregam a temporada, os outros ficam em fogo baixo e assumem o comando na temporada seguinte. Quem tenta dar peso igual a todos entrega o mesmo pouco para cada um." },
+    ],
+  },
+
+  // --------------------------------------------------------------- GAMES
+  {
+    slug: "gam-cinema",
+    title: "O que os jogos aprenderam com o cinema — e o que devolveram",
+    excerpt: "A troca começou com jogos imitando enquadramentos. Décadas depois, é o cinema que anda pegando emprestada a gramática dos jogos.",
+    category: "Games", tags: ["linguagem", "cinema"], author: A,
+    published_at: "2026-08-16", featured: true, cover: "img/gam-cinema.svg",
+    body: [
+      { type: "p", text: "Por muito tempo a relação foi de mão única e um pouco constrangida: jogos queriam ser filmes. Cutscene era prêmio, e a parte jogável, o intervalo entre os pedaços bonitos." },
+      { type: "h2", text: "A fase da imitação" },
+      { type: "p", text: "Dessa fase vieram coisas boas — cuidado com enquadramento, luz e ritmo de montagem — e uma armadilha: cenas em que o jogador vira espectador do próprio personagem, assistindo alguém fazer o que ele fazia dois segundos antes, muitas vezes melhor." },
+      { type: "img", src: "img/gam-cinema.svg", alt: "Ciclo circular representando a troca entre as duas mídias", caption: "Hoje a influência corre nos dois sentidos." },
+      { type: "h2", text: "O que só o jogo faz" },
+      { type: "p", text: "A virada veio quando ficou claro que a mídia tem um recurso que o cinema não tem: tornar o público responsável. Um filme pode mostrar uma escolha difícil. Um jogo pode fazer você tomá-la e conviver com ela por dez horas." },
+      { type: "list", items: [
+        "Cenário que conta história sem diálogo, porque você escolhe onde olhar",
+        "Ritmo controlado pelo jogador, não pela montagem",
+        "Regras como argumento: o que o jogo permite e proíbe é o que ele pensa",
+        "Repetição com sentido — morrer e tentar de novo vira tema, não punição",
+      ] },
+      { type: "p", text: "A conversa ficou mais interessante quando as duas mídias pararam de tentar ser a outra e passaram a roubar só o que servia." },
+    ],
+  },
+  {
+    slug: "gam-dificuldade",
+    title: "Dificuldade não é a mesma coisa que desafio",
+    excerpt: "Um jogo pode ser durííssimo e justo, ou fácil e irritante. A diferença está em quanto o jogador entende do próprio fracasso.",
+    category: "Games", tags: ["design", "dificuldade"], author: A,
+    published_at: "2026-08-15", featured: false, cover: "img/gam-dificuldade.svg",
+    body: [
+      { type: "p", text: "Existe uma confusão comum entre ser difícil e ser desafiador. Jogos famosos por punir o jogador costumam ser rigorosamente justos; jogos considerados fáceis às vezes frustram muito mais." },
+      { type: "h2", text: "A pergunta que separa os dois" },
+      { type: "p", text: "Depois de perder, o jogador sabe o que fez de errado? Se sabe, aquilo foi desafio, e ele volta. Se não sabe, foi obstáculo, e ele desiste — mesmo que o obstáculo seja pequeno." },
+      { type: "img", src: "img/gam-dificuldade.svg", alt: "Escada progressiva ao lado de um muro sólido", caption: "Escada convida a subir; muro só informa que você não passa." },
+      { type: "h2", text: "O que torna a derrota legível" },
+      { type: "list", items: [
+        "O erro acontece perto do castigo, não trinta segundos depois",
+        "O jogo mostrou a ameaça antes de cobrar por ela",
+        "Recomeçar é rápido — esperar tela de carregamento vira punição dupla",
+        "Existe mais de uma saída, e o jogador percebe isso",
+      ] },
+      { type: "p", text: "Nada disso é sobre baixar a dificuldade. É sobre garantir que a dificuldade esteja ensinando alguma coisa. Um jogo que só aumenta o dano dos inimigos ficou mais difícil sem ficar mais interessante." },
+    ],
+  },
+  {
+    slug: "gam-tutorial",
+    title: "O tutorial invisível: como bons jogos ensinam sem falar",
+    excerpt: "As melhores lições de um jogo nunca aparecem como texto na tela. Elas estão na forma do cenário e na ordem em que as coisas acontecem.",
+    category: "Games", tags: ["design", "tutorial"], author: A,
+    published_at: "2026-08-14", featured: false, cover: "img/gam-tutorial.svg",
+    body: [
+      { type: "p", text: "Quase todo jogo precisa ensinar as próprias regras. A diferença entre os que fazem isso bem e os que atrapalham está em quem descobre: o texto conta, o cenário deixa você concluir." },
+      { type: "h2", text: "Ensinar com o espaço" },
+      { type: "p", text: "Um buraco pequeno logo no começo, sem risco de morte, ensina a pular melhor do que qualquer caixa de diálogo. Uma luz no fim do corredor ensina para onde ir sem uma seta. O jogador acha que descobriu sozinho — e por isso não esquece." },
+      { type: "img", src: "img/gam-tutorial.svg", alt: "Caminho pontilhado guiando por um cenário", caption: "A rota está desenhada; o jogador acha que escolheu." },
+      { type: "h2", text: "A ordem também ensina" },
+      { type: "p", text: "Apresentar o inimigo que voa depois do inimigo que anda não é acaso: é uma progressão que constrói vocabulário. Quando os dois aparecem juntos, o jogador já tem resposta para cada um, e a combinação vira desafio em vez de confusão." },
+      { type: "p", text: "O sinal de que o tutorial falhou é o jogo precisar repetir a instrução. Se aparece um lembrete de comando na terceira hora, a lição não foi aprendida — foi lida." },
+    ],
+  },
+  {
+    slug: "gam-mundo-aberto",
+    title: "Mundo aberto vazio: quando o mapa vira lista de tarefas",
+    excerpt: "Tamanho de mapa virou argumento de venda, mas o que prende não é a área — é a densidade de coisas que valem parar para ver.",
+    category: "Games", tags: ["mundo aberto", "design"], author: A,
+    published_at: "2026-08-12", featured: false, cover: "img/gam-mundo-aberto.svg",
+    body: [
+      { type: "p", text: "Um mapa gigante é fácil de anunciar e difícil de preencher. O resultado mais comum é a paisagem bonita salpicada de ícones que se repetem — e a sensação de estar cumprindo pauta em vez de explorar." },
+      { type: "h2", text: "O que faz querer sair da estrada" },
+      { type: "p", text: "Curiosidade só funciona quando é recompensada de forma variada. Se toda torre no horizonte entrega o mesmo tipo de coisa, o jogador aprende rápido que não vale o desvio. Bastam três ou quatro decepções para o mapa inteiro virar deslocamento." },
+      { type: "img", src: "img/gam-mundo-aberto.svg", alt: "Linha do tempo com trechos ativos e trechos vazios", caption: "O problema raramente é o tamanho — é a distância entre um momento e o próximo." },
+      { type: "h2", text: "Densidade importa mais que área" },
+      { type: "list", items: [
+        "Cada desvio deveria oferecer algo que não se acha na trama principal",
+        "Repetir estrutura tudo bem; repetir a recompensa, não",
+        "O deslocamento precisa ter o que ver, ou vira tela de carregamento longa",
+        "Um mapa menor bem povoado sempre parece maior do que é",
+      ] },
+      { type: "p", text: "Não por acaso, os mundos abertos mais lembrados costumam ser os que dá para atravessar a pé sem tédio — e não os que exigem viagem rápida para serem toleráveis." },
+    ],
+  },
+  {
+    slug: "gam-remake",
+    title: "O que um remake deve preservar (e quase nunca é o gráfico)",
+    excerpt: "Refazer um clássico com tecnologia atual é a parte fácil. O difícil é identificar qual sensação fazia aquilo funcionar.",
+    category: "Games", tags: ["remake", "preservação"], author: A,
+    published_at: "2026-08-10", featured: false, cover: "img/gam-remake.svg",
+    body: [
+      { type: "p", text: "Todo remake enfrenta a mesma armadilha: a memória do jogador não guarda o jogo como ele era, e sim como pareceu na época. Reproduzir fielmente costuma decepcionar; modernizar demais costuma trair." },
+      { type: "h2", text: "O que a memória guarda" },
+      { type: "p", text: "Raramente é a textura. É a tensão de um corredor mal iluminado, o peso de um controle que respondia devagar de propósito, o alívio de um ponto de salvamento. São sensações produzidas por limitações — e limitações são a primeira coisa que a tecnologia nova apaga." },
+      { type: "img", src: "img/gam-remake.svg", alt: "Comparação entre o original e a releitura", caption: "Modernizar o que envelheceu, preservar o que assustava." },
+      { type: "h2", text: "Um critério prático" },
+      { type: "p", text: "Vale perguntar, para cada mudança: isso corrige um defeito ou remove uma característica? Câmera ruim é defeito. Inimigo lento demais para ser ameaça pode ser característica — era ele que criava a espera." },
+      { type: "p", text: "Os remakes que dão certo costumam ser generosos com o conforto (controle, câmera, salvamento) e conservadores com o ritmo. É o inverso do que a vitrine pede." },
+    ],
+  },
+
+  // ----------------------------------------------------------- BASTIDORES
+  {
+    slug: "bas-elenco",
+    title: "Como um elenco é escolhido de verdade",
+    excerpt: "Teste de elenco decide menos do que se imagina. Agenda, seguro, câmbio e química entre atores costumam pesar mais que a melhor audição.",
+    category: "Bastidores", tags: ["indústria", "elenco"], author: A,
+    published_at: "2026-08-16", featured: false, cover: "img/bas-elenco.svg",
+    body: [
+      { type: "p", text: "A imagem popular é a da audição decisiva: alguém entra numa sala, faz uma cena inesquecível e leva o papel. Acontece — e é a exceção." },
+      { type: "h2", text: "O funil antes da sala" },
+      { type: "p", text: "Antes de qualquer teste, uma lista é montada com nomes que cabem no orçamento, estão livres nas datas de filmagem e são aceitáveis para quem financia. Boa parte das decisões acontece nessa planilha, não na sala." },
+      { type: "img", src: "img/bas-elenco.svg", alt: "Muitos círculos representando candidatos a um elenco", caption: "A maior parte da escolha acontece antes de alguém entrar na sala." },
+      { type: "h2", text: "Química é testada, não presumida" },
+      { type: "p", text: "Quando dois papéis dependem um do outro, os finalistas são testados em pares. É comum o ator tecnicamente melhor perder para outro que funciona melhor ao lado de quem já foi confirmado." },
+      { type: "list", items: [
+        "Disponibilidade de agenda elimina mais gente do que desempenho",
+        "Seguro de produção pode vetar quem tem histórico de atrasos",
+        "Coprodução internacional às vezes exige atores de certos países",
+        "Papel pequeno com nome conhecido costuma ser decisão de marketing",
+      ] },
+    ],
+  },
+  {
+    slug: "bas-adiamento",
+    title: "Por que datas de lançamento mudam tanto",
+    excerpt: "Adiamento raramente significa que a obra está ruim. Na maior parte das vezes é calendário, concorrência ou uma peça da cadeia que atrasou.",
+    category: "Bastidores", tags: ["indústria", "lançamento"], author: A,
+    published_at: "2026-08-15", featured: false, cover: "img/bas-adiamento.svg",
+    body: [
+      { type: "p", text: "Quando uma data muda, a leitura imediata do público é sempre a mesma: deve estar um desastre. É a explicação menos provável." },
+      { type: "h2", text: "A data é escolhida anos antes" },
+      { type: "p", text: "Grandes lançamentos marcam data antes de existir corte final — às vezes antes de existir filmagem. Ela é reservada por posição no calendário: feriado, férias escolares, distância de concorrentes. Quando um concorrente se mexe, todos em volta se mexem." },
+      { type: "img", src: "img/bas-adiamento.svg", alt: "Calendário com uma data riscada e outra marcada adiante", caption: "A data original quase nunca foi uma promessa técnica." },
+      { type: "h2", text: "O gargalo invisível" },
+      { type: "p", text: "Efeitos visuais são feitos por um número limitado de estúdios, atendendo várias produções ao mesmo tempo. Um atraso em qualquer projeto da fila empurra os outros. O mesmo vale para dublagem, mixagem e certificação de plataformas, no caso de jogos." },
+      { type: "p", text: "Existe também o adiamento saudável: a produção percebe que precisa de mais tempo e prefere pagar por ele. Historicamente, esse tipo de adiamento produz resultado melhor do que a alternativa — mas rende manchete pior." },
+    ],
+  },
+  {
+    slug: "bas-bilheteria",
+    title: "Como a bilheteria é contada (e por que o número engana)",
+    excerpt: "O valor que sai na manchete não é o que o estúdio recebe. Entre a bilheteria bruta e o lucro existem várias camadas que quase nunca aparecem.",
+    category: "Bastidores", tags: ["indústria", "bilheteria"], author: A,
+    published_at: "2026-08-14", featured: false, cover: "img/bas-bilheteria.svg",
+    body: [
+      { type: "p", text: "Um filme que arrecada o dobro do orçamento pode dar prejuízo. A conta que o público faz — bilheteria menos custo de produção — deixa de fora quase tudo que importa." },
+      { type: "h2", text: "O que fica pelo caminho" },
+      { type: "list", items: [
+        "A sala de cinema fica com uma fatia relevante do ingresso",
+        "O marketing não entra no orçamento divulgado, e costuma ser altíssimo",
+        "A divisão muda por país e por semana de exibição",
+        "Parte do que sobra vai para participações contratuais",
+      ] },
+      { type: "img", src: "img/bas-bilheteria.svg", alt: "Barras crescentes com uma linha de tendência", caption: "O número da manchete é o topo da pilha, não o que sobra." },
+      { type: "h2", text: "Por que a primeira semana pesa tanto" },
+      { type: "p", text: "A divisão com as salas costuma ser mais favorável ao distribuidor nas primeiras semanas e ir piorando. Por isso uma estreia forte vale mais que a mesma arrecadação espalhada por dois meses — e por isso tanto esforço de marketing se concentra nos dias anteriores." },
+      { type: "p", text: "Com streaming a opacidade aumenta: não há ingresso para contar, e os números divulgados costumam medir minutos assistidos, uma métrica que cada plataforma define do próprio jeito." },
+    ],
+  },
+  {
+    slug: "bas-dublagem",
+    title: "O que acontece numa sala de dublagem",
+    excerpt: "Dublar não é traduzir. É reescrever o texto para caber na boca do ator original, sem perder o sentido nem o tempo da piada.",
+    category: "Bastidores", tags: ["dublagem", "tradução"], author: A,
+    published_at: "2026-08-13", featured: false, cover: "img/bas-dublagem.svg",
+    body: [
+      { type: "p", text: "O trabalho começa muito antes do microfone. Alguém precisa transformar o diálogo original em um texto que caiba no mesmo tempo, comece e termine junto com o movimento dos lábios e ainda soe natural em português." },
+      { type: "h2", text: "Sincronia labial manda no texto" },
+      { type: "p", text: "Quando o personagem fecha a boca em uma consoante, a tradução precisa ter uma consoante parecida no mesmo instante. É por isso que a frase dublada às vezes difere da legenda: as duas são traduções corretas, resolvendo problemas diferentes." },
+      { type: "img", src: "img/bas-dublagem.svg", alt: "Microfone de estúdio ao lado de um texto", caption: "O texto é reescrito para caber no tempo, não só no sentido." },
+      { type: "h2", text: "Gravação em solo" },
+      { type: "p", text: "Na maior parte das produções, cada ator grava sozinho, sem contracenar. A diretora de dublagem é quem guarda o tom da cena inteira na cabeça e garante que as peças combinem depois." },
+      { type: "p", text: "Piada é a parte mais difícil. Trocadilho quase nunca sobrevive à tradução literal, e a solução costuma ser inventar outra piada equivalente que caiba no mesmo espaço — decisão criativa, não erro." },
+    ],
+  },
+  {
+    slug: "bas-showrunner",
+    title: "O que exatamente faz um showrunner",
+    excerpt: "É o cargo mais citado e menos compreendido da televisão: metade autor, metade gerente de uma fábrica que não pode parar.",
+    category: "Bastidores", tags: ["televisão", "produção"], author: A,
+    published_at: "2026-08-12", featured: false, cover: "img/bas-showrunner.svg",
+    body: [
+      { type: "p", text: "No cinema, a autoria costuma ser atribuída a quem dirige. Na televisão, a pessoa que mantém a visão de pé ao longo de anos e dezenas de episódios raramente dirige — é quem comanda a sala de roteiristas e responde pela produção inteira." },
+      { type: "h2", text: "Duas funções que brigam entre si" },
+      { type: "p", text: "De um lado, decidir o que a série é: quem são os personagens, o que a temporada quer dizer, qual cena fica. De outro, garantir que o episódio 7 esteja filmado enquanto o 9 é escrito e o 4 é finalizado — tudo dentro de um orçamento fixo." },
+      { type: "img", src: "img/bas-showrunner.svg", alt: "Ciclo com quatro etapas de produção", caption: "Enquanto um episódio é escrito, outro filma e um terceiro é montado." },
+      { type: "h2", text: "Por que a troca de showrunner se nota" },
+      { type: "p", text: "Como a coerência de longo prazo mora principalmente na cabeça dessa pessoa, uma substituição no meio do caminho costuma ser perceptível: personagens tomam decisões que não combinam com quem eram, e planos plantados antes deixam de ser pagos." },
+    ],
+  },
+  {
+    slug: "bas-crunch",
+    title: "Crunch: por que o fim de produção vira corrida",
+    excerpt: "Jornadas extremas nas últimas semanas não são falta de planejamento pontual — são consequência de como prazos e escopo são definidos no começo.",
+    category: "Bastidores", tags: ["produção", "trabalho"], author: A,
+    published_at: "2026-08-11", featured: false, cover: "img/bas-crunch.svg",
+    body: [
+      { type: "p", text: "A imagem do estúdio virando noites no mês final aparece com frequência suficiente para não ser acidente. Ela nasce de uma equação montada muito antes, quando prazo e escopo são fixados ao mesmo tempo." },
+      { type: "h2", text: "Duas variáveis travadas" },
+      { type: "p", text: "Toda produção tem escopo, prazo e equipe. Se o prazo foi anunciado ao público e o escopo foi prometido aos financiadores, sobra uma variável para absorver qualquer imprevisto: as horas de quem trabalha." },
+      { type: "img", src: "img/bas-crunch.svg", alt: "Barras de carga de trabalho subindo até o fim do projeto", caption: "A curva não sobe por acaso — ela é o resultado de duas variáveis travadas." },
+      { type: "h2", text: "Por que a conta não fecha" },
+      { type: "list", items: [
+        "Estimar trabalho criativo é notoriamente impreciso",
+        "O que sai errado só aparece quando as peças se juntam, no fim",
+        "Cortar escopo tarde custa mais do que parece — muito já foi feito",
+        "Horas extras derrubam a produtividade justo quando ela é mais necessária",
+      ] },
+      { type: "p", text: "Equipes que escapam disso costumam ter uma prática em comum: escopo tratado como variável ajustável desde o começo, com cortes decididos cedo, quando ainda são baratos." },
+    ],
+  },
+  {
+    slug: "bas-fotografia",
+    title: "O que a direção de fotografia decide sem você perceber",
+    excerpt: "Altura da câmera, tipo de lente e cor da luz influenciam sua opinião sobre um personagem antes de ele abrir a boca.",
+    category: "Bastidores", tags: ["fotografia", "linguagem"], author: A,
+    published_at: "2026-08-10", featured: false, cover: "img/bas-fotografia.svg",
+    body: [
+      { type: "p", text: "Existe uma camada da narrativa que quase ninguém percebe conscientemente e que todo mundo processa: como a cena foi iluminada e de onde ela é vista." },
+      { type: "h2", text: "Altura e distância" },
+      { type: "p", text: "Filmar alguém de baixo para cima aumenta essa pessoa; de cima para baixo, diminui. Uma lente longa achata o fundo e isola o personagem; uma lente curta exagera o espaço e o deixa pequeno dentro dele. Nada disso é dito, e tudo isso é entendido." },
+      { type: "img", src: "img/bas-fotografia.svg", alt: "Câmera projetando um facho de luz", caption: "A escolha de lente e altura é argumento, não só estética." },
+      { type: "h2", text: "A cor como aviso" },
+      { type: "p", text: "Paletas consistentes ensinam o público a esperar coisas. Quando um filme associa uma cor a determinado ambiente ou pessoa, ele pode depois usar essa cor fora de contexto para gerar desconforto — sem uma linha de diálogo." },
+      { type: "p", text: "É por isso que \"foi só uma escolha estética\" quase nunca é verdade. A fotografia é o lugar onde o filme diz o que pensa dos personagens antes de o roteiro admitir." },
+    ],
+  },
+  {
+    slug: "bas-trailer",
+    title: "Como um trailer é montado — e por que ele mente",
+    excerpt: "Trailers costumam ser feitos por equipes externas, com objetivos diferentes dos do filme. Daí as cenas que não existem no corte final.",
+    category: "Bastidores", tags: ["marketing", "montagem"], author: A,
+    published_at: "2026-08-09", featured: false, cover: "img/bas-trailer.svg",
+    body: [
+      { type: "p", text: "É comum sair do cinema com a impressão de ter visto um filme diferente do anunciado. Não é impressão: o trailer foi montado por outra equipe, com outro objetivo e, muitas vezes, antes de o filme estar pronto." },
+      { type: "h2", text: "Duas metas incompatíveis" },
+      { type: "p", text: "O filme quer que você entenda a história na ordem certa. O trailer quer que você compre ingresso. Um precisa de construção; o outro, de impacto imediato. Por isso trailers reordenam livremente: reação de uma cena colada na fala de outra, plano do terceiro ato aparecendo como se fosse do primeiro." },
+      { type: "img", src: "img/bas-trailer.svg", alt: "Quadros de filme em ordem embaralhada", caption: "A ordem do trailer é publicitária, não narrativa." },
+      { type: "h2", text: "As cenas que não existem" },
+      { type: "p", text: "Alguns planos são gerados só para divulgação, ou vêm de versões descartadas. Como o material de marketing circula meses antes do corte final, é natural que parte dele mostre algo que depois saiu do filme." },
+      { type: "p", text: "Há também a escolha deliberada de esconder o gênero verdadeiro, vendendo uma comédia leve que é um drama pesado. Funciona uma vez e costuma cobrar caro no boca a boca." },
+    ],
+  },
+  {
+    slug: "bas-streaming",
+    title: "Por que catálogos de streaming encolhem",
+    excerpt: "Obras somem das plataformas por contrato, imposto e cálculo de custo — não porque ninguém estava assistindo.",
+    category: "Bastidores", tags: ["streaming", "indústria"], author: A,
+    published_at: "2026-08-08", featured: false, cover: "img/bas-streaming.svg",
+    body: [
+      { type: "p", text: "A promessa original do streaming era o catálogo infinito. O que se vê hoje é o contrário: títulos entram e saem, produções somem inteiras, e obras recém-lançadas desaparecem sem aviso." },
+      { type: "h2", text: "Licença tem prazo" },
+      { type: "p", text: "Boa parte do catálogo não pertence à plataforma — é licenciada por um período. Quando o contrato vence, renovar custa dinheiro, e a decisão é comparada com o que aquele título ainda atrai. Muitos simplesmente não pagam a própria renovação." },
+      { type: "img", src: "img/bas-streaming.svg", alt: "Barras decrescentes representando o encolhimento do catálogo", caption: "Manter um título no ar tem custo recorrente, não só o de aquisição." },
+      { type: "h2", text: "Produção própria também sai" },
+      { type: "p", text: "O caso mais estranho para o público é a obra original da própria plataforma desaparecer. Aí entram residuais — pagamentos devidos a quem trabalhou enquanto a obra estiver disponível — e incentivos fiscais que podem tornar a retirada financeiramente vantajosa." },
+      { type: "p", text: "Para quem assiste, a lição prática é desconfortável: catálogo não é acervo. Se uma obra importa muito, vale ter uma cópia física ou uma compra digital com direito de download." },
+    ],
+  },
+  {
+    slug: "bas-animacao",
+    title: "Por que a animação desenhada à mão envelhece melhor que o CGI da mesma época",
+    excerpt: "Não é nostalgia. É uma diferença técnica entre estilizar e simular — e simulação envelhece contra a memória do real.",
+    category: "Bastidores", tags: ["animação", "técnica"], author: A,
+    published_at: "2026-08-07", featured: false, cover: "img/bas-animacao.svg",
+    body: [
+      { type: "p", text: "Assista a uma produção animada à mão de trinta anos atrás e depois a uma computadorizada de vinte. É bem provável que a mais velha pareça mais nova. Isso se repete demais para ser gosto pessoal." },
+      { type: "h2", text: "Estilizar não tem alvo móvel" },
+      { type: "p", text: "Um desenho estilizado propõe uma convenção: o mundo é assim aqui dentro. Não existe versão \"correta\" com a qual comparar, então ele não pode ficar defasado — só sair de moda, que é outra coisa e costuma voltar." },
+      { type: "p", text: "A simulação faz a aposta oposta. Ela se mede contra o real, e o real está sempre disponível na sua janela. Cada avanço técnico posterior atualiza a régua e empurra o trabalho antigo para o passado." },
+      { type: "img", src: "img/bas-animacao.svg", alt: "Comparação entre traço estilizado e malha poligonal", caption: "Uma convenção não envelhece; uma imitação, sim." },
+      { type: "quote", text: "Quem estiliza combina uma regra com o público. Quem simula assina um contrato com a realidade — e a realidade não renegocia." },
+      { type: "p", text: "Trabalhos digitais que envelheceram bem quase sempre escolheram uma estética assumida em vez de perseguir o fotorrealismo. Eles jogaram o jogo do desenho, não o da simulação." },
+    ],
+  },
+  {
+    slug: "bas-critica",
+    title: "Anatomia de uma boa crítica",
+    excerpt: "O que separa um texto que ajuda o leitor a decidir de um que só reconta a história — cinco escolhas que fazem a diferença.",
+    category: "Bastidores", tags: ["crítica", "escrita"], author: A,
+    published_at: "2026-08-06", featured: false, cover: "img/bas-critica.svg",
+    body: [
+      { type: "p", text: "Toda crítica responde, no fundo, a uma pergunta prática: vale o meu tempo? O texto pode ser bonito e bem construído, mas se o leitor termina sem saber disso, ele não fez o trabalho." },
       { type: "h2", text: "Resumo não é análise" },
-      {
-        type: "p",
-        text: "O erro mais comum é gastar dois terços do texto recontando o enredo. O leitor já viu a sinopse. O que ele não tem é o seu julgamento sobre o que a obra tentou fazer e se conseguiu.",
-      },
+      { type: "p", text: "O erro mais comum é gastar dois terços do texto recontando o enredo. O leitor já viu a sinopse. O que ele não tem é o seu julgamento sobre o que a obra tentou fazer e se conseguiu." },
+      { type: "img", src: "img/bas-critica.svg", alt: "Página de texto com um trecho destacado", caption: "O veredito precisa estar visível, não escondido no último parágrafo." },
       { type: "h2", text: "Diga de onde você está falando" },
-      {
-        type: "p",
-        text: "Quem detesta terror avalia um terror de forma diferente de quem ama o gênero. Deixar isso claro não enfraquece o texto: dá ao leitor a régua para calibrar a sua opinião contra o gosto dele.",
-      },
-      {
-        type: "list",
-        items: [
-          "Diga cedo se recomenda ou não — sem enrolar até o último parágrafo",
-          "Sustente cada elogio ou crítica com uma cena concreta",
-          "Avise sobre spoilers antes, nunca depois",
-          "Separe o que é defeito do que é só não ser para você",
-          "Termine dizendo para quem a obra serve",
-        ],
-      },
-      {
-        type: "p",
-        text: "Nenhuma dessas regras é obrigatória. Mas quando um texto não está funcionando, quase sempre é porque uma delas foi ignorada.",
-      },
+      { type: "p", text: "Quem detesta terror avalia um terror de forma diferente de quem ama o gênero. Deixar isso claro não enfraquece o texto: dá ao leitor a régua para calibrar a sua opinião contra o gosto dele." },
+      { type: "list", items: [
+        "Diga cedo se recomenda ou não",
+        "Sustente cada elogio ou crítica com uma cena concreta",
+        "Avise sobre spoilers antes, nunca depois",
+        "Separe o que é defeito do que é só não ser para você",
+        "Termine dizendo para quem a obra serve",
+      ] },
     ],
   },
   {
-    slug: "como-publicar-no-magicine",
+    slug: "bas-publicar",
     title: "Como publicar uma matéria no Magicine",
-    excerpt:
-      "O passo a passo do formato de blocos que monta as páginas — e o caminho para trocar o arquivo local pelo Supabase quando o volume crescer.",
-    category: "Bastidores",
-    tags: ["tutorial", "supabase", "publicação"],
-    author: "Redação Magicine",
-    published_at: "2026-08-08",
-    featured: false,
+    excerpt: "O passo a passo do formato de blocos que monta as páginas — e o caminho para trocar o arquivo local pelo Supabase quando o volume crescer.",
+    category: "Bastidores", tags: ["tutorial", "supabase"], author: A,
+    published_at: "2026-08-05", featured: false, cover: "img/bas-publicar.svg",
     body: [
-      {
-        type: "p",
-        text: "Esta página não foi montada à mão. Ela nasceu de um objeto JavaScript em shared/news-data.js, e o mesmo objeto gerou o card que você clicou. É o combinado do site: você escreve o conteúdo, o layout se monta sozinho.",
-      },
+      { type: "p", text: "Esta página não foi montada à mão. Ela nasceu de um objeto JavaScript em shared/news-data.js, e o mesmo objeto gerou o card que você clicou. É o combinado do site: você escreve o conteúdo, o layout se monta sozinho." },
       { type: "h2", text: "O texto é uma lista de blocos" },
-      {
-        type: "p",
-        text: "Em vez de HTML solto, cada matéria tem um campo body com blocos identificados por tipo. A vantagem aparece na migração: esse formato cabe numa coluna jsonb do Supabase sem nenhuma conversão.",
-      },
-      {
-        type: "list",
-        items: [
-          "p — um parágrafo comum",
-          "h2 — um subtítulo para quebrar a leitura",
-          "quote — um destaque com autoria opcional",
-          "list — uma lista como esta",
-          "img — uma imagem com legenda",
-        ],
-      },
-      { type: "h2", text: "Quando migrar para o Supabase" },
-      {
-        type: "p",
-        text: "Enquanto forem poucas matérias por semana, editar o arquivo e publicar resolve. A troca compensa quando você quiser escrever de outro computador, ter mais de uma pessoa publicando ou agendar publicações. O README traz o SQL da tabela e as duas linhas que mudam em shared/news.js.",
-      },
+      { type: "p", text: "Em vez de HTML solto, cada matéria tem um campo body com blocos identificados por tipo. A vantagem aparece na migração: esse formato cabe numa coluna jsonb do Supabase sem nenhuma conversão." },
+      { type: "list", items: [
+        "p — um parágrafo comum",
+        "h2 — um subtítulo para quebrar a leitura",
+        "quote — um destaque com autoria opcional",
+        "list — uma lista como esta",
+        "img — uma imagem com legenda",
+      ] },
+      { type: "img", src: "img/bas-publicar.svg", alt: "Blocos de dados virando uma página montada", caption: "Os mesmos blocos alimentam o card, a listagem e a página." },
+      { type: "h2", text: "Quando migrar" },
+      { type: "p", text: "Enquanto forem poucas matérias por semana, editar o arquivo e publicar resolve. A troca compensa quando você quiser escrever de outro computador, ter mais de uma pessoa publicando ou agendar publicações. O arquivo COMO-PUBLICAR.md tem o passo a passo do dia a dia; o README traz o SQL da tabela." },
     ],
   },
 ];

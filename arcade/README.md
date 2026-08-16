@@ -39,9 +39,15 @@ objeto vira um card na home, uma entrada em `/noticias/` e uma página em
 }
 ```
 
-O pacote já vem com oito matérias escritas para este site — textos originais
-de análise atemporal, para o site não nascer vazio e para você ver o layout
-cheio. Edite, reaproveite ou apague à vontade.
+O pacote já vem com **27 matérias** escritas para este site — 5 de Cinema,
+5 de Séries, 5 de Games e 12 de Bastidores. São textos originais de análise
+atemporal: o tipo de conteúdo que continua recebendo visita meses depois.
+Cada uma tem ilustração própria em `img/`, também original.
+
+**Sobre notícia do dia:** as matérias que vêm no pacote são análise, não
+notícia. Fato do dia (elenco confirmado, data anunciada, prêmio recebido)
+precisa ser escrito por você quando acontecer — texto inventado sobre pessoa
+ou obra real é declaração falsa e reprova o site no AdSense.
 
 ### Migrando para o Supabase
 
@@ -182,8 +188,15 @@ Para mudar a paleta, mexa nas variáveis no topo do `style.css`:
 --ember: #ff5c39;   /* acento secundário */
 ```
 
-As cores por editoria (`--c-cinema`, `--c-series`, ...) tingem os cards, os
-selos dos títulos e a numeração das "Últimas".
+As cores por editoria (`--c-cinema`, `--c-series`, `--c-games`,
+`--c-bastidores`) tingem os cards, os selos dos títulos, a numeração das
+"Últimas" e a fita no topo do menu.
+
+As ilustrações das matérias ficam em `img/`, em SVG. Elas são desenhos
+geométricos originais — pesam poucos KB e ficam nítidas em qualquer tela.
+Nas matérias, o caminho é sempre relativo à raiz (`img/arquivo.svg`); cada
+página declara a própria base em `MAGICINE_BASE` e o `News.media()` resolve,
+para a mesma matéria funcionar na home e em `/noticias/`.
 
 ---
 
@@ -249,6 +262,7 @@ arcade/
 ├── noticias/
 │   ├── index.html          listagem com busca e filtros
 │   └── artigo.html         leitor de matéria
+├── img/                    ilustrações das matérias (SVG original)
 ├── shared/
 │   ├── news.js             camada de dados (local ↔ Supabase)
 │   ├── news-data.js        suas matérias
