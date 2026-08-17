@@ -260,15 +260,53 @@ main {
   translate: 0 0.1em;
 }
 
-.section-head .more {
+/* Vale em qualquer lugar: no cabeçalho de seção, no pé do artigo, no estado
+   vazio e nas páginas institucionais. Preso a .section-head, o link caía no
+   estilo padrão roxo e sublinhado do navegador. */
+.more {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
   color: var(--muted);
-  font-size: 13.5px;
-  font-weight: 600;
+  font-size: 13.8px;
+  font-weight: 650;
   text-decoration: none;
+  transition: color 0.16s, gap 0.16s;
 }
 
-.section-head .more:hover {
+.more:hover,
+.more:focus-visible {
   color: var(--amber);
+  gap: 9px;
+}
+
+.more:visited {
+  color: var(--muted);
+}
+
+.more:visited:hover {
+  color: var(--amber);
+}
+
+/* fora de um cabeçalho de seção, ganha peso de botão discreto */
+.article .more,
+.empty .more,
+.foot .more {
+  padding: 9px 16px;
+  border: 1px solid var(--line);
+  border-radius: 9px;
+}
+
+.article .more:hover,
+.empty .more:hover,
+.foot .more:hover {
+  border-color: color-mix(in srgb, var(--amber) 55%, transparent);
+  background: color-mix(in srgb, var(--amber) 9%, transparent);
+}
+
+.foot .more {
+  padding: 6px 12px;
+  font-size: 12.6px;
 }
 
 /* --------------------------------------------------------------- capa */

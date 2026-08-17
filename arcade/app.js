@@ -74,6 +74,46 @@
       `,
     },
     {
+      id: "cores", name: "Cores", genre: "Puzzle", tint: "#c77dff",
+      desc: "Blocos coloridos caem aos pares. Junte quatro ou mais da mesma cor e veja a pilha desabar em combo.",
+      path: "games/cores/", unit: "pts", best: ["cores"],
+      thumb: `
+        <rect width="320" height="180" fill="#121522"/>
+        <rect x="96" y="8" width="128" height="164" fill="rgba(0,0,0,.34)" stroke="rgba(255,255,255,.12)" stroke-width="2"/>
+        ${(() => {
+          const C = ["#ff5c39", "#ffce4d", "#5ec9a7", "#62a8ff", "#c77dff"];
+          const campo = [[2, 2, 0, 1, 3, 4, 0], [1, 2, 2, 1, 3, 3, 0], [1, 0, 4, 4, 3, 1, 2]];
+          return campo.map((linha, r) => linha.map((v, c) =>
+            `<rect x="${100 + c * 17}" y="${112 + r * 19}" width="15" height="17" rx="4" fill="${C[v]}"/>`
+          ).join("")).join("");
+        })()}
+        <rect x="134" y="30" width="15" height="17" rx="4" fill="#5ec9a7"/>
+        <rect x="134" y="50" width="15" height="17" rx="4" fill="#5ec9a7"/>
+        <g opacity=".18"><rect x="134" y="74" width="15" height="17" rx="4" fill="#5ec9a7"/>
+           <rect x="134" y="93" width="15" height="17" rx="4" fill="#5ec9a7"/></g>
+        <text x="262" y="62" font-family="Segoe UI,sans-serif" font-size="15" font-weight="800" fill="#ffb03a" text-anchor="middle">COMBO</text>
+        <text x="262" y="88" font-family="Segoe UI,sans-serif" font-size="24" font-weight="800" fill="#ffb03a" text-anchor="middle">x3</text>
+      `,
+    },
+    {
+      id: "memoria", name: "Memória", genre: "Puzzle", tint: "#ffb03a",
+      desc: "Encontre os pares antes de errar demais. O tabuleiro cresce a cada rodada limpa.",
+      path: "games/memoria/", unit: "pts", best: ["memoria"],
+      thumb: `
+        <rect width="320" height="180" fill="#161219"/>
+        ${(() => {
+          const cor = ["#ffb03a", "#ff5c39", "#5ec9a7", "#62a8ff", "#c77dff", "#e8dcc8", "#4ad66d", "#ffce4d"];
+          const cartas = [[0, 1], [1, 0], [2, 1], [3, 0], [4, 0], [5, 1], [6, 0], [7, 1]];
+          return cartas.map(([i, aberta], k) => {
+            const x = 26 + (k % 4) * 72, y = 26 + Math.floor(k / 4) * 68;
+            return aberta
+              ? `<rect x="${x}" y="${y}" width="60" height="56" rx="10" fill="rgba(255,255,255,.07)" stroke="rgba(255,255,255,.22)" stroke-width="2"/><circle cx="${x + 30}" cy="${y + 28}" r="15" fill="${cor[i]}"/>`
+              : `<rect x="${x}" y="${y}" width="60" height="56" rx="10" fill="#2b2333" stroke="rgba(255,176,58,.28)" stroke-width="2"/><circle cx="${x + 30}" cy="${y + 28}" r="5" fill="rgba(255,176,58,.5)"/>`;
+          }).join("");
+        })()}
+      `,
+    },
+    {
       id: "fliperama", name: "Fliperama", genre: "Pinball", tint: "#ff5c39",
       desc: "Pinball com física de verdade: bumpers, alvos que apagam e multiplicador por acertos seguidos.",
       path: "games/fliperama/", unit: "pts", best: ["fliperama"],

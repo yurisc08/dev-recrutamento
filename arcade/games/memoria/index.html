@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0c0c10">
+<meta name="description" content="Memória: encontre os pares antes de errar demais — o tabuleiro cresce a cada rodada.">
+<title>Memória — Magicine</title>
+<link rel="stylesheet" href="../../shared/ui.css">
+<link rel="icon" href="../../icon.svg">
+</head>
+<body>
+  <div class="stage">
+    <canvas id="c" aria-label="Jogo da memória"></canvas>
+
+    <header class="hud">
+      <a class="pill" href="../../index.html">← Sair</a>
+      <h1>Memória</h1>
+      <span class="pill"><span class="label">Recorde</span><b id="best">0</b></span>
+      <button class="pill icon" id="mute" type="button" aria-label="Som">🔊</button>
+      <button class="pill icon" id="fs" type="button" aria-label="Tela cheia">⛶</button>
+    </header>
+
+    <div class="screen" id="start">
+      <h2>Memória</h2>
+      <p>Vire duas cartas por vez e encontre os pares. Cada erro custa pontos, e o tabuleiro <b>cresce</b> a cada rodada limpa.</p>
+      <button class="btn" id="play" type="button">Começar</button>
+    </div>
+
+    <div class="screen hidden" id="over">
+      <h2 id="over-title">Fim da partida</h2>
+      <div class="result">
+        <div><span>Rodada</span><b id="r-rodada">0</b></div>
+        <div><span>Erros</span><b id="r-erros">0</b></div>
+        <div><span>Pontos</span><b id="r-score">0</b></div>
+      </div>
+      <p class="record" id="record"></p>
+      <button class="btn" id="again" type="button">Jogar de novo</button>
+    </div>
+
+
+    <p class="hint" id="hint">Toque ou clique numa carta para virar</p>
+  </div>
+
+  <script src="../../shared/engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#0c0c10">
+<meta name="description" content="Cores: encaixe os blocos que caem e junte quatro ou mais da mesma cor para limpar em cadeia.">
+<title>Cores — Magicine</title>
+<link rel="stylesheet" href="../../shared/ui.css">
+<link rel="icon" href="../../icon.svg">
+</head>
+<body>
+  <div class="stage">
+    <canvas id="c" aria-label="Quebra-cabeça de blocos coloridos"></canvas>
+
+    <header class="hud">
+      <a class="pill" href="../../index.html">← Sair</a>
+      <h1>Cores</h1>
+      <span class="pill"><span class="label">Recorde</span><b id="best">0</b></span>
+      <button class="pill icon" id="mute" type="button" aria-label="Som">🔊</button>
+      <button class="pill icon" id="fs" type="button" aria-label="Tela cheia">⛶</button>
+    </header>
+
+    <div class="screen" id="start">
+      <h2>Cores</h2>
+      <p>Os pares descem. Junte <b>quatro ou mais</b> blocos da mesma cor encostados para eles sumirem — o que estava em cima desaba e pode <b>encadear combos</b>.</p>
+      <button class="btn" id="play" type="button">Começar</button>
+    </div>
+
+    <div class="screen hidden" id="over">
+      <h2 id="over-title">A pilha chegou ao topo</h2>
+      <div class="result">
+        <div><span>Nível</span><b id="r-nivel">0</b></div>
+        <div><span>Maior combo</span><b id="r-combo">0</b></div>
+        <div><span>Pontos</span><b id="r-score">0</b></div>
+      </div>
+      <p class="record" id="record"></p>
+      <button class="btn" id="again" type="button">Jogar de novo</button>
+    </div>
+
+    <div class="touch">
+      <div class="pad"><div class="tbtn" data-key="ArrowLeft">◀</div><div class="tbtn" data-key="ArrowRight">▶</div></div>
+      <div class="pad"><div class="tbtn" data-key="ArrowUp">↻</div><div class="tbtn" data-key="ArrowDown">▼</div></div>
+    </div>
+
+    <p class="hint" id="hint"><kbd>←</kbd> <kbd>→</kbd> movem · <kbd>↑</kbd> gira · <kbd>↓</kbd> acelera</p>
+  </div>
+
+  <script src="../../shared/engine.js"></script>
+  <script src="game.js"></script>
+</body>
+</html>

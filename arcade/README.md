@@ -39,7 +39,7 @@ objeto vira um card na home, uma entrada em `/noticias/` e uma página em
 }
 ```
 
-O pacote já vem com **27 matérias** escritas para este site — 5 de Cinema,
+O pacote já vem com **28 matérias** escritas para este site — 6 de Cinema,
 5 de Séries, 5 de Games e 12 de Bastidores. São textos originais de análise
 atemporal: o tipo de conteúdo que continua recebendo visita meses depois.
 Cada uma tem ilustração própria em `img/`, também original.
@@ -124,6 +124,8 @@ o site avisa no console e volta a usar as matérias locais em vez de quebrar.
 | **Colosso** | Escalada | Gorila gigante subindo a torre, desviando de entulho e derrubando aviões |
 | **Linha de Frente** | Tiro | Arena em vista de cima, ondas convergentes, avanço com invulnerabilidade breve |
 | **Guardiões** | Estratégia | Defesa de torre: três guardiões, três níveis cada, ondas com velozes, blindados e chefes |
+| **Cores em Queda** | Puzzle | Pares que caem; 4+ da mesma cor somem e a reação em cadeia multiplica |
+| **Memória** | Puzzle | Pares de símbolos desenhados em código; o tabuleiro cresce a cada rodada |
 | **Voo Rasante** | Habilidade | Quatro mundos com arte própria e recorde separado por mundo |
 | **Serpente Neon** | Arcade | O tabuleiro ganha casas em telas maiores |
 | **Quebra-Blocos** | Arcade | A parede ganha colunas em telas largas |
@@ -309,7 +311,8 @@ arcade/
 │   ├── engine.js           base dos jogos
 │   └── ui.css              estilo das páginas de jogo
 ├── games/
-│   └── dragao/ voo/ serpente/ blocos/ invasores/ rebatida/
+│   ├── dragao/ voo/ serpente/ blocos/ invasores/ rebatida/
+│   └── fliperama/ colosso/ linhafrente/ guardioes/ cores/ memoria/
 ├── icon.svg  manifest.webmanifest  ads.txt  _headers
 ```
 
