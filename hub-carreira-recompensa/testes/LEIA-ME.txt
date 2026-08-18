@@ -1,0 +1,12 @@
+Testes de apoio (nao vao para o Cloudflare).
+
+Requisitos: node 20+ e "npm i jsdom" nesta pasta.
+
+  node testes/test.mjs      # catalogo de secoes e substituicao de marcadores
+  node testes/smoke.mjs     # carga do modulo e listeners da tela
+  node testes/flow.mjs      # fluxo do Gestor: abrir, escopo, obrigatorios, salvar
+  node testes/flow_cr.mjs   # fluxo do C&R: validacao da nova solicitacao
+  node testes/docxtest.mjs  # gera um DOCX a partir do modelo oficial
+
+pure.mjs e gerado a partir do index.html; regere com testes/gerar-pure.py
+sempre que as funcoes de secao ou de DOCX mudarem.

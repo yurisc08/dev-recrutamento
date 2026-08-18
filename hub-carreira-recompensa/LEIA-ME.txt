@@ -1,0 +1,94 @@
+HUB Carreira & Recompensa - Cloudflare estatico
+Versao 39 (correcao de fluxos e logicas)
+
+Arquivos preservam o template original enviado.
+Fluxo: C&R -> Gestor -> C&R -> Concluido.
+Sem aprovacao de lideranca.
+Gestor sugere somente ATIV_DESC e DESCRICAO_CARGO.
+TEXTO_RESULTADO_ESPERADO e SKILL_30 a SKILL_37 sao referencia/somente leitura
+(aparecem no bloco recolhivel "Demais campos do descritivo").
+
+Envie todos os arquivos deste pacote juntos no carregador de ativos estaticos
+do Cloudflare. Nenhuma alteracao de banco (Supabase) e necessaria: as
+correcoes sao todas de front-end e usam as mesmas RPCs de antes.
+
+
+NUMERACAO OFICIAL DAS SECOES
+----------------------------
+Conferida na planilha CARGOS_PARA_GERAR_MAPAS_HIERARQUIA (colunas
+SKILL_nn_DESC) e no modelo protegido modelo-cargo-individual.docx.
+Ate a v38 os rotulos estavam deslocados em uma posicao.
+
+  TEXTO_RESULTADO_ESPERADO  Foco de atuacao
+  ATIV_DESC                 Missao
+  DESCRICAO_CARGO           Principais responsabilidades/atividades
+  SKILL_30                  Formacao/Escolaridade minima
+  SKILL_31                  Formacao/Escolaridade desejavel
+  SKILL_32                  Idioma minimo
+  SKILL_33                  Idioma desejavel
+  SKILL_34                  Competencias tecnicas minimas
+  SKILL_35                  Competencias tecnicas desejaveis
+  SKILL_36                  Experiencia profissional desejavel
+  SKILL_37                  Competencias comportamentais Marcopolo desejaveis
+
+A tabela vive em SECTION_CATALOG, no inicio do script do index.html, e e a
+unica fonte da verdade: rotulos, leitura da base e escopo de revisao saem
+todos dela.
+
+Para permitir que o Gestor sugira outra secao, basta acrescentar a chave em
+SUGGESTABLE_SECTIONS (mesmo bloco). Tudo o que ficar fora dessa lista entra
+automaticamente no bloco de referencia somente leitura.
+
+
+O QUE FOI CORRIGIDO NA V39
+--------------------------
+1.  Numeracao SKILL_30..SKILL_34 deslocada em uma posicao. Os textos da base
+    apareciam no campo errado e o DOCX saia com escolaridade no lugar de
+    idioma, e assim por diante.
+2.  No celular a tela de login continuava por cima do sistema depois de
+    entrar (a regra #login.login-shell com !important vencia a classe
+    .hidden). Agora usa :not(.hidden).
+3.  init() rodava duas vezes no login e recarregava tudo a cada renovacao de
+    token, jogando quem estava preenchendo de volta ao painel. Agora reage
+    so a SIGNED_IN / SIGNED_OUT / INITIAL_SESSION e e idempotente.
+4.  Sem sessao a tela de login nao era restaurada; agora e.
+5.  Pesquisa e filtro do painel nao faziam nada e o select de status nunca
+    era preenchido. Idem para a busca e o filtro dos logs e o botao
+    Atualizar da auditoria.
+6.  Nova solicitacao: o formulario e novalidate, entao nenhum campo
+    obrigatorio era conferido. Agora nome do cargo, empresa, filial, setor,
+    gestor e prazo sao validados antes do envio.
+7.  Nova solicitacao: escolher "Pre-configurar aprovador adicional" nao abria
+    o bloco do aprovador e additional_area_id nunca era preenchido, entao o
+    envio falhava DEPOIS de a solicitacao ja ter sido criada. Agora o bloco
+    abre, a area vem do aprovador escolhido e a validacao acontece antes.
+8.  Falhas nas etapas complementares (tipo da solicitacao, escopo da revisao,
+    aprovador) abortavam o fluxo e deixavam a solicitacao criada e invisivel.
+    Agora o dialog fecha, a lista recarrega e o aviso e exibido.
+9.  values() usava document.querySelector e podia capturar um campo homonimo
+    de um dialog aberto. Agora le apenas o formulario do detalhe.
+10. Campos obrigatorios nao eram conferidos antes de "Atribuir ao Gestor" e
+    "Enviar para C&R" (o data-required era gerado e ignorado).
+11. save_dynamic_values recebia ora field_key ora id do campo. A semeadura de
+    valores da triagem, que usava id, nao gravava nada. Agora tudo e
+    normalizado para field_key.
+12. O escopo restrito da revisao so era aplicado a pedidos vindos da triagem
+    do Gestor; atualizacoes abertas pelo C&R mostravam o aviso de escopo mas
+    liberavam todos os campos.
+13. Documento: o mapeamento so era carregado ao visitar a aba Modelos, entao
+    baixar direto do painel gerava um DOCX inteiro com "Nao informado".
+14. Documento: escolher "Sem preenchimento" nao tinha efeito, voltava ao
+    padrao.
+15. Documento: so a primeira ocorrencia de cada marcador era substituida e as
+    quebras de linha eram perdidas. Agora todas as ocorrencias sao trocadas e
+    as quebras viram <w:br/>.
+16. Botoes Recusar/Excluir tinham o titulo do cargo interpolado dentro do
+    onclick; um apostrofo no nome quebrava o botao. Agora usam delegacao por
+    data-attribute.
+17. Solicitacao do Gestor ainda sem triagem aparecia como "Em triagem por
+    C&R". Agora mostra "Aguardando triagem de C&R".
+18. "Mostrar" no dialog de codigo revelava so o primeiro campo.
+19. Abrir "Editar usuario" podia apagar a filial ja cadastrada quando ela nao
+    estava na lista de filiais ativas.
+20. Filtro que escondia Concluir/Devolver durante a validacao adicional usava
+    escape invalido e nunca funcionava.
