@@ -68,7 +68,9 @@ console.log('== acesso ==');
 check('menu Base e modelo visivel para ADMIN', !$('#navBase').classList.contains('hidden'));
 $('#navBase').click(); await new Promise(r=>setTimeout(r,80));
 check('tela abre', !$('#baseView').classList.contains('hidden'));
-check('avisa que o catalogo e o padrao embutido', $('#baseStatus').textContent.includes('padrão embutido'), $('#baseStatus').textContent.slice(0,80));
+check('avisa que esta rodando no padrao do pacote', $('#baseStatus').textContent.includes('configuração padrão do pacote'), $('#baseStatus').textContent.slice(0,90));
+check('aponta as tabelas que faltam', $('#baseStatus').textContent.includes('section_catalog') && $('#baseStatus').textContent.includes('app_settings'), $('#baseStatus').textContent.slice(0,160));
+check('painel de configuracoes presente', w.document.querySelectorAll('#baseSettings .setting-row').length===6, String(w.document.querySelectorAll('#baseSettings .setting-row').length));
 check('botao vira Exportar sem a tabela', $('#baseSaveCatalog').textContent.includes('Exportar'), $('#baseSaveCatalog').textContent);
 check('catalogo listado', w.document.querySelectorAll('#baseCatalog tbody tr').length===11, String(w.document.querySelectorAll('#baseCatalog tbody tr').length));
 

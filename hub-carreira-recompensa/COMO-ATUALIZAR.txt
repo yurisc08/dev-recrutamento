@@ -1,0 +1,103 @@
+=======================================================================
+HUB Carreira & Recompensa — como atualizar o sistema
+Versao 43
+=======================================================================
+
+SAO DOIS PASSOS. Faca na ordem.
+
+
+PASSO 1 — BANCO (Supabase)  ~1 minuto, so precisa ser feito uma vez
+-----------------------------------------------------------------------
+  1. Abra o Supabase do projeto.
+  2. Menu lateral: SQL Editor -> New query.
+  3. Abra o arquivo  sql/atualizar-sistema.sql  deste pacote, copie o
+     conteudo inteiro e cole no editor.
+  4. Clique em Run.
+
+  Voce deve ver mensagens como:
+     [1/3] Constraint antigo removido: manager_intake_requests_status_check
+     [1/3] Status liberados: CONVERTIDA, EM_TRIAGEM, PENDENTE, RECUSADA_CR
+
+  Pode rodar de novo quando quiser: o arquivo e idempotente. Ele nao
+  apaga dados e NAO desfaz nada que voce ja tenha ajustado pela tela.
+
+  Este passo resolve o erro
+     "new row for relation manager_intake_requests violates check
+      constraint manager_intake_requests_status_check"
+  que estava travando a triagem, e cria as duas tabelas que deixam o
+  ADMIN configurar o sistema sem mexer no codigo.
+
+
+PASSO 2 — SITE (Cloudflare)
+-----------------------------------------------------------------------
+  Envie ESTES 7 ARQUIVOS juntos no carregador de ativos estaticos:
+
+     index.html
+     styles.css
+     config.js
+     LEIA-ME.txt
+     modelo-cargo-individual.docx
+     logo-hub-carreira-recompensa.png
+     logo-anterior.png
+
+  As pastas sql/ e testes/ NAO vao para o Cloudflare. Sao material de
+  apoio: uma tem o script do banco, a outra os testes automatizados.
+
+  Depois de publicar, de um Ctrl+F5 (ou puxe a tela para baixo no
+  celular) para o navegador pegar a versao nova.
+
+
+CONFERINDO SE DEU CERTO
+-----------------------------------------------------------------------
+  Entre como ADMIN e abra o menu "Base e modelo". No alto da tela:
+
+  - "Configuracao carregada do Supabase"  -> os dois passos deram certo.
+  - "Rodando com a configuracao padrao"   -> o Passo 1 nao foi aplicado.
+                                             O site funciona, mas os
+                                             botoes Salvar viram Exportar.
+
+
+A PARTIR DE AGORA, O QUE VOCE MUDA SEM MEXER NO CODIGO
+-----------------------------------------------------------------------
+Tudo pelo menu "Base e modelo" (visivel so para o ADMIN):
+
+  Configuracoes gerais
+    - Dominios de e-mail aceitos no login e no cadastro
+    - Marcadores de identificacao do documento
+    - Prazo padrao sugerido na triagem
+    - Se o Gestor pode abrir cargo novo / atualizacao
+    - Se o codigo do cargo e obrigatorio para concluir
+
+  Secoes do descritivo
+    - Criar, renomear, reordenar e remover secao (inclusive um SKILL_38
+      novo, se a planilha passar a ter). A secao criada aparece sozinha
+      na aba Modelos para voce mapear no documento.
+    - Marcar quais secoes o Gestor pode sugerir alteracao
+    - Apontar a coluna _DESC correspondente na planilha base
+
+  Conferencia automatica
+    - "Conferir modelo .docx" compara o catalogo com os marcadores do
+      documento oficial
+    - Envie a planilha base (.xlsx ou .csv) e a tela mostra o rotulo REAL
+      de cada coluna SKILL_nn e acusa qualquer secao apontando para a
+      coluna errada. O arquivo e lido no seu navegador; nada sobe para o
+      servidor.
+
+Nas outras telas, ja existentes:
+    Campos    - campos do formulario, obrigatoriedade, ordem, explicativos
+    Modelos   - de onde vem cada campo do documento gerado
+    Usuarios  - cadastro, perfil e codigo de acesso
+    Empresas e filiais / Fluxos / Logs
+
+E na tela de uma solicitacao, o ADMIN edita qualquer campo em qualquer
+status, inclusive fora do escopo da revisao e depois de concluida (botao
+"Salvar correcao"). Tudo fica registrado em Logs.
+
+
+O QUE AINDA EXIGE ALGUEM MEXER EM ARQUIVO
+-----------------------------------------------------------------------
+  - Trocar o modelo .docx: substitua modelo-cargo-individual.docx no
+    pacote e reenvie ao Cloudflare. Depois use "Conferir modelo .docx"
+    para ver se algum marcador novo precisa virar secao.
+  - Trocar as logomarcas: mesma coisa, substitua os .png.
+  - Mudar a URL/chave do Supabase: config.js.

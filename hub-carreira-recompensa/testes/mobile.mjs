@@ -111,7 +111,14 @@ for (const [nome,perfil] of [['iphone-se',{viewport:{width:375,height:667},isMob
       }).slice(0,6).map(el=>`${el.tagName.toLowerCase()}${el.id?'#'+el.id:''}${typeof el.className==='string'&&el.className.trim()?'.'+el.className.trim().split(/\s+/)[0]:''} (right=${Math.round(el.getBoundingClientRect().right)})`);
       const alvos=[...document.querySelectorAll('main button:not(.hidden), main input, main select, main textarea, .topbar button')].filter(el=>{
         const r=el.getBoundingClientRect();
-        return r.width>0 && r.height>0 && r.height<40 && !el.classList.contains('help-tip');
+        if(!(r.width>0 && r.height>0) || r.height>=40) return false;
+        if(el.classList.contains('help-tip')) return false;              // area efetiva de 44px via ::before
+        // checkbox pequeno dentro de um label alto o suficiente e aceitavel
+        if(el.type==='checkbox'){
+          const lab=el.closest('label');
+          if(lab && lab.getBoundingClientRect().height>=40) return false;
+        }
+        return true;
       }).slice(0,6).map(el=>`${el.tagName.toLowerCase()}${el.id?'#'+el.id:''}${typeof el.className==='string'&&el.className.trim()?'.'+el.className.trim().split(/\s+/)[0]:''} h=${Math.round(el.getBoundingClientRect().height)}`);
       return {scrollW:de.scrollWidth, innerW:window.innerWidth, fora, alvos};
     });

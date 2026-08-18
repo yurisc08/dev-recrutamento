@@ -1,5 +1,5 @@
 HUB Carreira & Recompensa - Cloudflare estatico
-Versao 42 (celular e preenchimento a partir da base)
+Versao 43 (ADMIN configura o sistema sem tocar no codigo)
 
 Arquivos preservam o template original enviado.
 Fluxo: C&R -> Gestor -> C&R -> Concluido.
@@ -38,6 +38,33 @@ todos dela.
 Para permitir que o Gestor sugira outra secao, basta acrescentar a chave em
 SUGGESTABLE_SECTIONS (mesmo bloco). Tudo o que ficar fora dessa lista entra
 automaticamente no bloco de referencia somente leitura.
+
+
+NOVIDADES DA V43 - CONFIGURACAO PELO ADMIN
+------------------------------------------
+Leia COMO-ATUALIZAR.txt: sao dois passos, o SQL e o envio ao Cloudflare.
+
+O que saiu do codigo e virou tela (menu Base e modelo > Configuracoes):
+  - email_domains               dominios aceitos no login e no cadastro
+  - fixed_markers               marcadores de identificacao do documento
+  - triage_deadline_days        prazo padrao sugerido na triagem
+  - manager_can_open_new        Gestor pode abrir cargo novo
+  - manager_can_open_update     Gestor pode pedir atualizacao
+  - require_job_code_on_approve exige codigo do cargo para concluir
+
+A lista de marcadores do documento deixou de ser fixa: agora e a soma dos
+marcadores de identificacao com TODAS as secoes do catalogo. Criar SKILL_38
+na tela ja o disponibiliza na aba Modelos, sem tocar no codigo.
+
+sql/atualizar-sistema.sql (arquivo unico, idempotente):
+  1. Conserta o CHECK de manager_intake_requests que travava a triagem. Em
+     vez de adivinhar os valores, ele monta a lista a partir do que ja esta
+     gravado na tabela mais o que as funcoes do fluxo escrevem. So amplia o
+     constraint: nada que ja exista deixa de valer.
+  2. Cria section_catalog + list/save (gravacao so para ADMIN).
+  3. Cria app_settings + list/save (gravacao so para ADMIN).
+Testado contra PostgreSQL 16 de verdade: reproduz o erro do constraint,
+conserta, e reaplicar o arquivo nao desfaz ajuste feito na tela.
 
 
 NOVIDADES DA V42 - CELULAR E PREENCHIMENTO

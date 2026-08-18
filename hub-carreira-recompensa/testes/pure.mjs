@@ -30,6 +30,35 @@ const DEFAULT_SECTION_CATALOG=[
    contrario cai no padrao acima. Tudo o que deriva dele e recalculado em
    rebuildSectionCatalog, entao a troca em tempo de execucao e segura. */
 let SECTION_CATALOG=[],SECTION_BY_KEY={},SECTION_ALIASES={},SUGGESTABLE_SECTIONS=[],REFERENCE_SECTIONS=[],UPDATE_CATALOG=[];
+/* Tudo o que antes era constante no codigo e o ADMIN pode precisar mudar.
+   Os valores abaixo sao so o padrao de fabrica: a tabela app_settings, quando
+   existe, sobrepoe cada chave. */
+const DEFAULT_SETTINGS={
+ email_domains:["marcopolo.com.br"],
+ triage_deadline_days:15,
+ fixed_markers:["EMPRESA","COD_DO_CARGO","NOME_COMPLETO","CBO","TCLC_DESC","DT_ATIVACAO"],
+ manager_can_open_new:true,
+ manager_can_open_update:true,
+ require_job_code_on_approve:true,
+};
+let SETTINGS={...DEFAULT_SETTINGS};
+let settingsSource="padrao";
+function setting(k){const v=SETTINGS[k];return v===undefined||v===null?DEFAULT_SETTINGS[k]:v;}
+async function loadSettings(){
+ try{
+  const {data,error}=await sb.rpc("list_app_settings");
+  // lista vazia = a RPC nao existe ou a tabela nao foi populada: seguimos no padrao
+  if(error||!Array.isArray(data)||!data.length){SETTINGS={...DEFAULT_SETTINGS};settingsSource="padrao";return;}
+  const out={...DEFAULT_SETTINGS};
+  for(const row of data){
+   if(!row||!row.key||!(row.key in DEFAULT_SETTINGS))continue;
+   let v=row.value;
+   if(typeof v==="string"){try{v=JSON.parse(v)}catch{}}
+   if(v!==null&&v!==undefined)out[row.key]=v;
+  }
+  SETTINGS=out;settingsSource="banco";
+ }catch(err){SETTINGS={...DEFAULT_SETTINGS};settingsSource="padrao";}
+}
 let sectionCatalogSource="padrao";
 function normalizeSection(row,i){
  return {

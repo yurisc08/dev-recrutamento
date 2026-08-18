@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v42"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v42"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v43"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v43"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   /* :not(.hidden) evita que a tela de login continue visivel apos entrar */
@@ -36,7 +36,7 @@
 <section id="dashboardView"><div class="page-head"><div><p class="eyebrow">Visão geral</p><h1 id="dashboardTitle"></h1><p id="dashboardSubtitle" class="muted"></p></div><button id="newRequest" class="btn primary">+ Novo cargo</button></div><div id="metrics" class="metrics"></div><section id="managerIntakesBox" class="card hidden"><div class="card-head"><div><h2>Solicitações iniciadas pelo Gestor</h2><p class="muted">Pedidos de criação ou atualização aguardando triagem de C&R.</p></div></div><div id="managerIntakes" class="admin-list"></div></section><div class="toolbar"><input id="search" placeholder="Pesquisar cargo, código ou gestor"><select id="status"><option value="">Todos os status</option></select></div><div id="requests" class="cards"></div><div id="empty" class="empty hidden"><h3>Nenhuma solicitação encontrada</h3></div></section>
 <section id="managersView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Usuários</h1><p class="muted">Cadastre C&R e Gestores. Cada usuário recebe um código individual de acesso.</p></div><button id="newManager" class="btn primary">+ Novo usuário</button></div><div class="toolbar"><input id="userSearch" placeholder="Pesquisar nome ou e-mail"><select id="userRoleFilter"><option value="">Todos os perfis</option><option value="CR">C&R</option><option value="GESTOR">Gestores</option></select><select id="userActiveFilter"><option value="">Ativos e inativos</option><option value="true">Ativos</option><option value="false">Inativos</option></select></div><div id="managers" class="cards"></div></section>
 <section id="fieldsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Configuração</p><h1>Campos do formulário</h1><p class="muted">Campos oficiais do documento. Para o Gestor, somente ATIV_DESC e DESCRICAO_CARGO aceitam sugestão; os demais permanecem somente leitura.</p></div><button id="newField" class="btn primary">+ Novo campo</button></div><div id="fieldRules" class="cards"></div></section>
-<section id="modelsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Documentos</p><h1>Configuração do documento</h1><p class="muted">Defina qual informação preencherá cada campo do documento aprovado. O arquivo-modelo fica protegido e não precisa ser acessado.</p></div><div><button id="resetModelMapping" class="btn ghost">Restaurar padrão</button><button id="saveModelMapping" class="btn primary">Salvar configuração</button></div></div><div class="notice"><b>Como funciona:</b> escolha uma origem para cada campo do documento. Informações fixas vêm da solicitação; campos do formulário vêm da aba Campos. O C&R pode consultar a configuração e gerar o documento, mas somente o ADMIN pode alterá-la.</div><div id="modelMappingStatus" class="muted" style="margin:14px 0"></div><div id="modelMappingGrid" class="mapping-grid"></div></section><section id="companiesView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Empresas e filiais</h1><p class="muted">Cadastre e mantenha as opções usadas nas novas solicitações.</p></div></div><div class="content-grid"><article class="card"><h2>Empresas</h2><form id="companyForm" class="inline-admin-form"><input name="name" placeholder="Nome da empresa" required><button class="btn primary" type="submit">Adicionar</button></form><div id="companyAdminList" class="admin-list"></div></article><article class="card"><h2>Filiais</h2><form id="branchForm" class="inline-admin-form"><select name="company_id" required></select><input name="name" placeholder="Nome da filial" required><button class="btn primary" type="submit">Adicionar</button></form><div id="branchAdminList" class="admin-list"></div></article></div></section><section id="workflowsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Fluxos e aprovadores</h1><p class="muted">Fluxo oficial protegido: C&R → Gestor → C&R → Concluído. Sem aprovação de liderança.</p></div></div><div class="content-grid"><article class="card"><h2>Áreas aprovadoras</h2><form id="approvalAreaForm" class="inline-admin-form"><input name="name" placeholder="Ex.: Centro de Formação" required><button class="btn primary">Adicionar</button></form><div id="approvalAreaList" class="admin-list"></div></article><article class="card"><h2>Modelos de fluxo</h2><form id="workflowForm" class="modal-form"><label>Nome<input name="name" required></label><label>Descrição<textarea name="description"></textarea></label><button class="btn primary">Criar modelo</button></form><div id="workflowList" class="admin-list"></div></article></div><article class="card workflow-builder"><h2>Etapas</h2><form id="workflowStepForm" class="inline-admin-form"><select name="workflow_id" required></select><input name="step_name" placeholder="Nome da etapa" required><select name="responsible_type"><option value="CR">C&R</option><option value="GESTOR">Gestor</option><option value="AREA">Área aprovadora</option></select><select name="approval_area_id"></select><select name="action_type"><option value="FILL">Preenchimento</option><option value="REVIEW">Revisão</option><option value="APPROVE">Aprovação</option><option value="OPINION">Parecer</option></select><input name="sort_order" type="number" value="10"><button class="btn primary">Adicionar etapa</button></form><div id="workflowStepList" class="admin-list"></div></article></section><section id="baseView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Base e modelo</h1><p class="muted">Estrutura oficial do descritivo. Quando o padrão do arquivo base mudar, confira aqui e redefina as seções.</p></div><div><button id="baseCheckModel" class="btn ghost">Conferir modelo .docx</button><button id="baseSaveCatalog" class="btn primary">Salvar catálogo</button></div></div><div id="baseStatus" class="notice"></div><article class="card"><div class="card-head"><div><h2>Conferência automática</h2><p class="muted">Compara o catálogo com os marcadores do modelo, com as colunas da planilha base e com os campos do formulário.</p></div></div><div class="base-upload"><label>Planilha base (.xlsx ou .csv)<input id="baseSheet" type="file" accept=".xlsx,.csv,.txt"></label><p class="fine">O arquivo é lido no seu navegador; nada é enviado para o servidor. Usamos só a linha de cabeçalho e a primeira linha preenchida, para descobrir o rótulo real de cada coluna SKILL_nn.</p></div><div id="baseFindings" class="base-findings"></div></article><article class="card"><div class="card-head"><div><h2>Seções do descritivo</h2><p class="muted">Chave = marcador no modelo e coluna na planilha. Sugerível marca as seções que o Gestor pode propor alteração.</p></div><button id="baseAddSection" class="btn secondary">+ Nova seção</button></div><div class="table-wrap"><table id="baseCatalog" class="base-table"></table></div></article></section><section id="auditView" class="hidden"><div class="page-head"><div><p class="eyebrow">Auditoria</p><h1>Logs de modificações</h1><p class="muted">Registro de criação e alteração de usuários e campos, além de entradas e saídas do sistema.</p></div><button id="refreshAudit" class="btn ghost">Atualizar</button></div><div class="toolbar"><input id="auditSearch" placeholder="Pesquisar responsável, ação ou item"><select id="auditEntity"><option value="">Todos os tipos</option><option value="profiles">Usuários</option><option value="form_fields">Campos</option><option value="access">Acessos</option></select></div><div id="auditLogs" class="cards"></div><div id="auditEmpty" class="empty hidden"><h3>Nenhum log encontrado</h3></div></section><section id="detailView" class="hidden"><button id="detailBackBtn" type="button" class="btn ghost">← Voltar</button><div id="detailHead" class="detail-head"></div><div id="returnNotice" class="notice warning hidden"></div><div id="stepper" class="stepper"></div><form id="content" class="content-grid"></form><section id="intakeReferencePanel" class="card hidden"></section><section id="crFinalOptions" class="card hidden"></section><section id="additionalApprovalPanel" class="card additional-approval hidden" aria-hidden="true"></section><div id="actions" class="actionbar"></div><section class="history-panel"><h2>Histórico</h2><div id="history"></div></section></section>
+<section id="modelsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Documentos</p><h1>Configuração do documento</h1><p class="muted">Defina qual informação preencherá cada campo do documento aprovado. O arquivo-modelo fica protegido e não precisa ser acessado.</p></div><div><button id="resetModelMapping" class="btn ghost">Restaurar padrão</button><button id="saveModelMapping" class="btn primary">Salvar configuração</button></div></div><div class="notice"><b>Como funciona:</b> escolha uma origem para cada campo do documento. Informações fixas vêm da solicitação; campos do formulário vêm da aba Campos. O C&R pode consultar a configuração e gerar o documento, mas somente o ADMIN pode alterá-la.</div><div id="modelMappingStatus" class="muted" style="margin:14px 0"></div><div id="modelMappingGrid" class="mapping-grid"></div></section><section id="companiesView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Empresas e filiais</h1><p class="muted">Cadastre e mantenha as opções usadas nas novas solicitações.</p></div></div><div class="content-grid"><article class="card"><h2>Empresas</h2><form id="companyForm" class="inline-admin-form"><input name="name" placeholder="Nome da empresa" required><button class="btn primary" type="submit">Adicionar</button></form><div id="companyAdminList" class="admin-list"></div></article><article class="card"><h2>Filiais</h2><form id="branchForm" class="inline-admin-form"><select name="company_id" required></select><input name="name" placeholder="Nome da filial" required><button class="btn primary" type="submit">Adicionar</button></form><div id="branchAdminList" class="admin-list"></div></article></div></section><section id="workflowsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Fluxos e aprovadores</h1><p class="muted">Fluxo oficial protegido: C&R → Gestor → C&R → Concluído. Sem aprovação de liderança.</p></div></div><div class="content-grid"><article class="card"><h2>Áreas aprovadoras</h2><form id="approvalAreaForm" class="inline-admin-form"><input name="name" placeholder="Ex.: Centro de Formação" required><button class="btn primary">Adicionar</button></form><div id="approvalAreaList" class="admin-list"></div></article><article class="card"><h2>Modelos de fluxo</h2><form id="workflowForm" class="modal-form"><label>Nome<input name="name" required></label><label>Descrição<textarea name="description"></textarea></label><button class="btn primary">Criar modelo</button></form><div id="workflowList" class="admin-list"></div></article></div><article class="card workflow-builder"><h2>Etapas</h2><form id="workflowStepForm" class="inline-admin-form"><select name="workflow_id" required></select><input name="step_name" placeholder="Nome da etapa" required><select name="responsible_type"><option value="CR">C&R</option><option value="GESTOR">Gestor</option><option value="AREA">Área aprovadora</option></select><select name="approval_area_id"></select><select name="action_type"><option value="FILL">Preenchimento</option><option value="REVIEW">Revisão</option><option value="APPROVE">Aprovação</option><option value="OPINION">Parecer</option></select><input name="sort_order" type="number" value="10"><button class="btn primary">Adicionar etapa</button></form><div id="workflowStepList" class="admin-list"></div></article></section><section id="baseView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Base e modelo</h1><p class="muted">Estrutura oficial do descritivo. Quando o padrão do arquivo base mudar, confira aqui e redefina as seções.</p></div><div><button id="baseCheckModel" class="btn ghost">Conferir modelo .docx</button><button id="baseSaveCatalog" class="btn primary">Salvar catálogo</button></div></div><div id="baseStatus" class="notice"></div><article class="card"><div class="card-head"><div><h2>Configurações gerais</h2><p class="muted">Regras que antes ficavam fixas no código. Valem para todos os usuários assim que salvas.</p></div><button id="baseSaveSettings" class="btn secondary">Salvar configurações</button></div><div id="baseSettings" class="settings-grid"></div></article><article class="card"><div class="card-head"><div><h2>Conferência automática</h2><p class="muted">Compara o catálogo com os marcadores do modelo, com as colunas da planilha base e com os campos do formulário.</p></div></div><div class="base-upload"><label>Planilha base (.xlsx ou .csv)<input id="baseSheet" type="file" accept=".xlsx,.csv,.txt"></label><p class="fine">O arquivo é lido no seu navegador; nada é enviado para o servidor. Usamos só a linha de cabeçalho e a primeira linha preenchida, para descobrir o rótulo real de cada coluna SKILL_nn.</p></div><div id="baseFindings" class="base-findings"></div></article><article class="card"><div class="card-head"><div><h2>Seções do descritivo</h2><p class="muted">Chave = marcador no modelo e coluna na planilha. Sugerível marca as seções que o Gestor pode propor alteração.</p></div><button id="baseAddSection" class="btn secondary">+ Nova seção</button></div><div class="table-wrap"><table id="baseCatalog" class="base-table"></table></div></article></section><section id="auditView" class="hidden"><div class="page-head"><div><p class="eyebrow">Auditoria</p><h1>Logs de modificações</h1><p class="muted">Registro de criação e alteração de usuários e campos, além de entradas e saídas do sistema.</p></div><button id="refreshAudit" class="btn ghost">Atualizar</button></div><div class="toolbar"><input id="auditSearch" placeholder="Pesquisar responsável, ação ou item"><select id="auditEntity"><option value="">Todos os tipos</option><option value="profiles">Usuários</option><option value="form_fields">Campos</option><option value="access">Acessos</option></select></div><div id="auditLogs" class="cards"></div><div id="auditEmpty" class="empty hidden"><h3>Nenhum log encontrado</h3></div></section><section id="detailView" class="hidden"><button id="detailBackBtn" type="button" class="btn ghost">← Voltar</button><div id="detailHead" class="detail-head"></div><div id="returnNotice" class="notice warning hidden"></div><div id="stepper" class="stepper"></div><form id="content" class="content-grid"></form><section id="intakeReferencePanel" class="card hidden"></section><section id="crFinalOptions" class="card hidden"></section><section id="additionalApprovalPanel" class="card additional-approval hidden" aria-hidden="true"></section><div id="actions" class="actionbar"></div><section class="history-panel"><h2>Histórico</h2><div id="history"></div></section></section>
 </main></div>
 <dialog id="requestDialog"><form id="requestForm" class="modal-form" novalidate><div class="modal-head"><div><p class="eyebrow">C&R</p><h2>Nova solicitação</h2></div><button type="button" class="icon-btn close">×</button></div><label>Tipo de solicitação<select name="request_type" required><option value="NEW">Criar cargo novo</option><option value="UPDATE">Atualizar cargo existente</option></select></label><div id="existingJobBox" class="hidden"><label>Pesquisar cargo vigente<input id="existingJobSearch" list="existingJobOptions" placeholder="Digite nome ou código" autocomplete="off"><datalist id="existingJobOptions"></datalist><input name="source_job_id" type="hidden"></label><div id="existingJobSelected" class="selected-manager muted">Selecione um cargo da base importada.</div></div><label>Nome do cargo<input name="title" required></label><label id="jobCodeCreateField">Código do cargo<input name="job_code"></label><div id="managerPickerBox"><label>Pesquisar gestor<input id="managerSearch" list="managerOptions" placeholder="Digite nome ou e-mail" autocomplete="off"><datalist id="managerOptions"></datalist><input name="manager_id" type="hidden"></label><div id="managerSelected" class="selected-manager muted">Selecione um gestor ativo.</div></div><div class="row"><label>Empresa<select name="company" required><option value="">Selecione...</option></select></label><label>Filial<select name="branch" required disabled><option value="">Selecione a empresa...</option></select></label></div><section id="updateFieldsBox" class="request-detail-box hidden"><h3>O que precisa ser atualizado?</h3><p class="muted">Selecione os conteúdos que precisam ser revisados. Os demais dados do cargo ficam disponíveis apenas para consulta.</p><div id="updateFieldChoices" class="update-field-choices"></div></section><section id="newManagerFieldsBox" class="request-detail-box hidden"><h3>Informações do Gestor</h3><p class="muted">Preencha os campos sob responsabilidade do Gestor. Os campos de C&R continuarão no fluxo oficial.</p><div id="newManagerFields"></div></section><label>Setor / área<input name="sector" placeholder="Informe o setor do cargo" required></label><label>Justificativa<textarea name="justification" placeholder="Explique a necessidade da criação ou atualização"></textarea></label><section id="requestOptionalApproval" class="optional-flow-box hidden"><label>Validação adicional<select name="use_additional_approval"><option value="NO">Não utilizar aprovador adicional</option><option value="YES">Pré-configurar aprovador adicional</option></select></label><div id="requestApprovalFields" class="hidden"><label>Área e aprovador<select name="additional_approver_id"><option value="">Selecione...</option></select></label><input name="additional_area_id" type="hidden"><label>Orientação para análise<textarea name="additional_approval_note" placeholder="Ex.: validar os campos relacionados à escolaridade"></textarea></label><p class="fine">O encaminhamento será confirmado pelo C&R quando a solicitação retornar do Gestor.</p></div></section><label id="requestDeadlineField">Prazo<input name="deadline" type="date" required></label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar solicitação</button></div></form></dialog>
 <dialog id="managerDialog"><form id="managerForm" class="modal-form"><div class="modal-head"><div><p class="eyebrow">Administração</p><h2>Novo usuário</h2></div><button type="button" class="icon-btn close">×</button></div><label>Nome<input name="name" required></label><label>Perfil<select name="role" required><option value="GESTOR">Gestor</option><option value="CR">Carreira & Recompensa</option></select></label><label id="newApproverAreaField" class="hidden">Área aprovadora<select name="approval_area_id"><option value="">Selecione...</option></select></label><label>E-mail corporativo<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="nome@marcopolo.com.br" required></label><div class="row"><label>Empresa<input name="company" list="managerCompanyOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="managerCompanyOptions"></datalist></label><label>Filial<input name="branch" list="managerBranchOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="managerBranchOptions"></datalist></label></div><div class="row"><label>Área<input name="area"></label><label>Cargo do gestor<input name="role_title"></label></div><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar acesso e gerar código</button></div></form></dialog>
@@ -100,7 +100,21 @@ function mgmt() {
 function admin() {
   return S.profile?.role === "ADMIN";
 }
-const corporateEmail = (v) => /^[^@\s]+@marcopolo\.com\.br$/i.test(String(v || "").trim());
+/* O dominio deixou de ser fixo no codigo: vem de Configuracoes. */
+const emailDomains = () => (Array.isArray(setting("email_domains")) ? setting("email_domains") : [])
+  .map((d) => String(d || "").trim().toLowerCase().replace(/^@/, ""))
+  .filter(Boolean);
+function corporateEmail(v) {
+  const email = String(v || "").trim().toLowerCase();
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)) return false;
+  const doms = emailDomains();
+  if (!doms.length) return true;
+  return doms.some((d) => email.endsWith("@" + d));
+}
+const emailDomainsLabel = () => {
+  const d = emailDomains();
+  return d.length ? d.map((x) => "@" + x).join(" ou ") : "um e-mail válido";
+};
 function owner(r) {
   return [ST.M, ST.R].includes(r.status)
     ? r.manager?.name
@@ -196,6 +210,7 @@ async function load() {
   S.fields = f.data || [];
   S.companies = c.data || [];
   S.branches = b.data || [];
+  await loadSettings();
   await loadSectionCatalog();
   const aa=await sb.from("approval_areas").select("*").order("name");S.approvalAreas=aa.data||[];
   if ($("#workflowsView")) {
@@ -220,7 +235,8 @@ function render() {
   $("#navCompanies")?.classList.toggle("hidden", !admin());
   $("#navWorkflows")?.classList.toggle("hidden", !admin());
   $("#navBase")?.classList.toggle("hidden", !admin());
-  $("#newRequest").classList.toggle("hidden", !(isMgmt || S.profile.role === "GESTOR"));
+  const gestorPodeAbrir = setting("manager_can_open_new") || setting("manager_can_open_update");
+  $("#newRequest").classList.toggle("hidden", !(isMgmt || (S.profile.role === "GESTOR" && gestorPodeAbrir)));
   $("#dashboardTitle").textContent = isMgmt
     ? "Painel administrativo"
     : "Painel do Gestor";
@@ -393,15 +409,80 @@ function baseFindings(){
 }
 
 /* ---------- render ---------- */
+const SETTINGS_FORM=[
+ {key:"email_domains",tipo:"lista",rotulo:"Domínios de e-mail aceitos",
+  ajuda:"Um por linha, sem @. Login e cadastro só aceitam estes domínios. Deixe vazio para aceitar qualquer e-mail válido."},
+ {key:"fixed_markers",tipo:"lista",rotulo:"Marcadores de identificação do documento",
+  ajuda:"Marcadores do modelo que não são seções do descritivo (empresa, código, CBO...). As seções do catálogo entram automaticamente."},
+ {key:"triage_deadline_days",tipo:"numero",rotulo:"Prazo padrão da triagem (dias)",
+  ajuda:"Sugestão de prazo ao converter um pedido do Gestor em solicitação oficial."},
+ {key:"manager_can_open_new",tipo:"bool",rotulo:"Gestor pode abrir cargo novo",
+  ajuda:"Desmarque para que só o C&R crie cargos novos."},
+ {key:"manager_can_open_update",tipo:"bool",rotulo:"Gestor pode pedir atualização de cargo existente",
+  ajuda:"Desmarque para que só o C&R abra atualizações."},
+ {key:"require_job_code_on_approve",tipo:"bool",rotulo:"Exigir código do cargo para concluir",
+  ajuda:"Bloqueia a conclusão enquanto o código do cargo não estiver salvo."},
+];
+function renderBaseSettings(){
+ const host=$("#baseSettings");if(!host)return;
+ host.innerHTML=SETTINGS_FORM.map(c=>{
+  const v=setting(c.key);
+  const campo=c.tipo==="lista"
+   ? `<textarea class="s-val" data-key="${c.key}" rows="3">${esc((Array.isArray(v)?v:[]).join("\n"))}</textarea>`
+   : c.tipo==="numero"
+   ? `<input class="s-val" data-key="${c.key}" type="number" min="1" max="365" value="${esc(String(v??""))}">`
+   : `<label class="switch"><input class="s-val" data-key="${c.key}" type="checkbox" ${v?"checked":""}> <span>${v?"Sim":"Não"}</span></label>`;
+  return `<div class="setting-row"><b>${esc(c.rotulo)}</b><small>${esc(c.ajuda)}</small>${campo}</div>`;
+ }).join("");
+}
+function collectSettings(){
+ const out={};
+ $$("#baseSettings .s-val").forEach(el=>{
+  const k=el.dataset.key,c=SETTINGS_FORM.find(x=>x.key===k);
+  if(!c)return;
+  if(c.tipo==="lista")out[k]=el.value.split(/\r?\n/).map(x=>x.trim().replace(/^@/,"")).filter(Boolean);
+  else if(c.tipo==="numero")out[k]=Math.max(1,Math.min(365,Number(el.value)||DEFAULT_SETTINGS[k]));
+  else out[k]=el.checked;
+ });
+ return out;
+}
+$("#baseSaveSettings").onclick=async()=>{
+ if(!admin())return;
+ const novo=collectSettings();
+ if(!novo.manager_can_open_new&&!novo.manager_can_open_update
+    &&!confirm("Com as duas opções desmarcadas o Gestor não poderá abrir nenhuma solicitação. Continuar?"))return;
+ if(!novo.fixed_markers.length&&!confirm("Sem marcadores de identificação, empresa e código do cargo não serão preenchidos no documento. Continuar?"))return;
+ if(settingsSource!=="banco"){
+  const blob=new Blob([JSON.stringify(novo,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="app_settings.json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  return toast("Configurações exportadas. Rode o SQL de atualização para poder salvar direto no Supabase.");
+ }
+ const rows=Object.entries(novo).map(([key,value])=>({key,value}));
+ const {error}=await sb.rpc("save_app_settings",{p_rows:rows});
+ if(error)return toast("Não foi possível salvar: "+error.message);
+ await loadSettings();
+ renderBaseView();
+ toast("Configurações salvas.");
+};
+document.addEventListener("change",e=>{
+ const el=e.target.closest("#baseSettings input[type=checkbox]");
+ if(el)el.parentElement.querySelector("span").textContent=el.checked?"Sim":"Não";
+});
 function renderBaseView(){
  if(!admin())return;
+ renderBaseSettings();
  if(!baseDraft.length)baseDraft=baseDraftFromCatalog();
  const st=$("#baseStatus");
  st.className="notice "+(sectionCatalogSource==="banco"?"":"warning");
- st.innerHTML=sectionCatalogSource==="banco"
-  ? '<b>Catálogo carregado do Supabase.</b> As alterações salvas aqui valem para todos os usuários.'
-  : '<b>Catálogo padrão embutido no pacote.</b> A tabela <code>section_catalog</code> ainda não existe no Supabase, então esta tela funciona para conferência e exportação, mas o botão Salvar não terá onde gravar. O SQL está no LEIA-ME.';
+ const noBanco=sectionCatalogSource==="banco"&&settingsSource==="banco";
+ st.className="notice "+(noBanco?"":"warning");
+ st.innerHTML=noBanco
+  ? '<b>Configuração carregada do Supabase.</b> Tudo o que você alterar nesta tela passa a valer para todos os usuários, sem mexer no código nem republicar o site.'
+  : `<b>Rodando com a configuração padrão do pacote.</b> ${sectionCatalogSource==="banco"?"":"A tabela <code>section_catalog</code>"}${sectionCatalogSource!=="banco"&&settingsSource!=="banco"?" e ":""}${settingsSource==="banco"?"":"<code>app_settings</code>"} ainda não existe(m) no Supabase. Esta tela funciona para conferência e exportação, mas os botões Salvar não têm onde gravar. Rode <code>sql/atualizar-sistema.sql</code>.`;
  $("#baseSaveCatalog").textContent=sectionCatalogSource==="banco"?"Salvar catálogo":"Exportar catálogo (JSON)";
+ $("#baseSaveSettings").textContent=settingsSource==="banco"?"Salvar configurações":"Exportar configurações (JSON)";
 
  const linhas=baseDraft.map((x,i)=>`<tr data-i="${i}">
    <td><input class="b-key" value="${esc(x.key)}" placeholder="SKILL_38"></td>
@@ -598,6 +679,35 @@ const DEFAULT_SECTION_CATALOG=[
    contrario cai no padrao acima. Tudo o que deriva dele e recalculado em
    rebuildSectionCatalog, entao a troca em tempo de execucao e segura. */
 let SECTION_CATALOG=[],SECTION_BY_KEY={},SECTION_ALIASES={},SUGGESTABLE_SECTIONS=[],REFERENCE_SECTIONS=[],UPDATE_CATALOG=[];
+/* Tudo o que antes era constante no codigo e o ADMIN pode precisar mudar.
+   Os valores abaixo sao so o padrao de fabrica: a tabela app_settings, quando
+   existe, sobrepoe cada chave. */
+const DEFAULT_SETTINGS={
+ email_domains:["marcopolo.com.br"],
+ triage_deadline_days:15,
+ fixed_markers:["EMPRESA","COD_DO_CARGO","NOME_COMPLETO","CBO","TCLC_DESC","DT_ATIVACAO"],
+ manager_can_open_new:true,
+ manager_can_open_update:true,
+ require_job_code_on_approve:true,
+};
+let SETTINGS={...DEFAULT_SETTINGS};
+let settingsSource="padrao";
+function setting(k){const v=SETTINGS[k];return v===undefined||v===null?DEFAULT_SETTINGS[k]:v;}
+async function loadSettings(){
+ try{
+  const {data,error}=await sb.rpc("list_app_settings");
+  // lista vazia = a RPC nao existe ou a tabela nao foi populada: seguimos no padrao
+  if(error||!Array.isArray(data)||!data.length){SETTINGS={...DEFAULT_SETTINGS};settingsSource="padrao";return;}
+  const out={...DEFAULT_SETTINGS};
+  for(const row of data){
+   if(!row||!row.key||!(row.key in DEFAULT_SETTINGS))continue;
+   let v=row.value;
+   if(typeof v==="string"){try{v=JSON.parse(v)}catch{}}
+   if(v!==null&&v!==undefined)out[row.key]=v;
+  }
+  SETTINGS=out;settingsSource="banco";
+ }catch(err){SETTINGS={...DEFAULT_SETTINGS};settingsSource="padrao";}
+}
 let sectionCatalogSource="padrao";
 function normalizeSection(row,i){
  return {
@@ -766,7 +876,7 @@ window.openIntakeTriage=id=>{
   const x=S.managerIntakes.find(v=>v.id===id);if(!x)return toast("Solicitação de triagem não localizada.");
   if(x.assigned_cr_id!==S.profile.id&&S.profile.role!=="ADMIN")return toast("Esta triagem está com outra pessoa de C&R.");
   const f=$("#triageForm");f.reset();f.intake_id.value=id;
-  const d=new Date();d.setDate(d.getDate()+15);f.deadline.value=d.toISOString().slice(0,10);
+  const d=new Date();d.setDate(d.getDate()+Number(setting("triage_deadline_days"))||15);f.deadline.value=d.toISOString().slice(0,10);
   $("#triageSummary").innerHTML=`<b>${esc(x.title)}</b><span>${x.request_type==="UPDATE"?"Atualização de cargo existente":"Criação de cargo novo"}</span><small>${esc(x.company)} / ${esc(x.branch)} · Setor ${esc(x.sector)}</small>${x.justification?`<small><b>Justificativa:</b> ${esc(x.justification)}</small>`:""}${x.update_sections?.length?`<small><b>Campos solicitados:</b> ${x.update_sections.map(sectionLabel).join(', ')}</small>`:""}${Object.entries(x.suggested_values||{}).map(([k,v])=>`<small><b>${sectionLabel(k)} — sugerido:</b> ${esc(v)}</small>`).join('')}`;
   $("#triageDialog").showModal();
 };
@@ -1168,7 +1278,7 @@ window.saveFinalJobCode=async()=>{const code=$("#finalJobCode").value.trim();if(
 window.sendManagerFinalReview=async()=>{const reason=prompt("Orientação para a conferência do Gestor:","Confira todos os campos preenchidos e devolva para C&R.")||"";if(!reason.trim())return;await saveValues();const{error}=await sb.rpc("cr_send_optional_manager_review",{p_request_id:S.selected.id,p_reason:reason});if(error)return toast(error.message);await load();show("dashboard");toast("Enviado ao Gestor para conferência opcional.");};
 
 window.transition = async (action, motivoPronto = null) => {
-  if(action === "approve" && !String(S.selected.job_code||"").trim()) return toast("Informe e salve o código do cargo antes da aprovação final.");
+  if(action === "approve" && setting("require_job_code_on_approve") && !String(S.selected.job_code||"").trim()) return toast("Informe e salve o código do cargo antes da aprovação final.");
   const requiredOwner = action === "request" ? "CR" : action === "sendCR" ? "GESTOR" : null;
   if (requiredOwner) {
     const missing = missingRequired(requiredOwner);
@@ -1232,25 +1342,15 @@ $("#codeForm").onsubmit = async (e) => {
     toast(err.message);
   }
 };
-const MODEL_MARKERS = [
-  "EMPRESA",
-  "COD_DO_CARGO",
-  "NOME_COMPLETO",
-  "CBO",
-  "TCLC_DESC",
-  "DT_ATIVACAO",
-  "TEXTO_RESULTADO_ESPERADO",
-  "ATIV_DESC",
-  "DESCRICAO_CARGO",
-  "SKILL_30",
-  "SKILL_31",
-  "SKILL_32",
-  "SKILL_33",
-  "SKILL_34",
-  "SKILL_35",
-  "SKILL_36",
-  "SKILL_37",
-];
+/* Antes era lista fixa. Agora sao os marcadores de identificacao (editaveis em
+   Configuracoes) mais TODAS as secoes do catalogo: criar SKILL_38 na tela Base
+   e modelo ja o disponibiliza aqui, sem mexer no codigo. */
+function modelMarkers(){
+ const fixos=(Array.isArray(setting("fixed_markers"))?setting("fixed_markers"):[])
+   .map(x=>String(x||"").trim().toUpperCase()).filter(Boolean);
+ const secoes=SECTION_CATALOG.map(x=>x.key);
+ return [...new Set([...fixos,...secoes])];
+}
 const FIXED_SOURCES = [
   ["request.company", "Empresa da solicitação"],
   ["request.job_code", "Código do cargo"],
@@ -1297,7 +1397,7 @@ function mappingOptions(selected) {
 }
 function renderModelMappings() {
   let map = Object.fromEntries(S.modelMappings.map((x) => [x.marker, x]));
-  $("#modelMappingGrid").innerHTML = MODEL_MARKERS.map((marker, i) => {
+  $("#modelMappingGrid").innerHTML = modelMarkers().map((marker, i) => {
     let m = map[marker],
       sel = m
         ? `${m.source_type}:${m.source_value}`
@@ -1344,7 +1444,7 @@ $("#resetModelMapping").onclick = () => {
 function mappedDocumentValues(r, vals) {
   let saved = Object.fromEntries(S.modelMappings.map((m) => [m.marker, m]));
   let out = {};
-  for (let marker of MODEL_MARKERS) {
+  for (let marker of modelMarkers()) {
     let m = saved[marker],
       fallback = m?.fallback_text || "Não informado",
       value = "";
@@ -1588,7 +1688,7 @@ $("#loginForm").onsubmit = async (e) => {
   const loginEmail = $("#email").value.replace(/\s+/g, "").toLowerCase();
   const accessCode = $("#accessCode").value.trim();
   $("#email").value = loginEmail;
-  if (!corporateEmail(loginEmail)) return toast("Utilize um e-mail corporativo @marcopolo.com.br.");
+  if (!corporateEmail(loginEmail)) return toast("Utilize um e-mail corporativo " + emailDomainsLabel() + ".");
   if (!accessCode) return toast("Informe o código de acesso.");
   submit.disabled = true;
   const originalText = submit.textContent;
@@ -1660,7 +1760,14 @@ $("#status").onchange = () => renderRequests();
 $("#auditSearch").oninput = () => renderAuditLogs();
 $("#auditEntity").onchange = () => renderAuditLogs();
 $("#refreshAudit").onclick = () => loadAuditLogs();
-$("#newRequest").onclick=async()=>{const f=$("#requestForm"),isManager=S.profile.role==="GESTOR";f.reset();f.manager_id.value=isManager?S.profile.id:"";$("#managerPickerBox").classList.toggle("hidden",isManager);$("#managerOptions").innerHTML=S.managers.filter(m=>m.active&&m.role==="GESTOR").map(m=>`<option value="${esc(m.name)} — ${esc(m.email)}"></option>`).join("");$("#managerSelected").textContent=isManager?`${S.profile.name} — solicitante`:"Selecione um gestor ativo.";fillCompanySelects();if(isManager&&S.profile.company){f.company.value=S.profile.company;fillBranches();f.branch.value=S.profile.branch||"";}else fillBranches();const {data,error}=await sb.rpc("list_available_approvers");S.approvalMembers=error?[]:(data||[]);f.additional_approver_id.innerHTML='<option value="">Selecione...</option>'+S.approvalMembers.map(x=>`<option value="${x.user_id}" data-area="${x.area_id}">${esc(x.area_name)} — ${esc(x.user_name)} (${esc(x.user_email)})</option>`).join("");$("#requestApprovalFields").classList.add("hidden");$("#existingJobBox").classList.add("hidden");applyRequestFormRules();syncRequestValidation();$("#requestDialog").showModal();};
+$("#newRequest").onclick=async()=>{const f=$("#requestForm"),isManager=S.profile.role==="GESTOR";f.reset();
+ /* O ADMIN decide em Configuracoes se o Gestor abre cargo novo, atualizacao,
+    os dois ou nenhum. */
+ if(isManager){
+  const podeNovo=setting("manager_can_open_new"),podeUpd=setting("manager_can_open_update");
+  [...f.request_type.options].forEach(o=>{o.hidden=o.value==="NEW"?!podeNovo:!podeUpd;o.disabled=o.hidden;});
+  if(f.request_type.selectedOptions[0]?.disabled){const livre=[...f.request_type.options].find(o=>!o.disabled);if(livre)f.request_type.value=livre.value;}
+ } else {[...f.request_type.options].forEach(o=>{o.hidden=false;o.disabled=false;});}f.manager_id.value=isManager?S.profile.id:"";$("#managerPickerBox").classList.toggle("hidden",isManager);$("#managerOptions").innerHTML=S.managers.filter(m=>m.active&&m.role==="GESTOR").map(m=>`<option value="${esc(m.name)} — ${esc(m.email)}"></option>`).join("");$("#managerSelected").textContent=isManager?`${S.profile.name} — solicitante`:"Selecione um gestor ativo.";fillCompanySelects();if(isManager&&S.profile.company){f.company.value=S.profile.company;fillBranches();f.branch.value=S.profile.branch||"";}else fillBranches();const {data,error}=await sb.rpc("list_available_approvers");S.approvalMembers=error?[]:(data||[]);f.additional_approver_id.innerHTML='<option value="">Selecione...</option>'+S.approvalMembers.map(x=>`<option value="${x.user_id}" data-area="${x.area_id}">${esc(x.area_name)} — ${esc(x.user_name)} (${esc(x.user_email)})</option>`).join("");$("#requestApprovalFields").classList.add("hidden");$("#existingJobBox").classList.add("hidden");applyRequestFormRules();syncRequestValidation();$("#requestDialog").showModal();};
 function renderNewManagerFields(){const box=$("#newManagerFields"),fields=S.fields.filter(x=>x.active&&x.owner_role==="GESTOR");box.innerHTML=fields.map(f=>`<label>${esc(f.label)}${f.required?' <span class="required-mark">*</span>':''}${f.field_type==="textarea"?`<textarea name="initial_${f.field_key}" ${f.required?'required':''} placeholder="${esc(f.placeholder||'')}"></textarea>`:`<input name="initial_${f.field_key}" ${f.required?'required':''} placeholder="${esc(f.placeholder||'')}">`}</label>`).join('')||'<p class="muted">Nenhum campo do Gestor está ativo na configuração.</p>';}
 function cleanCatalogValue(value){return String(value??'').replace(/<br\s*\/?>(\r?\n)?/gi,'\n').replace(/&nbsp;/gi,' ').trim();}
 function catalogValue(job,key){
@@ -1829,7 +1936,7 @@ $("#managerForm").onsubmit = async (e) => {
   let form = e.target,
     submit = form.querySelector("[type=submit]");
   form.email.value = form.email.value.trim().toLowerCase();
-  if (!corporateEmail(form.email.value)) return toast("Cadastre somente e-mails @marcopolo.com.br.");
+  if (!corporateEmail(form.email.value)) return toast("Cadastre somente e-mails " + emailDomainsLabel() + ".");
   submit.disabled = true;
   submit.textContent = "Criando...";
   try {
