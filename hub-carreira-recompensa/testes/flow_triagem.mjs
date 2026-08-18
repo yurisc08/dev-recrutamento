@@ -101,8 +101,11 @@ if (CENARIO==='cr') {
 }
 check('botao Concluir disponivel ja no rascunho', acoes.includes('Concluir solicitação'), acoes);
 check('botao Sugerir e enviar ao Gestor', acoes.includes('Sugerir e enviar ao Gestor'), acoes);
-check('campo do codigo do cargo visivel', !!$('#finalJobCode') && !$('#crFinalOptions').classList.contains('hidden'));
-check('conferencia opcional so aparece na validacao', !$('#crFinalOptions').textContent.includes('Enviar novamente ao Gestor'));
+// O codigo do cargo so existe depois do lancamento no sistema: nao aparece
+// no rascunho nem na validacao, so na solicitacao ja concluida.
+check('codigo do cargo NAO e pedido no rascunho', !$('#finalJobCode'), 'campo presente');
+check('painel de codigo oculto no rascunho', $('#jobCodePanel').classList.contains('hidden'));
+check('opcoes finais so na validacao', $('#crFinalOptions').classList.contains('hidden'));
 
 console.log('== painel de referencia do pedido ==');
 const ref=$('#intakeReferencePanel');

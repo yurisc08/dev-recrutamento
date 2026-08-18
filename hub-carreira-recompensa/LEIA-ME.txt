@@ -1,5 +1,5 @@
 HUB Carreira & Recompensa - Cloudflare estatico
-Versao 44 (fluxo de atualizacao separado do de criacao)
+Versao 45 (codigo do cargo depois do lancamento no sistema)
 
 Arquivos preservam o template original enviado.
 Fluxo: C&R -> Gestor -> C&R -> Concluido.
@@ -38,6 +38,27 @@ todos dela.
 Para permitir que o Gestor sugira outra secao, basta acrescentar a chave em
 SUGGESTABLE_SECTIONS (mesmo bloco). Tudo o que ficar fora dessa lista entra
 automaticamente no bloco de referencia somente leitura.
+
+
+NOVIDADES DA V45 - CODIGO DO CARGO E OPCOES FINAIS
+--------------------------------------------------
+Duas regras de negocio que estavam invertidas na tela.
+
+1) O codigo do cargo so existe depois do lancamento no sistema.
+   Ele era pedido no Rascunho C&R e chegava a bloquear a conclusao. Agora:
+   - nao aparece no rascunho nem na validacao;
+   - abre na solicitacao JA CONCLUIDA, como pendencia visivel;
+   - enquanto vazio, mostra o selo "Codigo pendente" no card, um contador
+     no painel para C&R e ADMIN, e o aviso no cabecalho;
+   - a configuracao "Exigir codigo do cargo para concluir" passou a vir
+     DESLIGADA por padrao.
+   Numa atualizacao o codigo continua vindo da base, e o campo serve para
+   corrigir se o lancamento mudar.
+
+2) As "Opcoes finais de C&R" so aparecem em Aguardando validacao de C&R.
+   Antes apareciam tambem no rascunho, onde nao ha o que finalizar. O
+   painel agora traz somente a conferencia opcional do Gestor; Devolver e
+   Concluir seguem na barra de acoes.
 
 
 NOVIDADES DA V44 - ATUALIZACAO x CRIACAO

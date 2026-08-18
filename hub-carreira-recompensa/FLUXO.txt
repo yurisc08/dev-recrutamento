@@ -1,6 +1,6 @@
 =======================================================================
 HUB Carreira & Recompensa — como os dois fluxos funcionam
-Versao 44
+Versao 45
 =======================================================================
 
 QUEM ABRE O QUE
@@ -29,8 +29,10 @@ Nao existe nada na base. Tudo precisa ser escrito.
         Concluir solicitacao          -> encerra
         Sugerir e enviar ao Gestor    -> devolve com orientacao
   4. Se foi ao Gestor: ele ajusta e devolve para C&R (Aguardando
-     validacao), onde C&R pode Devolver ou Concluir.
-  5. Concluido -> documento disponivel para download.
+     validacao). So nessa etapa aparecem as "Opcoes finais de C&R", com a
+     conferencia opcional do Gestor. C&R entao Devolve ou Conclui.
+  5. Concluido -> documento disponivel para download e o campo Codigo do
+     cargo abre para lancamento.
 
   Obrigatoriedade: TODOS os campos marcados como obrigatorios valem.
   Faz sentido: o cargo esta nascendo, nada pode ficar em branco.
@@ -57,7 +59,8 @@ mudar pontos especificos e preservar o resto.
                        hoje na base.
 
   4. C&R decide: Concluir, ou Sugerir e enviar ao Gestor.
-  5. Concluido -> documento com a base + as secoes revisadas.
+  5. Concluido -> documento com a base + as secoes revisadas. O codigo do
+     cargo ja vem da base, mas continua editavel caso mude.
 
   Obrigatoriedade: SO os campos EM REVISAO sao cobrados.
   Faz sentido: um campo fora do escopo esta bloqueado para edicao. Cobra-
@@ -65,6 +68,40 @@ mudar pontos especificos e preservar o resto.
   v43, quando "Experiencia profissional desejavel" e "Competencias
   Marcopolo desejaveis", obrigatorios, vazios na base e fora do escopo,
   impediam concluir a solicitacao sem que ninguem pudesse preenche-los.
+
+
+CODIGO DO CARGO — POR QUE SO NO FIM
+-----------------------------------------------------------------------
+Num cargo novo o codigo nao existe enquanto o cargo nao for lancado no
+sistema. Por isso ele NAO e pedido em nenhuma etapa anterior e NAO trava
+a conclusao.
+
+  Rascunho C&R          sem campo de codigo
+  Aguardando validacao  sem campo de codigo
+  Concluido             campo aberto, marcado como pendencia ate ser
+                        preenchido
+
+Enquanto estiver vazio numa solicitacao concluida, aparece:
+  - o selo "Codigo pendente" no card da lista
+  - um contador "Codigo pendente" no painel, so para C&R e ADMIN
+  - o aviso no cabecalho da solicitacao
+
+Depois de registrar, gere o documento de novo para ele sair com o codigo.
+
+Numa atualizacao o codigo ja vem da base junto com o cargo escolhido; o
+campo serve para corrigir se o lancamento mudar.
+
+Se na sua operacao o codigo existir ANTES da aprovacao, o ADMIN pode
+ligar "Exigir codigo do cargo para concluir" em Base e modelo >
+Configuracoes. Por padrao vem desligado.
+
+
+AS "OPCOES FINAIS DE C&R"
+-----------------------------------------------------------------------
+Aparecem somente em Aguardando validacao de C&R, que e o momento em que
+se decide se a solicitacao volta ao Gestor ou nao. Antes disso nao ha o
+que finalizar. O painel traz a conferencia opcional do Gestor; Devolver e
+Concluir ficam na barra de acoes.
 
 
 DE ONDE VEM O VALOR DE CADA CAMPO (em ordem de prioridade)

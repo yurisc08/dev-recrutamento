@@ -39,7 +39,7 @@ const DEFAULT_SETTINGS={
  fixed_markers:["EMPRESA","COD_DO_CARGO","NOME_COMPLETO","CBO","TCLC_DESC","DT_ATIVACAO"],
  manager_can_open_new:true,
  manager_can_open_update:true,
- require_job_code_on_approve:true,
+ require_job_code_on_approve:false,
 };
 let SETTINGS={...DEFAULT_SETTINGS};
 let settingsSource="padrao";
