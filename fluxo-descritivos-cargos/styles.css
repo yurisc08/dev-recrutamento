@@ -340,3 +340,8 @@ thead .sheet-gutter{background:var(--purple2);cursor:default}
   .base-card-danger{margin-top:22px}
   .base-card-danger .btn{width:100%}
 }
+.base-empty-cols{color:#8a4a14;background:#fff4e6;border:1px solid #ffd9b0;border-radius:999px;padding:4px 12px}
+.base-col-group label{justify-content:space-between}
+.base-col-group label span{flex:1}
+.base-col-group label em{font-style:normal;font-size:.72rem;font-weight:800;color:var(--muted);background:#eef1f6;border-radius:999px;padding:2px 7px}
+.base-col-group label em.vazia{color:#9d1938;background:#fdecef}

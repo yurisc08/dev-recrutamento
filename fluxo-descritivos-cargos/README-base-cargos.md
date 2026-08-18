@@ -1,4 +1,4 @@
-# Base de cargos editável (v56)
+# Base de cargos editável (v57)
 
 Versão v54 do Fluxo de Descritivos de Cargos + a nova aba **Base de cargos**: uma
 planilha estilo Excel embutida na página, onde o ADMIN edita, inclui e exclui os
@@ -10,7 +10,7 @@ no conteúdo atual dos campos e no documento gerado.
 
 | Arquivo | O que é |
 |---|---|
-| `index.html` | app v56 (v54 + aba Base de cargos) |
+| `index.html` | app v57 (v54 + aba Base de cargos) |
 | `base-grid.js` | a planilha: grade, edição, seleção, copiar/colar, importar/exportar |
 | `base-cargos.js` | colunas da base, regras de interligação, leitura/gravação de .xlsx e .csv |
 | `styles.css` | estilos v54 + bloco da planilha no final |
@@ -51,6 +51,14 @@ baixar). Nada é gravado no Supabase nesse modo.
   `Excluir linha` remove (a exclusão só vai para a base ao salvar).
 - Clicar no número da linha seleciona a linha inteira.
 
+**Se faltar conteúdo**
+- A base é lida em blocos de 1.000 linhas (limite de resposta do Supabase) até
+  terminar — o contador mostra o total real, não o primeiro pedaço.
+- O status avisa quantas colunas vieram **sem nenhum conteúdo** da base, e o menu
+  **Colunas** mostra quantas linhas estão preenchidas em cada uma. Se o conteúdo
+  existe na sua planilha e não no banco, use **Arquivo → Importar → mesclar**
+  para completar e depois **Salvar alterações**.
+
 **Salvar**
 - `Salvar alterações` grava tudo de uma vez, em lotes de 200 linhas.
 - O contador mostra quantas linhas estão pendentes; célula alterada fica amarela,
@@ -90,6 +98,20 @@ baixar). Nada é gravado no Supabase nesse modo.
 - ADMIN: edita, inclui, exclui, importa e exporta.
 - C&R: enxerga a aba apenas para consulta e download (mesma regra da aba Modelos).
 - Gestor: não vê a aba.
+
+## Documento (DOCX)
+
+- O download deixou de ser exclusivo das solicitações concluídas: em
+  **Validação C&R** (e em Rascunho C&R) o C&R baixa uma **prévia** com o
+  preenchimento salvo até o momento, e o Gestor faz o mesmo enquanto a
+  solicitação está com ele. A solicitação continua na etapa atual e o arquivo sai
+  identificado como prévia.
+- Os 17 marcadores do modelo agora são preenchidos automaticamente quando o ADMIN
+  não configurou a aba **Modelos**: primeiro o campo do formulário com a chave
+  igual ao marcador, depois o campo da seção correspondente (missão,
+  atividades, escolaridade, idioma, competências, experiência) e, se ainda
+  estiver vazio, o conteúdo do cargo na **Base de cargos**. O texto padrão só
+  aparece quando todas as origens estão vazias.
 
 ## Sobre o banco
 

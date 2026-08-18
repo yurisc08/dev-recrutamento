@@ -6,7 +6,7 @@
 import {
   COLUMNS, COLUMN_KEYS, COLUMN_BY_KEY, SKILL_LABELS,
   txt, norm, linkedUpdates, buildXlsx, readXlsx, toCsv, parseCsv, parseDelimited, download,
-} from "./base-cargos.js?v=20260818-v56";
+} from "./base-cargos.js?v=20260818-v57";
 
 const ROW_H = 34;
 const GUTTER_W = 58;
@@ -45,6 +45,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     sort: null,          // { key, dir }
     dupKeys: new Set(),
     suggestions: new Map(),
+    fillCount: new Map(),
   };
 
   view.innerHTML = `
@@ -136,6 +137,15 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       if (seen.has(key)) { G.dupKeys.add(seen.get(key)); G.dupKeys.add(r.__key); }
       else seen.set(key, r.__key);
     });
+    // Quantas linhas tem conteudo em cada coluna: mostra ao ADMIN quais campos
+    // vieram vazios da base (normalmente porque a importacao original nao trouxe
+    // aquela coluna) e onde vale importar a planilha para completar.
+    G.fillCount = new Map();
+    COLUMN_KEYS.forEach((k) => G.fillCount.set(k, 0));
+    G.rows.forEach((r) => {
+      COLUMN_KEYS.forEach((k) => { if (txt(r[k]).trim()) G.fillCount.set(k, G.fillCount.get(k) + 1); });
+    });
+
     // Sugestoes por coluna (datalist das celulas curtas).
     G.suggestions = new Map();
     COLUMNS.filter((c) => c.suggest).forEach((c) => {
@@ -257,9 +267,11 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     const modeTag = G.mode === "local"
       ? `<span class="base-tag warn">Modo local</span>`
       : `<span class="base-tag ok">Conectado à base</span>`;
+    const vazias = total ? COLUMN_KEYS.filter((k) => !G.fillCount.get(k)).length : 0;
     statusBox.innerHTML = `${modeTag}
       <span><b>${total.toLocaleString("pt-BR")}</b> cargos na base</span>
       <span><b>${shown.toLocaleString("pt-BR")}</b> exibidos</span>
+      ${vazias ? `<span class="base-empty-cols" title="Colunas sem nenhum conteúdo na base carregada"><b>${vazias}</b> de ${COLUMN_KEYS.length} colunas sem conteúdo — use <b>Arquivo → Importar</b> para completar</span>` : ""}
       <span class="${pending ? "base-pending" : ""}"><b>${pending.toLocaleString("pt-BR")}</b> alterações não salvas</span>
       ${G.deleted.length ? `<span class="base-pending"><b>${G.deleted.length.toLocaleString("pt-BR")}</b> exclusões pendentes</span>` : ""}`;
     el("baseSave").disabled = !canEdit() || !pendingCount();
@@ -669,14 +681,31 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     return row;
   }
 
+  // O Supabase corta a resposta em 1.000 linhas por requisicao, entao a base e
+  // lida em blocos ate acabar — caso contrario a planilha mostraria apenas o
+  // primeiro pedaco da base.
+  const PAGE_SIZE = 1000;
+  const MAX_ROWS = 200000;
+
+  async function fetchAllRows() {
+    const todas = [];
+    for (let offset = 0; offset < MAX_ROWS; offset += PAGE_SIZE) {
+      const { data, error } = await sb.rpc("base_cargos_list", { p_query: "", p_limit: PAGE_SIZE, p_offset: offset });
+      if (error) throw error;
+      const bloco = data || [];
+      todas.push(...bloco);
+      statusBox.innerHTML = `<span class="base-tag">Carregando base... ${todas.length.toLocaleString("pt-BR")} cargos</span>`;
+      if (bloco.length < PAGE_SIZE) break;
+    }
+    return todas;
+  }
+
   async function loadRows({ silent = false } = {}) {
     if (G.loading) return;
     G.loading = true;
     statusBox.innerHTML = `<span class="base-tag">Carregando base...</span>`;
     try {
-      const { data, error } = await sb.rpc("base_cargos_list", { p_query: "", p_limit: 100000, p_offset: 0 });
-      if (error) throw error;
-      G.rows = (data || []).map(toRow);
+      G.rows = (await fetchAllRows()).map(toRow);
       G.mode = "remote";
       G.deleted = [];
       G.undo = [];
@@ -871,7 +900,10 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     el("baseColsPanel").innerHTML = `<div class="base-panel-head"><b>Colunas visíveis</b><button type="button" id="baseColsAll" class="btn ghost">Mostrar todas</button></div>` +
       Object.entries(groups).map(([group, cols]) => `
         <div class="base-col-group"><small>${esc(group)}</small>
-          ${cols.map((c) => `<label><input type="checkbox" data-col="${c.key}" ${G.hidden.has(c.key) ? "" : "checked"}> ${esc(c.label)}</label>`).join("")}
+          ${cols.map((c) => {
+            const n = G.fillCount.get(c.key) || 0;
+            return `<label><input type="checkbox" data-col="${c.key}" ${G.hidden.has(c.key) ? "" : "checked"}> <span>${esc(c.label)}</span><em class="${n ? "" : "vazia"}">${n ? n.toLocaleString("pt-BR") : "vazia"}</em></label>`;
+          }).join("")}
         </div>`).join("");
   }
 
