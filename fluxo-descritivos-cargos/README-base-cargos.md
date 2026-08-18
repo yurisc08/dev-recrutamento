@@ -1,4 +1,4 @@
-# Base de cargos editável (v57)
+# Base de cargos editável (v58)
 
 Versão v54 do Fluxo de Descritivos de Cargos + a nova aba **Base de cargos**: uma
 planilha estilo Excel embutida na página, onde o ADMIN edita, inclui e exclui os
@@ -10,7 +10,7 @@ no conteúdo atual dos campos e no documento gerado.
 
 | Arquivo | O que é |
 |---|---|
-| `index.html` | app v57 (v54 + aba Base de cargos) |
+| `index.html` | app v58 (v54 + aba Base de cargos) |
 | `base-grid.js` | a planilha: grade, edição, seleção, copiar/colar, importar/exportar |
 | `base-cargos.js` | colunas da base, regras de interligação, leitura/gravação de .xlsx e .csv |
 | `styles.css` | estilos v54 + bloco da planilha no final |
@@ -51,13 +51,22 @@ baixar). Nada é gravado no Supabase nesse modo.
   `Excluir linha` remove (a exclusão só vai para a base ao salvar).
 - Clicar no número da linha seleciona a linha inteira.
 
-**Se faltar conteúdo**
+**Se faltar conteúdo (base incompleta no banco)**
 - A base é lida em blocos de 1.000 linhas (limite de resposta do Supabase) até
   terminar — o contador mostra o total real, não o primeiro pedaço.
-- O status avisa quantas colunas vieram **sem nenhum conteúdo** da base, e o menu
-  **Colunas** mostra quantas linhas estão preenchidas em cada uma. Se o conteúdo
-  existe na sua planilha e não no banco, use **Arquivo → Importar → mesclar**
-  para completar e depois **Salvar alterações**.
+- O status avisa quantas colunas vieram **sem nenhum conteúdo** e funciona como
+  botão: clicar abre direto a importação. O menu **Colunas** mostra quantas
+  linhas estão preenchidas em cada coluna.
+- A importação abre um resumo antes de aplicar: linhas do arquivo, colunas
+  reconhecidas, quantas casam com a base e quantas entrariam como novas. Aí você
+  escolhe **Completar dados dos cargos** (recomendado) ou **Substituir toda a
+  base**. Nada é gravado até você clicar em **Salvar alterações**.
+- O casamento é feito por empresa + código do cargo e, quando a empresa não
+  confere, apenas pelo código — desde que ele seja único na base, para nunca
+  gravar no cargo errado.
+- Medido de ponta a ponta com a planilha de 3.968 cargos contra um PostgreSQL
+  real: 2s para ler o arquivo, 90.940 campos completados e 2s para gravar em 20
+  lotes.
 
 **Salvar**
 - `Salvar alterações` grava tudo de uma vez, em lotes de 200 linhas.

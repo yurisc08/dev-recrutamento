@@ -6,7 +6,7 @@
 import {
   COLUMNS, COLUMN_KEYS, COLUMN_BY_KEY, SKILL_LABELS,
   txt, norm, linkedUpdates, buildXlsx, readXlsx, toCsv, parseCsv, parseDelimited, download,
-} from "./base-cargos.js?v=20260818-v57";
+} from "./base-cargos.js?v=20260818-v58";
 
 const ROW_H = 34;
 const GUTTER_W = 58;
@@ -95,6 +95,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     <p class="fine base-hint base-hint-mobile">No celular: arraste a tabela para o lado para ver as demais colunas e <b>toque em uma linha</b> para abrir a ficha do cargo, onde todos os campos podem ser editados.</p>
     <section class="card base-legend"><h2>Como os campos se interligam</h2><div id="baseLegend" class="base-legend-grid"></div></section>
     <dialog id="baseRowDialog" class="base-row-dialog"><form id="baseRowForm" class="modal-form" method="dialog"></form></dialog>
+    <dialog id="baseImportDialog" class="base-import-dialog"><form id="baseImportForm" class="modal-form" method="dialog"></form></dialog>
   `;
 
   const el = (id) => view.querySelector(`#${id}`);
@@ -271,7 +272,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     statusBox.innerHTML = `${modeTag}
       <span><b>${total.toLocaleString("pt-BR")}</b> cargos na base</span>
       <span><b>${shown.toLocaleString("pt-BR")}</b> exibidos</span>
-      ${vazias ? `<span class="base-empty-cols" title="Colunas sem nenhum conteúdo na base carregada"><b>${vazias}</b> de ${COLUMN_KEYS.length} colunas sem conteúdo — use <b>Arquivo → Importar</b> para completar</span>` : ""}
+      ${vazias ? `<button type="button" class="base-empty-cols" title="Abrir a importação da planilha para completar estas colunas"><b>${vazias}</b> de ${COLUMN_KEYS.length} colunas sem conteúdo — clique para importar a planilha</button>` : ""}
       <span class="${pending ? "base-pending" : ""}"><b>${pending.toLocaleString("pt-BR")}</b> alterações não salvas</span>
       ${G.deleted.length ? `<span class="base-pending"><b>${G.deleted.length.toLocaleString("pt-BR")}</b> exclusões pendentes</span>` : ""}`;
     el("baseSave").disabled = !canEdit() || !pendingCount();
@@ -829,18 +830,47 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     download(blob, `base-cargos-${new Date().toISOString().slice(0, 10)}.csv`);
   }
 
+  // Indice para casar o arquivo com a base: primeiro empresa+codigo e, quando a
+  // empresa nao bate (base sem empresa preenchida, por exemplo), so o codigo do
+  // cargo — desde que ele seja unico na base, para nunca gravar no cargo errado.
+  function buildMatchIndex() {
+    const porEmpresaCodigo = new Map();
+    const porCodigo = new Map();
+    const ambiguos = new Set();
+    G.rows.forEach((row) => {
+      const codigo = norm(row.COD_DO_CARGO);
+      if (!codigo) return;
+      porEmpresaCodigo.set(`${norm(row.EMPRESA)}|${codigo}`, row);
+      if (porCodigo.has(codigo)) ambiguos.add(codigo);
+      else porCodigo.set(codigo, row);
+    });
+    return {
+      find(row) {
+        const codigo = norm(row.COD_DO_CARGO);
+        if (!codigo) return null;
+        return porEmpresaCodigo.get(`${norm(row.EMPRESA)}|${codigo}`) ||
+          (ambiguos.has(codigo) ? null : porCodigo.get(codigo) || null);
+      },
+      add(row) {
+        const codigo = norm(row.COD_DO_CARGO);
+        if (!codigo) return;
+        porEmpresaCodigo.set(`${norm(row.EMPRESA)}|${codigo}`, row);
+        if (porCodigo.has(codigo)) ambiguos.add(codigo);
+        else porCodigo.set(codigo, row);
+      },
+    };
+  }
+
+  let importPendente = null;
+
   async function importFile(file) {
     if (!canEdit()) return toast("Somente o ADMIN pode alterar a base.");
     if (!file) return;
-    const mode = prompt(
-      `Importar "${file.name}".\n\nDigite:\n1 = mesclar pelo código do cargo (atualiza existentes e inclui novos)\n2 = substituir toda a base carregada`,
-      "1",
-    );
-    if (!mode) return;
     toast("Lendo arquivo...");
     try {
       const parsed = /\.xlsx$/i.test(file.name) ? await readXlsx(file) : parseCsv(await file.text());
-      const unknown = parsed.headers.filter((h) => h && !COLUMN_KEYS.includes(h));
+      const conhecidas = parsed.headers.filter((h) => h && COLUMN_KEYS.includes(h));
+      const ignoradas = parsed.headers.filter((h) => h && !COLUMN_KEYS.includes(h));
       const incoming = parsed.rows.map((data) => {
         const row = blankRow();
         COLUMN_KEYS.forEach((k) => { if (data[k] != null && txt(data[k]).trim()) row[k] = txt(data[k]).trim(); });
@@ -848,47 +878,78 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       }).filter((row) => COLUMN_KEYS.some((k) => txt(row[k]).trim()));
       if (!incoming.length) return toast("Nenhuma linha válida encontrada no arquivo.");
 
-      if (mode.trim() === "2") {
-        G.rows.forEach((row) => { if (row.__id) G.deleted.push(row.__id); });
-        G.rows = incoming;
-      } else {
-        const index = new Map();
-        G.rows.forEach((row) => {
-          const key = `${norm(row.EMPRESA)}|${norm(row.COD_DO_CARGO)}`;
-          if (txt(row.COD_DO_CARGO).trim()) index.set(key, row);
-        });
-        let updated = 0, added = 0;
-        incoming.forEach((row) => {
-          const key = `${norm(row.EMPRESA)}|${norm(row.COD_DO_CARGO)}`;
-          const current = txt(row.COD_DO_CARGO).trim() ? index.get(key) : null;
-          if (current) {
-            COLUMN_KEYS.forEach((k) => {
-              const value = txt(row[k]).trim();
-              if (value && value !== txt(current[k])) {
-                current[k] = value;
-                current.__dirty = true;
-                (current.__changed ||= new Set()).add(k);
-              }
-            });
-            updated++;
-          } else {
-            G.rows.push(row);
-            index.set(key, row);
-            added++;
-          }
-        });
-        toast(`Importação concluída: ${updated} atualizados, ${added} novos.`);
-      }
-      G.undo = [];
-      refreshDerived();
-      refreshOrder();
-      renderGrid();
-      if (unknown.length) toast(`Colunas ignoradas (fora do padrão da base): ${unknown.slice(0, 4).join(", ")}${unknown.length > 4 ? "..." : ""}`);
-      if (mode.trim() === "2") toast(`Base substituída por ${incoming.length} linhas. Clique em Salvar alterações para gravar.`);
+      const indice = buildMatchIndex();
+      let casam = 0;
+      incoming.forEach((row) => { if (indice.find(row)) casam++; });
+      importPendente = { file, incoming, conhecidas, ignoradas };
+
+      el("baseImportForm").innerHTML = `
+        <div class="modal-head">
+          <div><p class="eyebrow">Base de cargos</p><h2>Importar planilha</h2></div>
+          <button type="button" class="icon-btn base-import-close" aria-label="Fechar">×</button>
+        </div>
+        <p class="muted">${esc(file.name)}</p>
+        <ul class="base-import-resumo">
+          <li><b>${incoming.length.toLocaleString("pt-BR")}</b> linhas no arquivo</li>
+          <li><b>${conhecidas.length}</b> de ${COLUMN_KEYS.length} colunas reconhecidas${ignoradas.length ? ` <small>(ignoradas: ${esc(ignoradas.slice(0, 4).join(", "))}${ignoradas.length > 4 ? "..." : ""})</small>` : ""}</li>
+          <li><b>${casam.toLocaleString("pt-BR")}</b> já existem na base (casadas pelo código do cargo)</li>
+          <li><b>${(incoming.length - casam).toLocaleString("pt-BR")}</b> entrariam como cargos novos</li>
+        </ul>
+        <p class="fine">Nada é gravado agora: a importação prepara as alterações e você confere antes de clicar em <b>Salvar alterações</b>.</p>
+        <div class="modal-actions">
+          <button type="button" class="btn ghost base-import-close">Cancelar</button>
+          <button type="button" class="btn primary" data-import="merge">Completar dados dos cargos</button>
+        </div>
+        <div class="base-import-danger">
+          <button type="button" class="btn danger-soft" data-import="replace">Substituir toda a base pelo arquivo</button>
+          <small>Apaga os cargos que não estiverem no arquivo. Use apenas para recarregar a base do zero.</small>
+        </div>`;
+      el("baseImportDialog").showModal();
     } catch (error) {
       console.error("Falha ao importar arquivo", error);
       toast("Não foi possível ler o arquivo: " + (error.message || error));
     }
+  }
+
+  function applyImport(mode) {
+    if (!importPendente) return;
+    const { incoming } = importPendente;
+    el("baseImportDialog").close();
+
+    if (mode === "replace") {
+      G.rows.forEach((row) => { if (row.__id) G.deleted.push(row.__id); });
+      G.rows = incoming;
+      toast(`Base substituída por ${incoming.length.toLocaleString("pt-BR")} linhas. Clique em Salvar alterações para gravar.`);
+    } else {
+      const indice = buildMatchIndex();
+      let atualizados = 0, novos = 0, campos = 0;
+      incoming.forEach((row) => {
+        const atual = indice.find(row);
+        if (atual) {
+          let mudou = false;
+          COLUMN_KEYS.forEach((k) => {
+            const valor = txt(row[k]).trim();
+            if (valor && valor !== txt(atual[k]).trim()) {
+              atual[k] = valor;
+              (atual.__changed ||= new Set()).add(k);
+              campos++;
+              mudou = true;
+            }
+          });
+          if (mudou) { atual.__dirty = true; atualizados++; }
+        } else {
+          G.rows.push(row);
+          indice.add(row);
+          novos++;
+        }
+      });
+      toast(`Importação preparada: ${atualizados.toLocaleString("pt-BR")} cargos atualizados (${campos.toLocaleString("pt-BR")} campos), ${novos.toLocaleString("pt-BR")} novos. Clique em Salvar alterações.`);
+    }
+    importPendente = null;
+    G.undo = [];
+    refreshDerived();
+    refreshOrder();
+    renderGrid();
   }
 
   // -------------------------------------------------------------------------
@@ -1052,6 +1113,14 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     if (action === "xlsx") exportXlsx();
     if (action === "csv") exportCsv();
     if (action === "import") el("baseFileInput").click();
+  });
+  el("baseImportForm").addEventListener("click", (e) => {
+    if (e.target.closest(".base-import-close")) { el("baseImportDialog").close(); importPendente = null; return; }
+    const acao = e.target.closest("[data-import]")?.dataset.import;
+    if (acao) applyImport(acao);
+  });
+  statusBox.addEventListener("click", (e) => {
+    if (e.target.closest(".base-empty-cols")) el("baseFileInput").click();
   });
   el("baseFileInput").addEventListener("change", (e) => {
     const file = e.target.files?.[0];

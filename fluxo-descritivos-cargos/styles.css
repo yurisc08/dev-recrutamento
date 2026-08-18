@@ -345,3 +345,12 @@ thead .sheet-gutter{background:var(--purple2);cursor:default}
 .base-col-group label span{flex:1}
 .base-col-group label em{font-style:normal;font-size:.72rem;font-weight:800;color:var(--muted);background:#eef1f6;border-radius:999px;padding:2px 7px}
 .base-col-group label em.vazia{color:#9d1938;background:#fdecef}
+.base-empty-cols{cursor:pointer;font:inherit}
+.base-empty-cols:hover{background:#ffe8cc}
+.base-import-dialog{width:min(560px,94vw)}
+.base-import-resumo{margin:16px 0;padding:0;list-style:none;display:grid;gap:8px}
+.base-import-resumo li{padding:10px 12px;background:#f7f8fb;border:1px solid var(--line);border-radius:10px;font-size:.9rem}
+.base-import-resumo small{color:var(--muted)}
+.base-import-danger{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);display:grid;gap:6px;justify-items:start}
+.base-import-danger small{color:var(--muted);font-size:.78rem}
+@media(max-width:760px){.base-import-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100vh}.base-import-danger .btn{width:100%}}
