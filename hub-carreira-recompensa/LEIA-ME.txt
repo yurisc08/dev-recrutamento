@@ -1,5 +1,5 @@
 HUB Carreira & Recompensa - Cloudflare estatico
-Versao 40 (decisao do C&R sobre pedidos do Gestor)
+Versao 41 (base e modelo configuraveis pelo ADMIN)
 
 Arquivos preservam o template original enviado.
 Fluxo: C&R -> Gestor -> C&R -> Concluido.
@@ -38,6 +38,56 @@ todos dela.
 Para permitir que o Gestor sugira outra secao, basta acrescentar a chave em
 SUGGESTABLE_SECTIONS (mesmo bloco). Tudo o que ficar fora dessa lista entra
 automaticamente no bloco de referencia somente leitura.
+
+
+NOVIDADES DA V41 - BASE E MODELO
+--------------------------------
+1) ADMIN edita qualquer campo
+   O ADMIN ja tinha a liberacao no codigo, mas a regra de escopo restrito
+   das atualizacoes anulava ela logo em seguida, e em solicitacao concluida
+   nao havia botao de salvar. Agora:
+   - todos os campos ficam editaveis para o ADMIN em qualquer status,
+     dentro ou fora do escopo da revisao;
+   - solicitacao concluida ganha "Salvar correcao" (so ADMIN), com
+     confirmacao e aviso de que o documento precisa ser gerado de novo;
+   - um aviso amarelo deixa claro que o modo administrador esta ativo e que
+     as alteracoes ficam nos logs.
+
+2) Tela "Base e modelo" (menu do ADMIN)
+   O catalogo de secoes era texto fixo dentro do index.html. Era isso que
+   deixava o desalinhamento SKILL_30..34 invisivel. Agora tem tela propria:
+
+   - Catalogo editavel: chave (marcador no modelo e coluna na planilha),
+     rotulo na tela, coluna _DESC de referencia na base, apelidos antigos,
+     se e sugerivel pelo Gestor, e a ordem. Da para criar, remover e
+     reordenar secao - inclusive um SKILL_38 que a base passe a ter.
+
+   - Conferir modelo .docx: le o modelo do proprio pacote, lista todos os
+     marcadores «...» e marca no catalogo quais existem no documento.
+     Acusa marcador do modelo sem secao (sairia em branco no documento) e
+     secao sem marcador (nao seria impressa).
+
+   - Planilha base: arraste o .xlsx (ou .csv). O arquivo e lido no proprio
+     navegador, nada sobe para o servidor. A ferramenta le o cabecalho e a
+     primeira linha preenchida para descobrir o rotulo REAL de cada coluna
+     SKILL_nn - por exemplo, que SKILL_30_DESC vale "ESCOLARIDADE MINIMA" -
+     e compara com o catalogo. E exatamente a conferencia que teria pegado
+     o bug da v38 no primeiro dia.
+
+   - Campos do formulario: aponta campo ativo que nao casa com nenhuma
+     secao (nao puxa o texto da base nem entra no escopo) e secao sem campo.
+
+   As divergencias aparecem classificadas em erro / aviso / informacao e se
+   atualizam enquanto voce edita a tabela.
+
+3) Persistencia (opcional, exige SQL)
+   Sem a tabela, a tela funciona para conferencia e o botao vira "Exportar
+   catalogo (JSON)". Com a tabela, o botao salva e a estrutura nova passa a
+   valer para todos os usuarios na hora.
+
+   O SQL esta em sql/01-section-catalog.sql: cria a tabela section_catalog,
+   as RPCs list_section_catalog e save_section_catalog (gravacao restrita ao
+   ADMIN) e ja faz a carga inicial com a numeracao conferida.
 
 
 NOVIDADES DA V40 - DECISAO DO C&R

@@ -13,10 +13,10 @@ const normText=(value)=>String(value??'').normalize('NFD').replace(/[\u0300-\u03
      SKILL_36 = EXPERIENCIA PROFISSIONAL DESEJAVEL
      SKILL_37 = COMPETENCIAS COMPORTAMENTAIS MARCOPOLO DESEJAVEIS
    ------------------------------------------------------------------------ */
-const SECTION_CATALOG=[
+const DEFAULT_SECTION_CATALOG=[
  {key:'TEXTO_RESULTADO_ESPERADO',label:'Foco de atuação',legacy:['expected_result','foco_atuacao','resultado_esperado'],baseLabel:null},
- {key:'ATIV_DESC',label:'Missão',legacy:['mission','activities','ativ_desc'],baseLabel:null},
- {key:'DESCRICAO_CARGO',label:'Principais responsabilidades/atividades',legacy:['responsibilities','job_description','description','descricao_cargo'],baseLabel:null},
+ {key:'ATIV_DESC',label:'Missão',legacy:['mission','activities','ativ_desc'],baseLabel:null,suggestable:true},
+ {key:'DESCRICAO_CARGO',label:'Principais responsabilidades/atividades',legacy:['responsibilities','job_description','description','descricao_cargo'],baseLabel:null,suggestable:true},
  {key:'SKILL_30',label:'Formação/Escolaridade mínima',legacy:['formation_min'],baseLabel:'ESCOLARIDADE MÍNIMA'},
  {key:'SKILL_31',label:'Formação/Escolaridade desejável',legacy:['formation_desired'],baseLabel:'ESCOLARIDADE DESEJÁVEL'},
  {key:'SKILL_32',label:'Idioma mínimo',legacy:['language_min'],baseLabel:'IDIOMA MÍNIMO'},
@@ -26,14 +26,44 @@ const SECTION_CATALOG=[
  {key:'SKILL_36',label:'Experiência profissional desejável',legacy:['experience_min','experience_desired'],baseLabel:'EXPERIÊNCIA PROFISSIONAL DESEJÁVEL'},
  {key:'SKILL_37',label:'Competências comportamentais Marcopolo desejáveis',legacy:['behavioral'],baseLabel:'COMPETÊNCIAS MARCOPOLO DESEJÁVEIS'}
 ];
-const SECTION_BY_KEY=Object.fromEntries(SECTION_CATALOG.map(s=>[s.key,s]));
-const SECTION_ALIASES=(()=>{const m={};for(const s of SECTION_CATALOG){for(const alias of [s.key,...s.legacy]){m[alias]=s.key;m[alias.toUpperCase()]=s.key;m[alias.toLowerCase()]=s.key;}}return m;})();
-/* Regra oficial do pacote (LEIA-ME): o Gestor sugere apenas Missao e
-   Principais responsabilidades. As demais secoes sao referencia somente
-   leitura. Para liberar outra secao a sugestao, basta incluir a chave aqui. */
-const SUGGESTABLE_SECTIONS=['ATIV_DESC','DESCRICAO_CARGO'];
-const REFERENCE_SECTIONS=SECTION_CATALOG.map(s=>s.key).filter(k=>!SUGGESTABLE_SECTIONS.includes(k));
-const UPDATE_CATALOG=SUGGESTABLE_SECTIONS.map(k=>[k,SECTION_BY_KEY[k].label]);
+/* O catalogo vive no banco quando a tabela section_catalog existe; caso
+   contrario cai no padrao acima. Tudo o que deriva dele e recalculado em
+   rebuildSectionCatalog, entao a troca em tempo de execucao e segura. */
+let SECTION_CATALOG=[],SECTION_BY_KEY={},SECTION_ALIASES={},SUGGESTABLE_SECTIONS=[],REFERENCE_SECTIONS=[],UPDATE_CATALOG=[];
+let sectionCatalogSource="padrao";
+function normalizeSection(row,i){
+ return {
+  key:String(row.key||row.section_key||'').trim().toUpperCase(),
+  label:String(row.label||'').trim(),
+  legacy:Array.isArray(row.legacy)?row.legacy:(Array.isArray(row.legacy_keys)?row.legacy_keys:[]),
+  baseLabel:row.baseLabel??row.base_label??null,
+  suggestable:row.suggestable===true,
+  sort_order:Number.isFinite(row.sort_order)?row.sort_order:i*10,
+  active:row.active!==false,
+ };
+}
+function rebuildSectionCatalog(rows){
+ const base=(rows&&rows.length?rows:DEFAULT_SECTION_CATALOG.map((x,i)=>({...x,suggestable:['ATIV_DESC','DESCRICAO_CARGO'].includes(x.key),sort_order:i*10})));
+ SECTION_CATALOG=base.map(normalizeSection).filter(x=>x.key&&x.active).sort((a,b)=>a.sort_order-b.sort_order);
+ SECTION_BY_KEY=Object.fromEntries(SECTION_CATALOG.map(x=>[x.key,x]));
+ SECTION_ALIASES={};
+ for(const x of SECTION_CATALOG){for(const alias of [x.key,...x.legacy]){const a=String(alias||'').trim();if(!a)continue;SECTION_ALIASES[a]=x.key;SECTION_ALIASES[a.toUpperCase()]=x.key;SECTION_ALIASES[a.toLowerCase()]=x.key;}}
+ SUGGESTABLE_SECTIONS=SECTION_CATALOG.filter(x=>x.suggestable).map(x=>x.key);
+ REFERENCE_SECTIONS=SECTION_CATALOG.filter(x=>!x.suggestable).map(x=>x.key);
+ UPDATE_CATALOG=SUGGESTABLE_SECTIONS.map(k=>[k,SECTION_BY_KEY[k].label]);
+}
+rebuildSectionCatalog(null);
+/* Tolerante de proposito: sem a tabela no Supabase o app segue com o padrao
+   embutido e a tela Base e modelo entra em modo somente diagnostico. */
+async function loadSectionCatalog(){
+ try{
+  const {data,error}=await sb.rpc("list_section_catalog");
+  if(error||!Array.isArray(data)||!data.length){rebuildSectionCatalog(null);sectionCatalogSource="padrao";return;}
+  rebuildSectionCatalog(data);sectionCatalogSource="banco";
+ }catch(err){rebuildSectionCatalog(null);sectionCatalogSource="padrao";}
+}
+/* Regra oficial do pacote (LEIA-ME): por padrao o Gestor sugere apenas Missao
+   e Principais responsabilidades; o ADMIN altera isso na tela Base e modelo. */
 function canonicalReviewKey(k){const raw=String(k??'').trim();return SECTION_ALIASES[raw]||SECTION_ALIASES[raw.toUpperCase()]||raw;}
 function reviewLabel(k){return SECTION_BY_KEY[canonicalReviewKey(k)]?.label||k;}
 function sectionLabel(k){const s=SECTION_BY_KEY[canonicalReviewKey(k)];return s?`${s.label} — ${s.key}`:k;}

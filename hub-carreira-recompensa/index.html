@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v40"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v40"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v41"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v41"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   /* :not(.hidden) evita que a tela de login continue visivel apos entrar */
@@ -32,11 +32,11 @@
 <button id="codeLoginBtn" class="btn primary full" type="submit">Entrar com código</button>
 <div class="access-help" role="note"><strong>Dificuldade de acesso?</strong><span>Entre em contato com a equipe de Carreira &amp; Recompensa para receber suporte.</span></div>
 <p class="fine">O código individual é gerado no servidor para C&R e Gestores e enviado pelo fluxo de notificação.</p></form></section>
-<div id="app" class="hidden"><header class="topbar"><div class="logo-wrap"><div class="brand-logos brand-logos-header"><img class="hub-logo hub-logo-header" src="./logo-anterior.png" alt="Carreira e Recompensa"><img class="hub-logo hub-logo-header hub-logo-new" src="./logo-hub-carreira-recompensa.png" alt="Hub Carreira e Recompensa"></div><div><strong>Fluxo de Descritivos de Cargos</strong><small>Carreira &amp; Recompensa</small></div></div><nav><button class="nav active" data-view="dashboard">Painel</button><button class="nav" data-view="managers" id="navManagers">Usuários</button><button class="nav" data-view="fields" id="navFields">Campos</button><button class="nav" data-view="models" id="navModels">Modelos</button><button class="nav hidden" data-view="companies" id="navCompanies">Empresas e filiais</button><button class="nav hidden" data-view="workflows" id="navWorkflows">Fluxos</button><button class="nav" data-view="audit" id="navAudit">Logs</button></nav><div class="userbox"><div><strong id="userName"></strong><small id="userRole"></small></div><button id="logout" class="btn ghost">Sair</button></div></header><main>
+<div id="app" class="hidden"><header class="topbar"><div class="logo-wrap"><div class="brand-logos brand-logos-header"><img class="hub-logo hub-logo-header" src="./logo-anterior.png" alt="Carreira e Recompensa"><img class="hub-logo hub-logo-header hub-logo-new" src="./logo-hub-carreira-recompensa.png" alt="Hub Carreira e Recompensa"></div><div><strong>Fluxo de Descritivos de Cargos</strong><small>Carreira &amp; Recompensa</small></div></div><nav><button class="nav active" data-view="dashboard">Painel</button><button class="nav" data-view="managers" id="navManagers">Usuários</button><button class="nav" data-view="fields" id="navFields">Campos</button><button class="nav" data-view="models" id="navModels">Modelos</button><button class="nav hidden" data-view="companies" id="navCompanies">Empresas e filiais</button><button class="nav hidden" data-view="workflows" id="navWorkflows">Fluxos</button><button class="nav hidden" data-view="base" id="navBase">Base e modelo</button><button class="nav" data-view="audit" id="navAudit">Logs</button></nav><div class="userbox"><div><strong id="userName"></strong><small id="userRole"></small></div><button id="logout" class="btn ghost">Sair</button></div></header><main>
 <section id="dashboardView"><div class="page-head"><div><p class="eyebrow">Visão geral</p><h1 id="dashboardTitle"></h1><p id="dashboardSubtitle" class="muted"></p></div><button id="newRequest" class="btn primary">+ Novo cargo</button></div><div id="metrics" class="metrics"></div><section id="managerIntakesBox" class="card hidden"><div class="card-head"><div><h2>Solicitações iniciadas pelo Gestor</h2><p class="muted">Pedidos de criação ou atualização aguardando triagem de C&R.</p></div></div><div id="managerIntakes" class="admin-list"></div></section><div class="toolbar"><input id="search" placeholder="Pesquisar cargo, código ou gestor"><select id="status"><option value="">Todos os status</option></select></div><div id="requests" class="cards"></div><div id="empty" class="empty hidden"><h3>Nenhuma solicitação encontrada</h3></div></section>
 <section id="managersView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Usuários</h1><p class="muted">Cadastre C&R e Gestores. Cada usuário recebe um código individual de acesso.</p></div><button id="newManager" class="btn primary">+ Novo usuário</button></div><div class="toolbar"><input id="userSearch" placeholder="Pesquisar nome ou e-mail"><select id="userRoleFilter"><option value="">Todos os perfis</option><option value="CR">C&R</option><option value="GESTOR">Gestores</option></select><select id="userActiveFilter"><option value="">Ativos e inativos</option><option value="true">Ativos</option><option value="false">Inativos</option></select></div><div id="managers" class="cards"></div></section>
 <section id="fieldsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Configuração</p><h1>Campos do formulário</h1><p class="muted">Campos oficiais do documento. Para o Gestor, somente ATIV_DESC e DESCRICAO_CARGO aceitam sugestão; os demais permanecem somente leitura.</p></div><button id="newField" class="btn primary">+ Novo campo</button></div><div id="fieldRules" class="cards"></div></section>
-<section id="modelsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Documentos</p><h1>Configuração do documento</h1><p class="muted">Defina qual informação preencherá cada campo do documento aprovado. O arquivo-modelo fica protegido e não precisa ser acessado.</p></div><div><button id="resetModelMapping" class="btn ghost">Restaurar padrão</button><button id="saveModelMapping" class="btn primary">Salvar configuração</button></div></div><div class="notice"><b>Como funciona:</b> escolha uma origem para cada campo do documento. Informações fixas vêm da solicitação; campos do formulário vêm da aba Campos. O C&R pode consultar a configuração e gerar o documento, mas somente o ADMIN pode alterá-la.</div><div id="modelMappingStatus" class="muted" style="margin:14px 0"></div><div id="modelMappingGrid" class="mapping-grid"></div></section><section id="companiesView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Empresas e filiais</h1><p class="muted">Cadastre e mantenha as opções usadas nas novas solicitações.</p></div></div><div class="content-grid"><article class="card"><h2>Empresas</h2><form id="companyForm" class="inline-admin-form"><input name="name" placeholder="Nome da empresa" required><button class="btn primary" type="submit">Adicionar</button></form><div id="companyAdminList" class="admin-list"></div></article><article class="card"><h2>Filiais</h2><form id="branchForm" class="inline-admin-form"><select name="company_id" required></select><input name="name" placeholder="Nome da filial" required><button class="btn primary" type="submit">Adicionar</button></form><div id="branchAdminList" class="admin-list"></div></article></div></section><section id="workflowsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Fluxos e aprovadores</h1><p class="muted">Fluxo oficial protegido: C&R → Gestor → C&R → Concluído. Sem aprovação de liderança.</p></div></div><div class="content-grid"><article class="card"><h2>Áreas aprovadoras</h2><form id="approvalAreaForm" class="inline-admin-form"><input name="name" placeholder="Ex.: Centro de Formação" required><button class="btn primary">Adicionar</button></form><div id="approvalAreaList" class="admin-list"></div></article><article class="card"><h2>Modelos de fluxo</h2><form id="workflowForm" class="modal-form"><label>Nome<input name="name" required></label><label>Descrição<textarea name="description"></textarea></label><button class="btn primary">Criar modelo</button></form><div id="workflowList" class="admin-list"></div></article></div><article class="card workflow-builder"><h2>Etapas</h2><form id="workflowStepForm" class="inline-admin-form"><select name="workflow_id" required></select><input name="step_name" placeholder="Nome da etapa" required><select name="responsible_type"><option value="CR">C&R</option><option value="GESTOR">Gestor</option><option value="AREA">Área aprovadora</option></select><select name="approval_area_id"></select><select name="action_type"><option value="FILL">Preenchimento</option><option value="REVIEW">Revisão</option><option value="APPROVE">Aprovação</option><option value="OPINION">Parecer</option></select><input name="sort_order" type="number" value="10"><button class="btn primary">Adicionar etapa</button></form><div id="workflowStepList" class="admin-list"></div></article></section><section id="auditView" class="hidden"><div class="page-head"><div><p class="eyebrow">Auditoria</p><h1>Logs de modificações</h1><p class="muted">Registro de criação e alteração de usuários e campos, além de entradas e saídas do sistema.</p></div><button id="refreshAudit" class="btn ghost">Atualizar</button></div><div class="toolbar"><input id="auditSearch" placeholder="Pesquisar responsável, ação ou item"><select id="auditEntity"><option value="">Todos os tipos</option><option value="profiles">Usuários</option><option value="form_fields">Campos</option><option value="access">Acessos</option></select></div><div id="auditLogs" class="cards"></div><div id="auditEmpty" class="empty hidden"><h3>Nenhum log encontrado</h3></div></section><section id="detailView" class="hidden"><button id="detailBackBtn" type="button" class="btn ghost">← Voltar</button><div id="detailHead" class="detail-head"></div><div id="returnNotice" class="notice warning hidden"></div><div id="stepper" class="stepper"></div><form id="content" class="content-grid"></form><section id="intakeReferencePanel" class="card hidden"></section><section id="crFinalOptions" class="card hidden"></section><section id="additionalApprovalPanel" class="card additional-approval hidden" aria-hidden="true"></section><div id="actions" class="actionbar"></div><section class="history-panel"><h2>Histórico</h2><div id="history"></div></section></section>
+<section id="modelsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Documentos</p><h1>Configuração do documento</h1><p class="muted">Defina qual informação preencherá cada campo do documento aprovado. O arquivo-modelo fica protegido e não precisa ser acessado.</p></div><div><button id="resetModelMapping" class="btn ghost">Restaurar padrão</button><button id="saveModelMapping" class="btn primary">Salvar configuração</button></div></div><div class="notice"><b>Como funciona:</b> escolha uma origem para cada campo do documento. Informações fixas vêm da solicitação; campos do formulário vêm da aba Campos. O C&R pode consultar a configuração e gerar o documento, mas somente o ADMIN pode alterá-la.</div><div id="modelMappingStatus" class="muted" style="margin:14px 0"></div><div id="modelMappingGrid" class="mapping-grid"></div></section><section id="companiesView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Empresas e filiais</h1><p class="muted">Cadastre e mantenha as opções usadas nas novas solicitações.</p></div></div><div class="content-grid"><article class="card"><h2>Empresas</h2><form id="companyForm" class="inline-admin-form"><input name="name" placeholder="Nome da empresa" required><button class="btn primary" type="submit">Adicionar</button></form><div id="companyAdminList" class="admin-list"></div></article><article class="card"><h2>Filiais</h2><form id="branchForm" class="inline-admin-form"><select name="company_id" required></select><input name="name" placeholder="Nome da filial" required><button class="btn primary" type="submit">Adicionar</button></form><div id="branchAdminList" class="admin-list"></div></article></div></section><section id="workflowsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Fluxos e aprovadores</h1><p class="muted">Fluxo oficial protegido: C&R → Gestor → C&R → Concluído. Sem aprovação de liderança.</p></div></div><div class="content-grid"><article class="card"><h2>Áreas aprovadoras</h2><form id="approvalAreaForm" class="inline-admin-form"><input name="name" placeholder="Ex.: Centro de Formação" required><button class="btn primary">Adicionar</button></form><div id="approvalAreaList" class="admin-list"></div></article><article class="card"><h2>Modelos de fluxo</h2><form id="workflowForm" class="modal-form"><label>Nome<input name="name" required></label><label>Descrição<textarea name="description"></textarea></label><button class="btn primary">Criar modelo</button></form><div id="workflowList" class="admin-list"></div></article></div><article class="card workflow-builder"><h2>Etapas</h2><form id="workflowStepForm" class="inline-admin-form"><select name="workflow_id" required></select><input name="step_name" placeholder="Nome da etapa" required><select name="responsible_type"><option value="CR">C&R</option><option value="GESTOR">Gestor</option><option value="AREA">Área aprovadora</option></select><select name="approval_area_id"></select><select name="action_type"><option value="FILL">Preenchimento</option><option value="REVIEW">Revisão</option><option value="APPROVE">Aprovação</option><option value="OPINION">Parecer</option></select><input name="sort_order" type="number" value="10"><button class="btn primary">Adicionar etapa</button></form><div id="workflowStepList" class="admin-list"></div></article></section><section id="baseView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Base e modelo</h1><p class="muted">Estrutura oficial do descritivo. Quando o padrão do arquivo base mudar, confira aqui e redefina as seções.</p></div><div><button id="baseCheckModel" class="btn ghost">Conferir modelo .docx</button><button id="baseSaveCatalog" class="btn primary">Salvar catálogo</button></div></div><div id="baseStatus" class="notice"></div><article class="card"><div class="card-head"><div><h2>Conferência automática</h2><p class="muted">Compara o catálogo com os marcadores do modelo, com as colunas da planilha base e com os campos do formulário.</p></div></div><div class="base-upload"><label>Planilha base (.xlsx ou .csv)<input id="baseSheet" type="file" accept=".xlsx,.csv,.txt"></label><p class="fine">O arquivo é lido no seu navegador; nada é enviado para o servidor. Usamos só a linha de cabeçalho e a primeira linha preenchida, para descobrir o rótulo real de cada coluna SKILL_nn.</p></div><div id="baseFindings" class="base-findings"></div></article><article class="card"><div class="card-head"><div><h2>Seções do descritivo</h2><p class="muted">Chave = marcador no modelo e coluna na planilha. Sugerível marca as seções que o Gestor pode propor alteração.</p></div><button id="baseAddSection" class="btn secondary">+ Nova seção</button></div><div class="table-wrap"><table id="baseCatalog" class="base-table"></table></div></article></section><section id="auditView" class="hidden"><div class="page-head"><div><p class="eyebrow">Auditoria</p><h1>Logs de modificações</h1><p class="muted">Registro de criação e alteração de usuários e campos, além de entradas e saídas do sistema.</p></div><button id="refreshAudit" class="btn ghost">Atualizar</button></div><div class="toolbar"><input id="auditSearch" placeholder="Pesquisar responsável, ação ou item"><select id="auditEntity"><option value="">Todos os tipos</option><option value="profiles">Usuários</option><option value="form_fields">Campos</option><option value="access">Acessos</option></select></div><div id="auditLogs" class="cards"></div><div id="auditEmpty" class="empty hidden"><h3>Nenhum log encontrado</h3></div></section><section id="detailView" class="hidden"><button id="detailBackBtn" type="button" class="btn ghost">← Voltar</button><div id="detailHead" class="detail-head"></div><div id="returnNotice" class="notice warning hidden"></div><div id="stepper" class="stepper"></div><form id="content" class="content-grid"></form><section id="intakeReferencePanel" class="card hidden"></section><section id="crFinalOptions" class="card hidden"></section><section id="additionalApprovalPanel" class="card additional-approval hidden" aria-hidden="true"></section><div id="actions" class="actionbar"></div><section class="history-panel"><h2>Histórico</h2><div id="history"></div></section></section>
 </main></div>
 <dialog id="requestDialog"><form id="requestForm" class="modal-form" novalidate><div class="modal-head"><div><p class="eyebrow">C&R</p><h2>Nova solicitação</h2></div><button type="button" class="icon-btn close">×</button></div><label>Tipo de solicitação<select name="request_type" required><option value="NEW">Criar cargo novo</option><option value="UPDATE">Atualizar cargo existente</option></select></label><div id="existingJobBox" class="hidden"><label>Pesquisar cargo vigente<input id="existingJobSearch" list="existingJobOptions" placeholder="Digite nome ou código" autocomplete="off"><datalist id="existingJobOptions"></datalist><input name="source_job_id" type="hidden"></label><div id="existingJobSelected" class="selected-manager muted">Selecione um cargo da base importada.</div></div><label>Nome do cargo<input name="title" required></label><label id="jobCodeCreateField">Código do cargo<input name="job_code"></label><div id="managerPickerBox"><label>Pesquisar gestor<input id="managerSearch" list="managerOptions" placeholder="Digite nome ou e-mail" autocomplete="off"><datalist id="managerOptions"></datalist><input name="manager_id" type="hidden"></label><div id="managerSelected" class="selected-manager muted">Selecione um gestor ativo.</div></div><div class="row"><label>Empresa<select name="company" required><option value="">Selecione...</option></select></label><label>Filial<select name="branch" required disabled><option value="">Selecione a empresa...</option></select></label></div><section id="updateFieldsBox" class="request-detail-box hidden"><h3>O que precisa ser atualizado?</h3><p class="muted">Selecione os conteúdos que precisam ser revisados. Os demais dados do cargo ficam disponíveis apenas para consulta.</p><div id="updateFieldChoices" class="update-field-choices"></div></section><section id="newManagerFieldsBox" class="request-detail-box hidden"><h3>Informações do Gestor</h3><p class="muted">Preencha os campos sob responsabilidade do Gestor. Os campos de C&R continuarão no fluxo oficial.</p><div id="newManagerFields"></div></section><label>Setor / área<input name="sector" placeholder="Informe o setor do cargo" required></label><label>Justificativa<textarea name="justification" placeholder="Explique a necessidade da criação ou atualização"></textarea></label><section id="requestOptionalApproval" class="optional-flow-box hidden"><label>Validação adicional<select name="use_additional_approval"><option value="NO">Não utilizar aprovador adicional</option><option value="YES">Pré-configurar aprovador adicional</option></select></label><div id="requestApprovalFields" class="hidden"><label>Área e aprovador<select name="additional_approver_id"><option value="">Selecione...</option></select></label><input name="additional_area_id" type="hidden"><label>Orientação para análise<textarea name="additional_approval_note" placeholder="Ex.: validar os campos relacionados à escolaridade"></textarea></label><p class="fine">O encaminhamento será confirmado pelo C&R quando a solicitação retornar do Gestor.</p></div></section><label id="requestDeadlineField">Prazo<input name="deadline" type="date" required></label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar solicitação</button></div></form></dialog>
 <dialog id="managerDialog"><form id="managerForm" class="modal-form"><div class="modal-head"><div><p class="eyebrow">Administração</p><h2>Novo usuário</h2></div><button type="button" class="icon-btn close">×</button></div><label>Nome<input name="name" required></label><label>Perfil<select name="role" required><option value="GESTOR">Gestor</option><option value="CR">Carreira & Recompensa</option></select></label><label id="newApproverAreaField" class="hidden">Área aprovadora<select name="approval_area_id"><option value="">Selecione...</option></select></label><label>E-mail corporativo<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="nome@marcopolo.com.br" required></label><div class="row"><label>Empresa<input name="company" list="managerCompanyOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="managerCompanyOptions"></datalist></label><label>Filial<input name="branch" list="managerBranchOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="managerBranchOptions"></datalist></label></div><div class="row"><label>Área<input name="area"></label><label>Cargo do gestor<input name="role_title"></label></div><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar acesso e gerar código</button></div></form></dialog>
@@ -196,6 +196,7 @@ async function load() {
   S.fields = f.data || [];
   S.companies = c.data || [];
   S.branches = b.data || [];
+  await loadSectionCatalog();
   const aa=await sb.from("approval_areas").select("*").order("name");S.approvalAreas=aa.data||[];
   if ($("#workflowsView")) {
     const [wf,ws]=await Promise.all([sb.from("workflow_templates").select("*").order("name"),sb.from("workflow_steps").select("*").order("sort_order")]);
@@ -218,6 +219,7 @@ function render() {
   $("#navAudit").classList.toggle("hidden", !admin());
   $("#navCompanies")?.classList.toggle("hidden", !admin());
   $("#navWorkflows")?.classList.toggle("hidden", !admin());
+  $("#navBase")?.classList.toggle("hidden", !admin());
   $("#newRequest").classList.toggle("hidden", !(isMgmt || S.profile.role === "GESTOR"));
   $("#dashboardTitle").textContent = isMgmt
     ? "Painel administrativo"
@@ -233,6 +235,274 @@ function render() {
   if ($("#companiesView")) renderCompaniesAdmin();
   if ($("#workflowsView")) renderWorkflowAdmin();
 }
+
+
+/* =======================================================================
+   BASE E MODELO - ferramenta do ADMIN
+   O catalogo de secoes deixou de ser texto fixo no arquivo. Aqui o ADMIN
+   confere a estrutura contra as duas fontes oficiais (o modelo .docx e a
+   planilha base) e redefine as secoes quando o padrao mudar.
+   ======================================================================= */
+let baseDraft=[],baseModelMarkers=null,baseSheetInfo=null;
+
+function baseDraftFromCatalog(){
+ return SECTION_CATALOG.map((x,i)=>({...x,legacy:[...x.legacy],sort_order:i*10}));
+}
+
+/* ---------- leitura do modelo .docx (marcadores + rotulo provavel) ------- */
+function docxParagraphs(xml){
+ const semPr=xml.replace(/<w:pPr>[\s\S]*?<\/w:pPr>/g,'');
+ return [...semPr.matchAll(/<w:p[ >][\s\S]*?<\/w:p>/g)]
+   .map(m=>[...m[0].matchAll(/<w:t(?:[^>]*)>([\s\S]*?)<\/w:t>/g)].map(x=>x[1]).join('')
+     .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>').trim())
+   .filter(Boolean);
+}
+/* No modelo os marcadores vem em bloco, logo depois dos rotulos da coluna:
+   "FORMACAO/ESCOLARIDADE" / "MINIMA" / "DESEJAVEL" / «SKILL_30» / «SKILL_31».
+   Emparelhamos o i-esimo marcador com o i-esimo rotulo do fim da lista. E
+   heuristica: serve como alerta para o ADMIN conferir, nunca como verdade. */
+function markersFromDocx(paragraphs){
+ const out={},segTextos=[];let segMarks=[];
+ const fechar=()=>{
+  if(segMarks.length){
+   const t=segTextos.length,m=segMarks.length;
+   segMarks.forEach((mk,i)=>{
+    const sub=t>=m?segTextos[t-m+i]:null,cab=t>m?segTextos[t-m-1]:null;
+    out[mk]=[cab,sub].filter(Boolean).join(' ').trim()||null;
+   });
+   segTextos.length=0;segMarks=[];
+  }
+ };
+ for(const par of paragraphs){
+  const marks=[...par.matchAll(/«([^»]{1,60})»/g)].map(x=>x[1]);
+  if(marks.length){segMarks.push(...marks);continue;}
+  fechar();segTextos.push(par);
+ }
+ fechar();
+ return out;
+}
+async function lerModeloDocx(){
+ const res=await fetch("./modelo-cargo-individual.docx");
+ if(!res.ok)throw new Error("Modelo oficial não encontrado no pacote.");
+ const zip=await JSZip.loadAsync(await res.blob());
+ const alvos=Object.keys(zip.files).filter(n=>/^word\/(document|header\d+|footer\d+)\.xml$/.test(n));
+ let paragraphs=[];
+ for(const n of alvos) paragraphs=paragraphs.concat(docxParagraphs(await zip.file(n).async("string")));
+ return markersFromDocx(paragraphs);
+}
+
+/* ---------- leitura da planilha base (.xlsx via JSZip, ou .csv) ---------- */
+const colIndex=(ref)=>{const l=String(ref).replace(/[^A-Z]/g,'');let n=0;for(const c of l)n=n*26+(c.charCodeAt(0)-64);return n-1;};
+function xlsxSharedStrings(xml){
+ if(!xml)return [];
+ return [...xml.matchAll(/<si>([\s\S]*?)<\/si>/g)].map(m=>
+   [...m[1].matchAll(/<t(?:[^>]*)>([\s\S]*?)<\/t>/g)].map(x=>x[1]).join('')
+     .replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>'));
+}
+function xlsxRows(sheetXml,shared,limite){
+ const linhas=[];
+ for(const m of sheetXml.matchAll(/<row[^>]*>([\s\S]*?)<\/row>/g)){
+  const celulas=[];
+  for(const c of m[1].matchAll(/<c([^>]*)>([\s\S]*?)<\/c>/g)){
+   const attrs=c[1],corpo=c[2];
+   const ref=(attrs.match(/r="([A-Z]+\d+)"/)||[])[1];
+   const tipo=(attrs.match(/t="([^"]+)"/)||[])[1];
+   let v=(corpo.match(/<v>([\s\S]*?)<\/v>/)||[])[1];
+   if(tipo==='s')v=shared[Number(v)]??'';
+   else if(tipo==='inlineStr')v=[...corpo.matchAll(/<t(?:[^>]*)>([\s\S]*?)<\/t>/g)].map(x=>x[1]).join('');
+   if(ref)celulas[colIndex(ref)]=String(v??'').replace(/&amp;/g,'&').replace(/&lt;/g,'<').replace(/&gt;/g,'>');
+  }
+  linhas.push(celulas);
+  if(linhas.length>=limite)break;
+ }
+ return linhas;
+}
+function parseCsv(texto){
+ const sep=(texto.split('\n')[0]||'').includes(';')?';':',';
+ return texto.split(/\r?\n/).slice(0,400).map(l=>l.split(sep).map(c=>c.replace(/^"|"$/g,'').trim()));
+}
+/* Devolve { colunas, rotulos } onde rotulos[SKILL_30] = "ESCOLARIDADE MINIMA",
+   lido da coluna SKILL_30_DESC na primeira linha que tiver conteudo. */
+async function lerPlanilhaBase(file){
+ let linhas;
+ if(/\.csv$|\.txt$/i.test(file.name)) linhas=parseCsv(await file.text());
+ else {
+  const zip=await JSZip.loadAsync(file);
+  const nomeSheet=Object.keys(zip.files).find(n=>/^xl\/worksheets\/sheet1\.xml$/.test(n))
+    ||Object.keys(zip.files).find(n=>/^xl\/worksheets\/.*\.xml$/.test(n));
+  if(!nomeSheet)throw new Error("Planilha sem aba legível (esperado xl/worksheets).");
+  const sharedFile=zip.file("xl/sharedStrings.xml");
+  const shared=xlsxSharedStrings(sharedFile?await sharedFile.async("string"):null);
+  linhas=xlsxRows(await zip.file(nomeSheet).async("string"),shared,400);
+ }
+ if(!linhas.length)throw new Error("Arquivo vazio.");
+ const colunas=(linhas[0]||[]).map(x=>String(x||'').trim());
+ const rotulos={};
+ colunas.forEach((nome,i)=>{
+  const m=/^(SKILL_\d+)_DESC$/i.exec(nome);
+  if(!m)return;
+  for(let l=1;l<linhas.length;l++){
+   const v=String(linhas[l]?.[i]||'').trim();
+   if(v){rotulos[m[1].toUpperCase()]=v;break;}
+  }
+ });
+ return {arquivo:file.name,colunas,rotulos,linhasLidas:linhas.length};
+}
+
+/* ---------- conferencia ---------- */
+function baseFindings(){
+ const achados=[];
+ const chaves=baseDraft.map(x=>x.key);
+ const add=(nivel,titulo,detalhe)=>achados.push({nivel,titulo,detalhe});
+
+ if(baseModelMarkers){
+  const marcadores=Object.keys(baseModelMarkers);
+  const fixos=['EMPRESA','COD_DO_CARGO','NOME_COMPLETO','CBO','TCLC_DESC','DT_ATIVACAO'];
+  marcadores.filter(m=>!fixos.includes(m)&&!chaves.includes(m)).forEach(m=>
+   add('erro',`O modelo tem «${m}» e o catálogo não`,'O documento vai sair com esse campo em branco. Crie a seção ou remova o marcador do modelo.'));
+  chaves.filter(k=>!marcadores.includes(k)).forEach(k=>
+   add('aviso',`A seção ${k} não aparece no modelo`,'Ela continua valendo na tela, mas nada dela será impresso no documento.'));
+ }
+
+ if(baseSheetInfo){
+  const {colunas,rotulos}=baseSheetInfo;
+  Object.entries(rotulos).forEach(([chave,rotuloReal])=>{
+   const sec=baseDraft.find(x=>x.key===chave);
+   if(!sec){add('erro',`A planilha tem ${chave} e o catálogo não`,`Rótulo na base: "${rotuloReal}".`);return;}
+   const declarado=String(sec.baseLabel||'').trim();
+   if(!declarado){add('aviso',`${chave} sem coluna de referência`,`A planilha chama de "${rotuloReal}". Preencha o campo Coluna na base.`);return;}
+   if(normText(declarado)!==normText(rotuloReal))
+    add('erro',`${chave} está apontando para a coluna errada`,`O catálogo diz "${declarado}", mas a planilha diz "${rotuloReal}". Foi exatamente esse tipo de desalinhamento que trocou os textos de escolaridade e idioma.`);
+   if(normText(sec.label)!==normText(rotuloReal)&&normText(declarado)===normText(rotuloReal))
+    add('info',`${chave}: rótulo da tela difere do da base`,`Tela: "${sec.label}" · Base: "${rotuloReal}". Só confirme que é intencional.`);
+  });
+  chaves.filter(k=>/^SKILL_/.test(k)&&!rotulos[k]).forEach(k=>
+   add('aviso',`${k} não foi encontrada na planilha`,`Colunas lidas: ${colunas.filter(c=>/^SKILL_/i.test(c)).join(', ')||'nenhuma'}.`));
+ }
+
+ const semSecao=S.fields.filter(f=>f.active&&!fieldSection(f)).map(f=>f.label);
+ if(semSecao.length)
+  add('aviso','Campos do formulário sem seção correspondente',`${semSecao.join(', ')}. Eles funcionam, mas não puxam o texto atual da base nem entram no escopo de revisão.`);
+ const semCampo=chaves.filter(k=>!S.fields.some(f=>f.active&&fieldSection(f)===k));
+ if(semCampo.length)
+  add('info','Seções sem campo no formulário',`${semCampo.join(', ')}. Aparecem como referência somente leitura.`);
+
+ if(!baseModelMarkers) add('info','Modelo ainda não conferido','Clique em "Conferir modelo .docx" para comparar com os marcadores do documento oficial.');
+ if(!baseSheetInfo) add('info','Planilha ainda não enviada','Envie a planilha base para conferir o rótulo real de cada coluna SKILL_nn.');
+ return achados;
+}
+
+/* ---------- render ---------- */
+function renderBaseView(){
+ if(!admin())return;
+ if(!baseDraft.length)baseDraft=baseDraftFromCatalog();
+ const st=$("#baseStatus");
+ st.className="notice "+(sectionCatalogSource==="banco"?"":"warning");
+ st.innerHTML=sectionCatalogSource==="banco"
+  ? '<b>Catálogo carregado do Supabase.</b> As alterações salvas aqui valem para todos os usuários.'
+  : '<b>Catálogo padrão embutido no pacote.</b> A tabela <code>section_catalog</code> ainda não existe no Supabase, então esta tela funciona para conferência e exportação, mas o botão Salvar não terá onde gravar. O SQL está no LEIA-ME.';
+ $("#baseSaveCatalog").textContent=sectionCatalogSource==="banco"?"Salvar catálogo":"Exportar catálogo (JSON)";
+
+ const linhas=baseDraft.map((x,i)=>`<tr data-i="${i}">
+   <td><input class="b-key" value="${esc(x.key)}" placeholder="SKILL_38"></td>
+   <td><input class="b-label" value="${esc(x.label)}" placeholder="Rótulo exibido"></td>
+   <td><input class="b-base" value="${esc(x.baseLabel||'')}" placeholder="Coluna _DESC na planilha"></td>
+   <td><input class="b-legacy" value="${esc((x.legacy||[]).join(', '))}" placeholder="apelidos antigos"></td>
+   <td class="b-center"><input class="b-sug" type="checkbox" ${x.suggestable?'checked':''}></td>
+   <td class="b-center">${baseModelMarkers?(baseModelMarkers[x.key]!==undefined?'<span class="pill ok">no modelo</span>':'<span class="pill off">ausente</span>'):'<span class="pill">—</span>'}</td>
+   <td class="b-center"><button type="button" class="btn ghost b-up" title="Subir">↑</button><button type="button" class="btn ghost b-del" title="Remover">✕</button></td>
+ </tr>`).join('');
+ $("#baseCatalog").innerHTML=`<thead><tr><th>Chave</th><th>Rótulo na tela</th><th>Coluna na base</th><th>Apelidos</th><th>Sugerível</th><th>Modelo</th><th></th></tr></thead><tbody>${linhas}</tbody>`;
+
+ renderBaseFindings();
+}
+/* Separado de renderBaseView para atualizar a conferencia enquanto o ADMIN
+   digita, sem recriar a tabela e perder o foco do campo. */
+function renderBaseFindings(){
+ const host=$("#baseFindings");if(!host)return;
+ const ordem={erro:0,aviso:1,info:2};
+ host.innerHTML=baseFindings().sort((a,b)=>ordem[a.nivel]-ordem[b.nivel]).map(a=>
+  `<div class="finding ${a.nivel}"><b>${esc(a.titulo)}</b><span>${esc(a.detalhe)}</span></div>`).join('')
+  ||'<div class="finding info"><b>Nenhuma divergência encontrada.</b><span>Catálogo, modelo, planilha e campos do formulário estão coerentes.</span></div>';
+}
+
+function baseCollect(){
+ return [...document.querySelectorAll("#baseCatalog tbody tr")].map((tr,i)=>({
+  key:tr.querySelector(".b-key").value.trim().toUpperCase(),
+  label:tr.querySelector(".b-label").value.trim(),
+  baseLabel:tr.querySelector(".b-base").value.trim()||null,
+  legacy:tr.querySelector(".b-legacy").value.split(",").map(x=>x.trim()).filter(Boolean),
+  suggestable:tr.querySelector(".b-sug").checked,
+  sort_order:i*10,
+  active:true,
+ }));
+}
+let baseTimer;
+const baseTouched=()=>{baseDraft=baseCollect();clearTimeout(baseTimer);baseTimer=setTimeout(renderBaseFindings,250);};
+document.addEventListener("input",e=>{if(e.target.closest("#baseCatalog"))baseTouched();});
+document.addEventListener("change",e=>{if(e.target.closest("#baseCatalog"))baseTouched();});
+document.addEventListener("click",e=>{
+ const tr=e.target.closest("#baseCatalog tbody tr");if(!tr)return;
+ const i=[...tr.parentNode.children].indexOf(tr);
+ if(e.target.classList.contains("b-del")){
+  if(!confirm(`Remover a seção ${baseDraft[i]?.key||''} do catálogo?`))return;
+  baseDraft.splice(i,1);renderBaseView();
+ } else if(e.target.classList.contains("b-up")&&i>0){
+  [baseDraft[i-1],baseDraft[i]]=[baseDraft[i],baseDraft[i-1]];renderBaseView();
+ }
+});
+$("#baseAddSection").onclick=()=>{
+ baseDraft=baseCollect();
+ baseDraft.push({key:'',label:'',baseLabel:null,legacy:[],suggestable:false,sort_order:baseDraft.length*10,active:true});
+ renderBaseView();
+};
+$("#baseCheckModel").onclick=async()=>{
+ const btn=$("#baseCheckModel"),txt=btn.textContent;
+ btn.disabled=true;btn.textContent="Lendo modelo...";
+ try{
+  baseModelMarkers=await lerModeloDocx();
+  const divergentes=Object.entries(baseModelMarkers)
+    .filter(([k,rot])=>rot&&SECTION_BY_KEY[k]&&normText(rot)!==normText(SECTION_BY_KEY[k].label));
+  renderBaseView();
+  toast(divergentes.length
+    ? `${Object.keys(baseModelMarkers).length} marcadores lidos. ${divergentes.length} com rótulo diferente do catálogo — confira a lista.`
+    : `${Object.keys(baseModelMarkers).length} marcadores lidos do modelo.`);
+ }catch(err){toast("Não foi possível ler o modelo: "+(err?.message||err));}
+ finally{btn.disabled=false;btn.textContent=txt;}
+};
+$("#baseSheet").onchange=async e=>{
+ const file=e.target.files?.[0];if(!file)return;
+ try{
+  baseSheetInfo=await lerPlanilhaBase(file);
+  renderBaseView();
+  const n=Object.keys(baseSheetInfo.rotulos).length;
+  toast(n?`${n} colunas SKILL_nn identificadas em ${baseSheetInfo.arquivo}.`:"Nenhuma coluna SKILL_nn_DESC encontrada na planilha.");
+ }catch(err){baseSheetInfo=null;toast("Não foi possível ler a planilha: "+(err?.message||err));}
+};
+$("#baseSaveCatalog").onclick=async()=>{
+ if(!admin())return;
+ const rows=baseCollect();
+ const vazias=rows.filter(x=>!x.key||!x.label);
+ if(vazias.length)return toast("Preencha chave e rótulo em todas as linhas antes de salvar.");
+ const dup=rows.map(x=>x.key).filter((k,i,arr)=>arr.indexOf(k)!==i);
+ if(dup.length)return toast("Chave repetida no catálogo: "+[...new Set(dup)].join(", "));
+ const semSugestao=rows.filter(x=>x.suggestable);
+ if(!semSugestao.length&&!confirm("Nenhuma seção ficou marcada como sugerível. O Gestor não poderá propor alteração em nada. Continuar?"))return;
+
+ if(sectionCatalogSource!=="banco"){
+  const blob=new Blob([JSON.stringify(rows,null,2)],{type:"application/json"});
+  const url=URL.createObjectURL(blob),a=document.createElement("a");
+  a.href=url;a.download="section_catalog.json";a.click();
+  setTimeout(()=>URL.revokeObjectURL(url),1000);
+  return toast("Catálogo exportado. Crie a tabela section_catalog (SQL no LEIA-ME) para salvar direto no Supabase.");
+ }
+ const {error}=await sb.rpc("save_section_catalog",{p_rows:rows});
+ if(error)return toast("Não foi possível salvar: "+error.message);
+ await loadSectionCatalog();
+ baseDraft=baseDraftFromCatalog();
+ renderBaseView();
+ toast("Catálogo salvo. As telas e o documento passam a usar a nova estrutura.");
+};
 
 async function loadAuditLogs() {
   if (!admin()) return;
@@ -311,10 +581,10 @@ const parseSafe=(value,fallback)=>{if(value==null)return fallback;if(typeof valu
      SKILL_36 = EXPERIENCIA PROFISSIONAL DESEJAVEL
      SKILL_37 = COMPETENCIAS COMPORTAMENTAIS MARCOPOLO DESEJAVEIS
    ------------------------------------------------------------------------ */
-const SECTION_CATALOG=[
+const DEFAULT_SECTION_CATALOG=[
  {key:'TEXTO_RESULTADO_ESPERADO',label:'Foco de atuação',legacy:['expected_result','foco_atuacao','resultado_esperado'],baseLabel:null},
- {key:'ATIV_DESC',label:'Missão',legacy:['mission','activities','ativ_desc'],baseLabel:null},
- {key:'DESCRICAO_CARGO',label:'Principais responsabilidades/atividades',legacy:['responsibilities','job_description','description','descricao_cargo'],baseLabel:null},
+ {key:'ATIV_DESC',label:'Missão',legacy:['mission','activities','ativ_desc'],baseLabel:null,suggestable:true},
+ {key:'DESCRICAO_CARGO',label:'Principais responsabilidades/atividades',legacy:['responsibilities','job_description','description','descricao_cargo'],baseLabel:null,suggestable:true},
  {key:'SKILL_30',label:'Formação/Escolaridade mínima',legacy:['formation_min'],baseLabel:'ESCOLARIDADE MÍNIMA'},
  {key:'SKILL_31',label:'Formação/Escolaridade desejável',legacy:['formation_desired'],baseLabel:'ESCOLARIDADE DESEJÁVEL'},
  {key:'SKILL_32',label:'Idioma mínimo',legacy:['language_min'],baseLabel:'IDIOMA MÍNIMO'},
@@ -324,14 +594,44 @@ const SECTION_CATALOG=[
  {key:'SKILL_36',label:'Experiência profissional desejável',legacy:['experience_min','experience_desired'],baseLabel:'EXPERIÊNCIA PROFISSIONAL DESEJÁVEL'},
  {key:'SKILL_37',label:'Competências comportamentais Marcopolo desejáveis',legacy:['behavioral'],baseLabel:'COMPETÊNCIAS MARCOPOLO DESEJÁVEIS'}
 ];
-const SECTION_BY_KEY=Object.fromEntries(SECTION_CATALOG.map(s=>[s.key,s]));
-const SECTION_ALIASES=(()=>{const m={};for(const s of SECTION_CATALOG){for(const alias of [s.key,...s.legacy]){m[alias]=s.key;m[alias.toUpperCase()]=s.key;m[alias.toLowerCase()]=s.key;}}return m;})();
-/* Regra oficial do pacote (LEIA-ME): o Gestor sugere apenas Missao e
-   Principais responsabilidades. As demais secoes sao referencia somente
-   leitura. Para liberar outra secao a sugestao, basta incluir a chave aqui. */
-const SUGGESTABLE_SECTIONS=['ATIV_DESC','DESCRICAO_CARGO'];
-const REFERENCE_SECTIONS=SECTION_CATALOG.map(s=>s.key).filter(k=>!SUGGESTABLE_SECTIONS.includes(k));
-const UPDATE_CATALOG=SUGGESTABLE_SECTIONS.map(k=>[k,SECTION_BY_KEY[k].label]);
+/* O catalogo vive no banco quando a tabela section_catalog existe; caso
+   contrario cai no padrao acima. Tudo o que deriva dele e recalculado em
+   rebuildSectionCatalog, entao a troca em tempo de execucao e segura. */
+let SECTION_CATALOG=[],SECTION_BY_KEY={},SECTION_ALIASES={},SUGGESTABLE_SECTIONS=[],REFERENCE_SECTIONS=[],UPDATE_CATALOG=[];
+let sectionCatalogSource="padrao";
+function normalizeSection(row,i){
+ return {
+  key:String(row.key||row.section_key||'').trim().toUpperCase(),
+  label:String(row.label||'').trim(),
+  legacy:Array.isArray(row.legacy)?row.legacy:(Array.isArray(row.legacy_keys)?row.legacy_keys:[]),
+  baseLabel:row.baseLabel??row.base_label??null,
+  suggestable:row.suggestable===true,
+  sort_order:Number.isFinite(row.sort_order)?row.sort_order:i*10,
+  active:row.active!==false,
+ };
+}
+function rebuildSectionCatalog(rows){
+ const base=(rows&&rows.length?rows:DEFAULT_SECTION_CATALOG.map((x,i)=>({...x,suggestable:['ATIV_DESC','DESCRICAO_CARGO'].includes(x.key),sort_order:i*10})));
+ SECTION_CATALOG=base.map(normalizeSection).filter(x=>x.key&&x.active).sort((a,b)=>a.sort_order-b.sort_order);
+ SECTION_BY_KEY=Object.fromEntries(SECTION_CATALOG.map(x=>[x.key,x]));
+ SECTION_ALIASES={};
+ for(const x of SECTION_CATALOG){for(const alias of [x.key,...x.legacy]){const a=String(alias||'').trim();if(!a)continue;SECTION_ALIASES[a]=x.key;SECTION_ALIASES[a.toUpperCase()]=x.key;SECTION_ALIASES[a.toLowerCase()]=x.key;}}
+ SUGGESTABLE_SECTIONS=SECTION_CATALOG.filter(x=>x.suggestable).map(x=>x.key);
+ REFERENCE_SECTIONS=SECTION_CATALOG.filter(x=>!x.suggestable).map(x=>x.key);
+ UPDATE_CATALOG=SUGGESTABLE_SECTIONS.map(k=>[k,SECTION_BY_KEY[k].label]);
+}
+rebuildSectionCatalog(null);
+/* Tolerante de proposito: sem a tabela no Supabase o app segue com o padrao
+   embutido e a tela Base e modelo entra em modo somente diagnostico. */
+async function loadSectionCatalog(){
+ try{
+  const {data,error}=await sb.rpc("list_section_catalog");
+  if(error||!Array.isArray(data)||!data.length){rebuildSectionCatalog(null);sectionCatalogSource="padrao";return;}
+  rebuildSectionCatalog(data);sectionCatalogSource="banco";
+ }catch(err){rebuildSectionCatalog(null);sectionCatalogSource="padrao";}
+}
+/* Regra oficial do pacote (LEIA-ME): por padrao o Gestor sugere apenas Missao
+   e Principais responsabilidades; o ADMIN altera isso na tela Base e modelo. */
 function canonicalReviewKey(k){const raw=String(k??'').trim();return SECTION_ALIASES[raw]||SECTION_ALIASES[raw.toUpperCase()]||raw;}
 function reviewLabel(k){return SECTION_BY_KEY[canonicalReviewKey(k)]?.label||k;}
 function sectionLabel(k){const s=SECTION_BY_KEY[canonicalReviewKey(k)];return s?`${s.label} — ${s.key}`:k;}
@@ -508,7 +808,8 @@ const typeLabel = (t) =>
 function show(v) {
   if (v === "models" && mgmt()) loadModelMappings();
   if (v === "audit" && admin()) loadAuditLogs();
-  ["dashboard", "managers", "fields", "models", "companies", "workflows", "audit", "detail"].forEach((x) =>
+  if (v === "base" && admin()) renderBaseView();
+  ["dashboard", "managers", "fields", "models", "companies", "workflows", "base", "audit", "detail"].forEach((x) =>
     $("#" + x + "View").classList.toggle("hidden", x !== v),
   );
 $$(".nav").forEach((n) => {
@@ -668,8 +969,11 @@ function renderDetail() {
   $("#content").innerHTML =
     (!visibleFields.length?'<div class="empty"><h3>Nenhum campo ativo</h3><p>Revise a configuração no menu Campos.</p></div>':'')+
     (r.request_kind==='UPDATE'&&reviewScope.length?`<div class="review-scope-note"><b>Escopo da revisão:</b> ${reviewScope.map(sectionLabel).map(esc).join(', ')}. Somente os campos desse escopo podem ser alterados.</div>`:'')+
-    (r.status === ST.A
+    (r.status === ST.A && !admin()
       ? '<div class="approved-readonly-note">Solicitação concluída. Os campos estão disponíveis somente para consulta; os explicativos continuam visíveis no ícone ?.</div>'
+      : "") +
+    (admin()
+      ? '<div class="admin-override-note"><b>Modo administrador.</b> Todos os campos estão liberados, inclusive fora do escopo da revisão e após a conclusão. As alterações ficam registradas nos logs.</div>'
       : "") +
     visibleFields
       .map((f) => {
@@ -686,7 +990,9 @@ function renderDetail() {
           (S.profile.role === "GESTOR" &&
             f.owner_role === "GESTOR" &&
             [ST.M, ST.R].includes(r.status));
-        const chosenSection=fieldReviewKey(f),isRestrictedUpdate=r.request_kind==='UPDATE'&&reviewScope.length>0;
+        /* O escopo restrito nao vale para o ADMIN: ele corrige qualquer campo,
+           em qualquer status, inclusive depois de concluida. */
+        const chosenSection=fieldReviewKey(f),isRestrictedUpdate=!admin()&&r.request_kind==='UPDATE'&&reviewScope.length>0;
         if(isRestrictedUpdate&&(!chosenSection||!reviewScope.includes(chosenSection)))can=false;
         const baseText=sourceValueForField(f,sourceSnapshot);
         return (
@@ -717,7 +1023,8 @@ function renderDetail() {
     );
   if (mgmt() && r.status === ST.A)
     a.push(
-      `<button class="btn primary" onclick="chooseModel('${r.id}')">Baixar documento</button>`,
+      (admin() ? '<button class="btn secondary" onclick="saveApprovedCorrection()">Salvar correção</button>' : '') +
+        `<button class="btn primary" onclick="chooseModel('${r.id}')">Baixar documento</button>`,
     );
   /* Painel de referencia do pedido do Gestor. O elemento existia no HTML mas
      era sempre esvaziado: o C&R revisava sem ver o que o Gestor pediu. */
@@ -816,6 +1123,16 @@ window.sendManagerApproval=async()=>{
  if(nota===null)return;
  await saveValues();
  await transition("request",nota.trim());
+};
+/* Correcao pos-conclusao, so para o ADMIN. Pede confirmacao porque o
+   descritivo ja pode ter sido baixado e distribuido. */
+window.saveApprovedCorrection=async()=>{
+ if(!admin())return toast("Apenas o Administrador pode corrigir uma solicitação concluída.");
+ if(!confirm("Salvar a correção nesta solicitação já concluída? O documento precisará ser baixado novamente para refletir a mudança."))return;
+ const {error}=await sb.rpc("save_dynamic_values",{p_request_id:S.selected.id,p_values:values()});
+ if(error)return toast("Não foi possível salvar a correção: "+error.message);
+ await openRequest(S.selected.id);
+ toast("Correção salva. Gere o documento novamente para atualizar o arquivo.");
 };
 window.saveFinalJobCode=async()=>{const code=$("#finalJobCode").value.trim();if(!code)return toast("Informe o código do cargo.");const{error}=await sb.rpc("cr_set_request_job_code",{p_request_id:S.selected.id,p_job_code:code});if(error)return toast(error.message);await openRequest(S.selected.id);toast("Código do cargo salvo.");};
 window.sendManagerFinalReview=async()=>{const reason=prompt("Orientação para a conferência do Gestor:","Confira todos os campos preenchidos e devolva para C&R.")||"";if(!reason.trim())return;await saveValues();const{error}=await sb.rpc("cr_send_optional_manager_review",{p_request_id:S.selected.id,p_reason:reason});if(error)return toast(error.message);await load();show("dashboard");toast("Enviado ao Gestor para conferência opcional.");};
