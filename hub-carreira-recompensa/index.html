@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v43"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v43"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v44"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v44"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   /* :not(.hidden) evita que a tela de login continue visivel apos entrar */
@@ -396,6 +396,16 @@ function baseFindings(){
    add('aviso',`${k} não foi encontrada na planilha`,`Colunas lidas: ${colunas.filter(c=>/^SKILL_/i.test(c)).join(', ')||'nenhuma'}.`));
  }
 
+ /* Dois campos ativos apontando para a mesma secao dividem o mesmo texto da
+    base e concorrem no documento: um sobrescreve o outro. */
+ const porSecao={};
+ S.fields.filter(f=>f.active).forEach(f=>{const k=fieldSection(f);if(!k)return;(porSecao[k]=porSecao[k]||[]).push(f.label);});
+ Object.entries(porSecao).filter(([,l])=>l.length>1).forEach(([k,l])=>
+  add('erro',`${l.length} campos apontam para a seção ${k}`,`${l.join(' / ')}. Eles vão receber o mesmo texto da base e disputar o mesmo marcador no documento. Renomeie um deles ou desative o que sobrar.`));
+ /* Obrigatorio que nunca entra em escopo trava a conclusao de atualizacoes. */
+ const obrigatoriosForaDeSugestao=S.fields.filter(f=>f.active&&f.required&&(()=>{const k=fieldSection(f);return !k||!SECTION_BY_KEY[k]?.suggestable;})()).map(f=>f.label);
+ if(obrigatoriosForaDeSugestao.length)
+  add('info','Campos obrigatórios que o Gestor não pode sugerir',`${obrigatoriosForaDeSugestao.join(', ')}. Numa atualização eles ficam mantidos da base e não são cobrados — só valem como obrigatórios em cargo novo.`);
  const semSecao=S.fields.filter(f=>f.active&&!fieldSection(f)).map(f=>f.label);
  if(semSecao.length)
   add('aviso','Campos do formulário sem seção correspondente',`${semSecao.join(', ')}. Eles funcionam, mas não puxam o texto atual da base nem entram no escopo de revisão.`);
@@ -1066,13 +1076,21 @@ function renderDetail() {
     intakeValues = parseSafe(r.intake_manager_values, {}) || {},
     sourceSnapshot = r.__snapshot || parseSafe(r.intake_source_snapshot || r.source_snapshot, {}) || {},
     currentSnapshot = parseSafe(r.current_values, {}) || {},
+    suggestions = intakeSuggestions(r),
+    pedidoScope = selectedReviewKeys(r.intake_selected_sections || r.update_sections || []),
     vals = Object.fromEntries(S.fields.filter(f=>f.active).map(f=>{
       const reviewKey=fieldReviewKey(f);
       const fromSaved=savedValues[f.id] ?? savedValues[f.field_key];
       const fromIntake=intakeValues[f.id] ?? intakeValues[f.field_key] ?? intakeValues[reviewKey];
+      /* A sugestao do Gestor era lida so na semeadura da triagem. Se ela
+         falhou - e falhava, antes da correcao do payload - o campo em revisao
+         mostrava o texto antigo da base. Agora a sugestao entra direto,
+         abaixo do que ja foi salvo e acima do texto atual. */
+      const fromSuggestion=reviewKey&&pedidoScope.includes(reviewKey)
+        ? (suggestions[reviewKey] ?? suggestions[f.field_key]) : undefined;
       const fromCurrent=reviewKey?currentSnapshot[reviewKey]:undefined;
       const fromSource=sourceValueForField(f,sourceSnapshot);
-      return [f.id, cleanCatalogValue(fromSaved ?? fromIntake ?? fromCurrent ?? fromSource ?? '')];
+      return [f.id, cleanCatalogValue(fromSaved ?? fromIntake ?? fromSuggestion ?? fromCurrent ?? fromSource ?? '')];
     })),
     n =
       r.status === ST.D
@@ -1106,41 +1124,64 @@ function renderDetail() {
     .join("");
   let last = "";
   const visibleFields=S.fields.filter(f=>f.active);
+  /* ---------------------------------------------------------------------
+     Atualizacao de cargo existente e criacao de cargo novo sao fluxos
+     diferentes e a tela passa a refletir isso:
+       NOVO   -> todos os campos entram em jogo, agrupados por responsavel.
+       UPDATE -> so as secoes escolhidas sao revisadas. O resto do cargo vem
+                 da base, fica somente leitura num bloco recolhido e NAO e
+                 cobrado como obrigatorio: nao e o que esta sendo alterado.
+     --------------------------------------------------------------------- */
+  const escopado = r.request_kind === "UPDATE" && reviewScope.length > 0;
+  const emEscopo = (f) => {
+    const sec = fieldReviewKey(f);
+    return !!sec && reviewScope.includes(sec);
+  };
+  const campoHtml = (f, forcarBloqueio) => {
+    let can =
+      admin() ||
+      (S.profile.role === "CR" && f.owner_role === "CR" && [ST.D, ST.C].includes(r.status)) ||
+      (S.profile.role === "GESTOR" && f.owner_role === "GESTOR" && [ST.M, ST.R].includes(r.status));
+    // O escopo restrito nao vale para o ADMIN: ele corrige qualquer campo.
+    if (forcarBloqueio && !admin()) can = false;
+    const baseText = sourceValueForField(f, sourceSnapshot);
+    const obrigatorio = f.required && (!escopado || emEscopo(f));
+    return `<div class="field ${f.field_type === "textarea" ? "full" : ""}"><div class="field-label-row"><label>${esc(f.label)} ${obrigatorio ? '<span class="required-mark">*</span>' : ""}</label>${f.help_text ? `<button type="button" class="help-tip" aria-label="Explicação do campo ${esc(f.label)}">?<span class="help-popover">${esc(f.help_text)}</span></button>` : ""}</div><span class="field-owner">${f.owner_role === "CR" ? "Preenchimento C&R" : "Preenchimento Gestor"} · ${obrigatorio ? "Obrigatório" : "Opcional"}</span>${baseText ? `<div class="current-source"><b>Texto atual da base:</b><span>${esc(baseText)}</span></div>` : ""}${control(f, vals[f.id] ?? "", !can)}</div>`;
+  };
+  const grupoPorResponsavel = (lista, bloquear) => {
+    let ultimo = "";
+    return lista
+      .map((f) => {
+        let head = "";
+        if (f.owner_role !== ultimo) {
+          ultimo = f.owner_role;
+          head = `<div class="area-section ${ultimo === "CR" ? "cr-area" : "manager-area"}"><h3>${ultimo === "CR" ? "Área Gestão — C&R" : "Área Responsável — Gestor"}</h3><span>${ultimo === "CR" ? "Campos que C&R escolheu preencher" : "Campos atribuídos ao Gestor"}</span></div>`;
+        }
+        return head + campoHtml(f, bloquear);
+      })
+      .join("");
+  };
+
+  const emRevisao = escopado ? visibleFields.filter(emEscopo) : visibleFields;
+  const mantidos = escopado ? visibleFields.filter((f) => !emEscopo(f)) : [];
+
   $("#content").innerHTML =
-    (!visibleFields.length?'<div class="empty"><h3>Nenhum campo ativo</h3><p>Revise a configuração no menu Campos.</p></div>':'')+
-    (r.request_kind==='UPDATE'&&reviewScope.length?`<div class="review-scope-note"><b>Escopo da revisão:</b> ${reviewScope.map(sectionLabel).map(esc).join(', ')}. Somente os campos desse escopo podem ser alterados.</div>`:'')+
+    (!visibleFields.length ? '<div class="empty"><h3>Nenhum campo ativo</h3><p>Revise a configuração no menu Campos.</p></div>' : "") +
+    (escopado
+      ? `<div class="review-scope-note"><b>Atualização de cargo existente.</b> Em revisão: ${reviewScope.map(sectionLabel).map(esc).join(", ")}. O restante do descritivo é mantido como está hoje na base e aparece no fim da página, somente para consulta.</div>`
+      : r.request_kind === "UPDATE"
+        ? '<div class="review-scope-note"><b>Atualização de cargo existente</b> sem escopo definido: todos os campos estão abertos para revisão.</div>'
+        : "") +
     (r.status === ST.A && !admin()
       ? '<div class="approved-readonly-note">Solicitação concluída. Os campos estão disponíveis somente para consulta; os explicativos continuam visíveis no ícone ?.</div>'
       : "") +
     (admin()
       ? '<div class="admin-override-note"><b>Modo administrador.</b> Todos os campos estão liberados, inclusive fora do escopo da revisão e após a conclusão. As alterações ficam registradas nos logs.</div>'
       : "") +
-    visibleFields
-      .map((f) => {
-        let head = "";
-        if (f.owner_role !== last) {
-          last = f.owner_role;
-          head = `<div class="area-section ${last === "CR" ? "cr-area" : "manager-area"}"><h3>${last === "CR" ? "Área Gestão — C&R" : "Área Responsável — Gestor"}</h3><span>${last === "CR" ? "Campos que C&R escolheu preencher" : "Campos atribuídos ao Gestor"}</span></div>`;
-        }
-        let can =
-          admin() ||
-          (S.profile.role === "CR" &&
-            f.owner_role === "CR" &&
-            [ST.D, ST.C].includes(r.status)) ||
-          (S.profile.role === "GESTOR" &&
-            f.owner_role === "GESTOR" &&
-            [ST.M, ST.R].includes(r.status));
-        /* O escopo restrito nao vale para o ADMIN: ele corrige qualquer campo,
-           em qualquer status, inclusive depois de concluida. */
-        const chosenSection=fieldReviewKey(f),isRestrictedUpdate=!admin()&&r.request_kind==='UPDATE'&&reviewScope.length>0;
-        if(isRestrictedUpdate&&(!chosenSection||!reviewScope.includes(chosenSection)))can=false;
-        const baseText=sourceValueForField(f,sourceSnapshot);
-        return (
-          head +
-          `<div class="field ${f.field_type === "textarea" ? "full" : ""}"><div class="field-label-row"><label>${esc(f.label)} ${f.required ? '<span class="required-mark">*</span>' : ""}</label>${f.help_text ? `<button type="button" class="help-tip" aria-label="Explicação do campo ${esc(f.label)}">?<span class="help-popover">${esc(f.help_text)}</span></button>` : ""}</div><span class="field-owner">${f.owner_role === "CR" ? "Preenchimento C&R" : "Preenchimento Gestor"} · ${f.required ? "Obrigatório" : "Opcional"}</span>${baseText?`<div class="current-source"><b>Texto atual da base:</b><span>${esc(baseText)}</span></div>`:''}${control(f, vals[f.id] ?? "", !can)}</div>`
-        );
-      })
-      .join("");
+    grupoPorResponsavel(emRevisao, false) +
+    (mantidos.length
+      ? `<details class="kept-block"><summary>Demais campos do cargo — mantidos como estão hoje (${mantidos.length})</summary><div class="kept-list">${grupoPorResponsavel(mantidos, true)}</div></details>`
+      : "");
   let a = [];
   /* Rascunho C&R. Quando o pedido nasceu com o Gestor, o formulario ja vem
      preenchido com a base e com as sugestoes dele: o C&R decide entre concluir
@@ -1226,10 +1267,17 @@ function values() {
   return o;
 }
 /* Obrigatoriedade: o atributo data-required era gerado mas nunca conferido. */
-function missingRequired(ownerRole, incluirBloqueados = false) {
+/* Secoes em revisao de uma solicitacao, ou null quando nao ha escopo. */
+function escopoDaSolicitacao(r) {
+  if (!r || r.request_kind !== "UPDATE") return null;
+  const escopo = selectedReviewKeys(r.intake_selected_sections || r.update_sections || []);
+  return escopo.length ? escopo : null;
+}
+function missingRequired(ownerRole, incluirBloqueados = false, escopo = null) {
   const byName = detailControls();
   return S.fields
     .filter((f) => f.active && f.required && (!ownerRole || f.owner_role === ownerRole))
+    .filter((f) => !escopo || escopo.includes(fieldReviewKey(f)))
     .filter((f) => {
       const el = byName[f.field_key];
       if (!el || f.field_type === "checkbox") return false;
@@ -1281,13 +1329,15 @@ window.transition = async (action, motivoPronto = null) => {
   if(action === "approve" && setting("require_job_code_on_approve") && !String(S.selected.job_code||"").trim()) return toast("Informe e salve o código do cargo antes da aprovação final.");
   const requiredOwner = action === "request" ? "CR" : action === "sendCR" ? "GESTOR" : null;
   if (requiredOwner) {
-    const missing = missingRequired(requiredOwner);
+    const missing = missingRequired(requiredOwner, false, escopoDaSolicitacao(S.selected));
     if (missing.length) return toast("Preencha os campos obrigatórios: " + missing.join(", "));
   }
-  /* Concluir gera o descritivo final: nenhum campo obrigatorio pode ficar
-     vazio, inclusive os que estao bloqueados para este perfil. */
+  /* Concluir gera o descritivo final. Numa atualizacao com escopo, so os
+     campos EM REVISAO sao cobrados: os demais vem da base e nao fazem parte
+     do que esta sendo alterado - cobra-los travava a conclusao num campo que
+     o proprio fluxo deixou bloqueado. */
   if (action === "approve") {
-    const missing = missingRequired(null, true);
+    const missing = missingRequired(null, true, escopoDaSolicitacao(S.selected));
     if (missing.length) return toast("Não é possível concluir com campos obrigatórios vazios: " + missing.join(", "));
     if (!confirm("Concluir a solicitação? O descritivo passa a ficar disponível somente para consulta e download.")) return;
   }

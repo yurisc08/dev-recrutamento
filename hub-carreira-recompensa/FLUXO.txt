@@ -1,0 +1,110 @@
+=======================================================================
+HUB Carreira & Recompensa — como os dois fluxos funcionam
+Versao 44
+=======================================================================
+
+QUEM ABRE O QUE
+-----------------------------------------------------------------------
+C&R e Gestor podem abrir os DOIS tipos de solicitacao. A diferenca esta
+em por onde o pedido entra:
+
+  C&R abre   -> vira solicitacao oficial na hora (Rascunho C&R)
+  Gestor abre-> entra na caixa de triagem. Um C&R "pega para responder",
+                confere e converte em solicitacao oficial
+
+O ADMIN pode desligar cada tipo para o Gestor em Base e modelo >
+Configuracoes (manager_can_open_new / manager_can_open_update).
+
+
+=======================================================================
+FLUXO A — CARGO NOVO
+=======================================================================
+Nao existe nada na base. Tudo precisa ser escrito.
+
+  1. Gestor (ou C&R) abre a solicitacao e preenche os campos que sao
+     responsabilidade dele.
+  2. Se veio do Gestor: C&R pega para responder e converte. O formulario
+     ja chega com o que o Gestor escreveu.
+  3. C&R decide, ainda no Rascunho:
+        Concluir solicitacao          -> encerra
+        Sugerir e enviar ao Gestor    -> devolve com orientacao
+  4. Se foi ao Gestor: ele ajusta e devolve para C&R (Aguardando
+     validacao), onde C&R pode Devolver ou Concluir.
+  5. Concluido -> documento disponivel para download.
+
+  Obrigatoriedade: TODOS os campos marcados como obrigatorios valem.
+  Faz sentido: o cargo esta nascendo, nada pode ficar em branco.
+
+
+=======================================================================
+FLUXO B — CARGO EXISTENTE (ATUALIZACAO)
+=======================================================================
+O cargo JA TEM descritivo na base. O objetivo nao e reescrever tudo: e
+mudar pontos especificos e preservar o resto.
+
+  1. Quem abre escolhe o cargo pelo codigo e marca QUAIS secoes precisam
+     mudar. Quando quem abre e o Gestor, ele ja escreve a sugestao de
+     cada secao marcada, lado a lado com o texto atual.
+  2. Se veio do Gestor: C&R pega para responder e converte.
+  3. Na tela da solicitacao a divisao e explicita:
+
+       EM REVISAO      as secoes marcadas. Editaveis. Mostram o texto
+                       atual da base e ja vem preenchidas com a sugestao
+                       do Gestor, quando houver.
+
+       MANTIDOS        todo o resto do cargo. Bloco recolhido no fim da
+                       pagina, somente leitura, preenchido com o que esta
+                       hoje na base.
+
+  4. C&R decide: Concluir, ou Sugerir e enviar ao Gestor.
+  5. Concluido -> documento com a base + as secoes revisadas.
+
+  Obrigatoriedade: SO os campos EM REVISAO sao cobrados.
+  Faz sentido: um campo fora do escopo esta bloqueado para edicao. Cobra-
+  lo criaria um beco sem saida - era exatamente o que acontecia ate a
+  v43, quando "Experiencia profissional desejavel" e "Competencias
+  Marcopolo desejaveis", obrigatorios, vazios na base e fora do escopo,
+  impediam concluir a solicitacao sem que ninguem pudesse preenche-los.
+
+
+DE ONDE VEM O VALOR DE CADA CAMPO (em ordem de prioridade)
+-----------------------------------------------------------------------
+  1. o que ja foi salvo na solicitacao
+  2. o que o Gestor preencheu ao abrir o pedido
+  3. a sugestao do Gestor, para secoes em revisao
+  4. o snapshot gravado na solicitacao
+  5. o cargo na base, buscado no catalogo quando o snapshot esta
+     incompleto
+
+O passo 5 e o que garante que idioma, competencias tecnicas e os demais
+campos apareçam preenchidos mesmo quando so uma secao entrou no escopo.
+
+
+O QUE O ADMIN CONTROLA SEM MEXER NO CODIGO
+-----------------------------------------------------------------------
+  Base e modelo > Secoes    quais secoes existem, o rotulo de cada uma,
+                            a coluna correspondente na planilha e quais
+                            o Gestor pode sugerir
+  Base e modelo > Config.   dominios de e-mail, prazo padrao da triagem,
+                            se o Gestor abre cada tipo, se o codigo do
+                            cargo e obrigatorio para concluir
+  Campos                    campos do formulario, responsavel,
+                            obrigatoriedade, ordem, explicativos
+  Modelos                   de onde vem cada campo do documento
+  Usuarios / Empresas / Fluxos / Logs
+
+O ADMIN tambem edita qualquer campo de qualquer solicitacao, em qualquer
+status, inclusive fora do escopo e depois de concluida. Fica em Logs.
+
+
+PONTOS DE ATENCAO NA CONFIGURACAO
+-----------------------------------------------------------------------
+A tela Base e modelo acusa sozinha, na Conferencia automatica:
+
+  - dois campos ativos apontando para a mesma secao (ex.: "Experiencia
+    profissional desejavel" e "Experiencia desejavel" caem os dois em
+    SKILL_36). Eles recebem o mesmo texto da base e disputam o mesmo
+    marcador no documento — um sobrescreve o outro.
+  - campo ativo que nao casa com nenhuma secao
+  - secao apontando para a coluna errada da planilha
+  - marcador do modelo sem secao e secao sem marcador

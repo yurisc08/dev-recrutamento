@@ -337,3 +337,14 @@ input[list]{background-color:#fff}input[list]::-webkit-calendar-picker-indicator
 .setting-row .switch{display:flex;align-items:center;gap:10px;margin:0;font-weight:700;min-height:44px;cursor:pointer}
 .setting-row .switch input{width:24px;height:24px;min-height:24px;flex:0 0 auto;accent-color:var(--purple);cursor:pointer}
 @media(max-width:760px){.settings-grid{grid-template-columns:1fr}.setting-row input,.setting-row textarea{min-height:46px}}
+
+/* Atualizacao de cargo: bloco dos campos mantidos da base */
+.kept-block{grid-column:1/-1;border:1px solid var(--line);border-radius:14px;background:#fbfbfd;overflow:hidden;margin-top:6px}
+.kept-block>summary{cursor:pointer;padding:14px 16px;font-weight:800;color:var(--purple);background:#f5f2f8;list-style:none}
+.kept-block>summary::-webkit-details-marker{display:none}
+.kept-block>summary:before{content:"▸ ";display:inline-block}
+.kept-block[open]>summary:before{content:"▾ "}
+.kept-list{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px;padding:16px}
+.kept-list .field.full{grid-column:1/-1}
+.kept-list .area-section{grid-column:1/-1}
+@media(max-width:900px){.kept-list{grid-template-columns:1fr}}

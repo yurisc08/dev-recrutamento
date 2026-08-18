@@ -135,18 +135,28 @@ await new Promise(r=>setTimeout(r,120));
 const ap=log().filter(x=>x[0]==='transition_dynamic_request').pop();
 check('conclui a partir do rascunho', ap && ap[1].p_action==='approve', JSON.stringify(ap));
 
-console.log('== bloqueia conclusao com obrigatorio vazio ==');
+console.log('== obrigatorios: so o que esta em revisao e cobrado ==');
 $('.open-request-btn').dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
 await new Promise(r=>setTimeout(r,200));
-$('#content [name="esc_min"]').value='';
+if (CENARIO==='update') {
+  // esc_min (SKILL_30) esta FORA do escopo: vem da base e nao trava a conclusao
+  $('#content [name="esc_min"]').value='';
+  antes=log().filter(x=>x[0]==='transition_dynamic_request').length;
+  await globalThis.transition('approve');
+  await new Promise(r=>setTimeout(r,100));
+  check('campo fora do escopo NAO trava a conclusao', log().filter(x=>x[0]==='transition_dynamic_request').length===antes+1, $('#toast').textContent);
+  $('.open-request-btn').dispatchEvent(new w.MouseEvent('click',{bubbles:true}));
+  await new Promise(r=>setTimeout(r,250));
+}
+$('#content [name="ATIV_DESC"]').value='';
 antes=log().filter(x=>x[0]==='transition_dynamic_request').length;
 await globalThis.transition('approve');
 await new Promise(r=>setTimeout(r,80));
-check('nao conclui com campo obrigatorio vazio', log().filter(x=>x[0]==='transition_dynamic_request').length===antes);
-check('avisa qual campo falta', $('#toast').textContent.includes('Escolaridade mínima'), $('#toast').textContent);
+check('nao conclui com campo EM REVISAO vazio', log().filter(x=>x[0]==='transition_dynamic_request').length===antes, $('#toast').textContent);
+check('avisa qual campo falta', $('#toast').textContent.includes('Missão'), $('#toast').textContent);
 
 console.log('== sugerir e enviar ao Gestor ==');
-$('#content [name="esc_min"]').value='ENSINO SUPERIOR';
+$('#content [name="ATIV_DESC"]').value='MISSAO OK';
 promptResp='Confira a missao que ajustei e aprove.';
 antes=log().filter(x=>x[0]==='transition_dynamic_request').length;
 await globalThis.sendManagerApproval();

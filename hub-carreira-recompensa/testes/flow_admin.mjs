@@ -72,14 +72,14 @@ console.log(`== perfil ${PERFIL}, solicitação concluída com escopo restrito =
 if (PERFIL!=='ADMIN') {
   check('nao-admin fica bloqueado em tudo', campos.every(el=>el.disabled), campos.map(e=>e.disabled).join(','));
   check('nao-admin nao ve Salvar correcao', !$('#actions').textContent.includes('Salvar correção'), $('#actions').textContent);
-  check('nao-admin ve o aviso de somente consulta', $('#content').textContent.includes('somente para consulta'));
+  check('nao-admin ve o aviso de somente consulta', !!$('.approved-readonly-note'));
   check('nao-admin nao ve o aviso de administrador', !$('#content').textContent.includes('Modo administrador'));
   console.log(bad?`\n${bad} falha(s)`:`\nperfil ${PERFIL} OK`); process.exit(process.exitCode||0);
 }
 check('todos os campos liberados', campos.every(el=>!el.disabled), campos.map(e=>e.disabled).join(','));
 check('inclusive fora do escopo da revisao', !$('#content [name="idioma_min"]').disabled);
 check('aviso de modo administrador visivel', $('#content').textContent.includes('Modo administrador'));
-check('nao mostra o aviso de somente consulta', !$('#content').textContent.includes('somente para consulta'));
+check('nao mostra o aviso de somente consulta', !$('.approved-readonly-note'));
 check('botao Salvar correcao presente', $('#actions').textContent.includes('Salvar correção'), $('#actions').textContent);
 check('botao Baixar documento continua', $('#actions').textContent.includes('Baixar documento'));
 

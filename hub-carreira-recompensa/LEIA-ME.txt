@@ -1,5 +1,5 @@
 HUB Carreira & Recompensa - Cloudflare estatico
-Versao 43 (ADMIN configura o sistema sem tocar no codigo)
+Versao 44 (fluxo de atualizacao separado do de criacao)
 
 Arquivos preservam o template original enviado.
 Fluxo: C&R -> Gestor -> C&R -> Concluido.
@@ -38,6 +38,36 @@ todos dela.
 Para permitir que o Gestor sugira outra secao, basta acrescentar a chave em
 SUGGESTABLE_SECTIONS (mesmo bloco). Tudo o que ficar fora dessa lista entra
 automaticamente no bloco de referencia somente leitura.
+
+
+NOVIDADES DA V44 - ATUALIZACAO x CRIACAO
+----------------------------------------
+Leia FLUXO.txt: os dois fluxos descritos passo a passo.
+
+O erro relatado: numa atualizacao de cargo existente, campos obrigatorios
+FORA do escopo da revisao apareciam vazios e bloqueavam a conclusao. Como
+eles tambem ficam bloqueados para edicao, era um beco sem saida: ninguem
+podia preencher e ninguem podia concluir.
+
+A raiz e conceitual. Criar um cargo e atualizar um cargo nao sao o mesmo
+fluxo, e a tela tratava os dois igual. Agora:
+
+  CARGO NOVO      todos os campos em jogo, todos os obrigatorios valem.
+  ATUALIZACAO     so as secoes escolhidas sao revisadas; o resto do cargo
+                  vem da base, fica num bloco recolhido somente leitura
+                  no fim da pagina e NAO e cobrado como obrigatorio.
+
+Tambem corrigido: a sugestao do Gestor so chegava ao formulario se a
+semeadura da triagem tivesse funcionado - e ela estava quebrada ate a
+v39, por causa do payload com id em vez de field_key. Solicitacoes
+criadas antes disso mostravam o texto antigo da base no lugar da
+sugestao. Agora a sugestao entra direto na montagem da tela, abaixo do
+que ja foi salvo e acima do texto atual.
+
+Nova conferencia em Base e modelo: dois campos ativos apontando para a
+mesma secao. Foi o caso de "Experiencia profissional desejavel" e
+"Experiencia desejavel", que caem os dois em SKILL_36, recebem o mesmo
+texto da base e disputam o mesmo marcador no documento.
 
 
 NOVIDADES DA V43 - CONFIGURACAO PELO ADMIN

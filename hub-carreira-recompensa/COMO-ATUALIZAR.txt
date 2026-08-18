@@ -1,6 +1,6 @@
 =======================================================================
 HUB Carreira & Recompensa — como atualizar o sistema
-Versao 43
+Versao 44
 =======================================================================
 
 SAO DOIS PASSOS. Faca na ordem.
@@ -30,12 +30,14 @@ PASSO 1 — BANCO (Supabase)  ~1 minuto, so precisa ser feito uma vez
 
 PASSO 2 — SITE (Cloudflare)
 -----------------------------------------------------------------------
-  Envie ESTES 7 ARQUIVOS juntos no carregador de ativos estaticos:
+  Envie ESTES 9 ARQUIVOS juntos no carregador de ativos estaticos:
 
      index.html
      styles.css
      config.js
      LEIA-ME.txt
+     FLUXO.txt
+     COMO-ATUALIZAR.txt
      modelo-cargo-individual.docx
      logo-hub-carreira-recompensa.png
      logo-anterior.png
