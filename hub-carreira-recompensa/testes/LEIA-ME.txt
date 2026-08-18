@@ -1,12 +1,17 @@
 Testes de apoio (nao vao para o Cloudflare).
 
-Requisitos: node 20+ e "npm i jsdom" nesta pasta.
+Requisitos: node 20+ e, nesta pasta, "npm i jsdom jszip playwright".
 
   node testes/test.mjs      # catalogo de secoes e substituicao de marcadores
   node testes/smoke.mjs     # carga do modulo e listeners da tela
   node testes/flow.mjs      # fluxo do Gestor: abrir, escopo, obrigatorios, salvar
   node testes/flow_cr.mjs   # fluxo do C&R: validacao da nova solicitacao
-  node testes/docxtest.mjs  # gera um DOCX a partir do modelo oficial
+  node testes/flow_triagem.mjs   # CENARIO=update|novo|cr
+  node testes/flow_admin.mjs     # PERFIL=ADMIN|CR
+  node testes/flow_catalogo.mjs  # SNAPSHOT=incompleto|completo
+  node testes/flow_base.mjs      # PLANILHA=<caminho .xlsx> (opcional)
+  node testes/docxtest.mjs       # gera um DOCX a partir do modelo oficial
+  node testes/mobile.mjs         # Chromium em 375px e 412px, capturas em /tmp/mobile-shots
 
 pure.mjs e gerado a partir do index.html; regere com testes/gerar-pure.py
 sempre que as funcoes de secao ou de DOCX mudarem.

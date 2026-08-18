@@ -1,5 +1,5 @@
 HUB Carreira & Recompensa - Cloudflare estatico
-Versao 41 (base e modelo configuraveis pelo ADMIN)
+Versao 42 (celular e preenchimento a partir da base)
 
 Arquivos preservam o template original enviado.
 Fluxo: C&R -> Gestor -> C&R -> Concluido.
@@ -38,6 +38,34 @@ todos dela.
 Para permitir que o Gestor sugira outra secao, basta acrescentar a chave em
 SUGGESTABLE_SECTIONS (mesmo bloco). Tudo o que ficar fora dessa lista entra
 automaticamente no bloco de referencia somente leitura.
+
+
+NOVIDADES DA V42 - CELULAR E PREENCHIMENTO
+------------------------------------------
+1) Cargo existente: agora puxa TODOS os campos
+   Ao abrir uma solicitacao de atualizacao, so os campos do escopo vinham
+   preenchidos; os demais ficavam vazios. O snapshot gravado na solicitacao
+   nem sempre traz o cargo inteiro. Agora, quando falta a chave de alguma
+   secao usada por um campo ativo, o app busca o cargo direto no catalogo
+   (get_job_catalog_details) e completa o resto. O que ja estava gravado tem
+   prioridade e nao e sobrescrito.
+
+2) Celular
+   Auditado com renderizacao real no Chromium, em 375px e 412px, medindo
+   rolagem horizontal, elementos fora da tela, alvos de toque, abertura e
+   uso do dialog. Corrigido:
+   - Explicativo "?": dependia de :hover, que nao existe em toque, e o balao
+     saia da tela quando o icone ficava perto da borda. Agora abre com um
+     toque, tem area de toque de 44px e e posicionado preso ao viewport.
+     Uma regra antiga de :focus deixava o balao visivel na posicao errada
+     depois de rolar - removida.
+   - Selo de status quebrava no meio da palavra ("Rascunh o C&R").
+   - Titulo do pedido de triagem colava no detalhe ("ADMINISTRATIVOAtualiza").
+   - Asterisco de campo obrigatorio caia sozinho na linha de baixo.
+   - Tela Base e modelo: campos e botoes abaixo do alvo minimo de toque.
+   - .table-wrap so rolava abaixo de 620px.
+   O menu e os dialogs ja estavam corretos - a suspeita inicial de que o
+   menu nao rolava era falso positivo do proprio teste.
 
 
 NOVIDADES DA V41 - BASE E MODELO

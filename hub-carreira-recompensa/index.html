@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v41"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v41"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v42"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v42"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   /* :not(.hidden) evita que a tela de login continue visivel apos entrar */
@@ -842,6 +842,35 @@ window.deleteRequestAdmin=async(id)=>{
  if(error)return toast("Não foi possível excluir: "+error.message);
  await load();toast("Solicitação excluída definitivamente.");
 };
+/* O snapshot da base nem sempre chega completo na solicitacao: dependendo de
+   como ela foi criada, so as secoes do escopo foram gravadas. Quando faltar
+   texto, buscamos o cargo direto no catalogo para preencher os demais campos. */
+async function ensureSourceSnapshot(r){
+ const gravado=parseSafe(r.intake_source_snapshot||r.source_snapshot,{})||{};
+ const jobId=r.source_job_id||r.intake_source_job_id||r.job_catalog_id||r.catalog_job_id;
+ /* Consideramos completo quando o snapshot ja traz a CHAVE de toda secao que
+    algum campo ativo usa - mesmo vazia. Vazio gravado e uma informacao ("a
+    base nao tem isso"); chave ausente e que significa "nunca foi buscado". */
+ const necessarias=[...new Set(S.fields.filter(f=>f.active).map(fieldSection).filter(Boolean))];
+ const temChave=(k)=>{
+  const spec=SECTION_BY_KEY[k];if(!spec)return true;
+  return [k,...spec.legacy].some(n=>gravado[n]!==undefined||gravado[String(n).toUpperCase()]!==undefined||gravado[String(n).toLowerCase()]!==undefined);
+ };
+ if(!jobId||necessarias.every(temChave))return gravado;
+ try{
+  const {data,error}=await sb.rpc("get_job_catalog_details",{p_job_id:jobId});
+  if(error||!data)return gravado;
+  let d=data;
+  if(typeof d==='string'){try{d=JSON.parse(d)}catch{return gravado}}
+  const raw=parseSafe(d.raw_data,{})||{};
+  // o que ja estava gravado tem prioridade, mas so quando tem conteudo
+  const preenchidos=Object.fromEntries(Object.entries(gravado).filter(([,v])=>v!=null&&String(v).trim()!==''));
+  return {...(typeof raw==='object'?raw:{}),...d,...preenchidos};
+ }catch(err){
+  console.error("Falha ao completar os dados do cargo",err);
+  return gravado;
+ }
+}
 window.openRequest = async (id, trigger=null) => {
   const btn=trigger||document.querySelector(`[data-request-id="${CSS.escape(id)}"]`),old=btn?.textContent;
   if(btn){btn.disabled=true;btn.textContent="Abrindo...";}
@@ -856,6 +885,7 @@ window.openRequest = async (id, trigger=null) => {
       sb.rpc("get_request_intake_metadata",{p_request_id:id}).catch?.(()=>({data:null}))||Promise.resolve({data:null})
     ]);
     S.selected={...r,...(metadata?.data||{})};
+    S.selected.__snapshot=await ensureSourceSnapshot(S.selected);
     S.selected.request_field_values=Array.isArray(S.selected.request_field_values)?S.selected.request_field_values:[];
     S.selected.history=Array.isArray(S.selected.history)?S.selected.history:[];
     S.additionalApproval=approval?.data||null;
@@ -924,7 +954,7 @@ function renderDetail() {
   let r = S.selected,
     savedValues = Object.fromEntries((Array.isArray(r.request_field_values) ? r.request_field_values : []).map((v) => [v.field_id, v.field_value])),
     intakeValues = parseSafe(r.intake_manager_values, {}) || {},
-    sourceSnapshot = parseSafe(r.intake_source_snapshot || r.source_snapshot, {}) || {},
+    sourceSnapshot = r.__snapshot || parseSafe(r.intake_source_snapshot || r.source_snapshot, {}) || {},
     currentSnapshot = parseSafe(r.current_values, {}) || {},
     vals = Object.fromEntries(S.fields.filter(f=>f.active).map(f=>{
       const reviewKey=fieldReviewKey(f);
@@ -1921,6 +1951,42 @@ $("#fieldForm").onsubmit = async (e) => {
   toast("Campo salvo.");
 };
 $$(".close").forEach((b) => (b.onclick = () => b.closest("dialog").close()));
+/* O explicativo "?" dependia de :hover, que nao existe em toque, e o balao
+   saia da tela quando o icone ficava perto da borda. Um toque abre e fecha,
+   e a posicao e calculada presa ao viewport. */
+function posicionarHelpPopover(tip){
+ const pop=tip.querySelector(".help-popover");if(!pop)return;
+ pop.style.cssText="";
+ const larg=Math.min(320,window.innerWidth-24),r=tip.getBoundingClientRect();
+ Object.assign(pop.style,{position:"fixed",width:larg+"px",maxWidth:"none",transform:"none",bottom:"auto",left:"0px",top:"0px"});
+ const alt=pop.offsetHeight;
+ const esq=Math.min(Math.max(12,r.left+r.width/2-larg/2),window.innerWidth-larg-12);
+ const cima=r.top-alt-10;
+ pop.style.left=esq+"px";
+ pop.style.top=(cima<8?r.bottom+10:cima)+"px";
+}
+function fecharHelpPopovers(exceto){
+ $$(".help-tip.open").forEach(t=>{
+  if(t===exceto)return;
+  t.classList.remove("open");
+  const pop=t.querySelector(".help-popover");if(pop)pop.style.cssText="";
+ });
+}
+document.addEventListener("click",e=>{
+ const tip=e.target.closest(".help-tip");
+ fecharHelpPopovers(tip);
+ if(!tip)return;
+ e.preventDefault();
+ const abrindo=!tip.classList.contains("open");
+ tip.classList.toggle("open",abrindo);
+ if(abrindo)posicionarHelpPopover(tip);
+ else{const pop=tip.querySelector(".help-popover");if(pop)pop.style.cssText="";}
+});
+/* Rolar reposiciona em vez de fechar: fechar deixava o balao visivel pela
+   regra de :focus, so que na posicao antiga. */
+const reposicionarHelp=()=>$$(".help-tip.open").forEach(posicionarHelpPopover);
+window.addEventListener("resize",reposicionarHelp);
+document.addEventListener("scroll",reposicionarHelp,true);
 
 /* Reage apenas aos eventos que realmente mudam o usuario logado.
    TOKEN_REFRESHED nao pode recarregar a tela: derrubava quem estava

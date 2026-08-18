@@ -44,6 +44,8 @@ for (const k of Object.getOwnPropertyNames(w)) {
 try { Object.defineProperty(globalThis,'window',{value:globalThis,configurable:true,writable:true}); } catch(e) {}
 for (const k of ['FormData','Event','MouseEvent','Blob','URL','CustomEvent','HTMLElement','Node','Element','File'])
   { try { Object.defineProperty(globalThis,k,{value:w[k],configurable:true,writable:true}); } catch(e) {} }
+for (const k of ['addEventListener','removeEventListener','dispatchEvent','getComputedStyle'])
+  { try { Object.defineProperty(globalThis,k,{value:w[k].bind(w),configurable:true,writable:true}); } catch(e) {} }
 globalThis.matchMedia=()=>({matches:false,addListener(){},removeListener(){}});
 globalThis.scrollTo=()=>{}; globalThis.requestAnimationFrame=(f)=>f();
 globalThis.__JSZip=JSZipReal;

@@ -271,3 +271,59 @@ input[list]{background-color:#fff}input[list]::-webkit-calendar-picker-indicator
 .pill{display:inline-block;padding:4px 9px;border-radius:999px;font-size:.72rem;font-weight:800;background:#eceff3;color:#606b7a}
 .pill.ok{background:#e2f4ec;color:var(--green)}
 .pill.off{background:#fde8ed;color:#9d1938}
+
+/* =====================================================================
+   Correcoes de celular (v42) - verificadas com renderizacao real em
+   viewport de 375px e 412px.
+   ===================================================================== */
+
+/* O balao do "?" era hover-only e de 20px: em toque nao abria e, perto da
+   borda, saia da tela. Agora ancora no campo inteiro e cabe na largura. */
+.help-tip{width:26px;height:26px;font-size:.82rem}
+/* area de toque de 50px sem mudar o desenho do icone */
+.help-tip:before{content:"";position:absolute;inset:-12px;border-radius:50%}
+.help-tip:focus-visible{outline:2px solid var(--purple);outline-offset:2px}
+.help-tip.open .help-popover{visibility:visible;opacity:1}
+/* aberto por toque o balao vira position:fixed, entao a seta nao alinha */
+.help-tip.open .help-popover:after{display:none}
+/* A visibilidade passa a ser controlada so pelo estado .open (posicionado via
+   JS, sempre dentro da tela) e pelo hover em quem tem mouse. A regra antiga
+   com :focus deixava o balao preso na posicao errada depois de rolar. */
+.help-tip:focus .help-popover{visibility:hidden;opacity:0}
+.help-tip:hover .help-popover{visibility:hidden;opacity:0}
+@media (hover:hover) and (pointer:fine){
+  .help-tip:hover .help-popover,.help-tip:focus-visible .help-popover{visibility:visible;opacity:1}
+}
+
+/* Selo de status quebrava no meio da palavra ("Rascunh o C&R") */
+.badge{white-space:nowrap;align-self:flex-start;flex:0 0 auto}
+.card-head>div:first-child{min-width:0}
+@media(max-width:620px){
+  .card-head{flex-wrap:wrap;gap:8px}
+  .badge{font-size:.72rem;padding:5px 9px}
+}
+
+/* Titulo do pedido de triagem colava no detalhe */
+.intake-content{display:grid;gap:3px;min-width:0}
+.intake-content b{display:block}
+.intake-content small{display:block;line-height:1.45}
+@media(max-width:620px){
+  .intake-row{flex-direction:column;align-items:stretch}
+  .intake-actions{width:100%}.intake-actions .btn{width:100%}
+}
+
+/* Asterisco de obrigatorio caia sozinho na linha de baixo */
+.field-label-row label{display:inline}
+.required-mark{margin-left:2px}
+
+/* Tela Base e modelo: campos e botoes com alvo de toque adequado */
+@media(max-width:900px){
+  .base-table input,.base-table input:not([type]){min-height:44px}
+  .base-table .btn{min-height:44px;min-width:44px;padding:10px 12px}
+  .base-table td{padding:7px 6px}
+  .page-head>div:last-child{display:flex;gap:8px;flex-wrap:wrap}
+  .page-head>div:last-child .btn{flex:1 1 auto;min-height:44px}
+}
+
+/* .table-wrap so rolava abaixo de 620px */
+.table-wrap{overflow-x:auto;-webkit-overflow-scrolling:touch;max-width:100%}
