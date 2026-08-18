@@ -6,7 +6,7 @@
 import {
   COLUMNS, COLUMN_KEYS, COLUMN_BY_KEY, SKILL_LABELS,
   txt, norm, linkedUpdates, buildXlsx, readXlsx, toCsv, parseCsv, parseDelimited, download,
-} from "./base-cargos.js";
+} from "./base-cargos.js?v=20260818-v56";
 
 const ROW_H = 34;
 const GUTTER_W = 58;
@@ -65,6 +65,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       <select id="baseCompany"><option value="">Todas as empresas</option></select>
       <label class="base-check"><input id="baseOnlyChanged" type="checkbox"> Somente alterados</label>
       <div class="base-toolbar-actions">
+        <button id="baseCard" class="btn ghost" type="button">Ficha</button>
         <button id="baseAdd" class="btn secondary" type="button">+ Linha</button>
         <button id="baseDuplicate" class="btn ghost" type="button">Duplicar</button>
         <button id="baseDelete" class="btn danger-soft" type="button">Excluir linha</button>
@@ -89,8 +90,10 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     <div id="baseScroll" class="sheet-scroll" tabindex="0">
       <div id="baseSheetHost"></div>
     </div>
-    <p class="fine base-hint">Atalhos: setas navegam · <b>Enter</b> ou duplo clique edita · <b>Tab</b> avança · <b>Ctrl+C / Ctrl+V</b> copia e cola do Excel · <b>Delete</b> limpa · <b>Ctrl+Z</b> desfaz · <b>Shift+setas</b> seleciona intervalo.</p>
+    <p class="fine base-hint base-hint-desktop">Atalhos: setas navegam · <b>Enter</b> ou duplo clique edita · <b>Tab</b> avança · <b>Ctrl+C / Ctrl+V</b> copia e cola do Excel · <b>Delete</b> limpa · <b>Ctrl+Z</b> desfaz · <b>Shift+setas</b> seleciona intervalo · <b>Ficha</b> abre o cargo selecionado em formulário.</p>
+    <p class="fine base-hint base-hint-mobile">No celular: arraste a tabela para o lado para ver as demais colunas e <b>toque em uma linha</b> para abrir a ficha do cargo, onde todos os campos podem ser editados.</p>
     <section class="card base-legend"><h2>Como os campos se interligam</h2><div id="baseLegend" class="base-legend-grid"></div></section>
+    <dialog id="baseRowDialog" class="base-row-dialog"><form id="baseRowForm" class="modal-form" method="dialog"></form></dialog>
   `;
 
   const el = (id) => view.querySelector(`#${id}`);
@@ -103,6 +106,10 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
   // Estado derivado
   // -------------------------------------------------------------------------
   const visibleColumns = () => COLUMNS.filter((c) => !G.hidden.has(c.key));
+  // No celular a tela nao comporta colunas congeladas (elas cobririam a grade)
+  // e a edicao acontece pela ficha do cargo, nao pela celula.
+  const isMobile = () => window.matchMedia("(max-width: 760px)").matches;
+  const isPinned = (col) => !!col.pin && !isMobile();
   const canEdit = () => getProfile()?.role === "ADMIN";
   const dirtyCount = () => G.rows.filter((r) => r.__dirty || r.__new).length;
   const pendingCount = () => dirtyCount() + G.deleted.length;
@@ -187,11 +194,11 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     const cols = visibleColumns();
     pinOffsets = {};
     let offset = GUTTER_W;
-    cols.forEach((c) => { if (c.pin) { pinOffsets[c.key] = offset; offset += c.width; } });
+    cols.forEach((c) => { if (isPinned(c)) { pinOffsets[c.key] = offset; offset += c.width; } });
     totalWidth = GUTTER_W + cols.reduce((sum, c) => sum + c.width, 0);
     const colgroup = `<colgroup><col style="width:${GUTTER_W}px">${cols.map((c) => `<col style="width:${c.width}px">`).join("")}</colgroup>`;
     const ths = cols.map((c) => {
-      const pin = c.pin ? ` sheet-pin" style="left:${pinOffsets[c.key]}px` : "";
+      const pin = isPinned(c) ? ` sheet-pin" style="left:${pinOffsets[c.key]}px` : "";
       const arrow = G.sort?.key === c.key ? (G.sort.dir === "asc" ? " ▲" : " ▼") : "";
       const flow = c.flow ? `<small class="sheet-flow" title="Alimenta: ${esc(c.flow)}">↳ ${esc(c.flow)}</small>` : "";
       return `<th class="sheet-th${pin}" data-k="${c.key}" title="${esc(c.key)}"><span class="sheet-th-label">${esc(c.label)}${arrow}</span>${flow}</th>`;
@@ -202,13 +209,13 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
   function cellHtml(row, col, r, c) {
     const value = txt(row[col.key]);
     const classes = ["sheet-td"];
-    if (col.pin) classes.push("sheet-pin");
+    if (isPinned(col)) classes.push("sheet-pin");
     if (col.long) classes.push("sheet-long");
     if (col.auto) classes.push("sheet-auto");
     if (row.__changed?.has(col.key)) classes.push("sheet-changed");
     if (row.__linked?.has(col.key)) classes.push("sheet-linked");
     if (col.key === "COD_DO_CARGO" && G.dupKeys.has(row.__key)) classes.push("sheet-dup");
-    const style = col.pin ? ` style="left:${pinOffsets[col.key]}px"` : "";
+    const style = isPinned(col) ? ` style="left:${pinOffsets[col.key]}px"` : "";
     const title = value.length > 40 ? ` title="${esc(value.slice(0, 400))}"` : "";
     return `<td class="${classes.join(" ")}"${style} data-r="${r}" data-c="${c}"${title}>${esc(value)}</td>`;
   }
@@ -325,8 +332,8 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     let left = GUTTER_W;
     for (let i = 0; i < c; i++) left += cols[i].width;
     const width = cols[c]?.width || 120;
-    const pinned = cols.filter((x) => x.pin).reduce((sum, x) => sum + x.width, GUTTER_W);
-    if (!cols[c]?.pin) {
+    const pinned = cols.filter((x) => isPinned(x)).reduce((sum, x) => sum + x.width, GUTTER_W);
+    if (!isPinned(cols[c] || {})) {
       if (left - pinned < scroll.scrollLeft) scroll.scrollLeft = Math.max(0, left - pinned);
       else if (left + width > scroll.scrollLeft + scroll.clientWidth) scroll.scrollLeft = left + width - scroll.clientWidth + 8;
     }
@@ -433,16 +440,16 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       // O editor fica dentro da area rolavel: sem isto a mesma tecla seria
       // tratada de novo pela grade (Enter abriria a celula seguinte).
       e.stopPropagation();
-      if (e.key === "Escape") { e.preventDefault(); closeEditor(false); scroll.focus(); }
+      if (e.key === "Escape") { e.preventDefault(); closeEditor(false); scroll.focus({ preventScroll: true }); }
       else if (e.key === "Enter" && (!col.long || !e.shiftKey)) {
         e.preventDefault();
         closeEditor(true);
-        scroll.focus();
+        scroll.focus({ preventScroll: true });
         setSel(G.sel.r1 + 1, G.sel.c1);
       } else if (e.key === "Tab") {
         e.preventDefault();
         closeEditor(true);
-        scroll.focus();
+        scroll.focus({ preventScroll: true });
         setSel(G.sel.r1, G.sel.c1 + (e.shiftKey ? -1 : 1));
       }
     });
@@ -459,6 +466,75 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     const value = input.value;
     wrap.remove();
     if (commit) applyChanges([{ row, key: col.key, value }]);
+  }
+
+  // -------------------------------------------------------------------------
+  // Ficha do cargo: formulario com todos os campos da linha. E a forma de
+  // edicao no celular e uma alternativa confortavel para os textos longos.
+  // -------------------------------------------------------------------------
+  function control(col, row, editavel) {
+    const value = esc(txt(row[col.key]));
+    const disabled = editavel ? "" : " disabled";
+    if (col.long) return `<textarea name="${col.key}"${disabled} rows="4">${value}</textarea>`;
+    const list = (G.suggestions.get(col.key) || []).slice(0, 200);
+    const listId = list.length ? `cardList_${col.key}` : "";
+    return `<input name="${col.key}" value="${value}"${disabled}${listId ? ` list="${listId}"` : ""}>` +
+      (listId ? `<datalist id="${listId}">${list.map((x) => `<option value="${esc(x)}"></option>`).join("")}</datalist>` : "");
+  }
+
+  function openRowCard(viewIndex) {
+    const index = G.order[viewIndex];
+    const row = G.rows[index];
+    if (!row) return toast("Selecione uma linha da base.");
+    const editavel = canEdit();
+    const groups = {};
+    COLUMNS.forEach((c) => (groups[c.group] ||= []).push(c));
+    const titulo = [txt(row.COD_DO_CARGO).trim(), txt(row.CARGO).trim() || txt(row.NOME_COMPLETO).trim()]
+      .filter(Boolean).join(" — ") || "Cargo sem identificação";
+    const form = el("baseRowForm");
+    form.dataset.rowKey = row.__key;
+    form.innerHTML = `
+      <div class="modal-head">
+        <div>
+          <p class="eyebrow">${editavel ? "Ficha do cargo" : "Ficha do cargo — consulta"}</p>
+          <h2>${esc(titulo)}</h2>
+        </div>
+        <button type="button" class="icon-btn base-card-close" aria-label="Fechar">×</button>
+      </div>
+      <p class="fine">Linha ${viewIndex + 1} de ${G.order.length}. ${editavel
+        ? "Campos vazios são completados automaticamente pelos campos interligados ao salvar."
+        : "Somente o ADMIN pode alterar a base."}</p>
+      ${Object.entries(groups).map(([group, cols]) => `
+        <section class="base-card-group">
+          <h3>${esc(group)}</h3>
+          ${cols.map((c) => `<label class="base-card-field${c.long ? " full" : ""}">
+            <span>${esc(c.label)}${c.flow ? `<small>alimenta: ${esc(c.flow)}</small>` : ""}</span>
+            ${control(c, row, editavel)}
+          </label>`).join("")}
+        </section>`).join("")}
+      ${editavel ? `<div class="base-card-danger"><button type="button" class="btn danger-soft base-card-delete">Excluir este cargo da base</button></div>` : ""}
+      <div class="modal-actions">
+        <button type="button" class="btn ghost base-card-close">${editavel ? "Cancelar" : "Fechar"}</button>
+        ${editavel ? `<button type="button" class="btn primary base-card-save">Aplicar alterações</button>` : ""}
+      </div>`;
+    el("baseRowDialog").showModal();
+  }
+
+  function commitRowCard() {
+    const form = el("baseRowForm");
+    const row = G.rows.find((r) => r.__key === form.dataset.rowKey);
+    if (!row) return;
+    const changes = [];
+    COLUMNS.forEach((c) => {
+      const field = form.querySelector(`[name="${c.key}"]`);
+      if (!field) return;
+      const value = txt(field.value).trim();
+      if (value !== txt(row[c.key]).trim()) changes.push({ row, key: c.key, value });
+    });
+    el("baseRowDialog").close();
+    if (!changes.length) return toast("Nenhuma alteração na ficha.");
+    applyChanges(changes);
+    toast(`${changes.length} campo(s) alterado(s). Clique em Salvar alterações para gravar.`);
   }
 
   // -------------------------------------------------------------------------
@@ -598,7 +674,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     G.loading = true;
     statusBox.innerHTML = `<span class="base-tag">Carregando base...</span>`;
     try {
-      const { data, error } = await sb.rpc("admin_list_job_catalog", { p_query: "", p_limit: 100000, p_offset: 0 });
+      const { data, error } = await sb.rpc("base_cargos_list", { p_query: "", p_limit: 100000, p_offset: 0 });
       if (error) throw error;
       G.rows = (data || []).map(toRow);
       G.mode = "remote";
@@ -610,8 +686,8 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       G.mode = "local";
       G.rows = readLocalRows();
       banner.classList.remove("hidden");
-      banner.innerHTML = `<b>Base não conectada.</b> As funções <code>admin_list_job_catalog</code> / <code>admin_save_job_catalog_rows</code> ainda não existem no Supabase.
-        Execute <code>sql/base_cargos_admin.sql</code> e clique em Recarregar. Enquanto isso a planilha funciona em <b>modo local</b>: importe o arquivo, edite e use <b>Arquivo → Baixar planilha</b> para salvar. Detalhe técnico: ${esc(error.message || error)}`;
+      banner.innerHTML = `<b>Base não conectada.</b> As funções <code>base_cargos_list</code> / <code>base_cargos_save</code> ainda não existem no Supabase.
+        Execute <code>sql/base_cargos_admin.sql</code> no SQL Editor e clique em Recarregar. Enquanto isso a planilha funciona em <b>modo local</b>: importe o arquivo, edite e use <b>Arquivo → Baixar planilha</b> para salvar. Detalhe técnico: ${esc(error.message || error)}`;
       if (!silent && !G.rows.length) toast("Base não conectada — importe um arquivo para trabalhar em modo local.");
     } finally {
       G.loading = false;
@@ -661,7 +737,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     const originalLabel = btn.textContent;
     try {
       if (G.deleted.length) {
-        const { error } = await sb.rpc("admin_delete_job_catalog_rows", { p_ids: G.deleted });
+        const { error } = await sb.rpc("base_cargos_delete", { p_ids: G.deleted });
         if (error) throw error;
         G.deleted = [];
       }
@@ -671,7 +747,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       for (const batch of batches) {
         btn.textContent = `Salvando ${done}/${pending.length}...`;
         const payload = batch.map((row) => ({ client_key: row.__key, id: row.__id, data: rowData(row) }));
-        const { data, error } = await sb.rpc("admin_save_job_catalog_rows", { p_rows: payload });
+        const { data, error } = await sb.rpc("base_cargos_save", { p_rows: payload });
         if (error) throw error;
         const byKey = new Map((data || []).map((x) => [x.client_key, x.id]));
         batch.forEach((row) => {
@@ -823,13 +899,18 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       // Clique na numeracao seleciona a linha inteira.
       G.sel = { r1: r, c1: 0, r2: r, c2: visibleColumns().length - 1 };
       paintSelection();
-      scroll.focus();
+      scroll.focus({ preventScroll: true });
       return;
     }
     const c = Number(cell.dataset.c);
     if (G.editing) closeEditor(true);
     setSel(r, c, e.shiftKey);
-    scroll.focus();
+    scroll.focus({ preventScroll: true });
+    if (isMobile()) {
+      G.sel = { r1: r, c1: 0, r2: r, c2: visibleColumns().length - 1 };
+      paintSelection();
+      openRowCard(r);
+    }
   });
 
   host.addEventListener("dblclick", (e) => {
@@ -894,6 +975,12 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
   el("baseSearch").addEventListener("input", () => { refreshOrder(); scroll.scrollTop = 0; renderBody(); renderStatus(); });
   el("baseCompany").addEventListener("change", () => { refreshOrder(); scroll.scrollTop = 0; renderBody(); renderStatus(); });
   el("baseOnlyChanged").addEventListener("change", () => { refreshOrder(); scroll.scrollTop = 0; renderBody(); renderStatus(); });
+  el("baseCard").addEventListener("click", () => openRowCard(normalizedSel()?.r1 ?? 0));
+  el("baseRowForm").addEventListener("click", (e) => {
+    if (e.target.closest(".base-card-close")) { el("baseRowDialog").close(); return; }
+    if (e.target.closest(".base-card-save")) { commitRowCard(); return; }
+    if (e.target.closest(".base-card-delete")) { el("baseRowDialog").close(); deleteRows(); }
+  });
   el("baseAdd").addEventListener("click", addRow);
   el("baseDuplicate").addEventListener("click", duplicateRow);
   el("baseDelete").addEventListener("click", deleteRows);
@@ -945,6 +1032,14 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       el("baseColsPanel").classList.add("hidden");
       el("baseFilePanel").classList.add("hidden");
     }
+  });
+
+  let larguraMobile = isMobile();
+  window.addEventListener("resize", () => {
+    if (isMobile() === larguraMobile) return;
+    larguraMobile = isMobile();
+    if (G.editing) closeEditor(true);
+    if (G.loaded) renderGrid();
   });
 
   window.addEventListener("beforeunload", (e) => {

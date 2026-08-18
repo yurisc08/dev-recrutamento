@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v55"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v55"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v56"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v56"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   #login.login-shell { display:block!important; position:static!important; min-height:100vh!important; background:#fff!important; overflow:visible!important; }
@@ -45,7 +45,7 @@
 <dialog id="triageDialog"><form id="triageForm" class="modal-form"><div class="modal-head"><div><p class="eyebrow">Triagem C&R</p><h2>Iniciar fluxo oficial</h2></div><button type="button" class="icon-btn close">×</button></div><input name="intake_id" type="hidden"><div id="triageSummary" class="triage-summary"></div><label>Prazo da solicitação<input name="deadline" type="date" required></label><p class="fine">Ao continuar, o pedido sai da caixa de triagem, recebe uma solicitação oficial e entra como Rascunho C&R. Depois C&R poderá preencher seus campos e enviar ao Gestor pelo fluxo já existente.</p><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar solicitação e abrir fluxo</button></div></form></dialog><script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import JSZip from "https://esm.sh/jszip@3.10.1";
-import { mountBaseCargos } from "./base-grid.js";
+import { mountBaseCargos } from "./base-grid.js?v=20260818-v56";
 import { SUPABASE_URL, SUPABASE_ANON_KEY, APP_URL } from "./config.js";
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     auth: { persistSession: true, detectSessionInUrl: true },
