@@ -1,5 +1,5 @@
 HUB Carreira & Recompensa - Cloudflare estatico
-Versao 39 (correcao de fluxos e logicas)
+Versao 40 (decisao do C&R sobre pedidos do Gestor)
 
 Arquivos preservam o template original enviado.
 Fluxo: C&R -> Gestor -> C&R -> Concluido.
@@ -38,6 +38,34 @@ todos dela.
 Para permitir que o Gestor sugira outra secao, basta acrescentar a chave em
 SUGGESTABLE_SECTIONS (mesmo bloco). Tudo o que ficar fora dessa lista entra
 automaticamente no bloco de referencia somente leitura.
+
+
+NOVIDADES DA V40 - DECISAO DO C&R
+---------------------------------
+Pedido que nasce com o Gestor (cargo novo ou atualizacao por codigo
+existente) agora chega ao C&R pronto para decisao. No Rascunho C&R:
+
+  [Salvar rascunho]  [Sugerir e enviar ao Gestor]  [Concluir solicitacao]
+
+- Concluir solicitacao encerra o fluxo sem passar pelo Gestor de novo.
+  Exige o codigo do cargo salvo, nenhum campo obrigatorio vazio e uma
+  confirmacao.
+- Sugerir e enviar ao Gestor pede uma orientacao (opcional), salva o que
+  ja foi ajustado e devolve o pedido ao Gestor para conferencia. A
+  orientacao fica no historico.
+- Em Aguardando validacao de C&R nada mudou: continuam Devolver, Concluir
+  e a conferencia opcional do Gestor.
+
+Rascunho criado pelo proprio C&R (nao veio da triagem) segue como antes,
+so com "Atribuir ao Gestor": nesse caso o Gestor ainda precisa preencher.
+
+Painel "Pedido do Gestor": o elemento ja existia no HTML mas era sempre
+esvaziado, entao o C&R revisava sem ver o que tinha sido pedido. Agora
+mostra tipo, solicitante, justificativa e, para cada secao do escopo, o
+texto que esta hoje na base ao lado da sugestao do Gestor.
+
+O campo do codigo do cargo passou a aparecer tambem no Rascunho C&R,
+porque agora da para concluir a partir dali.
 
 
 O QUE FOI CORRIGIDO NA V39

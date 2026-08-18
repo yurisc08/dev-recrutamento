@@ -236,3 +236,14 @@ input[list]{background-color:#fff}input[list]::-webkit-calendar-picker-indicator
 .reference-row b{font-size:.92rem}
 .reference-row small{color:var(--muted);font-size:.72rem;letter-spacing:.06em}
 .reference-row span{white-space:pre-line;color:#3d4657;font-size:.88rem;max-height:9em;overflow:auto}
+
+/* Painel "Pedido do Gestor" na tela de detalhe */
+.intake-compare{border:1px solid var(--line);border-radius:12px;padding:12px 14px;margin-top:12px;background:#fbfafc}
+.intake-compare>b{display:block;font-size:.95rem}
+.intake-compare>small{display:block;color:var(--muted);font-size:.72rem;letter-spacing:.06em;margin-bottom:8px}
+.intake-compare-cols{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.intake-compare-cols>div{background:#fff;border:1px solid var(--line);border-radius:10px;padding:10px 12px}
+.intake-compare-tag{display:inline-block;font-size:.7rem;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.intake-compare-tag.suggested{color:var(--orange)}
+.intake-compare-cols p{margin:0;white-space:pre-line;font-size:.9rem;line-height:1.45;max-height:11em;overflow:auto}
+@media(max-width:760px){.intake-compare-cols{grid-template-columns:1fr}}

@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v39"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v39"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v40"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v40"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   /* :not(.hidden) evita que a tela de login continue visivel apos entrar */
@@ -588,6 +588,37 @@ function control(f, value, disabled) {
     return `<textarea ${common} placeholder="${esc(f.placeholder || "")}">${esc(value || "")}</textarea>`;
   return `<input type="${f.field_type === "number" ? "number" : f.field_type === "date" ? "date" : "text"}" ${common} value="${esc(value || "")}" placeholder="${esc(f.placeholder || "")}">`;
 }
+/* Um pedido nasceu na caixa de triagem do Gestor? Os nomes variam conforme a
+   RPC de metadados, entao aceitamos qualquer uma das pistas. */
+function fromManagerIntake(r){
+ if(!r)return false;
+ if(r.intake_request_id||r.intake_id)return true;
+ if(r.origin==='GESTOR'||r.created_by_role==='GESTOR'||r.request_origin==='GESTOR')return true;
+ const vals=parseSafe(r.intake_manager_values,null),sug=parseSafe(r.intake_suggested_values??r.suggested_values,null);
+ if(vals&&Object.keys(vals).length)return true;
+ if(sug&&Object.keys(sug).length)return true;
+ return !!(r.intake_selected_sections&&r.intake_selected_sections.length);
+}
+function intakeSuggestions(r){
+ return parseSafe(r.intake_suggested_values??r.suggested_values??r.manager_suggestions,{})||{};
+}
+/* Mostra ao C&R o que o Gestor pediu: justificativa, escopo, sugestao dele e o
+   texto que esta hoje na base, lado a lado. */
+function renderIntakeReference(host,r,snapshot,scope){
+ if(!fromManagerIntake(r)||r.status===ST.A){host.classList.add("hidden");host.innerHTML="";return;}
+ const sug=intakeSuggestions(r);
+ const justificativa=r.intake_justification||r.justification||"";
+ const solicitante=r.intake_requester_name||r.requester_name||r.creator?.name||"";
+ const ehNovo=(r.request_kind||r.intake_request_type)!=='UPDATE';
+ const tipo=ehNovo?'Criação de cargo novo':'Atualização de cargo existente';
+ const chaves=[...new Set([...(scope||[]),...Object.keys(sug).map(canonicalReviewKey)])];
+ const linhas=chaves.map(k=>{
+  const atual=sourceValueBySection(k,snapshot),proposta=cleanCatalogValue(sug[k]??sug[k?.toLowerCase?.()]??'');
+  return `<div class="intake-compare"><b>${esc(reviewLabel(k))}</b><small>${esc(k)}</small><div class="intake-compare-cols"><div><span class="intake-compare-tag">Hoje na base</span><p>${atual?esc(atual):'Não informado'}</p></div><div><span class="intake-compare-tag suggested">Sugestão do Gestor</span><p>${proposta?esc(proposta):'Sem sugestão registrada'}</p></div></div></div>`;
+ }).join('');
+ host.innerHTML=`<h2>Pedido do Gestor</h2><div class="meta"><span><b>Tipo:</b> ${esc(tipo)}</span>${solicitante?`<span><b>Solicitante:</b> ${esc(solicitante)}</span>`:''}</div>${justificativa?`<p><b>Justificativa:</b> ${esc(justificativa)}</p>`:''}${linhas||`<p class="muted">${ehNovo?'O Gestor preencheu diretamente os campos sob responsabilidade dele; o conteúdo já está no formulário abaixo.':'O Gestor não registrou sugestões de conteúdo neste pedido.'}</p>`}<p class="fine">O formulário abaixo já foi preenchido com estas informações. Ajuste o que for necessário e escolha entre concluir ou enviar ao Gestor.</p>`;
+ host.classList.remove("hidden");
+}
 function renderDetail() {
   let r = S.selected,
     savedValues = Object.fromEntries((Array.isArray(r.request_field_values) ? r.request_field_values : []).map((v) => [v.field_id, v.field_value])),
@@ -617,6 +648,7 @@ function renderDetail() {
   /* Escopo da revisao: vale tanto para pedidos vindos da triagem do Gestor
      quanto para atualizacoes abertas direto pelo C&R. */
   const reviewScope = selectedReviewKeys(r.intake_selected_sections || r.update_sections || []);
+  const doGestor = fromManagerIntake(r);
   $("#returnNotice").classList.toggle("hidden", r.status !== ST.R);
   $("#returnNotice").textContent =
     "Ajustes solicitados por C&R: " + (r.return_reason || "");
@@ -664,9 +696,16 @@ function renderDetail() {
       })
       .join("");
   let a = [];
+  /* Rascunho C&R. Quando o pedido nasceu com o Gestor, o formulario ja vem
+     preenchido com a base e com as sugestoes dele: o C&R decide entre concluir
+     direto ou devolver ao Gestor para conferencia/aprovacao. */
   if (mgmt() && r.status === ST.D)
     a.push(
-      '<button class="btn secondary" onclick="saveValues()">Salvar rascunho</button><button class="btn primary" onclick="transition(\'request\')">Atribuir ao Gestor</button>',
+      '<button class="btn secondary" onclick="saveValues()">Salvar rascunho</button>' +
+        `<button class="btn secondary" onclick="sendManagerApproval()">${doGestor ? "Sugerir e enviar ao Gestor" : "Atribuir ao Gestor"}</button>` +
+        (doGestor
+          ? '<button class="btn primary" onclick="transition(\'approve\')">Concluir solicitação</button>'
+          : ''),
     );
   if (S.profile.role === "GESTOR" && [ST.M, ST.R].includes(r.status))
     a.push(
@@ -680,15 +719,19 @@ function renderDetail() {
     a.push(
       `<button class="btn primary" onclick="chooseModel('${r.id}')">Baixar documento</button>`,
     );
+  /* Painel de referencia do pedido do Gestor. O elemento existia no HTML mas
+     era sempre esvaziado: o C&R revisava sem ver o que o Gestor pediu. */
   const ref=$("#intakeReferencePanel");
-  if(ref){ref.classList.add("hidden");ref.innerHTML="";}
+  if(ref) renderIntakeReference(ref,r,sourceSnapshot,reviewScope);
 
   const finalBox=$("#crFinalOptions");
   if(finalBox){
-    const isCRFinal=mgmt()&&r.status===ST.C;
+    // O codigo do cargo e exigido para concluir; como agora da para concluir
+    // ja no rascunho, o campo precisa aparecer nos dois estagios.
+    const isCRFinal=mgmt()&&[ST.D,ST.C].includes(r.status);
     finalBox.classList.toggle("hidden",!isCRFinal);
     if(isCRFinal){
-      finalBox.innerHTML=`<h2>Opções finais de C&R</h2><div class="row"><label>Código do cargo<input id="finalJobCode" value="${esc(r.job_code||"")}" placeholder="Obrigatório antes da aprovação final"></label><div class="final-code-action"><button class="btn secondary" onclick="saveFinalJobCode()">Salvar código</button></div></div><div class="optional-review"><b>Conferência opcional do Gestor</b><p class="muted">Use somente quando desejar que o Gestor confira todos os campos antes da decisão final.</p><button class="btn ghost" onclick="sendManagerFinalReview()">Enviar novamente ao Gestor para conferência</button></div>`;
+      finalBox.innerHTML=`<h2>Opções finais de C&R</h2><div class="row"><label>Código do cargo<input id="finalJobCode" value="${esc(r.job_code||"")}" placeholder="Obrigatório antes da aprovação final"></label><div class="final-code-action"><button class="btn secondary" onclick="saveFinalJobCode()">Salvar código</button></div></div>${r.status===ST.C?`<div class="optional-review"><b>Conferência opcional do Gestor</b><p class="muted">Use somente quando desejar que o Gestor confira todos os campos antes da decisão final.</p><button class="btn ghost" onclick="sendManagerFinalReview()">Enviar novamente ao Gestor para conferência</button></div>`:''}`;
     }
   }
   const ap=$("#additionalApprovalPanel");
@@ -736,13 +779,14 @@ function values() {
   return o;
 }
 /* Obrigatoriedade: o atributo data-required era gerado mas nunca conferido. */
-function missingRequired(ownerRole) {
+function missingRequired(ownerRole, incluirBloqueados = false) {
   const byName = detailControls();
   return S.fields
     .filter((f) => f.active && f.required && (!ownerRole || f.owner_role === ownerRole))
     .filter((f) => {
       const el = byName[f.field_key];
-      if (!el || el.disabled || f.field_type === "checkbox") return false;
+      if (!el || f.field_type === "checkbox") return false;
+      if (el.disabled && !incluirBloqueados) return false;
       return !String(el.value || "").trim();
     })
     .map((f) => f.label);
@@ -760,17 +804,37 @@ window.sendAdditionalApproval=async()=>{const sel=$("#additionalApprover"),appro
 window.respondAdditionalApproval=async status=>{const note=$("#approvalResponseNote").value.trim();if(!note)return toast("Informe o parecer.");const{error}=await sb.rpc("respond_request_additional_approval",{p_request_id:S.selected.id,p_status:status,p_note:note});if(error)return toast(error.message);await openRequest(S.selected.id);toast("Parecer registrado e devolvido ao C&R.");};
 window.clearAdditionalApproval=async()=>{const{error}=await sb.rpc("close_request_additional_approval",{p_request_id:S.selected.id});if(error)return toast(error.message);await openRequest(S.selected.id);toast("Validação adicional encerrada. O C&R pode concluir ou devolver ao Gestor.");};
 
+/* Rascunho C&R -> Gestor. Usa a transicao "request" ja existente, agora com
+   a orientacao do C&R gravada no historico. */
+window.sendManagerApproval=async()=>{
+ const doGestor=fromManagerIntake(S.selected);
+ const nota=prompt(
+   doGestor
+     ? "Descreva a sugestão ou orientação para o Gestor aprovar (opcional):"
+     : "Orientação para o preenchimento do Gestor (opcional):",
+   "");
+ if(nota===null)return;
+ await saveValues();
+ await transition("request",nota.trim());
+};
 window.saveFinalJobCode=async()=>{const code=$("#finalJobCode").value.trim();if(!code)return toast("Informe o código do cargo.");const{error}=await sb.rpc("cr_set_request_job_code",{p_request_id:S.selected.id,p_job_code:code});if(error)return toast(error.message);await openRequest(S.selected.id);toast("Código do cargo salvo.");};
 window.sendManagerFinalReview=async()=>{const reason=prompt("Orientação para a conferência do Gestor:","Confira todos os campos preenchidos e devolva para C&R.")||"";if(!reason.trim())return;await saveValues();const{error}=await sb.rpc("cr_send_optional_manager_review",{p_request_id:S.selected.id,p_reason:reason});if(error)return toast(error.message);await load();show("dashboard");toast("Enviado ao Gestor para conferência opcional.");};
 
-window.transition = async (action) => {
+window.transition = async (action, motivoPronto = null) => {
   if(action === "approve" && !String(S.selected.job_code||"").trim()) return toast("Informe e salve o código do cargo antes da aprovação final.");
   const requiredOwner = action === "request" ? "CR" : action === "sendCR" ? "GESTOR" : null;
   if (requiredOwner) {
     const missing = missingRequired(requiredOwner);
     if (missing.length) return toast("Preencha os campos obrigatórios: " + missing.join(", "));
   }
-  let reason = "";
+  /* Concluir gera o descritivo final: nenhum campo obrigatorio pode ficar
+     vazio, inclusive os que estao bloqueados para este perfil. */
+  if (action === "approve") {
+    const missing = missingRequired(null, true);
+    if (missing.length) return toast("Não é possível concluir com campos obrigatórios vazios: " + missing.join(", "));
+    if (!confirm("Concluir a solicitação? O descritivo passa a ficar disponível somente para consulta e download.")) return;
+  }
+  let reason = motivoPronto ?? "";
   if (action === "return") {
     reason = prompt("Informe os ajustes necessários:", "") || "";
     if (!reason.trim()) return;
