@@ -1,4 +1,4 @@
-# Instalação — Fluxo de Descritivos de Cargos (v78)
+# Instalação — Fluxo de Descritivos de Cargos (v81)
 
 Pacote completo: os arquivos que vão para o Cloudflare e os scripts SQL do
 Supabase.
@@ -15,6 +15,8 @@ Supabase.
 | `logo-anterior.png`, `logo-hub-carreira-recompensa.png` | identidade visual |
 | `base-cargos-atualizada.xlsx` | base de cargos exportada, para importar quando precisar |
 | `sql-00-verificacao-instalacao.sql` | **confere** o que já existe no banco (não altera nada) |
+| `sql-01-chaves-duplicadas.sql` | **confere** se há campos dividindo a mesma chave (não altera nada) |
+| `sql-02-corrigir-chaves-duplicadas.sql` | corrige as chaves repetidas encontradas pelo 01 |
 | `supabase-corrigir-lista-cargos-v58.sql` | pesquisa de cargo vigente e detalhes do cargo |
 | `supabase-base-cargos-admin-v74.sql` | aba Base de cargos: importação, cadastro manual e exportação |
 | `CORRECOES.md` | o que mudou da v74 até aqui |
@@ -25,7 +27,7 @@ Supabase.
 1. Confira o `config.js`: `SUPABASE_URL` e `SUPABASE_ANON_KEY` do seu projeto.
 2. Publique **todos os arquivos na raiz**, mantendo a pasta `vendor/` ao lado do
    `index.html`. No Cloudflare Pages, é só arrastar a pasta inteira.
-3. A versão publicada é identificada por `20260818-v78` (dentro do `index.html`).
+3. A versão publicada é identificada por `20260818-v81` (dentro do `index.html`).
    Se o navegador mostrar a tela antiga, é cache: recarregue com Ctrl+F5.
 
 ## 3. Banco de dados (Supabase → SQL Editor)
@@ -42,6 +44,12 @@ vezes precisar):
 2. `supabase-base-cargos-admin-v74.sql`
 
 Rode a verificação de novo para confirmar que o que faltava desses dois virou OK.
+
+Por último, rode `sql-01-chaves-duplicadas.sql`. Se ele listar campos (o caso
+típico é "Escolaridade mínima" e "Escolaridade desejável" com a mesma chave),
+confira a prévia e rode `sql-02-corrigir-chaves-duplicadas.sql` — sem isso, o
+que for digitado em um desses campos substitui o outro ao salvar. O 02 pode ser
+executado como está e não perde nenhum conteúdo já gravado.
 
 ### Se a verificação apontar funções que não estão nestes dois arquivos
 
@@ -74,6 +82,8 @@ Duas funções vivem fora do banco e precisam estar publicadas em
    pesquisa: a lista de cargos deve abrir sozinha.
 4. Entre como **Gestor**: só a aba Painel, e nenhuma solicitação concluída deve
    oferecer download do documento.
+5. Na aba **Campos**, não deve aparecer o aviso laranja de "chave repetida". Se
+   aparecer, rode os SQL 01 e 02 acima.
 
 ## 5. Se o login recusar o acesso
 

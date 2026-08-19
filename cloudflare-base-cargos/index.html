@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v80"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v80"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v81"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v81"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   #login.login-shell { display:block!important; position:static!important; min-height:100vh!important; background:#fff!important; overflow:visible!important; }
@@ -2471,7 +2471,14 @@ document.addEventListener("click", (e) => {
 });
 document.addEventListener("keydown", (e) => { if (e.key === "Escape" && dicaAtual) esconderDica(); });
 window.addEventListener("resize", () => { if (dicaAtual) posicionarDica(dicaAtual); });
-document.addEventListener("scroll", () => { if (dicaAtual) esconderDica(); }, true);
+// Ao rolar, o balao acompanha o "?" em vez de sumir: no celular a inercia da
+// rolagem fechava a explicacao logo depois do toque.
+document.addEventListener("scroll", () => {
+  if (!dicaAtual) return;
+  const r = dicaAtual.getBoundingClientRect();
+  const aindaNaTela = r.bottom > 0 && r.top < window.innerHeight && r.right > 0 && r.left < window.innerWidth;
+  if (aindaNaTela) posicionarDica(dicaAtual); else esconderDica();
+}, true);
 
 // A renovacao automatica do token dispara este evento de tempos em tempos. Sem
 // filtro, o app recarregava tudo e voltava para o Painel no meio do trabalho.

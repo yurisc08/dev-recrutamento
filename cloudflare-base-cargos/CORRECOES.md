@@ -1,4 +1,4 @@
-# Correções aplicadas sobre o v74 (publicação v80)
+# Correções aplicadas sobre o v74 (publicação v81)
 
 ## 1. Botões de Editar/Desativar não faziam nada
 
@@ -165,3 +165,49 @@ em vez de perder conteúdo em silêncio:
 
 A correção definitiva é renomear a chave de um dos campos no banco (ou desativar
 o que não for usado).
+
+## 8. Correção definitiva das chaves repetidas (v81)
+
+O aviso da v80 apontava o problema, mas quem tinha de resolver era o banco. Agora
+o pacote traz os dois scripts:
+
+- `sql-01-chaves-duplicadas.sql` — só consulta: diz se há campos dividindo a
+  mesma chave e mostra como as chaves ficariam depois;
+- `sql-02-corrigir-chaves-duplicadas.sql` — aplica. O primeiro campo de cada
+  chave mantém a atual e os demais recebem uma chave derivada do próprio nome
+  ("Escolaridade desejável" vira `escolaridade_desejavel`).
+
+Nada do histórico se perde: os valores gravados estão ligados ao campo pelo
+identificador, assim como o mapeamento do documento.
+
+Testado em PostgreSQL 16: com duas escolaridades e dois idiomas dividindo chave,
+o 01 apontou os quatro campos, o 02 renomeou dois e a conferência voltou vazia.
+Rodar de novo não altera nada, e um campo sem nome preenchido é deixado como
+está em vez de virar uma chave vazia.
+
+## 9. Bateria final (v81)
+
+Executada sobre o conteúdo do próprio zip, já extraído e servido como o
+Cloudflare serve — 12 suítes, todas verdes:
+
+1. navegação completa: 3 perfis x todas as abas x solicitações nos 4 status,
+   sem nenhum erro de JavaScript;
+2. login nos 5 cenários (ativo, inativo, inexistente, erro de consulta, `active`
+   nulo), com a sessão preservada quando a falha é de comunicação;
+3. renovação de token com uma solicitação aberta: permanece na tela e não
+   recarrega nada;
+4. transições do fluxo (atribuir ao Gestor, enviar para C&R, concluir), com as
+   validações de observação obrigatória e código do cargo;
+5. explicação dos campos no cartão, dentro do diálogo e no celular, incluindo
+   fechar por Esc e por segundo toque;
+6. aviso de chave repetida na aba Campos e dentro da solicitação;
+7. os 21 botões de ação que estavam quebrados no v74;
+8. Base de cargos: lista, contador, pesquisa, ficha e paginação;
+9. celular: nenhuma aba estoura a largura da tela;
+10. download do documento por perfil, inclusive tentando forçar pelo console;
+11. pesquisa de cargo vigente por clique, digitação, lupa e teclado;
+12. servidor fora do ar: a tela explica o motivo em vez de ficar vazia.
+
+Um defeito apareceu nesta bateria e foi corrigido: no celular, a rolagem logo
+após o toque fechava a explicação do campo. O balão agora acompanha o "?" e só
+some quando o ícone sai da tela.
