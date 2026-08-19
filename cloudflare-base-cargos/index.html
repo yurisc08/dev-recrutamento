@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v82"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v82"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260819-v83"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260819-v83"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   #login.login-shell { display:block!important; position:static!important; min-height:100vh!important; background:#fff!important; overflow:visible!important; }
@@ -179,11 +179,18 @@ async function executarInit() {
     data: { session },
   } = await sb.auth.getSession();
   if (!session) return;
-  let { data: p, error: perfilErro } = await sb
-    .from("profiles")
-    .select("*")
-    .eq("id", session.user.id)
-    .maybeSingle();
+  const lerPerfil = () =>
+    sb.from("profiles").select("*").eq("id", session.user.id).maybeSingle();
+  let { data: p, error: perfilErro } = await lerPerfil();
+  // Um 401 aqui quase sempre e o token vencido de uma aba aberta ha horas, nao
+  // falta de cadastro: renova a sessao uma vez e tenta de novo antes de avisar.
+  if (perfilErro && /jwt|token|401|expired|unauthorized/i.test((perfilErro.message || "") + " " + (perfilErro.code || ""))) {
+    const renovada = await sb.auth.refreshSession().catch(() => null);
+    if (renovada?.data?.session) {
+      session = renovada.data.session;
+      ({ data: p, error: perfilErro } = await lerPerfil());
+    }
+  }
   // Falha de rede ou de permissao na leitura do perfil nao significa cadastro
   // inativo: manter a sessao e pedir nova tentativa, em vez de deslogar.
   if (perfilErro) {
@@ -563,13 +570,32 @@ window.openRequest = async (id, trigger=null) => {
 };
 document.addEventListener("click",e=>{const btn=e.target.closest('.open-request-btn');if(!btn)return;e.preventDefault();window.openRequest(btn.dataset.requestId,btn);});
 
+// As opcoes da lista suspensa nem sempre chegam do banco como lista: conforme o
+// campo foi gravado, "options" pode vir como texto ("Basico\nMedio"), como
+// objeto ({"0":"Basico"}) ou como JSON dentro de um texto. Qualquer um deles
+// quebrava a tela de Campos ao clicar em Editar. Aqui tudo vira lista de texto.
+function opcoesDoCampo(bruto) {
+  let v = bruto;
+  if (v == null || v === "") return [];
+  if (typeof v === "string") {
+    const t = v.trim();
+    if (t.startsWith("[") || t.startsWith("{")) {
+      try { v = JSON.parse(t); } catch { return t.split(/\r?\n/).map((x) => x.trim()).filter(Boolean); }
+    } else {
+      return t.split(/\r?\n/).map((x) => x.trim()).filter(Boolean);
+    }
+  }
+  if (Array.isArray(v)) return v.map((x) => (x == null ? "" : typeof x === "object" ? (x.value ?? x.label ?? JSON.stringify(x)) : String(x))).map((x) => String(x).trim()).filter(Boolean);
+  if (typeof v === "object") return opcoesDoCampo(Object.values(v));
+  return [String(v).trim()].filter(Boolean);
+}
 function control(f, value, disabled) {
   // data-field-id identifica o campo sem depender do field_key: dois campos com
   // a mesma chave (Escolaridade mínima e desejável, por exemplo) deixavam de ser
   // lidos individualmente, porque a busca por name devolvia sempre o primeiro.
   let common = `name="${esc(f.field_key)}" data-field-id="${esc(f.id)}" ${disabled ? "disabled" : ""} ${f.required ? 'data-required="true"' : ""}`;
   if (f.field_type === "select")
-    return `<select class="select-control" ${common}><option value="">Selecione...</option>${(f.options || []).map((o) => `<option ${String(value) === String(o) ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
+    return `<select class="select-control" ${common}><option value="">Selecione...</option>${opcoesDoCampo(f.options).map((o) => `<option ${String(value) === String(o) ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
   if (f.field_type === "checkbox")
     return `<label class="checkbox-control"><input type="checkbox" ${common} ${value === "true" ? "checked" : ""}> Sim</label>`;
   if (f.field_type === "textarea")
@@ -1201,8 +1227,19 @@ function fillFieldApprovalAreas(form){
   form.approval_area_id.innerHTML='<option value="">C&R — sem aprovação adicional</option>'+S.approvalAreas.filter(x=>x.active).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
 }
 window.editField = (id) => {
+  // Antes, qualquer valor inesperado vindo do banco derrubava a funcao e o botao
+  // Editar simplesmente nao respondia. Agora o motivo aparece na tela.
+  try {
+    abrirEdicaoDeCampo(id);
+  } catch (err) {
+    console.error("Falha ao abrir o campo", err);
+    toast("Não foi possível abrir este campo: " + (err?.message || "erro inesperado"));
+  }
+};
+function abrirEdicaoDeCampo(id) {
   let f = S.fields.find((x) => x.id === id),
     x = $("#fieldForm");
+  if (!f) throw new Error("campo não encontrado na lista carregada");
   x.id.value = f.id;
   x.label.value = f.label;
   x.owner_role.value = f.owner_role;
@@ -1211,7 +1248,7 @@ window.editField = (id) => {
   x.field_type.value = f.field_type;
   x.help_text.value = f.help_text || "";
   x.placeholder.value = f.placeholder || "";
-  x.options.value = (f.options || []).join("\n");
+  x.options.value = opcoesDoCampo(f.options).join("\n");
   x.sort_order.value = f.sort_order;
   x.required.checked = f.required;
   x.update_editable.checked = !!f.update_editable;
@@ -1220,7 +1257,7 @@ window.editField = (id) => {
   toggleOptions();
   $("#fieldDialogTitle").textContent = "Editar campo";
   $("#fieldDialog").showModal();
-};
+}
 window.removeField = async (id) => {
   if (!confirm("Remover ou desativar este campo?")) return;
   let { data, error } = await sb.rpc("admin_remove_field", { p_id: id });

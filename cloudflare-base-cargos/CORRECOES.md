@@ -1,4 +1,4 @@
-# Correções aplicadas sobre o v74 (publicação v82)
+# Correções aplicadas sobre o v74 (publicação v83)
 
 ## 1. Botões de Editar/Desativar não faziam nada
 
@@ -222,3 +222,63 @@ funções, os `grant execute` e as políticas de RLS — além das instruções 
 
 Testado: as funções exportadas por ele foram executadas em um banco vazio e
 recriadas sem nenhum erro.
+
+## 11. "Editar" do campo continuava sem abrir (v83)
+
+O console do seu navegador mostrou a causa exata:
+
+    Uncaught TypeError: (f.options || []).join is not a function
+        at window.editField
+
+O campo guarda as opções da lista suspensa em `options`. Dependendo de como o
+campo foi criado, esse conteúdo chega do banco como **texto**
+(`"Básico\nAvançado"`), como **objeto** (`{"0":"Básico"}`) ou como **JSON dentro
+de um texto** — e não como lista. O código só sabia lidar com lista: ao clicar
+em **Editar** ele parava ali, a janela não abria e o botão parecia morto. Era
+exatamente o sintoma de "o escolaridade não consegue editar".
+
+Agora existe uma função única que aceita qualquer um desses formatos e devolve
+sempre uma lista de textos. Ela é usada nos dois lugares que liam `options`:
+
+- a janela **Editar campo** (aba Campos);
+- o `<select>` do formulário da solicitação — que quebrava do mesmo jeito e
+  deixava o formulário sem o campo.
+
+Além disso, o `editField` passou a avisar na tela quando algo inesperado
+acontecer, em vez de simplesmente não responder.
+
+Testado no navegador com os seis formatos possíveis (texto com quebras de
+linha, objeto, JSON em texto, objeto vazio, nulo e número): em todos a janela
+abre, as opções aparecem corretamente e o console fica limpo.
+
+## 12. Sessão vencida aparecendo como falha de acesso (v83)
+
+O mesmo print trazia um `401` na leitura do perfil, seguido de "Falha ao
+carregar o perfil". Isso acontece quando a aba fica aberta por horas e o token
+vence. Agora, antes de mostrar qualquer aviso, o portal renova a sessão uma vez
+e repete a leitura — só avisa se ainda assim não conseguir.
+
+## 13. Instalador completo do Supabase (v83)
+
+Foi montado o pacote `supabase-instalacao`, com os scripts numerados de 01 a 07
+que criam **as 12 tabelas e as 45 funções** em um projeto Supabase novo, além
+das políticas de RLS, das permissões e dos dados iniciais (fluxo oficial, os 13
+campos do documento e o mapeamento padrão).
+
+Validação executada aqui, e não apenas por leitura:
+
+1. instalação limpa em um PostgreSQL 16 vazio — **0 erros** nos sete arquivos;
+2. o `sql-00-verificacao-instalacao.sql` no banco recém-criado: **12 de 12
+   tabelas e 45 de 45 funções**, nenhuma marcada como FALTA;
+3. o portal de verdade (este `index.html`) rodando contra esse banco, através de
+   uma ponte que responde como o Supabase (Auth + PostgREST + RPC):
+   - login dos quatro perfis, incluindo o usuário inativo e o e-mail inexistente;
+   - solicitação criada por C&R, atribuída ao Gestor, preenchida, devolvida,
+     código do cargo salvo e concluída;
+   - Gestor com apenas ATIV_DESC e DESCRICAO_CARGO editáveis;
+   - download da **prévia** em Validação C&R e do documento **concluído**,
+     ambos com os 17 marcadores preenchidos e nenhum `«MARCADOR»` sobrando;
+   - Gestor sem botão de download em nenhuma tela, e barrado também pelo console;
+   - as oito abas do ADMIN abrindo com conteúdo;
+   - criação e edição de campos, com chaves distintas geradas automaticamente
+     para rótulos parecidos (`escolaridade_minima` e `escolaridade_desejavel`).
