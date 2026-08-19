@@ -1,4 +1,4 @@
-# Base de cargos editável (v58)
+# Base de cargos editável (v59)
 
 Versão v54 do Fluxo de Descritivos de Cargos + a nova aba **Base de cargos**: uma
 planilha estilo Excel embutida na página, onde o ADMIN edita, inclui e exclui os
@@ -10,7 +10,7 @@ no conteúdo atual dos campos e no documento gerado.
 
 | Arquivo | O que é |
 |---|---|
-| `index.html` | app v58 (v54 + aba Base de cargos) |
+| `index.html` | app v59 (v54 + aba Base de cargos) |
 | `base-grid.js` | a planilha: grade, edição, seleção, copiar/colar, importar/exportar |
 | `base-cargos.js` | colunas da base, regras de interligação, leitura/gravação de .xlsx e .csv |
 | `styles.css` | estilos v54 + bloco da planilha no final |
@@ -34,6 +34,16 @@ o que falta e a planilha continua utilizável (importar arquivo → editar →
 baixar). Nada é gravado no Supabase nesse modo.
 
 ## O que dá para fazer na aba
+
+**Ajuda na própria tela**
+- O **?** ao lado do título abre tudo em um só lugar: atalhos, como completar a
+  base, preenchimento automático, onde cada coluna é usada no fluxo e o
+  significado das cores. O painel fixo que ficava no rodapé foi removido.
+
+**Enquanto houver alteração pendente**
+- Uma faixa laranja fica visível abaixo da barra de ferramentas dizendo quantos
+  cargos foram alterados e que **nada foi gravado ainda**, com o botão
+  **Salvar alterações** ali mesmo. Importar sem gravar deixa de passar batido.
 
 **Editar como no Excel**
 - Setas navegam, `Enter` ou duplo clique abre a célula, `Tab` avança.

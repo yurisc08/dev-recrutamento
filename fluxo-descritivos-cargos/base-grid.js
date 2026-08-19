@@ -6,7 +6,7 @@
 import {
   COLUMNS, COLUMN_KEYS, COLUMN_BY_KEY, SKILL_LABELS,
   txt, norm, linkedUpdates, buildXlsx, readXlsx, toCsv, parseCsv, parseDelimited, download,
-} from "./base-cargos.js?v=20260818-v58";
+} from "./base-cargos.js?v=20260818-v59";
 
 const ROW_H = 34;
 const GUTTER_W = 58;
@@ -52,7 +52,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     <div class="page-head">
       <div>
         <p class="eyebrow">Administração</p>
-        <h1>Base de cargos</h1>
+        <h1>Base de cargos <button id="baseHelpBtn" class="base-help-btn" type="button" title="Como usar esta tela" aria-label="Como usar esta tela">?</button></h1>
         <p class="muted">Planilha da base geral usada pelo fluxo. Edite as células, inclua ou exclua linhas e salve — o conteúdo alimenta a pesquisa de cargo vigente e os campos do descritivo.</p>
       </div>
       <div class="base-head-actions">
@@ -88,12 +88,12 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       </div>
     </div>
     <div id="baseStatus" class="base-status"></div>
+    <div id="basePending" class="base-pending-bar hidden"></div>
     <div id="baseScroll" class="sheet-scroll" tabindex="0">
       <div id="baseSheetHost"></div>
     </div>
-    <p class="fine base-hint base-hint-desktop">Atalhos: setas navegam · <b>Enter</b> ou duplo clique edita · <b>Tab</b> avança · <b>Ctrl+C / Ctrl+V</b> copia e cola do Excel · <b>Delete</b> limpa · <b>Ctrl+Z</b> desfaz · <b>Shift+setas</b> seleciona intervalo · <b>Ficha</b> abre o cargo selecionado em formulário.</p>
-    <p class="fine base-hint base-hint-mobile">No celular: arraste a tabela para o lado para ver as demais colunas e <b>toque em uma linha</b> para abrir a ficha do cargo, onde todos os campos podem ser editados.</p>
-    <section class="card base-legend"><h2>Como os campos se interligam</h2><div id="baseLegend" class="base-legend-grid"></div></section>
+    <p class="fine base-hint">Precisa de ajuda? Clique no <b>?</b> ao lado do título para ver atalhos, campos interligados e como completar a base.</p>
+    <dialog id="baseHelpDialog" class="base-help-dialog"><div id="baseHelpBody" class="modal-form"></div></dialog>
     <dialog id="baseRowDialog" class="base-row-dialog"><form id="baseRowForm" class="modal-form" method="dialog"></form></dialog>
     <dialog id="baseImportDialog" class="base-import-dialog"><form id="baseImportForm" class="modal-form" method="dialog"></form></dialog>
   `;
@@ -277,29 +277,84 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
       ${G.deleted.length ? `<span class="base-pending"><b>${G.deleted.length.toLocaleString("pt-BR")}</b> exclusões pendentes</span>` : ""}`;
     el("baseSave").disabled = !canEdit() || !pendingCount();
     el("baseDiscard").disabled = !pendingCount();
+
+    // Enquanto houver alteracao preparada, o proximo passo fica visivel na tela:
+    // sem isto e facil importar a planilha e esquecer de gravar no banco.
+    const barra = el("basePending");
+    barra.classList.toggle("hidden", !pendingCount());
+    if (pendingCount()) {
+      const partes = [];
+      if (pending) partes.push(`<b>${pending.toLocaleString("pt-BR")}</b> ${pending === 1 ? "cargo alterado" : "cargos alterados"}`);
+      if (G.deleted.length) partes.push(`<b>${G.deleted.length.toLocaleString("pt-BR")}</b> ${G.deleted.length === 1 ? "exclusão" : "exclusões"}`);
+      barra.innerHTML = `<span>${partes.join(" e ")} — nada foi gravado ainda.</span>
+        <button type="button" class="btn primary" id="basePendingSave"${canEdit() ? "" : " disabled"}>Salvar alterações</button>`;
+    }
   }
 
-  function renderLegend() {
-    const groups = {};
-    COLUMNS.forEach((c) => {
-      if (!c.flow) return;
-      (groups[c.group] ||= []).push(c);
-    });
-    el("baseLegend").innerHTML = Object.entries(groups).map(([group, cols]) => `
-      <div class="base-legend-card">
-        <h3>${esc(group)}</h3>
-        <ul>${cols.map((c) => `<li><b>${esc(c.label)}</b><span>${esc(c.flow)}</span></li>`).join("")}</ul>
-      </div>`).join("") + `
-      <div class="base-legend-card">
+  function renderHelp() {
+    const grupos = {};
+    COLUMNS.forEach((c) => { if (c.flow) (grupos[c.group] ||= []).push(c); });
+    el("baseHelpBody").innerHTML = `
+      <div class="modal-head">
+        <div><p class="eyebrow">Base de cargos</p><h2>Como usar esta tela</h2></div>
+        <button type="button" class="icon-btn base-help-close" aria-label="Fechar">×</button>
+      </div>
+
+      <section class="base-help-block">
+        <h3>Editar como no Excel</h3>
+        <ul>
+          <li>Setas navegam · <b>Enter</b> ou duplo clique edita · <b>Tab</b> avança · <b>Esc</b> cancela.</li>
+          <li>Digitar direto sobre a célula substitui o conteúdo.</li>
+          <li><b>Shift + setas</b> seleciona um intervalo · <b>Ctrl+C / Ctrl+V</b> copia e cola do Excel · <b>Delete</b> limpa · <b>Ctrl+Z</b> desfaz.</li>
+          <li><b>Ficha</b> abre o cargo selecionado como formulário, com os 35 campos agrupados.</li>
+          <li>No celular, um toque na linha abre a ficha; a tabela rola para o lado.</li>
+        </ul>
+      </section>
+
+      <section class="base-help-block">
+        <h3>Completar a base com a sua planilha</h3>
+        <ol>
+          <li><b>Arquivo → Importar arquivo</b> (ou clique no aviso laranja de colunas sem conteúdo).</li>
+          <li>Confira o resumo e escolha <b>Completar dados dos cargos</b>.</li>
+          <li>Clique em <b>Salvar alterações</b> — só neste momento a base do Supabase é gravada.</li>
+        </ol>
+        <p class="fine">O casamento é feito por empresa + código do cargo e, quando a empresa não confere, apenas pelo código, desde que ele seja único na base.</p>
+      </section>
+
+      <section class="base-help-block">
         <h3>Preenchimento automático</h3>
         <ul>
-          <li><b>Empresa</b><span>completa código da empresa e emp. cód. a partir de outro registro</span></li>
-          <li><b>Cargo</b><span>replica para nome completo e nome resumido quando vazios</span></li>
-          <li><b>Código do cargo</b><span>herda CBO, nível, trilha e natureza de cargo já cadastrado</span></li>
-          <li><b>Cód. família</b><span>gera a chave de agrupamento (H|família)</span></li>
-          <li><b>Requisitos</b><span>preenchem o rótulo oficial correspondente (escolaridade, idioma, competências)</span></li>
+          <li><b>Empresa</b> completa código da empresa e emp. cód. a partir de outro registro.</li>
+          <li><b>Cargo</b> replica para nome completo e nome resumido quando estiverem vazios.</li>
+          <li><b>Código do cargo</b> herda CBO, nível, trilha e natureza de um cargo já cadastrado.</li>
+          <li><b>Cód. família</b> gera a chave de agrupamento (H|família).</li>
+          <li>Preencher um requisito preenche o rótulo oficial correspondente.</li>
+          <li>Só acontece em célula vazia — nunca sobrescreve o que você digitou — e a célula fica marcada em azul.</li>
         </ul>
-      </div>`;
+      </section>
+
+      <section class="base-help-block">
+        <h3>Onde cada coluna é usada no fluxo</h3>
+        <div class="base-help-grid">
+          ${Object.entries(grupos).map(([grupo, cols]) => `
+            <div>
+              <h4>${esc(grupo)}</h4>
+              <ul>${cols.map((c) => `<li><b>${esc(c.label)}</b><span>${esc(c.flow)}</span></li>`).join("")}</ul>
+            </div>`).join("")}
+        </div>
+      </section>
+
+      <section class="base-help-block">
+        <h3>Cores e sinais</h3>
+        <ul>
+          <li><span class="base-help-chip amarela"></span> célula alterada e ainda não salva.</li>
+          <li><span class="base-help-chip verde"></span> linha nova.</li>
+          <li><span class="base-help-chip azul"></span> preenchida automaticamente por um campo interligado.</li>
+          <li><span class="base-help-chip vermelha"></span> código do cargo repetido na mesma empresa.</li>
+        </ul>
+      </section>
+
+      <div class="modal-actions"><button type="button" class="btn primary base-help-close">Entendi</button></div>`;
   }
 
   // -------------------------------------------------------------------------
@@ -1068,6 +1123,8 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
   el("baseSearch").addEventListener("input", () => { refreshOrder(); scroll.scrollTop = 0; renderBody(); renderStatus(); });
   el("baseCompany").addEventListener("change", () => { refreshOrder(); scroll.scrollTop = 0; renderBody(); renderStatus(); });
   el("baseOnlyChanged").addEventListener("change", () => { refreshOrder(); scroll.scrollTop = 0; renderBody(); renderStatus(); });
+  el("baseHelpBtn").addEventListener("click", () => el("baseHelpDialog").showModal());
+  el("baseHelpBody").addEventListener("click", (e) => { if (e.target.closest(".base-help-close")) el("baseHelpDialog").close(); });
   el("baseCard").addEventListener("click", () => openRowCard(normalizedSel()?.r1 ?? 0));
   el("baseRowForm").addEventListener("click", (e) => {
     if (e.target.closest(".base-card-close")) { el("baseRowDialog").close(); return; }
@@ -1078,6 +1135,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
   el("baseDuplicate").addEventListener("click", duplicateRow);
   el("baseDelete").addEventListener("click", deleteRows);
   el("baseSave").addEventListener("click", save);
+  el("basePending").addEventListener("click", (e) => { if (e.target.id === "basePendingSave") save(); });
   el("baseDiscard").addEventListener("click", discard);
   el("baseReload").addEventListener("click", () => {
     if (pendingCount() && !confirm("Existem alterações não salvas. Recarregar mesmo assim?")) return;
@@ -1149,7 +1207,7 @@ export function mountBaseCargos({ sb, toast, getProfile }) {
     e.returnValue = "";
   });
 
-  renderLegend();
+  renderHelp();
   renderStatus();
 
   return {

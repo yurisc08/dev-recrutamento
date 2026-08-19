@@ -354,3 +354,24 @@ thead .sheet-gutter{background:var(--purple2);cursor:default}
 .base-import-danger{margin-top:18px;padding-top:14px;border-top:1px solid var(--line);display:grid;gap:6px;justify-items:start}
 .base-import-danger small{color:var(--muted);font-size:.78rem}
 @media(max-width:760px){.base-import-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100vh}.base-import-danger .btn{width:100%}}
+
+/* Base de cargos: ajuda em "?" e barra de alterações pendentes */
+.base-help-btn{width:30px;height:30px;border-radius:50%;border:2px solid var(--purple);background:#f7f1fa;color:var(--purple);font-size:1rem;font-weight:900;cursor:pointer;vertical-align:middle;margin-left:10px;line-height:1}
+.base-help-btn:hover{background:var(--purple);color:#fff}
+.base-help-dialog{width:min(760px,94vw);max-height:90vh}
+.base-help-dialog .modal-form{max-height:90vh;overflow:auto}
+.base-help-block{border-top:1px solid var(--line);margin-top:18px;padding-top:14px}
+.base-help-block h3{margin:0 0 10px;font-size:.92rem;text-transform:uppercase;letter-spacing:.07em;color:var(--purple)}
+.base-help-block ul,.base-help-block ol{margin:0;padding-left:18px;display:grid;gap:7px;font-size:.88rem;line-height:1.45}
+.base-help-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:14px}
+.base-help-grid h4{margin:0 0 7px;font-size:.8rem;color:var(--muted);text-transform:uppercase;letter-spacing:.06em}
+.base-help-grid ul{gap:5px;font-size:.82rem}
+.base-help-grid li b{display:block}
+.base-help-grid li span{color:var(--muted)}
+.base-help-chip{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px;border:1px solid #00000014}
+.base-help-chip.amarela{background:#fff6e2}
+.base-help-chip.verde{background:#f2fbf6}
+.base-help-chip.azul{background:#eef6ff;box-shadow:inset 0 -3px 0 #7aa7dd}
+.base-help-chip.vermelha{background:#fdecef}
+.base-pending-bar{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;margin:0 0 12px;padding:12px 16px;border-radius:12px;background:#fff4e6;border:1px solid #ffd2a8;color:#8a4a14;font-weight:700}
+@media(max-width:760px){.base-pending-bar{flex-direction:column;align-items:stretch;text-align:center}.base-pending-bar .btn{width:100%}.base-help-dialog{width:100vw;max-width:100vw;height:100dvh;max-height:100vh}.base-help-dialog .modal-form{max-height:100dvh}}
