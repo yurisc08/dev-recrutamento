@@ -1,7 +1,8 @@
 -- =====================================================================
--- V74 - Base de cargos administrada pelo ADMIN (importar, exportar e editar)
+-- V75 - Base de cargos administrada pelo ADMIN (importar, exportar, editar)
+--       + pesquisa tolerante a acento e diagnostico da base
 -- ---------------------------------------------------------------------
--- Cumulativo: substitui o V73. Se o V73 ja foi executado, rodar este por cima
+-- Cumulativo: substitui o V73/V74. Se o V73 ja foi executado, rodar este por cima
 -- e seguro (tudo aqui e idempotente).
 --
 -- Cria a estrutura usada pela aba "Base de cargos" do portal:
@@ -825,6 +826,149 @@ create policy job_catalog_leitura_autenticada
   using (true);
 
 -- As tabelas de importacao continuam sem policy nenhuma: so as funcoes leem.
+
+-- =====================================================================
+-- 12. Pesquisa de cargos mais tolerante e diagnostico da base
+-- ---------------------------------------------------------------------
+-- Motivos pelos quais um cargo "sumia" da pesquisa antes:
+--   1. acentos: 'PLASTICO' nao encontrava 'PLÁSTICO';
+--   2. varias palavras: 'analista dados' nao encontrava 'ANALISTA DE DADOS';
+--   3. cargos inativos ficavam totalmente fora do resultado, sem aviso;
+--   4. o limite de 100 cortava a lista em silencio.
+-- =====================================================================
+
+-- 12.1 Normalizacao sem acento (sem depender de extensao no projeto)
+create or replace function public.sem_acento(p text)
+returns text
+language sql
+immutable
+parallel safe
+as $$
+  select translate(
+    lower(coalesce(p,'')),
+    'áàâãäéèêëíìîïóòôõöúùûüçñýÁÀÂÃÄÉÈÊËÍÌÎÏÓÒÔÕÖÚÙÛÜÇÑÝ',
+    'aaaaaeeeeiiiiooooouuuucnyaaaaaeeeeiiiiooooouuuucny');
+$$;
+
+revoke all on function public.sem_acento(text) from public;
+grant execute on function public.sem_acento(text) to authenticated;
+
+-- 12.2 Pesquisa usada pelo campo "Pesquisar cargo vigente"
+drop function if exists public.search_job_catalog(text);
+drop function if exists public.search_job_catalog(text,boolean,int);
+create function public.search_job_catalog(
+  p_query text,
+  p_include_inactive boolean default true,
+  p_limit int default 200
+)
+returns table(
+  id uuid,
+  job_code text,
+  job_name text,
+  full_name text,
+  company_code text,
+  company text,
+  career_track text,
+  level text,
+  active boolean
+)
+language sql
+stable
+security definer
+set search_path=public
+as $$
+  with termos as (
+    select array_remove(
+             string_to_array(regexp_replace(public.sem_acento(btrim(coalesce(p_query,''))), '\s+', ' ', 'g'), ' '),
+             '') as palavras
+  ),
+  padroes as (
+    select coalesce(array_agg('%'||p||'%'), '{}'::text[]) as lista
+      from termos, unnest(termos.palavras) as p
+  )
+  select
+    j.id, j.job_code, j.job_name, j.full_name, j.company_code, j.company,
+    j.career_track, j.level, coalesce(j.active,true) as active
+  from public.job_catalog j, termos, padroes
+  where (coalesce(j.active,true) or coalesce(p_include_inactive,true))
+    and (
+      cardinality(termos.palavras) = 0
+      or public.sem_acento(
+           concat_ws(' ', j.job_code, j.job_name, j.full_name, j.company, j.company_code, j.career_track, j.level)
+         ) like all (padroes.lista)
+    )
+  order by
+    -- codigo exato primeiro, depois ativos, depois quem comeca pelo termo
+    case when lower(btrim(j.job_code)) = lower(btrim(coalesce(p_query,''))) then 0 else 1 end,
+    case when coalesce(j.active,true) then 0 else 1 end,
+    case when public.sem_acento(coalesce(j.full_name, j.job_name,'')) like public.sem_acento(btrim(coalesce(p_query,'')))||'%' then 0 else 1 end,
+    coalesce(j.full_name, j.job_name),
+    j.company
+  limit least(greatest(coalesce(p_limit,200),1),500);
+$$;
+
+revoke all on function public.search_job_catalog(text,boolean,int) from public;
+grant execute on function public.search_job_catalog(text,boolean,int) to authenticated;
+
+-- 12.3 Diagnostico: aponta cargos com cadastro suspeito.
+-- Serve para o ADMIN perceber quando a base foi importada com as colunas
+-- trocadas — por exemplo, o nome do cargo vindo igual ao codigo.
+drop function if exists public.admin_job_quality();
+create function public.admin_job_quality()
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path=public
+as $$
+declare v jsonb;
+begin
+  if not public.is_admin_user() then
+    raise exception 'Apenas o perfil ADMIN pode consultar o diagnostico da base.';
+  end if;
+
+  with base as (
+    select
+      j.id, j.job_code, j.job_name, j.full_name, j.company, coalesce(j.active,true) as active,
+      nullif(btrim(coalesce(j.full_name, j.job_name, '')),'')          as nome,
+      btrim(coalesce(j.job_code,''))                                   as codigo
+    from public.job_catalog j
+  ),
+  marcado as (
+    select *,
+      case
+        when nome is null                                   then 'sem_nome'
+        when nome = codigo                                  then 'nome_igual_ao_codigo'
+        when nome ~ '^[0-9]+$'                              then 'nome_so_numeros'
+        when length(nome) <= 2                              then 'nome_muito_curto'
+      end as problema
+    from base
+  )
+  select jsonb_build_object(
+    'total',            (select count(*) from base),
+    'ativos',           (select count(*) from base where active),
+    'inativos',         (select count(*) from base where not active),
+    'sem_descricao',    (select count(*) from public.job_catalog
+                          where nullif(btrim(coalesce(job_description,'')),'') is null
+                            and nullif(btrim(coalesce(activities,'')),'') is null),
+    'com_problema',     (select count(*) from marcado where problema is not null),
+    'por_problema',     (select coalesce(jsonb_object_agg(problema, qtd),'{}'::jsonb)
+                           from (select problema, count(*) qtd from marcado
+                                  where problema is not null group by problema) x),
+    'exemplos',         (select coalesce(jsonb_agg(to_jsonb(e)),'[]'::jsonb)
+                           from (select job_code, job_name, full_name, company, problema
+                                   from marcado where problema is not null
+                                  order by problema, job_code limit 8) e)
+  ) into v;
+
+  return v;
+end;
+$$;
+
+revoke all on function public.admin_job_quality() from public;
+grant execute on function public.admin_job_quality() to authenticated;
+
+notify pgrst,'reload schema';
 
 -- ---------------------------------------------------------------------
 -- 10. Diagnostico

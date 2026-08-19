@@ -14,7 +14,7 @@ A aba **Base de cargos** (visível apenas para o perfil ADMIN) faz três coisas:
    `vendor/`** (ela contém o leitor/gravador de planilhas usado pela tela — sem ela o
    navegador tenta um CDN externo, que a rede corporativa pode bloquear).
 2. No Supabase, abra **SQL Editor** e execute o arquivo
-   **`supabase-base-cargos-admin-v74.sql`** inteiro, uma única vez.
+   **`supabase-base-cargos-admin-v75.sql`** inteiro, uma única vez.
 
 > O SQL é idempotente e cumulativo: substitui o v73 e pode ser executado de novo sem
 > duplicar nada e sem apagar dados.
@@ -115,7 +115,79 @@ código em empresas diferentes é permitido, porque é assim que a base real fun
 
 ---
 
-## 6. Segurança
+## 6. Mensagens de erro e pesquisa de cargos
+
+### Erros que explicam a causa
+
+Antes, um erro do banco chegava cru na tela — por exemplo
+`invalid input syntax for type date: ""`, que não diz nada a quem está
+preenchendo o formulário. Agora cada erro vira um aviso com **título, causa e o
+que fazer**, e o texto original fica embaixo como *detalhe técnico*, para não se
+perder quando for preciso reportar.
+
+| O banco devolve | O usuário lê |
+|---|---|
+| `invalid input syntax for type date: ""` | **Falta preencher uma data.** Um campo de data ficou em branco ou está incompleto. |
+| `invalid input syntax for type uuid` | **Selecione uma opção da lista.** O campo foi digitado à mão em vez de escolhido entre as opções. |
+| `null value in column … not-null` | **Falta preencher um campo obrigatório.** Confira os campos com asterisco. |
+| `duplicate key value violates unique constraint` | **Já existe um registro com esses dados.** |
+| `violates foreign key constraint` | **Este item está vinculado a outro registro.** Desative em vez de excluir. |
+| `row-level security` / `permission denied` | **Você não tem permissão para esta ação.** |
+| `Could not find the function … schema cache` | **O banco ainda não está preparado.** Execute o SQL que acompanha esta versão. |
+| `JWT expired` | **Sua sessão expirou.** Entre novamente. |
+| `Failed to fetch` | **Sem conexão com o servidor.** Verifique a internet ou a VPN. |
+
+Além disso, os campos obrigatórios da nova solicitação passaram a ser conferidos
+**antes** do envio, com uma frase que diz o que fazer — e uma data em branco vira
+`null` em vez da string vazia que causava o erro original.
+
+### Por que um cargo "não estava na lista"
+
+A pesquisa de cargos vigentes tinha quatro limitações que faziam cargos sumirem:
+
+| Problema | Antes | Agora |
+|---|---|---|
+| Acentos | `PLASTICO` não achava `PLÁSTICO` | acentos ignorados dos dois lados |
+| Várias palavras | `analista dados` não achava `ANALISTA DE DADOS` | todas as palavras valem, em qualquer ordem |
+| Cargos inativos | ficavam totalmente fora, sem aviso | aparecem no fim da lista, marcados **Inativo** |
+| Limite de 100 | a lista era cortada em silêncio | limite de 200, com aviso quando corta |
+
+Medido na base real de 2.974 cargos:
+
+```
+"PLASTICO"              antes:   3 resultados   agora: 101
+"MECANICO"              antes:   2              agora:  76
+"analista dados"        antes:   0              agora:  19
+"tecnico manutencao"    antes:   0              agora:   4
+```
+
+A lista agora mostra um cabeçalho com a contagem, o nome da empresa, a trilha e o
+nível de cada cargo, e quando nada é encontrado explica o que tentar — inclusive
+que o ADMIN pode cadastrar o cargo direto no portal se ele ainda não existir.
+
+### "Situação da base": por que aparece um cargo chamado "84"
+
+Um cargo que aparece com o **nome igual ao código** (por exemplo `84 — 84 —
+DINACO IND E COM DE FERRO E ACO LTDA`) é sinal de que a base foi importada com a
+coluna trocada: o campo do nome recebeu o valor do código.
+
+Por isso a aba **Base de cargos** ganhou o painel **Situação da base**, que conta e
+explica esses casos:
+
+* **Nome igual ao código** — coluna trocada; reimporte apontando a coluna certa
+  no passo 3;
+* **Nome só com números** / **Nome muito curto** / **Sem nome** — mesma família de
+  problema, sempre ligada ao mapeamento;
+* **Cargos inativos** — quantos estão fora da lista de vigentes e como reativá-los;
+* **Sem descrição nem atividades** — normal em cargos antigos; o documento sai com
+  "Não informado" nesses campos.
+
+Na pesquisa, esses cargos aparecem com a marca **Cadastro incompleto**, para o C&R
+entender na hora que o problema está na base e não na busca.
+
+---
+
+## 7. Segurança
 
 ### O que protege o sistema
 
@@ -191,7 +263,7 @@ cadastros de acesso e não faz parte desta entrega.
 
 ---
 
-## 7. Celular e tablet
+## 8. Celular e tablet
 
 A aba funciona em celular: o menu superior rola lateralmente e leva sozinho até a
 aba ativa, os cartões do mapeamento e da lista de cargos empilham em uma coluna,
@@ -215,13 +287,13 @@ de um cargo e a exportação.
 
 ---
 
-## 7. Arquivos desta versão
+## 9. Arquivos desta versão
 
 | Arquivo | O que mudou |
 |---|---|
 | `index.html` | Aba **Base de cargos**: importação, exportação e cadastro de cargos. |
 | `styles.css` | Estilos da nova tela. |
-| `supabase-base-cargos-admin-v74.sql` | **Rodar uma vez.** Estrutura e funções de importação, exportação e cadastro. Cumulativo — substitui o v73. |
+| `supabase-base-cargos-admin-v75.sql` | **Rodar uma vez.** Estrutura e funções de importação, exportação e cadastro. Cumulativo — substitui o v73/v74. |
 | `vendor/xlsx.mjs` | Leitor/gravador de planilhas (SheetJS, licença Apache 2.0), carregado só quando o ADMIN abre a tela. Veja o item 6 sobre atualizar este arquivo. |
 | `LEIA-ME-BASE-DE-CARGOS.md` | Este documento. |
 

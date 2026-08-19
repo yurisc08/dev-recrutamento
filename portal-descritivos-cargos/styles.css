@@ -331,3 +331,32 @@ input[list]{background-color:#fff}input[list]::-webkit-calendar-picker-indicator
    portal começava ~550px abaixo. Esta regra tem especificidade maior ainda. */
 #login.login-shell.hidden,
 #login.hidden { display:none!important; }
+
+/* Pesquisa de cargos e diagnóstico da base */
+.job-head{padding:10px 14px;font-size:.8rem;font-weight:800;color:var(--muted);background:#f6f7fb;border-bottom:1px solid var(--line);position:sticky;top:0}
+.job-head b{color:#8c4c0c}
+.job-empty{padding:16px;display:grid;gap:7px;font-size:.86rem;color:var(--muted);line-height:1.45}
+.job-empty b{color:var(--text)}
+.job-option.inativo{opacity:.72}
+.job-tags{display:flex;gap:6px;flex-wrap:wrap;margin-top:5px}
+.job-tag{border-radius:999px;padding:3px 8px;font-size:.68rem;font-weight:800}
+.job-tag.inativo{background:#eceff3;color:#606b7a}
+.job-tag.alerta{background:#fff1e3;color:#8c4c0c}
+.quality-list{display:grid;gap:10px}
+.quality-row{display:grid;grid-template-columns:auto minmax(0,1fr);gap:14px;align-items:start;padding:13px 15px;border:1px solid #ffd2a8;background:#fff8f1;border-radius:12px}
+.quality-row.neutra{border-color:var(--line);background:#f8f9fc}
+.quality-count{min-width:46px;text-align:center;font-weight:900;font-size:1.05rem;color:#8c4c0c;background:#ffe9d5;border-radius:9px;padding:5px 8px}
+.quality-row.neutra .quality-count{color:var(--muted);background:#eceff3}
+.quality-row small{display:block;color:var(--muted);font-weight:500;margin-top:3px;line-height:1.45}
+.quality-exemplos{margin-top:4px;font-size:.86rem}
+.quality-exemplos summary{cursor:pointer;font-weight:800;color:var(--purple);padding:6px 0}
+.quality-exemplo{padding:6px 0;border-top:1px solid var(--line)}
+.quality-exemplo small{color:var(--muted)}
+/* Toast com título, explicação e detalhe técnico */
+.toast{display:grid;gap:4px;text-align:left;line-height:1.4}
+.toast b{font-size:.95rem}
+.toast small{font-size:.82rem;opacity:.88;font-weight:500}
+.toast .toast-tecnico{opacity:.62;font-size:.76rem;font-family:ui-monospace,monospace;word-break:break-word}
+.toast.erro{background:#7c1330}
+.toast.ok{background:#0f5c45}
+@media(max-width:700px){.quality-row{grid-template-columns:1fr}.quality-count{justify-self:start}}

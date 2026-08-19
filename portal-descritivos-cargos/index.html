@@ -51,6 +51,7 @@
 <div class="row"><label>Como aplicar<select id="jobImportMode"><option value="REPLACE">Substituir a base (desativa cargos fora da planilha)</option><option value="MERGE">Complementar a base (só inclui e atualiza)</option></select></label><label class="checkbox-inline"><input id="jobScopeCompanies" type="checkbox" checked><span>Desativar somente cargos das empresas presentes no arquivo</span></label></div><label class="checkbox-inline standalone"><input id="jobBlankClears" type="checkbox"><span>Células em branco apagam o conteúdo atual <small class="muted">(desmarcado: uma célula vazia mantém o que já está na base — recomendado)</small></span></label><label class="checkbox-inline standalone"><input id="jobProtectManual" type="checkbox" checked><span>Preservar cargos cadastrados no portal <small class="muted">(marcado: cargos criados aqui não são desativados por não estarem na planilha — recomendado)</small></span></label>
 <div id="jobProgress" class="progress hidden"><i id="jobProgressBar" style="width:0%"></i></div>
 <div class="modal-actions"><button id="jobCancelImport" class="btn ghost" type="button">Cancelar</button><button id="jobRunImport" class="btn primary" type="button">Atualizar base de cargos</button></div></article>
+<article class="card hidden" id="jobQualityCard"><div class="card-head"><div><h2>Situação da base</h2><p class="muted">O que pode fazer um cargo não aparecer na pesquisa, ou aparecer com o nome errado.</p></div></div><div id="jobQualityBox" class="quality-list"></div></article>
 <article class="card"><div class="card-head"><div><h2>Cargos cadastrados</h2><p class="muted">Consulte, edite ou inclua cargos direto aqui, sem passar pela planilha. Cargos criados neste cadastro não são desativados nas importações seguintes.</p></div><button id="newJobBtn" class="btn primary" type="button">+ Novo cargo na base</button></div>
 <div class="toolbar"><input id="jobListSearch" placeholder="Pesquisar código, cargo ou empresa"><label class="checkbox-inline"><input id="jobListInactive" type="checkbox" checked><span>Mostrar inativos</span></label></div>
 <div id="jobListBox" class="admin-list"></div>
@@ -114,12 +115,82 @@ const esc = (s = "") =>
   fmt = (s) => (s ? new Date(s).toLocaleString("pt-BR") : "-"),
   date = (s) =>
     s ? new Date(s + "T12:00:00").toLocaleDateString("pt-BR") : "-";
-function toast(m) {
+function toast(m, detalhe, tipo) {
   let t = $("#toast");
-  t.textContent = m;
+  const info = typeof m === "object" && m !== null ? m : { titulo: m, detalhe, tipo };
+  t.className = "toast " + (info.tipo || "");
+  t.innerHTML =
+    `<b>${esc(info.titulo || "")}</b>` +
+    (info.detalhe ? `<small>${esc(info.detalhe)}</small>` : "") +
+    (info.tecnico ? `<small class="toast-tecnico">Detalhe técnico: ${esc(info.tecnico)}</small>` : "");
   t.classList.add("show");
-  setTimeout(() => t.classList.remove("show"), 3500);
+  clearTimeout(toast._t);
+  toast._t = setTimeout(() => t.classList.remove("show"), info.tecnico || info.detalhe ? 8000 : 4000);
 }
+/* Traduz o erro que vem do banco para uma frase que explica a causa e o que fazer.
+   O texto original fica visível como "detalhe técnico", para não perder informação. */
+const ERROS_CONHECIDOS = [
+  [/invalid input syntax for type date/i,
+   "Falta preencher uma data.",
+   "Um campo de data ficou em branco ou está incompleto. Preencha o prazo antes de continuar."],
+  [/invalid input syntax for type uuid/i,
+   "Selecione uma opção da lista.",
+   "O campo foi digitado à mão em vez de escolhido entre as opções sugeridas. Clique em um resultado da lista."],
+  [/invalid input syntax for type (integer|numeric|bigint)/i,
+   "Um campo numérico está inválido.",
+   "Use apenas números, sem letras nem símbolos."],
+  [/null value in column "([^"]+)"[^]*?not-null/i,
+   "Falta preencher um campo obrigatório.",
+   "Confira os campos marcados com asterisco e tente novamente."],
+  [/duplicate key value|already exists|ja existe|já existe/i,
+   "Já existe um registro com esses dados.",
+   "Altere o código, o nome ou o e-mail para um valor que ainda não esteja em uso."],
+  [/violates foreign key constraint/i,
+   "Este item está vinculado a outro registro.",
+   "Desative em vez de excluir, ou remova antes os registros que dependem dele."],
+  [/value too long for type character/i,
+   "Um texto ficou longo demais para o campo.",
+   "Reduza o conteúdo e salve novamente."],
+  [/row-level security|permission denied|nao tem permissao|não tem permissão/i,
+   "Você não tem permissão para esta ação.",
+   "Esta operação é exclusiva de outro perfil. Fale com a equipe de Carreira & Recompensa."],
+  [/Apenas o perfil ADMIN|Apenas C&R|Apenas o Administrador/i, null, null],
+  [/(function|relation|column) .* does not exist|schema cache/i,
+   "O banco ainda não está preparado para esta função.",
+   "Execute no Supabase o arquivo SQL que acompanha esta versão e tente de novo."],
+  [/JWT expired|Invalid Refresh Token|not authenticated|session.*expired/i,
+   "Sua sessão expirou.",
+   "Entre novamente com seu e-mail e código de acesso."],
+  [/Failed to fetch|NetworkError|Load failed|ERR_INTERNET|fetch failed/i,
+   "Sem conexão com o servidor.",
+   "Verifique sua internet ou a VPN da empresa e tente novamente."],
+  [/timeout|Tempo limite/i,
+   "O servidor demorou para responder.",
+   "Tente novamente em alguns instantes."],
+  [/deadlock|could not serialize/i,
+   "Outra pessoa estava alterando o mesmo registro.",
+   "Atualize a tela e refaça a alteração."],
+];
+function erroAmigavel(erro, acao) {
+  const bruto = typeof erro === "string" ? erro : erro?.message || erro?.error_description || erro?.details || String(erro || "");
+  for (const [padrao, titulo, detalhe] of ERROS_CONHECIDOS) {
+    if (padrao.test(bruto)) {
+      if (titulo === null) return { titulo: bruto, tipo: "erro" };   // mensagem do banco ja e clara
+      return { titulo, detalhe, tecnico: bruto, tipo: "erro" };
+    }
+  }
+  return {
+    titulo: acao ? "Não foi possível " + acao + "." : "Não foi possível concluir a ação.",
+    detalhe: "Confira os campos preenchidos e tente novamente. Se continuar, avise a equipe de Carreira & Recompensa com o detalhe abaixo.",
+    tecnico: bruto,
+    tipo: "erro",
+  };
+}
+function toastErro(erro, acao) { toast(erroAmigavel(erro, acao)); }
+function toastOk(titulo, detalhe) { toast({ titulo, detalhe, tipo: "ok" }); }
+/* Datas vazias precisam virar null: o banco recusa a string "" com uma
+   mensagem incompreensivel para quem esta preenchendo o formulario. */
+function dataOuNulo(v) { const s = String(v ?? "").trim(); return s ? s : null; }
 function mgmt() {
   return ["ADMIN", "CR"].includes(S.profile?.role);
 }
@@ -333,7 +404,7 @@ function filteredUsers() {
 async function loadManagerIntakes(){
   if(!S.profile||S.profile.role==="APROVADOR")return;
   const {data,error}=await sb.rpc("list_manager_intake_requests");
-  if(error){console.error("Falha ao carregar solicitações do Gestor",error);S.managerIntakes=[];toast("Não foi possível carregar as solicitações iniciadas pelo Gestor: "+error.message);return;}
+  if(error){console.error("Falha ao carregar solicitações do Gestor",error);S.managerIntakes=[];toast({titulo:"Não foi possível carregar as solicitações iniciadas pelo Gestor.",tecnico:error.message,tipo:"erro"});return;}
   S.managerIntakes=data||[];
 }
 function sectionLabel(k){return ({ATIV_DESC:'Missão',DESCRICAO_CARGO:'Principais responsabilidades/atividades',SKILL_30:'Formação/Escolaridade mínima',SKILL_31:'Formação/Escolaridade desejável',SKILL_32:'Idioma mínimo',SKILL_33:'Idioma desejável',SKILL_34:'Competências técnicas mínimas',SKILL_35:'Competências técnicas desejáveis',SKILL_36:'Experiência profissional desejável',SKILL_37:'Competências Marcopolo desejáveis',mission:'Missão',responsibilities:'Principais responsabilidades/atividades',activities:'Principais responsabilidades/atividades',job_description:'Principais responsabilidades/atividades',description:'Descrição do cargo',formation_min:'Formação/Escolaridade mínima',formation_desired:'Formação/Escolaridade desejável',language_min:'Idioma mínimo',language_desired:'Idioma desejável',technical_min:'Competências técnicas mínimas',technical_desired:'Competências técnicas desejáveis',experience_min:'Experiência profissional desejável',behavioral:'Competências Marcopolo desejáveis',requirements:'Requisitos'})[k]||k;}
@@ -370,7 +441,7 @@ function renderManagerIntakes(){
     return `<div class="admin-row intake-row"><span class="intake-content"><b>${esc(x.title)}</b><small>${x.request_type==="UPDATE"?"Atualização":"Novo cargo"} · ${esc(x.company)} / ${esc(x.branch)} · ${esc(x.sector)} · Solicitante: ${esc(x.requester_name||"")}</small>${claimed?`<small class="intake-owner">Responsável C&R: ${esc(x.assigned_cr_name||"")}</small>`:""}</span><div class="admin-actions intake-actions">${action}</div></div>`;
   }).join("");
 }
-window.rejectManagerIntake=async id=>{const reason=prompt('Informe o motivo do não aceite para o Gestor:','')||'';if(!reason.trim())return;const{error}=await sb.rpc('reject_manager_intake_request',{p_intake_id:id,p_reason:reason.trim()});if(error)return toast(error.message);await loadManagerIntakes();renderManagerIntakes();toast('Solicitação não aceita. O motivo ficou disponível para o Gestor.');};
+window.rejectManagerIntake=async id=>{const reason=prompt('Informe o motivo do não aceite para o Gestor:','')||'';if(!reason.trim())return;const{error}=await sb.rpc('reject_manager_intake_request',{p_intake_id:id,p_reason:reason.trim()});if(error)return toastErro(error);await loadManagerIntakes();renderManagerIntakes();toast('Solicitação não aceita. O motivo ficou disponível para o Gestor.');};
 window.claimManagerIntake=async id=>{
   const {error}=await sb.rpc("claim_manager_intake_request",{p_intake_id:id});
   if(error){console.error("Falha ao assumir triagem",error);return toast("Não foi possível assumir a solicitação: "+(error.details||error.message));}
@@ -386,8 +457,9 @@ window.openIntakeTriage=id=>{
 };
 $("#triageForm").onsubmit=async e=>{
   e.preventDefault();const b=Object.fromEntries(new FormData(e.target));
-  const {data,error}=await sb.rpc("convert_manager_intake_to_request",{p_intake_id:b.intake_id,p_deadline:b.deadline});
-  if(error)return toast(error.message);
+  if(!dataOuNulo(b.deadline))return toast({titulo:"Informe o prazo da solicitação.",detalhe:"O prazo define até quando o Gestor deve responder. Escolha uma data no calendário.",tipo:"erro"});
+  const {data,error}=await sb.rpc("convert_manager_intake_to_request",{p_intake_id:b.intake_id,p_deadline:dataOuNulo(b.deadline)});
+  if(error)return toastErro(error,"iniciar o fluxo oficial");
   const intake=S.managerIntakes.find(x=>x.id===b.intake_id);const initial=buildInitialOfficialValues(intake||{});if(data&&Object.keys(initial).length){const seeded=await sb.rpc('save_dynamic_values',{p_request_id:data,p_values:initial});if(seeded.error)return toast('Solicitação criada, mas não foi possível carregar os valores atuais: '+seeded.error.message);}
   $("#triageDialog").close();await load();toast("Solicitação oficial criada e fluxo iniciado.");
   if(data) await openRequest(data);
@@ -409,7 +481,7 @@ function renderFields() {
   if(!S.fields.length){host.innerHTML='<div class="empty admin-fields-empty"><h3>Nenhum campo cadastrado</h3><p>Execute o SQL V20 para restaurar os campos padrão ou clique para recarregar.</p><button class="btn secondary" onclick="reloadFields()">Recarregar campos</button></div>';return;}
   host.innerHTML=S.fields.map(f=>`<article class="card rule-card"><div><b>${esc(f.label)}</b><div class="config-summary"><span class="config-chip">${f.owner_role === "CR" ? "Gestão — C&R" : "Responsável — Gestor"}</span><span class="config-chip approval-chip">Aprovação: ${f.approval_area_id ? esc(S.approvalAreas.find(a=>a.id===f.approval_area_id)?.name||"Área aprovadora") : "C&R"}</span><span class="config-chip">${typeLabel(f.field_type)}</span><span class="${f.required ? "required-chip" : "optional-chip"}">${f.required ? "Obrigatório" : "Opcional"}</span><span class="config-chip">${f.active ? "Ativo" : "Inativo"}</span><span class="config-chip">${f.update_editable ? "Editável em atualização" : "Somente leitura em atualização"}</span></div>${f.help_text ? `<small class="muted">${esc(f.help_text)}</small>` : ""}</div><div class="field-actions"><button class="btn ghost" onclick="editField(${jsq(f.id)})">Editar</button><button class="btn danger" onclick="removeField(${jsq(f.id)})">${f.is_system ? "Desativar" : "Remover"}</button></div></article>`).join('');
 }
-window.reloadFields=async()=>{const{data,error}=await sb.from('form_fields').select('*').order('sort_order');if(error)return toast(error.message);S.fields=data||[];renderFields();toast(`${S.fields.length} campo(s) carregado(s).`);};
+window.reloadFields=async()=>{const{data,error}=await sb.from('form_fields').select('*').order('sort_order');if(error)return toastErro(error);S.fields=data||[];renderFields();toast(`${S.fields.length} campo(s) carregado(s).`);};
 const typeLabel = (t) =>
   ({
     text: "Texto curto",
@@ -422,7 +494,7 @@ const typeLabel = (t) =>
 function show(v) {
   if (v === "models" && mgmt()) loadModelMappings();
   if (v === "audit" && admin()) loadAuditLogs();
-  if (v === "jobBase" && admin()) { loadJobBaseOverview(); loadJobList(); }
+  if (v === "jobBase" && admin()) { loadJobBaseOverview(); loadJobList(); loadJobQuality(); }
   ["dashboard", "managers", "fields", "models", "companies", "workflows", "jobBase", "audit", "detail"].forEach((x) =>
     $("#" + x + "View").classList.toggle("hidden", x !== v),
   );
@@ -442,7 +514,7 @@ window.rejectRequestCR=async(id,title)=>{
  if(!reason)return toast("A recusa exige uma justificativa.");
  if(!confirm("Confirmar a recusa? A solicitação será cancelada, o motivo ficará registrado e o histórico será preservado."))return;
  const {error}=await sb.rpc("cr_reject_request",{p_request_id:id,p_reason:reason});
- if(error)return toast("Não foi possível recusar: "+error.message);
+ if(error)return toast({titulo:"Não foi possível recusar.",tecnico:error.message,tipo:"erro"});
  await load();toast("Solicitação recusada.");
 };
 window.deleteRequestAdmin=async(id,title)=>{
@@ -451,7 +523,7 @@ window.deleteRequestAdmin=async(id,title)=>{
  const typed=prompt('Para confirmar, digite EXCLUIR:');
  if(typed!=="EXCLUIR")return toast("Exclusão cancelada.");
  const {error}=await sb.rpc("admin_delete_request",{p_request_id:id});
- if(error)return toast("Não foi possível excluir: "+error.message);
+ if(error)return toast({titulo:"Não foi possível excluir.",tecnico:error.message,tipo:"erro"});
  await load();toast("Solicitação excluída definitivamente.");
 };
 window.openRequest = async (id, trigger=null) => {
@@ -644,16 +716,16 @@ window.saveValues = async () => {
     p_request_id: S.selected.id,
     p_values: values(),
   });
-  if (error) return toast(error.message);
+  if (error) return toastErro(error);
   toast("Rascunho salvo.");
   await openRequest(S.selected.id);
 };
-window.sendAdditionalApproval=async()=>{const sel=$("#additionalApprover"),approverId=sel.value;if(!approverId)return toast("Selecione o aprovador.");const areaId=sel.selectedOptions[0]?.dataset.area,note=$("#additionalApprovalNote").value.trim();await saveValues();const{error}=await sb.rpc("assign_request_additional_approval",{p_request_id:S.selected.id,p_area_id:areaId,p_approver_id:approverId,p_note:note});if(error)return toast(error.message);await openRequest(S.selected.id);toast("Enviado ao aprovador adicional.");};
-window.respondAdditionalApproval=async status=>{const note=$("#approvalResponseNote").value.trim();if(!note)return toast("Informe o parecer.");const{error}=await sb.rpc("respond_request_additional_approval",{p_request_id:S.selected.id,p_status:status,p_note:note});if(error)return toast(error.message);await openRequest(S.selected.id);toast("Parecer registrado e devolvido ao C&R.");};
-window.clearAdditionalApproval=async()=>{const{error}=await sb.rpc("close_request_additional_approval",{p_request_id:S.selected.id});if(error)return toast(error.message);await openRequest(S.selected.id);toast("Validação adicional encerrada. O C&R pode concluir ou devolver ao Gestor.");};
+window.sendAdditionalApproval=async()=>{const sel=$("#additionalApprover"),approverId=sel.value;if(!approverId)return toast("Selecione o aprovador.");const areaId=sel.selectedOptions[0]?.dataset.area,note=$("#additionalApprovalNote").value.trim();await saveValues();const{error}=await sb.rpc("assign_request_additional_approval",{p_request_id:S.selected.id,p_area_id:areaId,p_approver_id:approverId,p_note:note});if(error)return toastErro(error);await openRequest(S.selected.id);toast("Enviado ao aprovador adicional.");};
+window.respondAdditionalApproval=async status=>{const note=$("#approvalResponseNote").value.trim();if(!note)return toast("Informe o parecer.");const{error}=await sb.rpc("respond_request_additional_approval",{p_request_id:S.selected.id,p_status:status,p_note:note});if(error)return toastErro(error);await openRequest(S.selected.id);toast("Parecer registrado e devolvido ao C&R.");};
+window.clearAdditionalApproval=async()=>{const{error}=await sb.rpc("close_request_additional_approval",{p_request_id:S.selected.id});if(error)return toastErro(error);await openRequest(S.selected.id);toast("Validação adicional encerrada. O C&R pode concluir ou devolver ao Gestor.");};
 
 window.saveFinalJobCode=async()=>{const input=$("#finalJobCode"),code=input.value.trim();if(!code)return toast("Informe o código do cargo.");if(code.length>30)return toast("O código deve ter no máximo 30 caracteres.");input.disabled=true;try{await saveValues();const{error}=await sb.rpc("cr_set_request_job_code",{p_request_id:S.selected.id,p_job_code:code});if(error)throw error;S.selected.job_code=code;await openRequest(S.selected.id);toast("Código do cargo salvo com sucesso.");}catch(error){toast("Não foi possível salvar o código: "+(error.details||error.message));}finally{if(input)input.disabled=false;}};
-window.sendManagerFinalReview=async()=>{const reason=prompt("Orientação para a conferência do Gestor:","Confira todos os campos preenchidos e devolva para C&R.")||"";if(!reason.trim())return;await saveValues();const{error}=await sb.rpc("cr_send_optional_manager_review",{p_request_id:S.selected.id,p_reason:reason});if(error)return toast(error.message);await load();show("dashboard");toast("Enviado ao Gestor para conferência opcional.");};
+window.sendManagerFinalReview=async()=>{const reason=prompt("Orientação para a conferência do Gestor:","Confira todos os campos preenchidos e devolva para C&R.")||"";if(!reason.trim())return;await saveValues();const{error}=await sb.rpc("cr_send_optional_manager_review",{p_request_id:S.selected.id,p_reason:reason});if(error)return toastErro(error);await load();show("dashboard");toast("Enviado ao Gestor para conferência opcional.");};
 
 window.transition = async (action) => {
   if(action === "approve" && !String(S.selected.job_code||"").trim()) return toast("Informe e salve o código do cargo antes da aprovação final.");
@@ -672,7 +744,7 @@ window.transition = async (action) => {
     p_reason: reason,
     p_values: values(),
   });
-  if (error) return toast(error.message);
+  if (error) return toastErro(error);
   await sb.functions
     .invoke("notify-workflow", {
       body: { request_id: S.selected.id, event: action },
@@ -709,7 +781,7 @@ $("#codeForm").onsubmit = async (e) => {
     f.reset();
     toast("Novo código aplicado. O anterior deixou de funcionar.");
   } catch (err) {
-    toast(err.message);
+    toastErro(error);
   }
 };
 const MODEL_MARKERS = [
@@ -809,7 +881,7 @@ $("#saveModelMapping").onclick = async () => {
     { error } = await sb.rpc("save_document_field_mappings", {
       p_mappings: rows,
     });
-  if (error) return toast(error.message);
+  if (error) return toastErro(error);
   await loadModelMappings();
   toast("Configuração do documento salva.");
 };
@@ -903,7 +975,7 @@ window.downloadCurrentModel=async(stage)=>{
     const validation=validateCurrentModelData();if(validation)return toast(validation);
     await saveValues();
     chooseModel(S.selected.id,stage||"CR");
-  }catch(err){toast("Não foi possível preparar o modelo: "+err.message);}
+  }catch(err){toast({titulo:"Não foi possível preparar o modelo.",tecnico:err.message,tipo:"erro"});}
 };
 window.chooseModel = (id, stage="APPROVED") => {
   let f = $("#modelForm");
@@ -1125,7 +1197,7 @@ window.editField = (id) => {
 window.removeField = async (id) => {
   if (!confirm("Remover ou desativar este campo?")) return;
   let { data, error } = await sb.rpc("admin_remove_field", { p_id: id });
-  if (error) return toast(error.message);
+  if (error) return toastErro(error);
   await load();
   toast(
     data === "deleted"
@@ -1182,14 +1254,14 @@ function renderCompaniesAdmin(){
   $("#branchAdminList").innerHTML=S.branches.map(x=>`<div class="admin-row"><span>${esc(x.name)} <small>${esc(S.companies.find(c=>c.id===x.company_id)?.name||"")} · ${x.active?"Ativa":"Inativa"}</small></span><div class="admin-actions"><button class="btn ghost" onclick="editBranch(${jsq(x.id)})">Editar</button><button class="btn ghost" onclick="toggleBranch(${jsq(x.id)},${!x.active})">${x.active?"Desativar":"Reativar"}</button><button class="btn danger-soft" onclick="deleteBranch(${jsq(x.id)})">Excluir</button></div></div>`).join("");
   fillCompanySelects();
 }
-$("#companyForm").onsubmit=async e=>{e.preventDefault();const name=e.target.name.value.trim(),{error}=await sb.from("companies").insert({name});if(error)return toast(error.message);e.target.reset();await load();toast("Empresa cadastrada.");};
-$("#branchForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target)),{error}=await sb.from("branches").insert(b);if(error)return toast(error.message);e.target.reset();await load();toast("Filial cadastrada.");};
-window.toggleCompany=async(id,active)=>{const{error}=await sb.from("companies").update({active,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await load();toast(active?"Empresa reativada.":"Empresa desativada.");};
-window.toggleBranch=async(id,active)=>{const{error}=await sb.from("branches").update({active,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await load();toast(active?"Filial reativada.":"Filial desativada.");};
-window.editCompany=async id=>{const x=S.companies.find(v=>v.id===id);if(!x)return;const name=prompt("Novo nome da empresa:",x.name)?.trim();if(!name||name===x.name)return;const{error}=await sb.from("companies").update({name,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await load();toast("Empresa atualizada.");};
-window.editBranch=async id=>{const x=S.branches.find(v=>v.id===id);if(!x)return;const name=prompt("Novo nome da filial:",x.name)?.trim();if(!name)return;const companyName=prompt("Empresa da filial (digite exatamente o nome):",S.companies.find(c=>c.id===x.company_id)?.name||"")?.trim();if(!companyName)return;const company=S.companies.find(c=>c.name.toLowerCase()===companyName.toLowerCase());if(!company)return toast("Empresa não encontrada.");const{error}=await sb.from("branches").update({name,company_id:company.id,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toast(error.message);await load();toast("Filial atualizada.");};
-window.deleteCompany=async id=>{const x=S.companies.find(v=>v.id===id);if(!x||!confirm(`Excluir a empresa ${x.name}?`))return;const [br,rq,pf]=await Promise.all([sb.from("branches").select("id",{count:"exact",head:true}).eq("company_id",id),sb.from("requests").select("id",{count:"exact",head:true}).eq("company",x.name),sb.from("profiles").select("id",{count:"exact",head:true}).eq("company",x.name)]);if(br.error||rq.error||pf.error)return toast(br.error?.message||rq.error?.message||pf.error?.message);if((br.count||0)+(rq.count||0)+(pf.count||0)>0)return toast("Não é possível excluir: existem filiais, solicitações ou usuários vinculados. Desative a empresa.");const{error}=await sb.from("companies").delete().eq("id",id);if(error)return toast(error.message);await load();toast("Empresa excluída.");};
-window.deleteBranch=async id=>{const x=S.branches.find(v=>v.id===id),company=S.companies.find(c=>c.id===x?.company_id);if(!x||!confirm(`Excluir a filial ${x.name}?`))return;const [rq,pf]=await Promise.all([sb.from("requests").select("id",{count:"exact",head:true}).eq("company",company?.name||"").eq("branch",x.name),sb.from("profiles").select("id",{count:"exact",head:true}).eq("company",company?.name||"").eq("branch",x.name)]);if(rq.error||pf.error)return toast(rq.error?.message||pf.error?.message);if((rq.count||0)+(pf.count||0)>0)return toast("Não é possível excluir: existem solicitações ou usuários vinculados. Desative a filial.");const{error}=await sb.from("branches").delete().eq("id",id);if(error)return toast(error.message);await load();toast("Filial excluída.");};
+$("#companyForm").onsubmit=async e=>{e.preventDefault();const name=e.target.name.value.trim(),{error}=await sb.from("companies").insert({name});if(error)return toastErro(error);e.target.reset();await load();toast("Empresa cadastrada.");};
+$("#branchForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target)),{error}=await sb.from("branches").insert(b);if(error)return toastErro(error);e.target.reset();await load();toast("Filial cadastrada.");};
+window.toggleCompany=async(id,active)=>{const{error}=await sb.from("companies").update({active,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toastErro(error);await load();toast(active?"Empresa reativada.":"Empresa desativada.");};
+window.toggleBranch=async(id,active)=>{const{error}=await sb.from("branches").update({active,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toastErro(error);await load();toast(active?"Filial reativada.":"Filial desativada.");};
+window.editCompany=async id=>{const x=S.companies.find(v=>v.id===id);if(!x)return;const name=prompt("Novo nome da empresa:",x.name)?.trim();if(!name||name===x.name)return;const{error}=await sb.from("companies").update({name,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toastErro(error);await load();toast("Empresa atualizada.");};
+window.editBranch=async id=>{const x=S.branches.find(v=>v.id===id);if(!x)return;const name=prompt("Novo nome da filial:",x.name)?.trim();if(!name)return;const companyName=prompt("Empresa da filial (digite exatamente o nome):",S.companies.find(c=>c.id===x.company_id)?.name||"")?.trim();if(!companyName)return;const company=S.companies.find(c=>c.name.toLowerCase()===companyName.toLowerCase());if(!company)return toast("Empresa não encontrada.");const{error}=await sb.from("branches").update({name,company_id:company.id,updated_at:new Date().toISOString()}).eq("id",id);if(error)return toastErro(error);await load();toast("Filial atualizada.");};
+window.deleteCompany=async id=>{const x=S.companies.find(v=>v.id===id);if(!x||!confirm(`Excluir a empresa ${x.name}?`))return;const [br,rq,pf]=await Promise.all([sb.from("branches").select("id",{count:"exact",head:true}).eq("company_id",id),sb.from("requests").select("id",{count:"exact",head:true}).eq("company",x.name),sb.from("profiles").select("id",{count:"exact",head:true}).eq("company",x.name)]);if(br.error||rq.error||pf.error)return toast(br.error?.message||rq.error?.message||pf.error?.message);if((br.count||0)+(rq.count||0)+(pf.count||0)>0)return toast("Não é possível excluir: existem filiais, solicitações ou usuários vinculados. Desative a empresa.");const{error}=await sb.from("companies").delete().eq("id",id);if(error)return toastErro(error);await load();toast("Empresa excluída.");};
+window.deleteBranch=async id=>{const x=S.branches.find(v=>v.id===id),company=S.companies.find(c=>c.id===x?.company_id);if(!x||!confirm(`Excluir a filial ${x.name}?`))return;const [rq,pf]=await Promise.all([sb.from("requests").select("id",{count:"exact",head:true}).eq("company",company?.name||"").eq("branch",x.name),sb.from("profiles").select("id",{count:"exact",head:true}).eq("company",company?.name||"").eq("branch",x.name)]);if(rq.error||pf.error)return toast(rq.error?.message||pf.error?.message);if((rq.count||0)+(pf.count||0)>0)return toast("Não é possível excluir: existem solicitações ou usuários vinculados. Desative a filial.");const{error}=await sb.from("branches").delete().eq("id",id);if(error)return toastErro(error);await load();toast("Filial excluída.");};
 function fillCompanySelects() {
   const opts='<option value="">Selecione...</option>'+S.companies.filter(x=>x.active).map(x=>`<option value="${esc(x.name)}" data-id="${x.id}">${esc(x.name)}</option>`).join("");
   $("#requestForm").company.innerHTML=opts;
@@ -1202,11 +1274,11 @@ $("#workflowList").innerHTML=S.workflows.map(x=>`<div class="admin-row"><span><b
 $("#workflowStepForm").workflow_id.innerHTML='<option value="">Modelo...</option>'+S.workflows.filter(x=>!x.is_default).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
 $("#workflowStepForm").approval_area_id.innerHTML='<option value="">Área...</option>'+S.approvalAreas.filter(x=>x.active).map(x=>`<option value="${x.id}">${esc(x.name)}</option>`).join("");
 $("#workflowStepList").innerHTML=S.workflowSteps.map(x=>`<div class="admin-row"><span>${x.sort_order}. ${esc(x.step_name)} <small>${x.responsible_type} · ${x.action_type}</small></span>${S.workflows.find(w=>w.id===x.workflow_id)?.is_default?"":`<button class="btn danger-soft" onclick="deleteWorkflowStep(${jsq(x.id)})">Excluir</button>`}</div>`).join("");}
-$("#approvalAreaForm").onsubmit=async e=>{e.preventDefault();const{error}=await sb.from("approval_areas").insert({name:e.target.name.value.trim()});if(error)return toast(error.message);e.target.reset();await load();};
-$("#workflowForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target)),{error}=await sb.from("workflow_templates").insert(b);if(error)return toast(error.message);e.target.reset();await load();};
-$("#workflowStepForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));b.sort_order=Number(b.sort_order);b.approval_area_id=b.responsible_type==="AREA"?(b.approval_area_id||null):null;if(b.responsible_type==="AREA"&&!b.approval_area_id)return toast("Selecione a área.");const{error}=await sb.from("workflow_steps").insert(b);if(error)return toast(error.message);e.target.reset();await load();};
+$("#approvalAreaForm").onsubmit=async e=>{e.preventDefault();const{error}=await sb.from("approval_areas").insert({name:e.target.name.value.trim()});if(error)return toastErro(error);e.target.reset();await load();};
+$("#workflowForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target)),{error}=await sb.from("workflow_templates").insert(b);if(error)return toastErro(error);e.target.reset();await load();};
+$("#workflowStepForm").onsubmit=async e=>{e.preventDefault();const b=Object.fromEntries(new FormData(e.target));b.sort_order=Number(b.sort_order);b.approval_area_id=b.responsible_type==="AREA"?(b.approval_area_id||null):null;if(b.responsible_type==="AREA"&&!b.approval_area_id)return toast("Selecione a área.");const{error}=await sb.from("workflow_steps").insert(b);if(error)return toastErro(error);e.target.reset();await load();};
 window.toggleApprovalArea=async(id,active)=>{await sb.from("approval_areas").update({active}).eq("id",id);await load();};
-window.toggleWorkflow=async(id,active)=>{if(active)await sb.from("workflow_templates").update({active:false}).eq("is_default",false);const{error}=await sb.from("workflow_templates").update({active}).eq("id",id);if(error)return toast(error.message);await load();};
+window.toggleWorkflow=async(id,active)=>{if(active)await sb.from("workflow_templates").update({active:false}).eq("is_default",false);const{error}=await sb.from("workflow_templates").update({active}).eq("id",id);if(error)return toastErro(error);await load();};
 window.deleteWorkflowStep=async id=>{if(confirm("Excluir etapa?")){await sb.from("workflow_steps").delete().eq("id",id);await load();}};
 
 // Navegacao principal: registra os cliques fora da funcao show().
@@ -1264,14 +1336,81 @@ function syncRequestValidation(){
 
 let jobTimer;
 function jobLabel(x){return `${x.job_code} — ${x.full_name||x.job_name||"Cargo sem nome"}`;}
-function renderJobOptions(){
- const box=$("#existingJobOptions"),input=$("#existingJobSearch");
- if(!S.jobSearchResults.length){box.innerHTML='<div class="job-empty">Nenhum cargo encontrado.</div>';box.classList.remove("hidden");input.setAttribute("aria-expanded","true");return;}
- box.innerHTML=S.jobSearchResults.map((x,i)=>`<button type="button" class="job-option" role="option" data-index="${i}"><span class="job-option-code">${esc(x.job_code)}</span><span class="job-option-main"><b>${esc(x.full_name||x.job_name||"Cargo sem nome")}</b><small>${esc(x.company||"")}${x.level?` • ${esc(x.level)}`:""}</small></span></button>`).join("");
- box.classList.remove("hidden");input.setAttribute("aria-expanded","true");
- box.querySelectorAll(".job-option").forEach(btn=>btn.onclick=()=>{const x=S.jobSearchResults[Number(btn.dataset.index)];input.value=jobLabel(x);box.classList.add("hidden");input.setAttribute("aria-expanded","false");selectExistingJob(x);});
+const JOB_BUSCA_LIMITE = 200;
+function nomeSuspeito(x) {
+  const nome = String(x.full_name || x.job_name || "").trim();
+  const codigo = String(x.job_code || "").trim();
+  return !nome || nome === codigo || /^\d+$/.test(nome) || nome.length <= 2;
 }
-$("#existingJobSearch").oninput=e=>{clearTimeout(jobTimer);const q=e.target.value.trim();$("#requestForm").source_job_id.value="";if(q.length<2){$("#existingJobOptions").classList.add("hidden");return;}jobTimer=setTimeout(async()=>{const {data,error}=await sb.rpc("search_job_catalog",{p_query:q});if(error){console.error(error);return;}S.jobSearchResults=data||[];renderJobOptions();},250);};
+function renderJobOptions(q) {
+  const box = $("#existingJobOptions"), input = $("#existingJobSearch");
+  const termo = String(q ?? input.value ?? "").trim();
+  box.classList.remove("hidden");
+  input.setAttribute("aria-expanded", "true");
+
+  if (!S.jobSearchResults.length) {
+    box.innerHTML = `<div class="job-empty"><b>Nenhum cargo encontrado para “${esc(termo)}”.</b>
+<span>A pesquisa já ignora acentos e maiúsculas, e aceita palavras soltas (“analista dados” encontra “ANALISTA DE DADOS”).</span>
+<span>Vale tentar: escrever menos palavras, pesquisar só pelo <b>código</b>, ou procurar pelo nome da <b>empresa</b>.</span>
+<span>Se o cargo é novo e ainda não está na planilha, o ADMIN pode incluí-lo em <b>Base de cargos → Cargos cadastrados</b>.</span></div>`;
+    return;
+  }
+
+  const total = S.jobSearchResults.length;
+  const cortou = total >= JOB_BUSCA_LIMITE;
+  const inativos = S.jobSearchResults.filter((x) => x.active === false).length;
+  const suspeitos = S.jobSearchResults.filter(nomeSuspeito).length;
+
+  const cabecalho = `<div class="job-head">${total} cargo${total > 1 ? "s" : ""} encontrado${total > 1 ? "s" : ""}${inativos ? ` · ${inativos} inativo${inativos > 1 ? "s" : ""}` : ""}`
+    + (cortou ? `<b> · lista cortada no limite, escreva mais palavras para afinar</b>` : "")
+    + (suspeitos ? `<b> · ${suspeitos} com cadastro incompleto na base</b>` : "")
+    + `</div>`;
+
+  box.innerHTML = cabecalho + S.jobSearchResults.map((x, i) => {
+    const nome = String(x.full_name || x.job_name || "").trim();
+    const detalhes = [x.company, x.career_track, x.level].filter(Boolean).map(esc).join(" · ");
+    const marcas =
+      (x.active === false ? `<span class="job-tag inativo">Inativo</span>` : "") +
+      (nomeSuspeito(x) ? `<span class="job-tag alerta">Cadastro incompleto</span>` : "");
+    return `<button type="button" class="job-option${x.active === false ? " inativo" : ""}" role="option" data-index="${i}">
+<span class="job-option-code">${esc(x.job_code)}</span>
+<span class="job-option-main"><b>${esc(nome || "Cargo sem nome na base")}</b>
+<small>${detalhes || "Empresa não informada"}</small>${marcas ? `<span class="job-tags">${marcas}</span>` : ""}</span></button>`;
+  }).join("");
+
+  box.querySelectorAll(".job-option").forEach((btn) => btn.onclick = () => {
+    const x = S.jobSearchResults[Number(btn.dataset.index)];
+    input.value = jobLabel(x);
+    box.classList.add("hidden");
+    input.setAttribute("aria-expanded", "false");
+    selectExistingJob(x);
+  });
+}
+$("#existingJobSearch").oninput=e=>{
+  clearTimeout(jobTimer);
+  const q=e.target.value.trim();
+  $("#requestForm").source_job_id.value="";
+  const box=$("#existingJobOptions");
+  if(q.length<2){
+    if(q.length===1){box.innerHTML='<div class="job-empty"><b>Digite pelo menos 2 caracteres.</b><span>Pode ser parte do nome do cargo, o código ou o nome da empresa.</span></div>';box.classList.remove("hidden");}
+    else box.classList.add("hidden");
+    return;
+  }
+  box.innerHTML='<div class="job-empty"><b>Procurando “'+esc(q)+'”...</b></div>';
+  box.classList.remove("hidden");
+  jobTimer=setTimeout(async()=>{
+    const {data,error}=await sb.rpc("search_job_catalog",{p_query:q,p_include_inactive:true,p_limit:JOB_BUSCA_LIMITE});
+    if(error){
+      console.error(error);
+      const amigavel=erroAmigavel(error,"pesquisar os cargos");
+      box.innerHTML='<div class="job-empty"><b>'+esc(amigavel.titulo)+'</b><span>'+esc(amigavel.detalhe||"")+'</span></div>';
+      box.classList.remove("hidden");
+      return;
+    }
+    S.jobSearchResults=data||[];
+    renderJobOptions(q);
+  },250);
+};
 $("#existingJobSearch").onfocus=()=>{if(S.jobSearchResults.length)renderJobOptions();};
 document.addEventListener("click",e=>{if(!e.target.closest(".job-combobox")){$("#existingJobOptions")?.classList.add("hidden");}});
 async function selectExistingJob(x){
@@ -1288,8 +1427,11 @@ $("#requestForm").company.onchange=fillBranches;
 $("#requestForm").onsubmit = async (e) => {
   e.preventDefault();
   let form=e.target;form.noValidate=true;syncRequestValidation();let b=Object.fromEntries(new FormData(form));
-  if (!b.manager_id) return toast("Selecione um Gestor ativo.");
-  if (b.request_type === "UPDATE" && !b.source_job_id) return toast("Selecione um cargo válido da base.");
+  if (!b.manager_id) return toast({titulo:"Selecione um Gestor.",detalhe:"Digite o nome ou e-mail no campo \"Pesquisar gestor\" e clique em um resultado da lista.",tipo:"erro"});
+  if (b.request_type === "UPDATE" && !b.source_job_id) return toast({titulo:"Selecione o cargo que será atualizado.",detalhe:"Pesquise pelo código ou pelo nome em \"Pesquisar cargo vigente\" e clique no resultado desejado.",tipo:"erro"});
+  if (S.profile.role !== "GESTOR" && !dataOuNulo(b.deadline)) return toast({titulo:"Informe o prazo da solicitação.",detalhe:"O prazo define até quando o Gestor deve responder. Escolha uma data no calendário.",tipo:"erro"});
+  if (!String(b.title || "").trim()) return toast({titulo:"Informe o nome do cargo.",detalhe:"É o título que aparecerá no documento final.",tipo:"erro"});
+  if (!String(b.sector || "").trim()) return toast({titulo:"Informe o setor / área do cargo.",detalhe:"Ajuda a identificar onde o cargo está alocado.",tipo:"erro"});
   if (S.profile.role === "GESTOR") {
     const selectedSections=[...form.querySelectorAll('[name="update_sections"]:checked')].map(x=>x.value);const suggestedValues={};selectedSections.forEach(key=>{suggestedValues[key]=(form.querySelector(`[name="suggested_${key}"]`)?.value||'').trim();});if(b.request_type==="UPDATE"&&!selectedSections.length)return toast("Selecione pelo menos um campo que precisa ser atualizado.");const missingSuggestion=selectedSections.find(key=>!suggestedValues[key]);if(missingSuggestion)return toast("Informe a alteração sugerida para: "+sectionLabel(missingSuggestion));const initialValues={};S.fields.filter(x=>x.active&&x.owner_role==="GESTOR").forEach(f=>{const el=form.querySelector(`[name="initial_${f.field_key}"]`);if(!el)return;const value=el.type==="checkbox"?(el.checked?"true":""):String(el.value||"").trim();if(value)initialValues[f.id]=value;});const payload={p_request_type:b.request_type,p_title:b.title,p_company:b.company,p_branch:b.branch,p_sector:b.sector,p_justification:b.justification||null,p_source_job_id:b.source_job_id||null,p_update_sections:selectedSections,p_manager_initial_values:initialValues,p_suggested_values:suggestedValues};const submitBtn=form.querySelector('button[type="submit"]');submitBtn.disabled=true;submitBtn.textContent="Criando...";try{const intake=await sb.rpc("create_manager_intake_request_v2",payload);if(intake.error){console.error("Falha RPC create_manager_intake_request_v2",intake.error,payload);throw new Error(intake.error.details||intake.error.hint||intake.error.message);}$("#requestDialog").close();form.reset();S.selectedJobDetails=null;await loadManagerIntakes();renderManagerIntakes();toast("Solicitação enviada para triagem de C&R.");return;}catch(err){console.error("Erro ao criar solicitação do Gestor",err);toast("Não foi possível criar a solicitação. Execute o SQL final v47 no Supabase. Detalhe: "+(err.message||"erro não identificado"));return;}finally{submitBtn.disabled=false;submitBtn.textContent="Criar solicitação";}
   }
@@ -1302,9 +1444,9 @@ $("#requestForm").onsubmit = async (e) => {
     p_company: b.company,
     p_branch: b.branch,
     p_manager_id: b.manager_id,
-    p_deadline: b.deadline,
+    p_deadline: dataOuNulo(b.deadline),
   });
-  if (error) return toast(error.message);
+  if (error) return toastErro(error, "criar a solicitação");
   const kindSave=await sb.rpc("cr_mark_request_kind",{p_request_id:requestId,p_request_kind:b.request_type});
   if(kindSave.error) return toast("Solicitação criada, mas não foi possível registrar o tipo: "+kindSave.error.message);
   if(b.request_type==="UPDATE"){const scopeSave=await sb.rpc("cr_set_request_update_scope",{p_request_id:requestId,p_source_job_id:b.source_job_id,p_update_sections:crSelectedSections,p_source_snapshot:S.selectedJobDetails||{},p_current_values:currentValues});if(scopeSave.error)return toast("Solicitação criada, mas não foi possível salvar os conteúdos para revisão: "+scopeSave.error.message);}
@@ -1378,7 +1520,7 @@ $("#managerForm").onsubmit = async (e) => {
     $("#generatedManagerCode").textContent = data.access_code;
     $("#managerSuccessDialog").showModal();
   } catch (err) {
-    toast(err.message);
+    toastErro(error);
   } finally {
     submit.disabled = false;
     submit.textContent = "Criar acesso e gerar código";
@@ -1414,7 +1556,7 @@ $("#editUserForm").onsubmit = async (e) => {
     await load();
     toast("Usuário atualizado.");
   } catch (err) {
-    toast(err.message);
+    toastErro(error);
   }
 };
 window.regenerateCode = async (id) => {
@@ -1425,7 +1567,7 @@ window.regenerateCode = async (id) => {
     $("#generatedManagerCode").textContent = data.access_code;
     $("#managerSuccessDialog").showModal();
   } catch (err) {
-    toast(err.message);
+    toastErro(error);
   }
 };
 window.toggleUser = async (id, active) => {
@@ -1436,7 +1578,7 @@ window.toggleUser = async (id, active) => {
     await load();
     toast(active ? "Usuário reativado." : "Usuário desativado.");
   } catch (err) {
-    toast(err.message);
+    toastErro(error);
   }
 };
 $("#copyManagerCode").onclick = async () => {
@@ -1480,7 +1622,7 @@ $("#fieldForm").onsubmit = async (e) => {
       p_sort_order: +f.sort_order.value,
       p_active: f.active.checked,
     });
-  if (error) return toast(error.message);
+  if (error) return toastErro(error);
   if(S.profile?.role==="ADMIN"){
     const updateSave=await sb.rpc("admin_set_field_update_editable",{p_field_id:f.id.value||null,p_label:f.label.value,p_update_editable:f.update_editable.checked});
     if(updateSave.error)return toast("Campo salvo, mas não foi possível configurar a edição em atualizações: "+updateSave.error.message);
@@ -1870,7 +2012,7 @@ async function loadJobBaseOverview() {
     sb.rpc("admin_list_import_profiles"),
   ]);
   if (overview.error) {
-    jbStatus("Execute o arquivo supabase-base-cargos-admin-v74.sql no Supabase para habilitar esta tela. Detalhe: " + overview.error.message, "error");
+    jbStatus("Execute o arquivo supabase-base-cargos-admin-v75.sql no Supabase para habilitar esta tela. Detalhe: " + overview.error.message, "error");
     return;
   }
   JB.overview = typeof overview.data === "string" ? JSON.parse(overview.data) : overview.data;
@@ -2089,6 +2231,41 @@ async function jbExportBase() {
   } finally {
     JB.busy = false; btn.disabled = false; btn.textContent = oldLabel;
   }
+}
+
+
+/* --------- Diagnóstico da base: explica cargos com cadastro estranho --------- */
+const PROBLEMA_TEXTO = {
+  sem_nome: ["Sem nome de cargo", "A coluna do nome não foi preenchida ou não foi mapeada na última importação."],
+  nome_igual_ao_codigo: ["Nome igual ao código", "Sinal clássico de coluna trocada: o nome do cargo recebeu o valor do código. Reimporte apontando a coluna certa em “De onde vem cada informação”."],
+  nome_so_numeros: ["Nome só com números", "O nome do cargo veio de uma coluna numérica. Confira o mapeamento da coluna “Cargo”."],
+  nome_muito_curto: ["Nome muito curto", "Com uma ou duas letras o cargo fica impossível de achar na pesquisa."],
+};
+async function loadJobQuality() {
+  if (!admin()) return;
+  const host = $("#jobQualityBox");
+  if (!host) return;
+  const { data, error } = await sb.rpc("admin_job_quality");
+  if (error) { host.closest(".card").classList.add("hidden"); return; }
+  const d = typeof data === "string" ? JSON.parse(data) : data || {};
+  JB.quality = d;
+  const card = host.closest(".card");
+  const problemas = Object.entries(d.por_problema || {});
+  if (!problemas.length && !d.sem_descricao && !d.inativos) { card.classList.add("hidden"); return; }
+  card.classList.remove("hidden");
+
+  const linhas = problemas.map(([chave, qtd]) => {
+    const [titulo, explica] = PROBLEMA_TEXTO[chave] || [chave, ""];
+    return `<div class="quality-row"><span class="quality-count">${qtd}</span><span><b>${esc(titulo)}</b><small>${esc(explica)}</small></span></div>`;
+  }).join("");
+
+  const neutras = [
+    d.inativos ? `<div class="quality-row neutra"><span class="quality-count">${d.inativos}</span><span><b>Cargos inativos</b><small>Não aparecem como “vigentes” na criação de solicitações. Eles continuam na pesquisa, marcados como Inativo, e podem ser reativados na lista abaixo.</small></span></div>` : "",
+    d.sem_descricao ? `<div class="quality-row neutra"><span class="quality-count">${d.sem_descricao}</span><span><b>Sem descrição nem atividades</b><small>O cargo existe na base, mas sem conteúdo descritivo. É normal para cargos antigos; o documento sai com “Não informado” nesses campos.</small></span></div>` : "",
+  ].join("");
+
+  host.innerHTML = (linhas || "") + neutras +
+    (d.exemplos?.length ? `<details class="quality-exemplos"><summary>Ver exemplos (${d.exemplos.length})</summary>${d.exemplos.map((e) => `<div class="quality-exemplo"><b>${esc(e.job_code)}</b> — ${esc(e.full_name || e.job_name || "(sem nome)")} <small>${esc(e.company || "")}</small></div>`).join("")}</details>` : "");
 }
 
 /* ------------------------- Cargos cadastrados ------------------------- */
