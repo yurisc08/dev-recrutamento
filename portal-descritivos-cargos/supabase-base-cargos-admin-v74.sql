@@ -805,6 +805,28 @@ create index if not exists idx_job_catalog_source on public.job_catalog(source);
 notify pgrst,'reload schema';
 
 -- ---------------------------------------------------------------------
+-- 9.1 Protecao da tabela de cargos (RLS)
+-- ---------------------------------------------------------------------
+-- Sem RLS, qualquer usuario autenticado alcanca a tabela direto pela API do
+-- Supabase, com a chave publicavel que vai no config.js — inclusive para
+-- ESCREVER, dependendo dos grants. Aqui ligamos o RLS e criamos apenas uma
+-- policy de LEITURA para usuarios autenticados:
+--   * leitura continua funcionando igual para tudo que ja lia a tabela;
+--   * insert/update/delete diretos pela API ficam bloqueados;
+--   * as funcoes acima (security definer, donas da tabela) seguem gravando
+--     normalmente, porque contornam o RLS.
+alter table public.job_catalog enable row level security;
+
+drop policy if exists job_catalog_leitura_autenticada on public.job_catalog;
+create policy job_catalog_leitura_autenticada
+  on public.job_catalog
+  for select
+  to authenticated
+  using (true);
+
+-- As tabelas de importacao continuam sem policy nenhuma: so as funcoes leem.
+
+-- ---------------------------------------------------------------------
 -- 10. Diagnostico
 -- ---------------------------------------------------------------------
 select
@@ -814,15 +836,11 @@ select
 from public.job_catalog;
 
 -- 10.1 CONFERENCIA DE SEGURANCA
--- As tabelas criadas aqui ficam com RLS ligado e SEM policy: so as funcoes
--- acima (security definer, que exigem perfil ADMIN) conseguem le-las.
--- A consulta abaixo mostra o estado de RLS de cada tabela envolvida.
--- Se job_catalog aparecer com rls_ligado = false, qualquer usuario autenticado
--- consegue ler a tabela inteira direto pela API, sem passar pelas funcoes.
--- Neste projeto o portal nunca le job_catalog direto (usa search_job_catalog e
--- get_job_catalog_details), entao ligar o RLS costuma ser seguro:
---     alter table public.job_catalog enable row level security;
--- Confirme antes se nao existe outro sistema lendo a tabela diretamente.
+-- Esperado apos rodar este arquivo:
+--   job_catalog          rls_ligado = t, policies = 1  (somente leitura)
+--   job_import_*         rls_ligado = t, policies = 0  (so as funcoes acessam)
+-- Se profiles aparecer com rls_ligado = f, vale revisar essa tabela tambem:
+-- ela guarda os cadastros de acesso e nao faz parte desta entrega.
 select
   c.relname               as tabela,
   c.relrowsecurity        as rls_ligado,

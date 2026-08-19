@@ -115,50 +115,79 @@ código em empresas diferentes é permitido, porque é assim que a base real fun
 
 ---
 
-## 6. Pontos de atenção de segurança
+## 6. Segurança
 
-**O que já está protegido:**
+### O que protege o sistema
 
-* toda função do banco é `security definer` com `set search_path` fixo e confere o
-  perfil ADMIN no servidor — as verificações da tela são só conveniência;
-* as tabelas criadas aqui (`job_import_runs`, `job_import_stage`,
-  `job_import_profiles`) ficam com RLS ligado e **sem policy**: só as funções
-  conseguem lê-las;
-* todo dado vindo da planilha é escapado antes de ir para a tela, e as ações da
-  lista de cargos usam `data-attributes` em vez de `onclick` — assim o conteúdo de
-  uma planilha não consegue virar código executado no navegador do ADMIN;
-* nenhuma chave de servidor (`service_role`) vai no pacote publicado.
+**A regra que vale para qualquer aplicação web: o código que roda no navegador é
+público.** Ctrl+U, as ferramentas de desenvolvedor, a aba de rede ou um simples
+`curl` mostram o `index.html`, o `styles.css` e o `config.js` para qualquer pessoa
+que abra o site. Não existe forma de impedir isso — bloquear Ctrl+U ou o botão
+direito é contornado em segundos e não protege nada. Minificar embaralha a leitura,
+mas o código continua todo lá.
 
-**Duas coisas que dependem de uma ação sua:**
+Por isso a proteção **não depende de esconder o código**. Ela está no servidor:
 
-1. **Leitor de planilhas (`vendor/xlsx.mjs`) na versão 0.18.5.** É a última publicada
-   no npm, e tem dois avisos de segurança em aberto — *prototype pollution*
-   ([GHSA-4r6h-8v6p-xvw6](https://github.com/advisories/GHSA-4r6h-8v6p-xvw6),
-   corrigido na 0.19.3) e *ReDoS*
-   ([GHSA-5pgg-2g8v-p4x9](https://github.com/advisories/GHSA-5pgg-2g8v-p4x9),
-   corrigido na 0.20.2). As versões corrigidas saíram do npm e só existem no CDN do
-   próprio SheetJS. O código funciona igual com a versão nova — é só **trocar o
-   arquivo**, sem mexer em mais nada:
+* a chave do `config.js` é a *publicável* (`sb_publishable_`), feita para ficar
+  exposta; nenhuma chave de servidor (`service_role`) vai no pacote;
+* todas as 15 funções do banco são `security definer`, com `set search_path` fixo,
+  e **conferem o perfil ADMIN no servidor**. As checagens da tela são só
+  conveniência — quem chamar a função direto pela API recebe erro;
+* a tabela `job_catalog` fica com RLS ligado e apenas uma policy de **leitura**:
+  ninguém escreve nela pela API, só as funções. As tabelas de importação não têm
+  policy nenhuma — nem leitura;
+* todas as referências a tabelas dentro das funções são qualificadas com `public.`,
+  o que impede o truque de sombrear uma tabela por `pg_temp`;
+* a única consulta dinâmica (`admin_job_delete`) é parametrizada, sem concatenação.
 
-   ```
-   curl -o vendor/xlsx.mjs https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs
-   ```
+Em outras palavras: mesmo lendo todo o código-fonte e conhecendo os nomes das
+funções e tabelas, um Gestor não consegue importar, exportar, editar nem apagar
+cargos.
 
-   Depois é só publicar a pasta `vendor/` novamente. Vale fazer isso antes de subir,
-   porque o arquivo lido pode vir de fora e é aberto dentro do navegador do ADMIN.
+### Injeção de código pela tela
 
-2. **RLS da tabela `job_catalog`.** Ao final do SQL há uma conferência que mostra o
-   estado de RLS de cada tabela. Se `job_catalog` aparecer com `rls_ligado = false`,
-   qualquer usuário autenticado consegue ler a tabela inteira direto pela API, sem
-   passar pelas funções. O portal nunca lê essa tabela diretamente (usa
-   `search_job_catalog` e `get_job_catalog_details`), então normalmente é seguro
-   ligar:
+Valor que veio da planilha ou digitado por outro usuário **nunca** é interpolado
+cru dentro de um atributo. Isso importa porque escapar para HTML não basta em
+atributos de evento: o navegador decodifica as entidades **antes** de o JavaScript
+ser lido, então um `&#39;` volta a ser aspa e fecha a string.
 
-   ```sql
-   alter table public.job_catalog enable row level security;
-   ```
+* as ações da lista de cargos usam `data-attributes` lidos via `dataset`, com um
+  listener delegado — sem `onclick` montado por concatenação;
+* os demais botões do portal passam os valores por `jsq()`, que gera um literal de
+  string JavaScript com `&`, `<`, `>`, `"`, `'` e `/` convertidos para `\uXXXX`;
+* os atributos montados a partir da configuração de campos passam por `esc()`.
 
-   Confirme antes se não há outro sistema lendo a tabela direto.
+### Leitura da planilha
+
+O leitor de planilhas roda dentro de uma proteção: se a análise do arquivo criar
+qualquer propriedade em `Object.prototype` — o efeito das falhas do tipo
+*prototype pollution* — as propriedades são removidas na hora, o arquivo é
+recusado e nada dele chega à tela.
+
+Ainda assim, **vale trocar o leitor pela versão corrigida antes de publicar.** O
+`vendor/xlsx.mjs` está na 0.18.5, a última publicada no npm, que tem dois avisos em
+aberto: *prototype pollution*
+([GHSA-4r6h-8v6p-xvw6](https://github.com/advisories/GHSA-4r6h-8v6p-xvw6),
+corrigido na 0.19.3) e *ReDoS*
+([GHSA-5pgg-2g8v-p4x9](https://github.com/advisories/GHSA-5pgg-2g8v-p4x9),
+corrigido na 0.20.2). As versões corrigidas saíram do npm e só existem no CDN do
+SheetJS. O código funciona igual com a versão nova — é só trocar o arquivo:
+
+```
+curl -o vendor/xlsx.mjs https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs
+```
+
+### Conferência ao rodar o SQL
+
+A última consulta do arquivo SQL mostra o estado de RLS de cada tabela. O esperado é:
+
+| tabela | rls_ligado | policies |
+|---|---|---|
+| `job_catalog` | t | 1 (só leitura) |
+| `job_import_runs` / `job_import_stage` / `job_import_profiles` | t | 0 |
+
+Se a tabela `profiles` aparecer com `rls_ligado = f`, vale revisar — ela guarda os
+cadastros de acesso e não faz parte desta entrega.
 
 ---
 
@@ -169,7 +198,7 @@ código em empresas diferentes é permitido, porque é assim que a base real fun
 | `index.html` | Aba **Base de cargos**: importação, exportação e cadastro de cargos. |
 | `styles.css` | Estilos da nova tela. |
 | `supabase-base-cargos-admin-v74.sql` | **Rodar uma vez.** Estrutura e funções de importação, exportação e cadastro. Cumulativo — substitui o v73. |
-| `vendor/xlsx.mjs` | Leitor/gravador de planilhas (SheetJS, licença Apache 2.0), carregado só quando o ADMIN abre a tela. |
+| `vendor/xlsx.mjs` | Leitor/gravador de planilhas (SheetJS, licença Apache 2.0), carregado só quando o ADMIN abre a tela. Veja o item 6 sobre atualizar este arquivo. |
 | `LEIA-ME-BASE-DE-CARGOS.md` | Este documento. |
 
 Nenhum arquivo existente foi removido e o fluxo de solicitações não foi alterado.
