@@ -191,6 +191,30 @@ cadastros de acesso e não faz parte desta entrega.
 
 ---
 
+## 7. Celular e tablet
+
+A aba funciona em celular: o menu superior rola lateralmente e leva sozinho até a
+aba ativa, os cartões do mapeamento e da lista de cargos empilham em uma coluna,
+a tabela de conferência rola dentro do próprio quadro e o formulário de cargo abre
+em tela cheia com rolagem interna. Testado de 320px (iPhone SE, Galaxy S9+) a
+768px (iPad), incluindo escolher a planilha, mapear, conferir, cadastrar, editar e
+exportar — sem rolagem horizontal na página e sem botão menor que 40px.
+
+Uma correção importante entrou aqui: o bloco `<style>` do cabeçalho do
+`index.html` força `#login.login-shell{display:block!important}` abaixo de 700px.
+Como esse seletor tem especificidade maior que `.hidden`, **a tela de login
+continuava visível depois de entrar em qualquer celular**, e o portal só aparecia
+uns 550px abaixo. O `styles.css` agora corrige isso com uma regra de
+especificidade maior.
+
+Observação prática: ler a planilha completa (2.974 cargos) exige memória do
+aparelho. Em celular funciona, mas o passo de leitura leva alguns segundos a mais
+que no computador. Para a atualização mensal da base, o computador continua sendo
+o caminho mais confortável; o celular resolve bem a consulta, o cadastro pontual
+de um cargo e a exportação.
+
+---
+
 ## 7. Arquivos desta versão
 
 | Arquivo | O que mudou |

@@ -289,13 +289,15 @@ input[list]{background-color:#fff}input[list]::-webkit-calendar-picker-indicator
 .preview-table th,.preview-table td{text-align:left;padding:9px 11px;border-bottom:1px solid var(--line);vertical-align:top}
 .preview-table th{background:#f6f0fa;color:var(--purple);font-weight:800;white-space:nowrap}
 .preview-table tr:last-child td{border-bottom:0}
-.checkbox-inline{display:flex!important;align-items:center;gap:9px;font-weight:700;align-self:end}
-.checkbox-inline input{width:auto}
+.checkbox-inline{display:grid!important;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:10px;font-weight:700;align-self:end;margin:0}
+.checkbox-inline input{width:auto;min-width:0;justify-self:start}
+.checkbox-inline > span{min-width:0}
 #jobImportHistory .admin-row small{display:block;color:var(--muted);font-weight:600}
 #jobProgress{height:10px;margin:6px 0 4px}
 @media(max-width:900px){#jobBaseView .metrics{grid-template-columns:repeat(2,1fr)}.map-row{grid-template-columns:1fr}.step-actions{margin-left:0;width:100%}}
-.checkbox-inline.standalone{margin:12px 0 4px;flex-wrap:wrap;gap:8px}
-.checkbox-inline small{font-weight:600}
+.checkbox-inline.standalone{margin:14px 0 4px;align-items:start}
+.checkbox-inline.standalone input{margin-top:3px}
+.checkbox-inline small{font-weight:600;display:block;margin-top:3px}
 /* Cadastro manual de cargos e exportação (v74) */
 .job-row{align-items:flex-start}
 .job-row.inactive{opacity:.62}
@@ -318,3 +320,14 @@ input[list]{background-color:#fff}input[list]::-webkit-calendar-picker-indicator
 #jobBaseView .toolbar .checkbox-inline{flex:0 0 auto;margin:0;white-space:nowrap}
 #jobBaseView .toolbar .checkbox-inline input{flex:0 0 auto;width:auto;min-width:0}
 .import-step .step-actions .checkbox-inline{margin:0;white-space:nowrap}
+@media(max-width:700px){#jobBaseView .step-actions{flex-direction:column;align-items:stretch;gap:10px}#jobBaseView .step-actions .checkbox-inline{white-space:normal}#jobBaseView .row{grid-template-columns:1fr}#jobBaseView .toolbar{flex-direction:column;align-items:stretch}#jobBaseView .toolbar .checkbox-inline{white-space:normal}.job-row .admin-actions .btn{flex:1 1 auto}.list-pager{display:grid;grid-template-columns:1fr 1fr;gap:10px}#jobListCount{grid-column:1/-1;order:-1;text-align:center}}
+
+/* ===================================================================
+   Correções de mobile
+   =================================================================== */
+/* O bloco <style> do cabeçalho força #login.login-shell{display:block!important}
+   abaixo de 700px. Como #login.login-shell (0,1,1,0) tem especificidade maior que
+   .hidden (0,0,1,0), a tela de login continuava visível depois de entrar e o
+   portal começava ~550px abaixo. Esta regra tem especificidade maior ainda. */
+#login.login-shell.hidden,
+#login.hidden { display:none!important; }
