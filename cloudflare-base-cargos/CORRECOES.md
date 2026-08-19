@@ -1,4 +1,4 @@
-# Correções aplicadas sobre o v74 (publicação v78)
+# Correções aplicadas sobre o v74 (publicação v79)
 
 ## 1. Botões de Editar/Desativar não faziam nada
 
@@ -116,3 +116,26 @@ eventos são ignorados quando o perfil já está carregado.
 
 Testado nos cinco cenários (perfil ativo, inativo, inexistente, erro de consulta
 e `active` nulo) e com a renovação de token durante uma solicitação aberta.
+
+## 6. Explicação dos campos ("?") cortada (v79)
+
+O balão do "?" era desenhado dentro do próprio botão, sempre acima dele e preso
+à largura de 300px. Resultado: perto da borda do cartão ou da janela o texto era
+cortado, e explicações longas ficavam numa coluna estreita e alta.
+
+Agora o balão é posicionado na tela, fora do botão:
+
+- ele se ajusta sozinho para caber — abre acima do "?" e, se não houver espaço,
+  abaixo; nunca ultrapassa as margens da janela;
+- ficou mais largo (até 420px, ou a largura da tela no celular), com o texto
+  inteiro visível e rolagem própria só em textos muito longos;
+- dentro de um diálogo, o balão é criado no próprio diálogo, senão ficaria atrás
+  da camada do modal;
+- no computador aparece ao passar o mouse ou ao focar pelo teclado; no celular,
+  o primeiro toque abre e o segundo fecha (antes, o toque abria e fechava na
+  mesma hora);
+- fecha com **Esc**, ao clicar fora ou ao rolar a página.
+
+Testado no cartão da solicitação, dentro do diálogo de nova solicitação e no
+celular, com um texto de 368 caracteres: em todos os casos o balão fica inteiro
+dentro da tela e mostra o texto completo.
