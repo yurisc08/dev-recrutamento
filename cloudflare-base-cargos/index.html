@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v75"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v75"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v76"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v76"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   #login.login-shell { display:block!important; position:static!important; min-height:100vh!important; background:#fff!important; overflow:visible!important; }
@@ -309,7 +309,7 @@ function renderRequests() {
   $("#requests").innerHTML = rows
     .map(
       (r) =>
-        `<article class="card request-card"><div><div class="card-head"><div><h3>${esc(r.title)}</h3><span class="muted">${esc(r.job_code || "Sem código")} · ${esc(r.company || "-")} · ${esc(r.branch || "-")}</span></div><span class="badge ${badge(r.status)}">${esc(r.status)}</span></div><div class="meta"><span><b>Gestor:</b> ${esc(r.manager?.name || "-")}</span><span><b>Prazo:</b> ${date(r.deadline)}</span><span><b>Atualizado:</b> ${fmt(r.updated_at)}</span></div><div class="flow-lane"><div class="lane manager"><b>Área Responsável — Gestor</b><br><small>${[ST.M, ST.R].includes(r.status) ? "Ação necessária" : "Acompanhamento"}</small></div><div class="lane cr"><b>Área Gestão — C&R</b><br><small>${[ST.D, ST.C].includes(r.status) ? "Ação necessária" : "Acompanhamento"}</small></div></div><div class="owner"><b>Está com:</b> ${esc(owner(r))}</div>${requestReviewPreview(r)}<div class="progress"><i style="width:${r.progress || 0}%"></i></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn secondary open-request-btn" data-request-id="${r.id}">Abrir</button>${(S.profile.role==="CR"||S.profile.role==="ADMIN")&&[ST.D,ST.C].includes(r.status)?`<button class="btn danger-soft" onclick="rejectRequestCR(${jsq(r.id)},${jsq(r.title)})">Recusar</button>`:""}${isApprovedStatus(r.status) ? `<button class="btn approved-download" onclick="chooseModel(${jsq(r.id)})">Baixar</button>` : ""}${S.profile.role==="ADMIN"?`<button class="btn danger-soft" onclick="deleteRequestAdmin(${jsq(r.id)},${jsq(r.title)})">Excluir</button>`:""}</div></article>`,
+        `<article class="card request-card"><div><div class="card-head"><div><h3>${esc(r.title)}</h3><span class="muted">${esc(r.job_code || "Sem código")} · ${esc(r.company || "-")} · ${esc(r.branch || "-")}</span></div><span class="badge ${badge(r.status)}">${esc(r.status)}</span></div><div class="meta"><span><b>Gestor:</b> ${esc(r.manager?.name || "-")}</span><span><b>Prazo:</b> ${date(r.deadline)}</span><span><b>Atualizado:</b> ${fmt(r.updated_at)}</span></div><div class="flow-lane"><div class="lane manager"><b>Área Responsável — Gestor</b><br><small>${[ST.M, ST.R].includes(r.status) ? "Ação necessária" : "Acompanhamento"}</small></div><div class="lane cr"><b>Área Gestão — C&R</b><br><small>${[ST.D, ST.C].includes(r.status) ? "Ação necessária" : "Acompanhamento"}</small></div></div><div class="owner"><b>Está com:</b> ${esc(owner(r))}</div>${requestReviewPreview(r)}<div class="progress"><i style="width:${r.progress || 0}%"></i></div></div><div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end"><button type="button" class="btn secondary open-request-btn" data-request-id="${r.id}">Abrir</button>${(S.profile.role==="CR"||S.profile.role==="ADMIN")&&[ST.D,ST.C].includes(r.status)?`<button class="btn danger-soft" onclick="rejectRequestCR(${jsq(r.id)},${jsq(r.title)})">Recusar</button>`:""}${isApprovedStatus(r.status) && mgmt() ? `<button class="btn approved-download" onclick="chooseModel(${jsq(r.id)})">Baixar</button>` : ""}${S.profile.role==="ADMIN"?`<button class="btn danger-soft" onclick="deleteRequestAdmin(${jsq(r.id)},${jsq(r.title)})">Excluir</button>`:""}</div></article>`,
     )
     .join("");
   $("#empty").classList.toggle("hidden", rows.length > 0);
@@ -585,10 +585,6 @@ function renderDetail() {
     a.push(
       '<button class="btn secondary" onclick="saveValues()">Salvar revisão</button><button class="btn danger" onclick="transition(\'return\')">Devolver</button><button class="btn primary" onclick="transition(\'approve\')">Concluir solicitação</button>',
     );
-  if (mgmt() && r.status === ST.A)
-    a.push(
-      `<button class="btn primary" onclick="chooseModel(${jsq(r.id)})">Baixar documento</button>`,
-    );
   const ref=$("#intakeReferencePanel");
   if(ref){ref.classList.add("hidden");ref.innerHTML="";}
 
@@ -614,7 +610,9 @@ function renderDetail() {
       if(isCR&&current.status==="PENDING") a=a.filter(x=>!x.includes("approve\\')")&&!x.includes("return\\')"));
     }
   }
-  if(isApprovedStatus(r.status)) a.push(`<button class="btn primary" onclick="chooseModel(${jsq(r.id)})">Baixar documento aprovado</button>`);
+  // O documento concluido fica restrito a Carreira & Recompensa (e ao ADMIN):
+  // o Gestor acompanha a solicitacao, mas nao baixa o documento aprovado.
+  if(isApprovedStatus(r.status) && mgmt()) a.push(`<button class="btn primary" onclick="chooseModel(${jsq(r.id)})">Baixar documento aprovado</button>`);
   const managerObservation=S.profile.role==="GESTOR"&&[ST.M,ST.R].includes(r.status)
     ? `<div class="manager-change-note"><label><b>Observação das alterações <span class="required-mark">*</span></b><small>Obrigatório: descreva o que foi alterado, mantido ou confirmado antes de enviar para C&R.</small><textarea id="managerChangeObservation" minlength="5" placeholder="Ex.: Reajustei a experiência profissional, mantive o idioma e confirmei as competências técnicas."></textarea></label></div>`:"";
   $("#actions").innerHTML = managerObservation+a.join("");
@@ -905,6 +903,8 @@ window.downloadCurrentModel=async(stage)=>{
   }catch(err){toast("Não foi possível preparar o modelo: "+err.message);}
 };
 window.chooseModel = (id, stage="APPROVED") => {
+  if (stage === "APPROVED" && !mgmt())
+    return toast("O documento concluído fica disponível apenas para Carreira & Recompensa.");
   let f = $("#modelForm");
   f.reset();
   f.request_id.value = id;
