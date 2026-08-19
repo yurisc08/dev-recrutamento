@@ -39,6 +39,7 @@
 <section id="jobBaseView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Base de cargos</h1><p class="muted">Atualize a planilha oficial de cargos direto por aqui. O sistema reconhece as colunas automaticamente e, se os nomes mudarem, basta apontar a coluna certa antes de confirmar.</p></div><button id="refreshJobBase" class="btn ghost" type="button">Atualizar painel</button></div>
 <div id="jobBaseStats" class="metrics"></div>
 <div id="jobBaseStatus" class="import-status"></div>
+<article class="card import-step"><div class="step-head"><span class="step-num">↓</span><div><h2>Exportar a base vigente</h2><p class="muted">Baixa a base como está hoje, no mesmo layout do arquivo oficial — o arquivo exportado pode ser reimportado sem nenhum ajuste de mapeamento.</p></div><div class="step-actions"><label class="checkbox-inline"><input id="jobExportOnlyActive" type="checkbox"> Somente cargos ativos</label><button id="jobExportBtn" class="btn secondary" type="button">Baixar planilha da base</button></div></div></article>
 <article class="card import-step"><div class="step-head"><span class="step-num">1</span><div><h2>Escolha a planilha</h2><p class="muted">Aceita .xlsx, .xlsm e .csv. O arquivo é lido no seu navegador — nada é enviado antes da sua confirmação.</p></div></div>
 <div id="jobFileDrop" class="file-drop"><input type="file" id="jobFileInput" accept=".xlsx,.xlsm,.xls,.csv" hidden><p class="file-drop-hint">Arraste a planilha aqui ou <button type="button" class="btn secondary" id="jobFilePick">escolher arquivo</button></p><small id="jobFileInfo" class="muted">Nenhum arquivo selecionado.</small></div></article>
 <article id="jobSheetStep" class="card import-step hidden"><div class="step-head"><span class="step-num">2</span><div><h2>Aba e linha do cabeçalho</h2><p class="muted">Selecionamos a aba com mais colunas reconhecidas. Ajuste se a planilha tiver mudado de estrutura.</p></div></div>
@@ -47,9 +48,13 @@
 <p id="jobMapSummary" class="muted"></p><div id="jobMapGrid" class="map-grid"></div></article>
 <article id="jobPreviewStep" class="card import-step hidden"><div class="step-head"><span class="step-num">4</span><div><h2>Conferência e envio</h2><p class="muted">Revise a amostra abaixo antes de gravar. A base anterior nunca é apagada: os cargos ausentes apenas ficam inativos.</p></div></div>
 <div id="jobPreviewCounts" class="metrics"></div><div class="preview-scroll"><div id="jobPreviewTable"></div></div><p id="jobPreviewNote" class="muted"></p>
-<div class="row"><label>Como aplicar<select id="jobImportMode"><option value="REPLACE">Substituir a base (desativa cargos fora da planilha)</option><option value="MERGE">Complementar a base (só inclui e atualiza)</option></select></label><label class="checkbox-inline"><input id="jobScopeCompanies" type="checkbox" checked> Desativar somente cargos das empresas presentes no arquivo</label></div><label class="checkbox-inline standalone"><input id="jobBlankClears" type="checkbox"> Células em branco apagam o conteúdo atual <small class="muted">(desmarcado: uma célula vazia mantém o que já está na base — recomendado)</small></label>
+<div class="row"><label>Como aplicar<select id="jobImportMode"><option value="REPLACE">Substituir a base (desativa cargos fora da planilha)</option><option value="MERGE">Complementar a base (só inclui e atualiza)</option></select></label><label class="checkbox-inline"><input id="jobScopeCompanies" type="checkbox" checked> Desativar somente cargos das empresas presentes no arquivo</label></div><label class="checkbox-inline standalone"><input id="jobBlankClears" type="checkbox"> Células em branco apagam o conteúdo atual <small class="muted">(desmarcado: uma célula vazia mantém o que já está na base — recomendado)</small></label><label class="checkbox-inline standalone"><input id="jobProtectManual" type="checkbox" checked> Preservar cargos cadastrados no portal <small class="muted">(marcado: cargos criados aqui não são desativados por não estarem na planilha — recomendado)</small></label>
 <div id="jobProgress" class="progress hidden"><i id="jobProgressBar" style="width:0%"></i></div>
 <div class="modal-actions"><button id="jobCancelImport" class="btn ghost" type="button">Cancelar</button><button id="jobRunImport" class="btn primary" type="button">Atualizar base de cargos</button></div></article>
+<article class="card"><div class="card-head"><div><h2>Cargos cadastrados</h2><p class="muted">Consulte, edite ou inclua cargos direto aqui, sem passar pela planilha. Cargos criados neste cadastro não são desativados nas importações seguintes.</p></div><button id="newJobBtn" class="btn primary" type="button">+ Novo cargo na base</button></div>
+<div class="toolbar"><input id="jobListSearch" placeholder="Pesquisar código, cargo ou empresa"><label class="checkbox-inline"><input id="jobListInactive" type="checkbox" checked> Mostrar inativos</label></div>
+<div id="jobListBox" class="admin-list"></div>
+<div class="list-pager"><button id="jobListPrev" class="btn ghost" type="button">← Anterior</button><span id="jobListCount" class="muted"></span><button id="jobListNext" class="btn ghost" type="button">Próximos →</button></div></article>
 <article class="card"><h2>Histórico de atualizações</h2><div id="jobImportHistory" class="admin-list"></div></article></section>
 </main></div>
 <dialog id="requestDialog"><form id="requestForm" class="modal-form" novalidate><div class="modal-head"><div><p class="eyebrow">C&R</p><h2>Nova solicitação</h2></div><button type="button" class="icon-btn close">×</button></div><label>Tipo de solicitação<select name="request_type" required><option value="NEW">Criar cargo novo</option><option value="UPDATE">Atualizar cargo existente</option></select></label><div id="existingJobBox" class="hidden"><label>Pesquisar cargo vigente<div class="job-combobox"><input id="existingJobSearch" placeholder="Digite nome ou código" autocomplete="off" aria-autocomplete="list" aria-controls="existingJobOptions" aria-expanded="false"><span class="job-search-icon">⌕</span><div id="existingJobOptions" class="job-options hidden" role="listbox"></div></div><input name="source_job_id" type="hidden"></label><div id="existingJobSelected" class="selected-manager muted">Selecione um cargo da base importada.</div></div><label>Nome do cargo<input name="title" required></label><label id="jobCodeCreateField">Código do cargo<input name="job_code"></label><div id="managerPickerBox"><label>Pesquisar gestor<input id="managerSearch" list="managerOptions" placeholder="Digite nome ou e-mail" autocomplete="off"><datalist id="managerOptions"></datalist><input name="manager_id" type="hidden"></label><div id="managerSelected" class="selected-manager muted">Selecione um gestor ativo.</div></div><div class="row"><label>Empresa<select name="company" required><option value="">Selecione...</option></select></label><label>Filial<select name="branch" required disabled><option value="">Selecione a empresa...</option></select></label></div><section id="updateFieldsBox" class="request-detail-box hidden"><h3>O que precisa ser atualizado?</h3><p class="muted">Selecione os conteúdos que precisam ser revisados. Os demais dados do cargo ficam disponíveis apenas para consulta.</p><div id="updateFieldChoices" class="update-field-choices"></div></section><section id="newManagerFieldsBox" class="request-detail-box hidden"><h3>Informações do Gestor</h3><p class="muted">Os campos abaixo são definidos na Administração de Campos. Nome, ordem, tipo, orientação e obrigatoriedade seguem a mesma configuração do fluxo oficial.</p><div id="newManagerFields"></div></section><label>Setor / área<input name="sector" placeholder="Informe o setor do cargo" required></label><label>Justificativa<textarea name="justification" placeholder="Explique a necessidade da criação ou atualização"></textarea></label><section id="requestOptionalApproval" class="optional-flow-box hidden"><label>Validação adicional<select name="use_additional_approval"><option value="NO">Não utilizar aprovador adicional</option><option value="YES">Pré-configurar aprovador adicional</option></select></label><div id="requestApprovalFields" class="hidden"><label>Área e aprovador<select name="additional_approver_id"><option value="">Selecione...</option></select></label><input name="additional_area_id" type="hidden"><label>Orientação para análise<textarea name="additional_approval_note" placeholder="Ex.: validar os campos relacionados à escolaridade"></textarea></label><p class="fine">O encaminhamento será confirmado pelo C&R quando a solicitação retornar do Gestor.</p></div></section><label id="requestDeadlineField">Prazo<input name="deadline" type="date" required></label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar solicitação</button></div></form></dialog>
@@ -57,6 +62,7 @@
 <dialog id="managerSuccessDialog"><div class="modal-form"><div class="modal-head"><div><p class="eyebrow">Usuário cadastrado</p><h2>Acesso criado com sucesso</h2></div><button type="button" class="icon-btn close">×</button></div><p>O usuário foi incluído na lista administrativa e o código foi preparado para envio.</p><div class="access-code-box"><small>Código individual de acesso</small><strong id="generatedManagerCode"></strong><button id="copyManagerCode" class="btn ghost" type="button">Copiar código</button></div><p class="fine">Este código é exclusivo do usuário e não corresponde ao número de uma solicitação. O mesmo processo atende Gestores e C&R. Quando o Power Automate estiver configurado, o código será enviado por e-mail e poderá também ser enviado pelo Teams.</p><div class="modal-actions"><button type="button" class="btn primary close">Concluir</button></div></div></dialog>
 <dialog id="editUserDialog"><form id="editUserForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Administração</p><h2>Editar usuário</h2></div><button type="button" class="icon-btn close">×</button></div><label>Nome<input name="name" required></label><label>Perfil<select name="role"><option value="CR">Carreira & Recompensa</option><option value="GESTOR">Gestor</option></select></label><label id="editApproverAreaField" class="hidden">Área aprovadora<select name="approval_area_id"><option value="">Selecione...</option></select></label><label>E-mail<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" disabled></label><div class="row"><label>Empresa<input name="company" list="editCompanyOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="editCompanyOptions"></datalist></label><label>Filial<input name="branch" list="editBranchOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="editBranchOptions"></datalist></label></div><div class="row"><label>Área<input name="area"></label><label>Função/Cargo<input name="role_title"></label></div><label style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="active" type="checkbox"> Acesso ativo</label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Salvar alterações</button></div></form></dialog>
 <dialog id="codeDialog"><form id="codeForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Segurança</p><h2>Definir novo código</h2></div><button type="button" class="icon-btn close">×</button></div><p class="muted">A credencial atual não pode ser visualizada. Defina uma nova credencial e use o ícone para conferir antes de salvar.</p><label>Novo código<div style="display:flex;gap:8px"><input name="code" type="password" minlength="8" required style="flex:1"><button type="button" id="toggleCode" class="btn ghost">Mostrar</button></div></label><label>Confirmar código<input name="confirm_code" type="password" minlength="8" required></label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Aplicar novo código</button></div></form></dialog><dialog id="modelDialog"><form id="modelForm" class="modal-form"><input type="hidden" name="request_id"><div class="modal-head"><div><p class="eyebrow">Prévia do documento</p><h2>Baixar modelo preenchido</h2></div><button type="button" class="icon-btn close">×</button></div><p class="code-note">O documento será criado com todos os valores atuais salvos na solicitação. Em cargos existentes, campos não alterados usam os dados atuais da base.</p><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Gerar DOCX</button></div></form></dialog><dialog id="fieldDialog"><form id="fieldForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Administração</p><h2 id="fieldDialogTitle">Novo campo</h2></div><button type="button" class="icon-btn close">×</button></div><label>Nome exibido<input name="label" required></label><div class="row"><label>Área responsável<select name="owner_role"><option value="CR">Gestão — C&R</option><option value="GESTOR">Responsável — Gestor</option></select></label><label>Quem aprova?<select name="approval_area_id"><option value="">C&R — sem aprovação adicional</option></select></label></div><div class="row"><label>Tipo<select name="field_type"><option value="textarea">Texto longo</option><option value="text">Texto curto</option><option value="number">Número</option><option value="date">Data</option><option value="select">Lista suspensa</option><option value="checkbox">Sim/Não</option></select></label><div></div></div><label>Explicativo do campo<input name="help_text" placeholder="Explique o que deve ser informado neste campo"><small class="muted">O texto aparecerá no ícone ? e poderá ser editado posteriormente.</small></label><label>Exemplo de preenchimento<input name="placeholder" placeholder="Ex.: exemplo de resposta esperada"><small class="muted">O exemplo aparece dentro do campo enquanto estiver vazio.</small></label><label id="optionsField">Opções da lista suspensa (uma por linha)<textarea name="options" placeholder="Ex.: Básico\nIntermediário\nAvançado"></textarea><small class="muted">Visível somente quando o tipo for Lista suspensa.</small></label><div class="row"><label>Ordem<input name="sort_order" type="number" value="100"></label><label style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="required" type="checkbox"> Obrigatório</label></div><label id="updateEditableField" style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="update_editable" type="checkbox"> Permitir edição em atualização de cargo</label><label style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="active" type="checkbox" checked> Campo ativo</label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Salvar campo</button></div></form></dialog>
+<dialog id="jobDialog" class="wide-dialog"><form id="jobForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Base de cargos</p><h2 id="jobDialogTitle">Novo cargo na base</h2></div><button type="button" class="icon-btn close">×</button></div><p id="jobFormOrigin" class="notice warning"></p><h3 class="form-section">Identificação</h3><div class="row"><label><span>Código do cargo <b class="required-mark">*</b></span><input name="job_code" required></label><label><span>Cargo <b class="required-mark">*</b></span><input name="job_name" required></label></div><label>Nome completo do cargo<input name="full_name" placeholder="Ex.: ANALISTA DE DADOS PLENO"></label><div class="row"><label>Código da empresa<input name="company_code"></label><label>Empresa<input name="company"></label></div><h3 class="form-section">Classificação</h3><div class="row"><label>CBO<input name="cbo"></label><label>Natureza do cargo<input name="nature"></label></div><div class="row"><label>Trilha de carreira<input name="career_track"></label><label>Nível do cargo<input name="level"></label></div><div class="row"><label>Código da família<input name="family_code"></label><label>Chave de agrupamento<input name="grouping_key"></label></div><h3 class="form-section">Descritivo</h3><label>Resultado esperado (missão)<textarea name="expected_result"></textarea></label><label>Atividades<textarea name="activities"></textarea></label><label>Descrição do cargo / responsabilidades<textarea name="job_description"></textarea></label><h3 class="form-section">Requisitos do cargo</h3><label>Formação/Escolaridade mínima<textarea name="SKILL_30" rows="2"></textarea></label><label>Formação/Escolaridade desejável<textarea name="SKILL_31" rows="2"></textarea></label><label>Idioma mínimo<textarea name="SKILL_32" rows="2"></textarea></label><label>Idioma desejável<textarea name="SKILL_33" rows="2"></textarea></label><label>Competências técnicas mínimas<textarea name="SKILL_34" rows="2"></textarea></label><label>Competências técnicas desejáveis<textarea name="SKILL_35" rows="2"></textarea></label><label>Experiência profissional desejável<textarea name="SKILL_36" rows="2"></textarea></label><label>Competências Marcopolo desejáveis<textarea name="SKILL_37" rows="2"></textarea></label><label class="checkbox-inline standalone"><input name="active" type="checkbox" checked> Cargo ativo (aparece na pesquisa de cargos vigentes)</label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Salvar cargo</button></div></form></dialog>
 <dialog id="triageDialog"><form id="triageForm" class="modal-form"><div class="modal-head"><div><p class="eyebrow">Triagem C&R</p><h2>Iniciar fluxo oficial</h2></div><button type="button" class="icon-btn close">×</button></div><input name="intake_id" type="hidden"><div id="triageSummary" class="triage-summary"></div><label>Prazo da solicitação<input name="deadline" type="date" required></label><p class="fine">Ao continuar, o pedido sai da caixa de triagem, recebe uma solicitação oficial e entra como Rascunho C&R. Depois C&R poderá preencher seus campos e enviar ao Gestor pelo fluxo já existente.</p><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar solicitação e abrir fluxo</button></div></form></dialog><script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import JSZip from "https://esm.sh/jszip@3.10.1";
@@ -411,7 +417,7 @@ const typeLabel = (t) =>
 function show(v) {
   if (v === "models" && mgmt()) loadModelMappings();
   if (v === "audit" && admin()) loadAuditLogs();
-  if (v === "jobBase" && admin()) loadJobBaseOverview();
+  if (v === "jobBase" && admin()) { loadJobBaseOverview(); loadJobList(); }
   ["dashboard", "managers", "fields", "models", "companies", "workflows", "jobBase", "audit", "detail"].forEach((x) =>
     $("#" + x + "View").classList.toggle("hidden", x !== v),
   );
@@ -1836,7 +1842,7 @@ async function loadJobBaseOverview() {
     sb.rpc("admin_list_import_profiles"),
   ]);
   if (overview.error) {
-    jbStatus("Execute o arquivo supabase-base-cargos-admin-v73.sql no Supabase para habilitar esta tela. Detalhe: " + overview.error.message, "error");
+    jbStatus("Execute o arquivo supabase-base-cargos-admin-v74.sql no Supabase para habilitar esta tela. Detalhe: " + overview.error.message, "error");
     return;
   }
   JB.overview = typeof overview.data === "string" ? JSON.parse(overview.data) : overview.data;
@@ -1922,6 +1928,7 @@ async function jbRunImport() {
       p_total_rows: rows.length,
       p_scope_companies: scope,
       p_blank_clears: blankClears,
+      p_protect_manual: $("#jobProtectManual").checked,
     });
     if (start.error) throw start.error;
     runId = start.data;
@@ -1965,6 +1972,221 @@ async function jbRunImport() {
   }
 }
 jbBindJobBase();
+
+
+/* ---------------------------------------------------------------------
+   Exportação da base vigente e cadastro de cargos direto no portal (v74)
+   --------------------------------------------------------------------- */
+
+/* Colunas da planilha exportada: mesmo layout do arquivo oficial, para que o
+   arquivo baixado possa ser reimportado sem nenhum ajuste de mapeamento. */
+const JOB_EXPORT_COLUMNS = [
+  ["COD_EMPRESA", (j) => j.company_code],
+  ["EMPRESA", (j) => j.company],
+  ["EMP_COD", (j) => raw(j, "EMP_COD")],
+  ["COD_DO_CARGO", (j) => j.job_code],
+  ["CARGO", (j) => j.job_name],
+  ["NOME_COMPLETO", (j) => j.full_name],
+  ["NOME", (j) => raw(j, "NOME")],
+  ["CBO", (j) => j.cbo],
+  ["NATUREZA_DO_CARGO", (j) => j.nature],
+  ["DT_DESATIVADO", (j) => raw(j, "DT_DESATIVADO")],
+  ["DT_ATIVACAO", (j) => raw(j, "DT_ATIVACAO")],
+  ["TCLC_DESC", (j) => j.career_track],
+  ["DATA_REVISAO", (j) => raw(j, "DATA_REVISAO")],
+  ["NIVEL_CARGO", (j) => j.level],
+  ["COD_FAMILIA_CARGO", (j) => j.family_code],
+  ["CHAVE_AGRUPAMENTO", (j) => j.grouping_key],
+  ["TEXTO_RESULTADO_ESPERADO", (j) => j.expected_result],
+  ["DESCRICAO_CARGO", (j) => j.job_description],
+  ["ATIV_DESC", (j) => j.activities],
+  ...JOB_SKILLS.flatMap(([key, , title]) => [
+    [key + "_DESC", (j) => req(j, key + "_DESC") || title],
+    [key, (j) => req(j, key) || req(j, title)],
+  ]),
+  ["SITUACAO", (j) => (j.active ? "Ativo" : "Inativo")],
+  ["ORIGEM", (j) => (j.source === "MANUAL" ? "Cadastro no portal" : "Planilha")],
+];
+function raw(job, key) {
+  const r = job?.raw_data;
+  if (!r || typeof r !== "object") return "";
+  const hit = Object.keys(r).find((k) => jbNorm(k) === jbNorm(key));
+  return hit ? String(r[hit] ?? "") : "";
+}
+function req(job, key) {
+  const r = job?.requirements;
+  if (!r || typeof r !== "object") return "";
+  const hit = Object.keys(r).find((k) => jbNorm(k) === jbNorm(key));
+  return hit ? String(r[hit] ?? "") : "";
+}
+
+async function jbExportBase() {
+  if (!admin()) return toast("Apenas o ADMIN pode exportar a base de cargos.");
+  if (JB.busy) return toast("Aguarde a operação em andamento terminar.");
+  const onlyActive = $("#jobExportOnlyActive").checked;
+  const btn = $("#jobExportBtn");
+  JB.busy = true; btn.disabled = true;
+  const oldLabel = btn.textContent;
+  try {
+    jbStatus("Preparando a exportação...", "info");
+    const XLSX = await jbLoadXLSX();
+    const PAGE = 500;
+    let offset = 0, total = null, rows = [];
+    do {
+      const { data, error } = await sb.rpc("admin_job_export", { p_only_active: onlyActive, p_limit: PAGE, p_offset: offset });
+      if (error) throw error;
+      const page = typeof data === "string" ? JSON.parse(data) : data || {};
+      total = page.total ?? 0;
+      rows = rows.concat(page.rows || []);
+      offset += PAGE;
+      btn.textContent = `Exportando ${rows.length}/${total}...`;
+      jbStatus(`Baixando a base: ${rows.length} de ${total} cargos...`, "info");
+    } while (total && rows.length < total && offset < 100000);
+
+    if (!rows.length) { jbStatus("A base está vazia — nada para exportar.", "warn"); return; }
+
+    const header = JOB_EXPORT_COLUMNS.map(([name]) => name);
+    const body = rows.map((j) => JOB_EXPORT_COLUMNS.map(([, get]) => get(j) ?? ""));
+    const ws = XLSX.utils.aoa_to_sheet([header, ...body]);
+    ws["!cols"] = header.map((h) => ({ wch: Math.min(Math.max(h.length + 2, 12), 46) }));
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "Base");
+    const stamp = new Date().toISOString().slice(0, 10).split("-").reverse().join("-");
+    XLSX.writeFile(wb, `base-de-cargos-${stamp}.xlsx`, { compression: true });
+    jbStatus(`Exportação concluída: ${rows.length} cargos${onlyActive ? " ativos" : ""} no arquivo baixado.`, "ok");
+    toast("Base exportada.");
+  } catch (err) {
+    console.error(err);
+    jbStatus("Não foi possível exportar a base: " + (err.message || err), "error");
+  } finally {
+    JB.busy = false; btn.disabled = false; btn.textContent = oldLabel;
+  }
+}
+
+/* ------------------------- Cargos cadastrados ------------------------- */
+let JL = { query: "", includeInactive: true, page: 0, size: 10, total: 0, rows: [], timer: null };
+
+async function loadJobList() {
+  if (!admin()) return;
+  const { data, error } = await sb.rpc("admin_job_list", {
+    p_query: JL.query || null,
+    p_include_inactive: JL.includeInactive,
+    p_limit: JL.size,
+    p_offset: JL.page * JL.size,
+  });
+  if (error) { $("#jobListBox").innerHTML = `<p class="muted">Não foi possível carregar os cargos: ${esc(error.message)}</p>`; return; }
+  const d = typeof data === "string" ? JSON.parse(data) : data || {};
+  JL.total = d.total || 0;
+  JL.rows = d.rows || [];
+  if (JL.page > 0 && !JL.rows.length) { JL.page = 0; return loadJobList(); }
+  renderJobList();
+}
+function renderJobList() {
+  const host = $("#jobListBox");
+  if (!host) return;
+  if (!JL.rows.length) {
+    host.innerHTML = `<p class="muted">${JL.query ? "Nenhum cargo encontrado para esta pesquisa." : "Nenhum cargo na base."}</p>`;
+  } else {
+    host.innerHTML = JL.rows.map((j) => `<div class="admin-row job-row ${j.active ? "" : "inactive"}">
+<span class="job-row-main"><b>${esc(j.job_code)} — ${esc(j.full_name || j.job_name)}</b>
+<small>${esc(j.company || "Empresa não informada")}${j.company_code ? ` (cód. ${esc(j.company_code)})` : ""}${j.career_track ? ` · ${esc(j.career_track)}` : ""}${j.level ? ` · ${esc(j.level)}` : ""}</small>
+<small><span class="badge ${j.active ? "approved" : "cancelled"}">${j.active ? "Ativo" : "Inativo"}</span> <span class="badge ${j.source === "MANUAL" ? "draft" : "cr"}">${j.source === "MANUAL" ? "Cadastrado no portal" : "Veio da planilha"}</span></small></span>
+<div class="admin-actions"><button class="btn ghost" onclick="editJob('${j.id}')">Editar</button>
+<button class="btn ${j.active ? "danger-soft" : "primary"}" onclick="toggleJob('${j.id}',${!j.active})">${j.active ? "Desativar" : "Reativar"}</button>
+${j.source === "MANUAL" ? `<button class="btn danger-soft" onclick="removeJob('${j.id}','${esc(j.job_code)}')">Excluir</button>` : ""}</div></div>`).join("");
+  }
+  const from = JL.total ? JL.page * JL.size + 1 : 0;
+  const to = Math.min((JL.page + 1) * JL.size, JL.total);
+  $("#jobListCount").textContent = JL.total ? `${from}–${to} de ${JL.total} cargos` : "Nenhum cargo";
+  $("#jobListPrev").disabled = JL.page === 0;
+  $("#jobListNext").disabled = to >= JL.total;
+}
+
+const JOB_FORM_FIELDS = [
+  ["job_code", "Código do cargo *"], ["job_name", "Cargo *"], ["full_name", "Nome completo do cargo"],
+  ["company_code", "Código da empresa"], ["company", "Empresa"], ["cbo", "CBO"],
+  ["nature", "Natureza do cargo"], ["career_track", "Trilha de carreira"], ["level", "Nível do cargo"],
+  ["family_code", "Código da família"], ["grouping_key", "Chave de agrupamento"],
+];
+window.newJob = () => {
+  if (!admin()) return toast("Apenas o ADMIN pode cadastrar cargos.");
+  fillJobForm({ active: true });
+  $("#jobDialogTitle").textContent = "Novo cargo na base";
+  $("#jobDialog").showModal();
+};
+window.editJob = async (id) => {
+  if (!admin()) return toast("Apenas o ADMIN pode editar cargos.");
+  const { data, error } = await sb.rpc("admin_job_get", { p_id: id });
+  if (error) return toast("Não foi possível abrir o cargo: " + error.message);
+  const j = typeof data === "string" ? JSON.parse(data) : data || {};
+  fillJobForm(j);
+  $("#jobDialogTitle").textContent = "Editar cargo";
+  $("#jobDialog").showModal();
+};
+function fillJobForm(j) {
+  const f = $("#jobForm");
+  f.reset();
+  f.id.value = j.id || "";
+  JOB_FORM_FIELDS.forEach(([k]) => { f[k].value = j[k] || ""; });
+  ["expected_result", "job_description", "activities"].forEach((k) => { f[k].value = j[k] || ""; });
+  JOB_SKILLS.forEach(([key, , title]) => { f[key].value = req(j, key) || req(j, title) || ""; });
+  f.active.checked = j.active !== false;
+  $("#jobFormOrigin").textContent = !j.id ? "Cargo novo — será marcado como cadastrado no portal."
+    : j.source === "MANUAL" ? "Cargo cadastrado no portal."
+    : "Cargo veio da planilha. Ao salvar, ele passa a ser tratado como cadastro do portal e deixa de ser desativado automaticamente nas próximas importações.";
+}
+window.toggleJob = async (id, active) => {
+  if (!admin()) return;
+  const { error } = await sb.rpc("admin_job_set_active", { p_id: id, p_active: active });
+  if (error) return toast("Não foi possível alterar: " + error.message);
+  await loadJobList();
+  await loadJobBaseOverview();
+  toast(active ? "Cargo reativado." : "Cargo desativado. Ele deixa de aparecer na pesquisa de cargos vigentes.");
+};
+window.removeJob = async (id, code) => {
+  if (!admin()) return;
+  if (!confirm(`Excluir definitivamente o cargo ${code}? Esta ação não pode ser desfeita.`)) return;
+  const { error } = await sb.rpc("admin_job_delete", { p_id: id });
+  if (error) return toast(error.message);
+  await loadJobList();
+  await loadJobBaseOverview();
+  toast("Cargo excluído.");
+};
+function jbBindJobCrud() {
+  if (!$("#jobListBox")) return;
+  $("#jobExportBtn").onclick = jbExportBase;
+  $("#newJobBtn").onclick = () => window.newJob();
+  $("#jobListSearch").oninput = (e) => {
+    clearTimeout(JL.timer);
+    JL.timer = setTimeout(() => { JL.query = e.target.value.trim(); JL.page = 0; loadJobList(); }, 300);
+  };
+  $("#jobListInactive").onchange = (e) => { JL.includeInactive = e.target.checked; JL.page = 0; loadJobList(); };
+  $("#jobListPrev").onclick = () => { if (JL.page > 0) { JL.page--; loadJobList(); } };
+  $("#jobListNext").onclick = () => { JL.page++; loadJobList(); };
+  $("#jobForm").onsubmit = async (e) => {
+    e.preventDefault();
+    const f = e.target, b = {};
+    JOB_FORM_FIELDS.forEach(([k]) => { b[k] = f[k].value.trim(); });
+    ["expected_result", "job_description", "activities"].forEach((k) => { b[k] = f[k].value.trim(); });
+    JOB_SKILLS.forEach(([key, , title]) => { b[key] = f[key].value.trim(); b[key + "_DESC"] = title; });
+    b.active = f.active.checked;
+    if (!b.job_code) return toast("Informe o código do cargo.");
+    if (!b.job_name) return toast("Informe o nome do cargo.");
+    const btn = f.querySelector('button[type="submit"]');
+    btn.disabled = true;
+    try {
+      const { error } = await sb.rpc("admin_job_upsert", { p_id: f.id.value || null, p_data: b });
+      if (error) throw error;
+      $("#jobDialog").close();
+      await loadJobList();
+      await loadJobBaseOverview();
+      toast(f.id.value ? "Cargo atualizado." : "Cargo incluído na base.");
+    } catch (err) {
+      toast(err.message || "Não foi possível salvar o cargo.");
+    } finally { btn.disabled = false; }
+  };
+}
+jbBindJobCrud();
 
 sb.auth.onAuthStateChange(() => setTimeout(init, 0));
 init();

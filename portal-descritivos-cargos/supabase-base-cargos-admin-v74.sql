@@ -1,10 +1,15 @@
 -- =====================================================================
--- V73 - Atualizacao da base de cargos pelo proprio ADMIN (sem SQL)
+-- V74 - Base de cargos administrada pelo ADMIN (importar, exportar e editar)
 -- ---------------------------------------------------------------------
--- Cria a estrutura usada pela nova aba "Base de cargos" do portal:
+-- Cumulativo: substitui o V73. Se o V73 ja foi executado, rodar este por cima
+-- e seguro (tudo aqui e idempotente).
+--
+-- Cria a estrutura usada pela aba "Base de cargos" do portal:
 --   * perfis de importacao (mapeamento de colunas salvo e reutilizavel)
 --   * area de estagio (staging) para receber a planilha em lotes
 --   * historico de importacoes
+--   * cadastro manual de cargos direto no portal (incluir/editar/desativar)
+--   * exportacao da base vigente para planilha
 --   * funcoes RPC protegidas: somente o perfil ADMIN executa
 --
 -- Execute este arquivo UMA vez no SQL Editor do Supabase.
@@ -21,6 +26,9 @@ alter table public.job_catalog add column if not exists imported_at timestamptz 
 alter table public.job_catalog add column if not exists updated_at timestamptz default now();
 alter table public.job_catalog add column if not exists import_run_id uuid;
 alter table public.job_catalog add column if not exists active boolean default true;
+alter table public.job_catalog add column if not exists source text default 'IMPORT';   -- IMPORT | MANUAL
+alter table public.job_catalog add column if not exists manual_updated_at timestamptz;
+alter table public.job_catalog add column if not exists manual_updated_by uuid;
 
 -- ---------------------------------------------------------------------
 -- 1. Helper de permissao
@@ -70,6 +78,7 @@ create table if not exists public.job_import_runs(
   mode text not null default 'REPLACE',            -- REPLACE | MERGE
   scope_companies boolean not null default true,
   blank_clears boolean not null default false,
+  protect_manual boolean not null default true,
   status text not null default 'UPLOADING',        -- UPLOADING | DONE | CANCELLED | ERROR
   total_rows int not null default 0,
   received_rows int not null default 0,
@@ -84,6 +93,7 @@ create table if not exists public.job_import_runs(
   finished_at timestamptz
 );
 create index if not exists idx_job_import_runs_started_at on public.job_import_runs(started_at desc);
+alter table public.job_import_runs add column if not exists protect_manual boolean not null default true;
 alter table public.job_import_runs enable row level security;
 
 -- ---------------------------------------------------------------------
@@ -175,6 +185,7 @@ $$;
 -- ---------------------------------------------------------------------
 drop function if exists public.admin_job_import_start(text,text,int,jsonb,text,int,boolean);
 drop function if exists public.admin_job_import_start(text,text,int,jsonb,text,int,boolean,boolean);
+drop function if exists public.admin_job_import_start(text,text,int,jsonb,text,int,boolean,boolean,boolean);
 create function public.admin_job_import_start(
   p_file_name text,
   p_sheet_name text,
@@ -183,7 +194,8 @@ create function public.admin_job_import_start(
   p_mode text,
   p_total_rows int,
   p_scope_companies boolean default true,
-  p_blank_clears boolean default false
+  p_blank_clears boolean default false,
+  p_protect_manual boolean default true
 )
 returns uuid
 language plpgsql
@@ -207,11 +219,11 @@ begin
    where status='UPLOADING' and started_by = auth.uid();
 
   insert into public.job_import_runs(
-    file_name, sheet_name, header_row, column_map, mode, scope_companies, blank_clears,
+    file_name, sheet_name, header_row, column_map, mode, scope_companies, blank_clears, protect_manual,
     status, total_rows, started_by, started_by_name)
   values (
     p_file_name, p_sheet_name, greatest(coalesce(p_header_row,1),1), coalesce(p_column_map,'{}'::jsonb),
-    upper(coalesce(p_mode,'REPLACE')), coalesce(p_scope_companies,true), coalesce(p_blank_clears,false),
+    upper(coalesce(p_mode,'REPLACE')), coalesce(p_scope_companies,true), coalesce(p_blank_clears,false), coalesce(p_protect_manual,true),
     'UPLOADING', greatest(coalesce(p_total_rows,0),0), auth.uid(), v_name)
   returning id into v_id;
 
@@ -367,11 +379,13 @@ begin
   select count(*) into v_inserted from ins;
 
   -- 6.4 Modo "substituir": desativa o que nao veio na planilha.
+  --     Cargos cadastrados manualmente no portal ficam preservados por padrao.
   if v_run.mode = 'REPLACE' then
     with off as (
       update public.job_catalog j
          set active = false, updated_at = now()
        where coalesce(j.active,true)
+         and not (v_run.protect_manual and coalesce(j.source,'IMPORT') = 'MANUAL')
          and not exists (
            select 1 from tmp_job_import t
             where upper(btrim(j.job_code)) = upper(t.job_code)
@@ -465,7 +479,7 @@ $$;
 revoke all on function public.admin_list_import_profiles() from public;
 revoke all on function public.admin_save_import_profile(text,text,int,jsonb,boolean) from public;
 revoke all on function public.admin_delete_import_profile(uuid) from public;
-revoke all on function public.admin_job_import_start(text,text,int,jsonb,text,int,boolean,boolean) from public;
+revoke all on function public.admin_job_import_start(text,text,int,jsonb,text,int,boolean,boolean,boolean) from public;
 revoke all on function public.admin_job_import_push(uuid,jsonb) from public;
 revoke all on function public.admin_job_import_commit(uuid) from public;
 revoke all on function public.admin_job_import_cancel(uuid) from public;
@@ -474,7 +488,7 @@ revoke all on function public.admin_job_catalog_overview(int) from public;
 grant execute on function public.admin_list_import_profiles() to authenticated;
 grant execute on function public.admin_save_import_profile(text,text,int,jsonb,boolean) to authenticated;
 grant execute on function public.admin_delete_import_profile(uuid) to authenticated;
-grant execute on function public.admin_job_import_start(text,text,int,jsonb,text,int,boolean,boolean) to authenticated;
+grant execute on function public.admin_job_import_start(text,text,int,jsonb,text,int,boolean,boolean,boolean) to authenticated;
 grant execute on function public.admin_job_import_push(uuid,jsonb) to authenticated;
 grant execute on function public.admin_job_import_commit(uuid) to authenticated;
 grant execute on function public.admin_job_import_cancel(uuid) to authenticated;
@@ -487,6 +501,306 @@ create index if not exists idx_job_catalog_active on public.job_catalog(active);
 create index if not exists idx_job_catalog_job_code_lower on public.job_catalog(lower(job_code));
 create index if not exists idx_job_catalog_job_name_lower on public.job_catalog(lower(job_name));
 create index if not exists idx_job_catalog_company_code on public.job_catalog(company_code);
+
+notify pgrst,'reload schema';
+
+-- =====================================================================
+-- 11. Cadastro manual de cargos e exportacao da base vigente
+-- ---------------------------------------------------------------------
+-- Permite ao ADMIN incluir, editar e desativar cargos direto no portal,
+-- alem de baixar a base atual em planilha (mesmo layout do arquivo oficial,
+-- para que o arquivo exportado possa ser reimportado sem ajuste nenhum).
+-- =====================================================================
+
+-- 11.1 Lista paginada com busca -----------------------------------------
+drop function if exists public.admin_job_list(text,boolean,int,int);
+create function public.admin_job_list(
+  p_query text default null,
+  p_include_inactive boolean default true,
+  p_limit int default 25,
+  p_offset int default 0
+)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path=public
+as $$
+declare v_q text; v_limit int; v_offset int; v_out jsonb;
+begin
+  if not public.is_admin_user() then
+    raise exception 'Apenas o perfil ADMIN pode consultar a base de cargos.';
+  end if;
+  v_q := nullif(btrim(coalesce(p_query,'')),'');
+  v_limit := least(greatest(coalesce(p_limit,25),1),200);
+  v_offset := greatest(coalesce(p_offset,0),0);
+
+  with filtered as (
+    select j.id, j.job_code, j.job_name, j.full_name, j.company_code, j.company,
+           j.career_track, j.level, j.cbo, coalesce(j.active,true) as active,
+           coalesce(j.source,'IMPORT') as source, j.updated_at, j.imported_at
+      from public.job_catalog j
+     where (coalesce(p_include_inactive,true) or coalesce(j.active,true))
+       and (v_q is null
+            or j.job_code ilike '%'||v_q||'%'
+            or j.job_name ilike '%'||v_q||'%'
+            or coalesce(j.full_name,'') ilike '%'||v_q||'%'
+            or coalesce(j.company,'') ilike '%'||v_q||'%')
+  ), page as (
+    select * from filtered
+     order by coalesce(company,''), job_code
+     limit v_limit offset v_offset
+  )
+  select jsonb_build_object(
+           'total',  (select count(*) from filtered),
+           'rows',   coalesce((select jsonb_agg(to_jsonb(p) order by coalesce(p.company,''), p.job_code) from page p),'[]'::jsonb),
+           'limit',  v_limit,
+           'offset', v_offset)
+    into v_out;
+
+  return v_out;
+end;
+$$;
+
+-- 11.2 Registro completo de um cargo ------------------------------------
+drop function if exists public.admin_job_get(uuid);
+create function public.admin_job_get(p_id uuid)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path=public
+as $$
+declare v jsonb;
+begin
+  if not public.is_admin_user() then
+    raise exception 'Apenas o perfil ADMIN pode consultar a base de cargos.';
+  end if;
+  select to_jsonb(j) into v from public.job_catalog j where j.id = p_id;
+  if v is null then raise exception 'Cargo nao localizado.'; end if;
+  return v;
+end;
+$$;
+
+-- 11.3 Incluir ou editar um cargo ---------------------------------------
+drop function if exists public.admin_job_upsert(uuid,jsonb);
+create function public.admin_job_upsert(p_id uuid, p_data jsonb)
+returns jsonb
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare
+  v_id uuid := p_id;
+  v_code text;
+  v_company_code text;
+  v_name text;
+  v_req jsonb;
+  v_row jsonb;
+  v_txt text;
+begin
+  if not public.is_admin_user() then
+    raise exception 'Apenas o perfil ADMIN pode alterar a base de cargos.';
+  end if;
+
+  v_code := nullif(btrim(coalesce(p_data->>'job_code','')),'');
+  v_name := nullif(btrim(coalesce(p_data->>'job_name','')),'');
+  v_company_code := nullif(btrim(coalesce(p_data->>'company_code','')),'');
+  if v_code is null then raise exception 'Informe o codigo do cargo.'; end if;
+  if v_name is null then raise exception 'Informe o nome do cargo.'; end if;
+
+  -- nao permite dois cargos com o mesmo codigo dentro da mesma empresa
+  if exists (
+    select 1 from public.job_catalog j
+     where upper(btrim(j.job_code)) = upper(v_code)
+       and coalesce(nullif(btrim(j.company_code),''),'-') = coalesce(v_company_code,'-')
+       and (v_id is null or j.id <> v_id)
+  ) then
+    raise exception 'Ja existe um cargo com o codigo % nesta empresa.', v_code;
+  end if;
+
+  -- requisitos: guarda a chave SKILL_xx, o titulo e tambem titulo -> valor,
+  -- que e o formato lido pelo formulario e pelo documento gerado.
+  v_req := '{}'::jsonb;
+  for v_txt in select unnest(array['30','31','32','33','34','35','36','37']) loop
+    declare
+      v_key text := 'SKILL_'||v_txt;
+      v_title text := nullif(btrim(coalesce(p_data->>('SKILL_'||v_txt||'_DESC'),'')),'');
+      v_value text := btrim(coalesce(p_data->>('SKILL_'||v_txt),''));
+    begin
+      if v_title is null then
+        v_title := (array['ESCOLARIDADE MÍNIMA','ESCOLARIDADE DESEJÁVEL','IDIOMA MÍNIMO','IDIOMA DESEJÁVEL',
+                          'COMPETÊNCIAS TÉCNICAS MÍNIMAS','COMPETÊNCIAS TÉCNICAS DESEJÁVEIS',
+                          'EXPERIÊNCIA PROFISSIONAL DESEJÁVEL','COMPETÊNCIAS MARCOPOLO DESEJÁVEIS'])
+                   [array_position(array['30','31','32','33','34','35','36','37'], v_txt)];
+      end if;
+      v_req := v_req || jsonb_build_object(v_key||'_DESC', v_title, v_key, v_value, v_title, v_value);
+    end;
+  end loop;
+
+  if v_id is null then
+    insert into public.job_catalog(
+      job_code, job_name, full_name, company_code, company, cbo, nature, career_track,
+      level, family_code, grouping_key, expected_result, job_description, activities,
+      requirements, raw_data, active, source, imported_at, updated_at, manual_updated_at, manual_updated_by)
+    values (
+      v_code, v_name,
+      nullif(btrim(coalesce(p_data->>'full_name','')),''), v_company_code,
+      nullif(btrim(coalesce(p_data->>'company','')),''),
+      nullif(btrim(coalesce(p_data->>'cbo','')),''),
+      nullif(btrim(coalesce(p_data->>'nature','')),''),
+      nullif(btrim(coalesce(p_data->>'career_track','')),''),
+      nullif(btrim(coalesce(p_data->>'level','')),''),
+      nullif(btrim(coalesce(p_data->>'family_code','')),''),
+      nullif(btrim(coalesce(p_data->>'grouping_key','')),''),
+      nullif(btrim(coalesce(p_data->>'expected_result','')),''),
+      nullif(btrim(coalesce(p_data->>'job_description','')),''),
+      nullif(btrim(coalesce(p_data->>'activities','')),''),
+      v_req, '{}'::jsonb,
+      coalesce((p_data->>'active')::boolean, true),
+      'MANUAL', now(), now(), now(), auth.uid())
+    returning id into v_id;
+  else
+    update public.job_catalog set
+      job_code        = v_code,
+      job_name        = v_name,
+      full_name       = nullif(btrim(coalesce(p_data->>'full_name','')),''),
+      company_code    = v_company_code,
+      company         = nullif(btrim(coalesce(p_data->>'company','')),''),
+      cbo             = nullif(btrim(coalesce(p_data->>'cbo','')),''),
+      nature          = nullif(btrim(coalesce(p_data->>'nature','')),''),
+      career_track    = nullif(btrim(coalesce(p_data->>'career_track','')),''),
+      level           = nullif(btrim(coalesce(p_data->>'level','')),''),
+      family_code     = nullif(btrim(coalesce(p_data->>'family_code','')),''),
+      grouping_key    = nullif(btrim(coalesce(p_data->>'grouping_key','')),''),
+      expected_result = nullif(btrim(coalesce(p_data->>'expected_result','')),''),
+      job_description = nullif(btrim(coalesce(p_data->>'job_description','')),''),
+      activities      = nullif(btrim(coalesce(p_data->>'activities','')),''),
+      requirements    = coalesce(requirements,'{}'::jsonb) || v_req,
+      active          = coalesce((p_data->>'active')::boolean, true),
+      source          = 'MANUAL',
+      updated_at      = now(),
+      manual_updated_at = now(),
+      manual_updated_by = auth.uid()
+     where id = v_id;
+    if not found then raise exception 'Cargo nao localizado.'; end if;
+  end if;
+
+  select to_jsonb(j) into v_row from public.job_catalog j where j.id = v_id;
+  return v_row;
+end;
+$$;
+
+-- 11.4 Ativar / desativar ------------------------------------------------
+drop function if exists public.admin_job_set_active(uuid,boolean);
+create function public.admin_job_set_active(p_id uuid, p_active boolean)
+returns boolean
+language plpgsql
+security definer
+set search_path=public
+as $$
+begin
+  if not public.is_admin_user() then
+    raise exception 'Apenas o perfil ADMIN pode alterar a base de cargos.';
+  end if;
+  update public.job_catalog
+     set active = coalesce(p_active,true), updated_at = now()
+   where id = p_id;
+  if not found then raise exception 'Cargo nao localizado.'; end if;
+  return true;
+end;
+$$;
+
+-- 11.5 Excluir (somente cargos criados manualmente e sem vinculo) --------
+drop function if exists public.admin_job_delete(uuid);
+create function public.admin_job_delete(p_id uuid)
+returns boolean
+language plpgsql
+security definer
+set search_path=public
+as $$
+declare v_source text; v_used boolean := false;
+begin
+  if not public.is_admin_user() then
+    raise exception 'Apenas o perfil ADMIN pode alterar a base de cargos.';
+  end if;
+
+  select coalesce(source,'IMPORT') into v_source from public.job_catalog where id = p_id;
+  if v_source is null then raise exception 'Cargo nao localizado.'; end if;
+  if v_source <> 'MANUAL' then
+    raise exception 'Este cargo veio da planilha. Use "Desativar" para tira-lo da pesquisa.';
+  end if;
+
+  if to_regclass('public.requests') is not null
+     and exists (select 1 from information_schema.columns
+                  where table_schema='public' and table_name='requests' and column_name='source_job_id') then
+    execute 'select exists(select 1 from public.requests where source_job_id = $1)' into v_used using p_id;
+    if v_used then
+      raise exception 'Existem solicitacoes vinculadas a este cargo. Use "Desativar" em vez de excluir.';
+    end if;
+  end if;
+
+  delete from public.job_catalog where id = p_id;
+  return true;
+end;
+$$;
+
+-- 11.6 Exportacao da base vigente (paginada) -----------------------------
+drop function if exists public.admin_job_export(boolean,int,int);
+create function public.admin_job_export(
+  p_only_active boolean default false,
+  p_limit int default 500,
+  p_offset int default 0
+)
+returns jsonb
+language plpgsql
+stable
+security definer
+set search_path=public
+as $$
+declare v_total int; v_rows jsonb; v_limit int; v_offset int;
+begin
+  if not public.is_admin_user() then
+    raise exception 'Apenas o perfil ADMIN pode exportar a base de cargos.';
+  end if;
+  v_limit := least(greatest(coalesce(p_limit,500),1),1000);
+  v_offset := greatest(coalesce(p_offset,0),0);
+
+  select count(*) into v_total from public.job_catalog j
+   where (not coalesce(p_only_active,false) or coalesce(j.active,true));
+
+  select coalesce(jsonb_agg(to_jsonb(x) order by x.company_code, x.job_code),'[]'::jsonb)
+    into v_rows
+    from (
+      select j.job_code, j.job_name, j.full_name, j.company_code, j.company, j.cbo, j.nature,
+             j.career_track, j.level, j.family_code, j.grouping_key, j.expected_result,
+             j.job_description, j.activities, j.requirements, j.raw_data,
+             coalesce(j.active,true) as active, coalesce(j.source,'IMPORT') as source
+        from public.job_catalog j
+       where (not coalesce(p_only_active,false) or coalesce(j.active,true))
+       order by j.company_code, j.job_code
+       limit v_limit offset v_offset) x;
+
+  return jsonb_build_object('total', v_total, 'rows', v_rows, 'limit', v_limit, 'offset', v_offset);
+end;
+$$;
+
+-- 11.7 Permissoes --------------------------------------------------------
+revoke all on function public.admin_job_list(text,boolean,int,int) from public;
+revoke all on function public.admin_job_get(uuid) from public;
+revoke all on function public.admin_job_upsert(uuid,jsonb) from public;
+revoke all on function public.admin_job_set_active(uuid,boolean) from public;
+revoke all on function public.admin_job_delete(uuid) from public;
+revoke all on function public.admin_job_export(boolean,int,int) from public;
+
+grant execute on function public.admin_job_list(text,boolean,int,int) to authenticated;
+grant execute on function public.admin_job_get(uuid) to authenticated;
+grant execute on function public.admin_job_upsert(uuid,jsonb) to authenticated;
+grant execute on function public.admin_job_set_active(uuid,boolean) to authenticated;
+grant execute on function public.admin_job_delete(uuid) to authenticated;
+grant execute on function public.admin_job_export(boolean,int,int) to authenticated;
+
+create index if not exists idx_job_catalog_source on public.job_catalog(source);
 
 notify pgrst,'reload schema';
 
