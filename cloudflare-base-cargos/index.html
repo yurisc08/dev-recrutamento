@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v76"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v76"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v77"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v77"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   #login.login-shell { display:block!important; position:static!important; min-height:100vh!important; background:#fff!important; overflow:visible!important; }
@@ -169,8 +169,30 @@ async function init() {
   }
   $("#login").classList.add("hidden");
   $("#app").classList.remove("hidden");
-  await load();
-  show("dashboard");
+  // Uma falha ao carregar (rede, permissao, RPC fora do ar) deixava a tela pela
+  // metade, sem titulo e sem nenhuma explicacao. Agora o motivo aparece e ha um
+  // botao para tentar de novo.
+  try {
+    await load();
+    show("dashboard");
+  } catch (loadError) {
+    console.error("Falha ao carregar os dados", loadError);
+    mostrarFalhaDeCarregamento(loadError);
+  }
+}
+function mostrarFalhaDeCarregamento(erro) {
+  const motivo = erro?.message || erro?.details || "Não foi possível falar com o servidor.";
+  const host = $("#requests");
+  if (host) {
+    host.innerHTML = `<article class="card"><h3>Não foi possível carregar as solicitações</h3>
+      <p class="muted">${esc(motivo)}</p>
+      <p class="muted">Verifique a conexão e tente novamente. Se continuar, avise a equipe de Carreira &amp; Recompensa.</p>
+      <div class="user-actions"><button class="btn primary" type="button" onclick="location.reload()">Tentar novamente</button></div></article>`;
+  }
+  $("#empty")?.classList.add("hidden");
+  $("#dashboardTitle").textContent = "Não foi possível carregar o painel";
+  $("#dashboardSubtitle").textContent = motivo;
+  toast("Erro ao carregar: " + motivo);
 }
 async function load() {
   let [r, m, f] = await Promise.all([
@@ -579,8 +601,6 @@ function renderDetail() {
     a.push(
       '<button class="btn secondary" onclick="saveValues()">Salvar rascunho</button><button class="btn primary" onclick="transition(\'sendCR\')">Enviar para C&R com observação</button>',
     );
-  if(S.profile.role === "GESTOR" && [ST.M, ST.R].includes(r.status))
-    a.push('<button class="btn ghost" onclick="downloadCurrentModel(\'GESTOR\')">Baixar modelo — Preenchimento Gestor</button>');
   if (mgmt() && r.status === ST.C)
     a.push(
       '<button class="btn secondary" onclick="saveValues()">Salvar revisão</button><button class="btn danger" onclick="transition(\'return\')">Devolver</button><button class="btn primary" onclick="transition(\'approve\')">Concluir solicitação</button>',
@@ -670,11 +690,15 @@ window.transition = async (action) => {
     p_values: values(),
   });
   if (error) return toast(error.message);
-  await sb.functions
-    .invoke("notify-workflow", {
+  // Notificacao e complementar: se falhar (ou se o cliente nao expuser
+  // functions), o fluxo ja foi gravado e a tela precisa atualizar do mesmo jeito.
+  try {
+    await sb.functions?.invoke("notify-workflow", {
       body: { request_id: S.selected.id, event: action },
-    })
-    .catch(() => {});
+    });
+  } catch (notifyError) {
+    console.warn("Falha ao notificar o fluxo", notifyError);
+  }
   await load();
   show("dashboard");
   toast("Fluxo atualizado.");

@@ -1,4 +1,4 @@
-# Correções aplicadas sobre o v74 (publicação v76)
+# Correções aplicadas sobre o v74 (publicação v77)
 
 ## 1. Botões de Editar/Desativar não faziam nada
 
@@ -57,3 +57,28 @@ preenchendo. Não é o documento aprovado.
 Também foi removida uma duplicidade: para o C&R apareciam dois botões na
 solicitação concluída ("Baixar documento" e "Baixar documento aprovado"). Ficou
 apenas o segundo, que cobre também as demais grafias de status aprovado.
+
+## 4. Revisão geral (v77)
+
+Varredura nos três perfis (ADMIN, C&R e Gestor), em todas as abas, no celular e
+com o servidor falhando de propósito. Três ajustes saíram dela:
+
+**Botão morto no perfil do Gestor.** O Gestor via "Baixar modelo — Preenchimento
+Gestor" na etapa dele, mas o próprio código recusava o clique com "O download do
+modelo atual é exclusivo de C&R e Administrador". O botão foi removido: agora ele
+tem só "Salvar rascunho" e "Enviar para C&R com observação".
+
+**Falha de carregamento deixava a tela pela metade.** Se a consulta das
+solicitações falhasse (rede, permissão, RPC fora do ar), o painel abria sem
+título, sem indicadores e sem nenhuma mensagem — parecia que a base estava
+vazia. Agora aparece o motivo do erro e um botão "Tentar novamente".
+
+**Notificação podia travar a atualização da tela.** Depois de cada transição o
+sistema chama a função de notificação; se essa chamada falhasse de forma
+inesperada, a linha seguinte (recarregar e voltar ao painel) não executava e o
+usuário ficava achando que a ação não tinha sido registrada. A notificação agora
+é isolada: falhou, registra no console e o fluxo segue.
+
+Sem erros de JavaScript em nenhum perfil, nenhuma aba estoura a largura no
+celular, e as transições (atribuir ao Gestor, enviar para C&R, concluir) seguem
+validando o que já validavam.
