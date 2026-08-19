@@ -2091,7 +2091,7 @@ function jbBindJobBase() {
   $("#jobHeaderRow").onchange = (e) => jbApplySheet(JB.sheet, Number(e.target.value) || 1);
   $("#jobRedetect").onclick = () => { JB.map = jbAutoMap(JB.headers); renderJobMapStep(); renderJobPreview(); toast("Colunas reconhecidas novamente."); };
   $("#jobClearMap").onclick = () => { JB.map = {}; renderJobMapStep(); renderJobPreview(); };
-  $("#refreshJobBase").onclick = () => loadJobBaseOverview();
+  $("#refreshJobBase").onclick = async () => { await loadJobBaseOverview(); await loadJobList(); };
   $("#jobCancelImport").onclick = () => jbReset();
   $("#jobRunImport").onclick = () => jbRunImport();
 }
@@ -2186,6 +2186,8 @@ async function jbRunImport() {
 
     jbReset();                       // limpa o assistente antes de exibir o resultado
     await loadJobBaseOverview();
+    JL.page = 0;
+    await loadJobList();             // sem isto a lista abaixo ficava com o total antigo
     jbStatus(`Base atualizada: ${r.inserted || 0} cargos novos, ${r.updated || 0} atualizados, ${r.deactivated || 0} desativados, ${r.skipped || 0} ignorados.`, "ok");
     toast("Base de cargos atualizada com sucesso.");
   } catch (err) {

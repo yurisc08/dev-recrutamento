@@ -282,3 +282,18 @@ Validação executada aqui, e não apenas por leitura:
    - as oito abas do ADMIN abrindo com conteúdo;
    - criação e edição de campos, com chaves distintas geradas automaticamente
      para rótulos parecidos (`escolaridade_minima` e `escolaridade_desejavel`).
+
+## 14. Lista de cargos parada depois de importar a planilha (v83)
+
+Ao atualizar a base pela planilha, os indicadores do topo passavam a mostrar o
+número novo (3.970 cargos), mas o quadro **Cargos cadastrados**, logo abaixo,
+continuava com o conteúdo anterior — "1–2 de 2 cargos". O botão **Atualizar
+painel** também não resolvia, porque recarregava só os indicadores.
+
+Agora tanto o fim da importação quanto o botão **Atualizar painel** recarregam
+as duas coisas.
+
+Medido aqui com a sua planilha de 3.968 cargos, contra um PostgreSQL real:
+3 segundos para ler o arquivo, 35 colunas e 30 de 30 campos reconhecidos
+automaticamente, 6 segundos para gravar, e a base terminando com 3.970 cargos
+ativos em 28 empresas.
