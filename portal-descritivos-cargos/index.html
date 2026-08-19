@@ -2087,13 +2087,17 @@ function renderJobList() {
   if (!JL.rows.length) {
     host.innerHTML = `<p class="muted">${JL.query ? "Nenhum cargo encontrado para esta pesquisa." : "Nenhum cargo na base."}</p>`;
   } else {
+    /* Os dados de cada cargo vêm da planilha importada. Por isso as ações usam
+       data-attributes lidos por dataset, e nunca onclick com o valor interpolado:
+       dentro de um atributo o navegador decodifica as entidades antes de o
+       JavaScript ser lido, o que permitiria injetar código pelo conteúdo da planilha. */
     host.innerHTML = JL.rows.map((j) => `<div class="admin-row job-row ${j.active ? "" : "inactive"}">
 <span class="job-row-main"><b>${esc(j.job_code)} — ${esc(j.full_name || j.job_name)}</b>
 <small>${esc(j.company || "Empresa não informada")}${j.company_code ? ` (cód. ${esc(j.company_code)})` : ""}${j.career_track ? ` · ${esc(j.career_track)}` : ""}${j.level ? ` · ${esc(j.level)}` : ""}</small>
 <small><span class="badge ${j.active ? "approved" : "cancelled"}">${j.active ? "Ativo" : "Inativo"}</span> <span class="badge ${j.source === "MANUAL" ? "draft" : "cr"}">${j.source === "MANUAL" ? "Cadastrado no portal" : "Veio da planilha"}</span></small></span>
-<div class="admin-actions"><button class="btn ghost" onclick="editJob('${j.id}')">Editar</button>
-<button class="btn ${j.active ? "danger-soft" : "primary"}" onclick="toggleJob('${j.id}',${!j.active})">${j.active ? "Desativar" : "Reativar"}</button>
-${j.source === "MANUAL" ? `<button class="btn danger-soft" onclick="removeJob('${j.id}','${esc(j.job_code)}')">Excluir</button>` : ""}</div></div>`).join("");
+<div class="admin-actions"><button type="button" class="btn ghost" data-job-action="edit" data-job-id="${esc(j.id)}">Editar</button>
+<button type="button" class="btn ${j.active ? "danger-soft" : "primary"}" data-job-action="toggle" data-job-id="${esc(j.id)}" data-job-active="${j.active ? "1" : "0"}">${j.active ? "Desativar" : "Reativar"}</button>
+${j.source === "MANUAL" ? `<button type="button" class="btn danger-soft" data-job-action="delete" data-job-id="${esc(j.id)}" data-job-code="${esc(j.job_code)}">Excluir</button>` : ""}</div></div>`).join("");
   }
   const from = JL.total ? JL.page * JL.size + 1 : 0;
   const to = Math.min((JL.page + 1) * JL.size, JL.total);
@@ -2108,13 +2112,13 @@ const JOB_FORM_FIELDS = [
   ["nature", "Natureza do cargo"], ["career_track", "Trilha de carreira"], ["level", "Nível do cargo"],
   ["family_code", "Código da família"], ["grouping_key", "Chave de agrupamento"],
 ];
-window.newJob = () => {
+function newJob() {
   if (!admin()) return toast("Apenas o ADMIN pode cadastrar cargos.");
   fillJobForm({ active: true });
   $("#jobDialogTitle").textContent = "Novo cargo na base";
   $("#jobDialog").showModal();
-};
-window.editJob = async (id) => {
+}
+async function editJob(id) {
   if (!admin()) return toast("Apenas o ADMIN pode editar cargos.");
   const { data, error } = await sb.rpc("admin_job_get", { p_id: id });
   if (error) return toast("Não foi possível abrir o cargo: " + error.message);
@@ -2122,7 +2126,7 @@ window.editJob = async (id) => {
   fillJobForm(j);
   $("#jobDialogTitle").textContent = "Editar cargo";
   $("#jobDialog").showModal();
-};
+}
 function fillJobForm(j) {
   const f = $("#jobForm");
   f.reset();
@@ -2135,15 +2139,15 @@ function fillJobForm(j) {
     : j.source === "MANUAL" ? "Cargo cadastrado no portal."
     : "Cargo veio da planilha. Ao salvar, ele passa a ser tratado como cadastro do portal e deixa de ser desativado automaticamente nas próximas importações.";
 }
-window.toggleJob = async (id, active) => {
+async function toggleJob(id, active) {
   if (!admin()) return;
   const { error } = await sb.rpc("admin_job_set_active", { p_id: id, p_active: active });
   if (error) return toast("Não foi possível alterar: " + error.message);
   await loadJobList();
   await loadJobBaseOverview();
   toast(active ? "Cargo reativado." : "Cargo desativado. Ele deixa de aparecer na pesquisa de cargos vigentes.");
-};
-window.removeJob = async (id, code) => {
+}
+async function removeJob(id, code) {
   if (!admin()) return;
   if (!confirm(`Excluir definitivamente o cargo ${code}? Esta ação não pode ser desfeita.`)) return;
   const { error } = await sb.rpc("admin_job_delete", { p_id: id });
@@ -2151,11 +2155,19 @@ window.removeJob = async (id, code) => {
   await loadJobList();
   await loadJobBaseOverview();
   toast("Cargo excluído.");
-};
+}
 function jbBindJobCrud() {
   if (!$("#jobListBox")) return;
   $("#jobExportBtn").onclick = jbExportBase;
-  $("#newJobBtn").onclick = () => window.newJob();
+  $("#newJobBtn").onclick = () => newJob();
+  $("#jobListBox").addEventListener("click", (e) => {
+    const btn = e.target.closest("[data-job-action]");
+    if (!btn) return;
+    const { jobAction, jobId, jobActive, jobCode } = btn.dataset;
+    if (jobAction === "edit") editJob(jobId);
+    else if (jobAction === "toggle") toggleJob(jobId, jobActive !== "1");
+    else if (jobAction === "delete") removeJob(jobId, jobCode);
+  });
   $("#jobListSearch").oninput = (e) => {
     clearTimeout(JL.timer);
     JL.timer = setTimeout(() => { JL.query = e.target.value.trim(); JL.page = 0; loadJobList(); }, 300);

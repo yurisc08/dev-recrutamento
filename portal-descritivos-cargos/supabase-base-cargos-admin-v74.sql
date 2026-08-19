@@ -812,3 +812,25 @@ select
   count(*) filter (where coalesce(active,true)) as cargos_ativos,
   max(imported_at) as ultima_importacao
 from public.job_catalog;
+
+-- 10.1 CONFERENCIA DE SEGURANCA
+-- As tabelas criadas aqui ficam com RLS ligado e SEM policy: so as funcoes
+-- acima (security definer, que exigem perfil ADMIN) conseguem le-las.
+-- A consulta abaixo mostra o estado de RLS de cada tabela envolvida.
+-- Se job_catalog aparecer com rls_ligado = false, qualquer usuario autenticado
+-- consegue ler a tabela inteira direto pela API, sem passar pelas funcoes.
+-- Neste projeto o portal nunca le job_catalog direto (usa search_job_catalog e
+-- get_job_catalog_details), entao ligar o RLS costuma ser seguro:
+--     alter table public.job_catalog enable row level security;
+-- Confirme antes se nao existe outro sistema lendo a tabela diretamente.
+select
+  c.relname               as tabela,
+  c.relrowsecurity        as rls_ligado,
+  count(p.policyname)     as policies
+from pg_class c
+join pg_namespace n on n.oid = c.relnamespace
+left join pg_policies p on p.schemaname = n.nspname and p.tablename = c.relname
+where n.nspname = 'public'
+  and c.relname in ('job_catalog','job_import_runs','job_import_stage','job_import_profiles','profiles')
+group by c.relname, c.relrowsecurity
+order by c.relname;

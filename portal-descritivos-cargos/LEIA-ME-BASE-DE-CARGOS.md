@@ -115,7 +115,54 @@ código em empresas diferentes é permitido, porque é assim que a base real fun
 
 ---
 
-## 6. Arquivos desta versão
+## 6. Pontos de atenção de segurança
+
+**O que já está protegido:**
+
+* toda função do banco é `security definer` com `set search_path` fixo e confere o
+  perfil ADMIN no servidor — as verificações da tela são só conveniência;
+* as tabelas criadas aqui (`job_import_runs`, `job_import_stage`,
+  `job_import_profiles`) ficam com RLS ligado e **sem policy**: só as funções
+  conseguem lê-las;
+* todo dado vindo da planilha é escapado antes de ir para a tela, e as ações da
+  lista de cargos usam `data-attributes` em vez de `onclick` — assim o conteúdo de
+  uma planilha não consegue virar código executado no navegador do ADMIN;
+* nenhuma chave de servidor (`service_role`) vai no pacote publicado.
+
+**Duas coisas que dependem de uma ação sua:**
+
+1. **Leitor de planilhas (`vendor/xlsx.mjs`) na versão 0.18.5.** É a última publicada
+   no npm, e tem dois avisos de segurança em aberto — *prototype pollution*
+   ([GHSA-4r6h-8v6p-xvw6](https://github.com/advisories/GHSA-4r6h-8v6p-xvw6),
+   corrigido na 0.19.3) e *ReDoS*
+   ([GHSA-5pgg-2g8v-p4x9](https://github.com/advisories/GHSA-5pgg-2g8v-p4x9),
+   corrigido na 0.20.2). As versões corrigidas saíram do npm e só existem no CDN do
+   próprio SheetJS. O código funciona igual com a versão nova — é só **trocar o
+   arquivo**, sem mexer em mais nada:
+
+   ```
+   curl -o vendor/xlsx.mjs https://cdn.sheetjs.com/xlsx-0.20.3/package/xlsx.mjs
+   ```
+
+   Depois é só publicar a pasta `vendor/` novamente. Vale fazer isso antes de subir,
+   porque o arquivo lido pode vir de fora e é aberto dentro do navegador do ADMIN.
+
+2. **RLS da tabela `job_catalog`.** Ao final do SQL há uma conferência que mostra o
+   estado de RLS de cada tabela. Se `job_catalog` aparecer com `rls_ligado = false`,
+   qualquer usuário autenticado consegue ler a tabela inteira direto pela API, sem
+   passar pelas funções. O portal nunca lê essa tabela diretamente (usa
+   `search_job_catalog` e `get_job_catalog_details`), então normalmente é seguro
+   ligar:
+
+   ```sql
+   alter table public.job_catalog enable row level security;
+   ```
+
+   Confirme antes se não há outro sistema lendo a tabela direto.
+
+---
+
+## 7. Arquivos desta versão
 
 | Arquivo | O que mudou |
 |---|---|
