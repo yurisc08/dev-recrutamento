@@ -1,4 +1,4 @@
-# Correções aplicadas sobre o v74 (publicação v77)
+# Correções aplicadas sobre o v74 (publicação v78)
 
 ## 1. Botões de Editar/Desativar não faziam nada
 
@@ -82,3 +82,37 @@ usuário ficava achando que a ação não tinha sido registrada. A notificação
 Sem erros de JavaScript em nenhum perfil, nenhuma aba estoura a largura no
 celular, e as transições (atribuir ao Gestor, enviar para C&R, concluir) seguem
 validando o que já validavam.
+
+## 5. Login dizendo "Perfil não cadastrado ou inativo" (v78)
+
+A verificação do perfil, logo após o login, tratava três situações diferentes
+como se fossem a mesma — e ainda deslogava o usuário em todas elas:
+
+    let { data: p } = await sb.from("profiles")...;   // o erro era descartado
+    if (!p?.active) { await sb.auth.signOut(); toast("Perfil não cadastrado ou inativo."); }
+
+- **Falha na consulta** (rede instável, permissão/RLS, PostgREST fora do ar):
+  `p` vinha nulo e o usuário — ativo e cadastrado — era expulso com a mensagem
+  errada. Agora a sessão é mantida e a tela explica o motivo real, pedindo nova
+  tentativa.
+- **Cadastro inexistente** e **acesso inativo** agora têm mensagens distintas,
+  cada uma dizendo o que fazer.
+- **`active` nulo** (perfil criado fora do portal, sem o campo preenchido)
+  também tinha a mesma mensagem genérica; agora avisa que falta ativar o acesso.
+
+As mensagens aparecem no próprio cartão de login, e não só num aviso que some
+em três segundos.
+
+**Corrida entre duas inicializações.** `init()` era chamado pelo formulário e
+também pelo evento de autenticação. As duas execuções corriam juntas e, se a
+segunda tropeçasse, o `signOut()` dela derrubava a sessão que a primeira já
+tinha validado — o login "caía" sozinho, de forma intermitente. Agora a segunda
+chamada reaproveita a primeira.
+
+**Renovação de token não reinicia mais a tela.** O mesmo evento dispara quando o
+token é renovado automaticamente. Antes, isso recarregava tudo e jogava o
+usuário de volta ao Painel no meio de uma solicitação aberta. Agora esses
+eventos são ignorados quando o perfil já está carregado.
+
+Testado nos cinco cenários (perfil ativo, inativo, inexistente, erro de consulta
+e `active` nulo) e com a renovação de token durante uma solicitação aberta.

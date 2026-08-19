@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v77"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v77"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v78"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v78"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   #login.login-shell { display:block!important; position:static!important; min-height:100vh!important; background:#fff!important; overflow:visible!important; }
@@ -28,6 +28,7 @@
 <section id="login" class="login-shell"><div class="brand-panel"><div class="brand-logos brand-logos-login"><img class="hub-logo hub-logo-login" src="./logo-anterior.png" alt="Carreira e Recompensa"><img class="hub-logo hub-logo-login hub-logo-new" src="./logo-hub-carreira-recompensa.png" alt="Hub Carreira e Recompensa"></div><p class="eyebrow">Portal corporativo</p><h1>Fluxo de Descritivos de Cargos</h1><p class="lead">Criação, revisão, devolução e conclusão em um único ambiente.</p><div class="flow-mini"><span>C&R cria</span><b>→</b><span>Gestor sugere</span><b>→</b><span>C&R conclui</span></div></div><form id="loginForm" class="login-card"><p class="eyebrow">Acesso corporativo</p><h2>Entrar</h2><p class="muted">ADMIN, C&R e Gestores acessam com e-mail e código individual. O código é enviado no cadastro ou na regeneração do acesso.</p>
 <label>E-mail corporativo<input id="email" type="email" inputmode="email" autocomplete="username" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="nome@marcopolo.com.br" required></label>
 <label id="codeGroup">Código de acesso<input id="accessCode" autocomplete="one-time-code" placeholder="DC-XXXXXX-XXXX"></label>
+<div id="loginNotice" class="login-notice hidden" role="alert"></div>
 <button id="codeLoginBtn" class="btn primary full" type="submit">Entrar com código</button>
 <div class="access-help" role="note"><strong>Dificuldade de acesso?</strong><span>Entre em contato com a equipe de Carreira &amp; Recompensa para receber suporte.</span></div>
 <p class="fine">O código individual é gerado no servidor para C&R e Gestores e enviado pelo fluxo de notificação.</p></form></section>
@@ -148,20 +149,60 @@ function badge(s) {
             ? "approved"
             : "cancelled";
 }
+function avisoLogin(mensagem) {
+  const box = $("#loginNotice");
+  if (box) {
+    box.textContent = mensagem;
+    box.classList.remove("hidden");
+  }
+  toast(mensagem);
+}
+function limparAvisoLogin() {
+  const box = $("#loginNotice");
+  if (box) { box.textContent = ""; box.classList.add("hidden"); }
+}
+// init() e chamado pelo formulario e tambem pelo onAuthStateChange. Sem este
+// controle as duas execucoes corriam juntas e, se uma tropecasse, o signOut dela
+// derrubava a sessao que a outra ja tinha validado — o login "caia" sozinho.
+let initEmAndamento = null;
 async function init() {
+  if (initEmAndamento) return initEmAndamento;
+  initEmAndamento = executarInit();
+  try {
+    return await initEmAndamento;
+  } finally {
+    initEmAndamento = null;
+  }
+}
+async function executarInit() {
   let {
     data: { session },
   } = await sb.auth.getSession();
   if (!session) return;
-  let { data: p } = await sb
+  let { data: p, error: perfilErro } = await sb
     .from("profiles")
     .select("*")
     .eq("id", session.user.id)
     .maybeSingle();
-  if (!p?.active) {
-    await sb.auth.signOut();
-    return toast("Perfil não cadastrado ou inativo.");
+  // Falha de rede ou de permissao na leitura do perfil nao significa cadastro
+  // inativo: manter a sessao e pedir nova tentativa, em vez de deslogar.
+  if (perfilErro) {
+    console.error("Falha ao carregar o perfil", perfilErro);
+    return avisoLogin("Não foi possível confirmar seu acesso agora: " + (perfilErro.message || "falha de comunicação") + ". Tente novamente em alguns instantes.");
   }
+  if (!p) {
+    await sb.auth.signOut();
+    return avisoLogin("Este e-mail ainda não está cadastrado no portal. Solicite o cadastro à equipe de Carreira & Recompensa.");
+  }
+  if (p.active === false) {
+    await sb.auth.signOut();
+    return avisoLogin("Seu acesso está inativo. Fale com a equipe de Carreira & Recompensa para reativar.");
+  }
+  if (p.active == null) {
+    await sb.auth.signOut();
+    return avisoLogin("Seu cadastro existe, mas o acesso ainda não foi ativado. Peça à equipe de Carreira & Recompensa para ativar o seu usuário.");
+  }
+  limparAvisoLogin();
   S.profile = p;
   if (!sessionStorage.getItem("access_logged")) {
     await registerAccess("SESSION_RESTORED");
@@ -1174,6 +1215,7 @@ $("#loginForm").onsubmit = async (e) => {
   const loginEmail = $("#email").value.replace(/\s+/g, "").toLowerCase();
   const accessCode = $("#accessCode").value.trim();
   $("#email").value = loginEmail;
+  limparAvisoLogin();
   if (!corporateEmail(loginEmail)) return toast("Utilize um e-mail corporativo @marcopolo.com.br.");
   if (!accessCode) return toast("Informe o código de acesso.");
   submit.disabled = true;
@@ -2313,7 +2355,14 @@ function jbBindJobCrud() {
 }
 jbBindJobCrud();
 
-sb.auth.onAuthStateChange(() => setTimeout(init, 0));
+// A renovacao automatica do token dispara este evento de tempos em tempos. Sem
+// filtro, o app recarregava tudo e voltava para o Painel no meio do trabalho.
+sb.auth.onAuthStateChange((evento, sessao) => {
+  if (evento === "TOKEN_REFRESHED" || evento === "USER_UPDATED") return;
+  if (evento === "SIGNED_OUT") { S.profile = null; return; }
+  if (S.profile && sessao?.user?.id === S.profile.id) return;
+  setTimeout(init, 0);
+});
 init();
 
 </script></body></html>
