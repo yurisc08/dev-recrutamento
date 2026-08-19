@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260818-v79"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v79"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260818-v80"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260818-v80"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   #login.login-shell { display:block!important; position:static!important; min-height:100vh!important; background:#fff!important; overflow:visible!important; }
@@ -465,11 +465,31 @@ function renderManagers() {
       .join("") ||
     '<div class="empty"><h3>Nenhum usuário encontrado</h3></div>';
 }
+// Dois campos ativos com a mesma chave compartilham o mesmo valor na solicitacao:
+// o que for digitado em um sobrescreve o outro ao salvar (o conteudo e gravado
+// por chave, nao por campo). Isso aparece como "nao consigo editar este campo".
+function chavesRepetidas() {
+  const contagem = {};
+  S.fields.filter((f) => f.active).forEach((f) => {
+    const chave = String(f.field_key || "").trim().toLowerCase();
+    if (!chave) return;
+    (contagem[chave] ||= []).push(f);
+  });
+  return Object.entries(contagem).filter(([, lista]) => lista.length > 1);
+}
 function renderFields() {
   if (!mgmt()) return;
   const host=$("#fieldRules");
   if(!S.fields.length){host.innerHTML='<div class="empty admin-fields-empty"><h3>Nenhum campo cadastrado</h3><p>Execute o SQL V20 para restaurar os campos padrão ou clique para recarregar.</p><button class="btn secondary" onclick="reloadFields()">Recarregar campos</button></div>';return;}
-  host.innerHTML=S.fields.map(f=>`<article class="card rule-card"><div><b>${esc(f.label)}</b><div class="config-summary"><span class="config-chip">${f.owner_role === "CR" ? "Gestão — C&R" : "Responsável — Gestor"}</span><span class="config-chip approval-chip">Aprovação: ${f.approval_area_id ? esc(S.approvalAreas.find(a=>a.id===f.approval_area_id)?.name||"Área aprovadora") : "C&R"}</span><span class="config-chip">${typeLabel(f.field_type)}</span><span class="${f.required ? "required-chip" : "optional-chip"}">${f.required ? "Obrigatório" : "Opcional"}</span><span class="config-chip">${f.active ? "Ativo" : "Inativo"}</span><span class="config-chip">${f.update_editable ? "Editável em atualização" : "Somente leitura em atualização"}</span></div>${f.help_text ? `<small class="muted">${esc(f.help_text)}</small>` : ""}</div><div class="field-actions"><button class="btn ghost" onclick="editField(${jsq(f.id)})">Editar</button><button class="btn danger" onclick="removeField(${jsq(f.id)})">${f.is_system ? "Desativar" : "Remover"}</button></div></article>`).join('');
+  const repetidas = chavesRepetidas();
+  const chavesEmConflito = new Set(repetidas.flatMap(([chave]) => chave));
+  const aviso = repetidas.length
+    ? `<article class="card notice warning"><b>Campos com a mesma chave interna</b>
+        <p>Estes campos dividem a mesma chave e, por isso, dividem também o mesmo conteúdo na solicitação: o que for preenchido em um substitui o outro ao salvar.</p>
+        <ul>${repetidas.map(([chave, lista]) => `<li><code>${esc(chave)}</code> — ${lista.map((x) => esc(x.label)).join(" · ")}</li>`).join("")}</ul>
+        <p>Peça ao responsável pelo banco para renomear a chave de um deles (ou desative o campo que não for usado).</p></article>`
+    : "";
+  host.innerHTML=aviso+S.fields.map(f=>`<article class="card rule-card${chavesEmConflito.has(String(f.field_key||"").trim().toLowerCase()) && f.active ? " chave-repetida" : ""}"><div><b>${esc(f.label)}</b><div class="config-summary"><span class="config-chip">${f.owner_role === "CR" ? "Gestão — C&R" : "Responsável — Gestor"}</span><span class="config-chip approval-chip">Aprovação: ${f.approval_area_id ? esc(S.approvalAreas.find(a=>a.id===f.approval_area_id)?.name||"Área aprovadora") : "C&R"}</span><span class="config-chip">${typeLabel(f.field_type)}</span><span class="${f.required ? "required-chip" : "optional-chip"}">${f.required ? "Obrigatório" : "Opcional"}</span><span class="config-chip">${f.active ? "Ativo" : "Inativo"}</span><span class="config-chip">${f.update_editable ? "Editável em atualização" : "Somente leitura em atualização"}</span>${chavesEmConflito.has(String(f.field_key||"").trim().toLowerCase()) && f.active ? `<span class="required-chip" title="Outro campo ativo usa a mesma chave">chave repetida: ${esc(f.field_key)}</span>` : ""}</div>${f.help_text ? `<small class="muted">${esc(f.help_text)}</small>` : ""}</div><div class="field-actions"><button class="btn ghost" onclick="editField(${jsq(f.id)})">Editar</button><button class="btn danger" onclick="removeField(${jsq(f.id)})">${f.is_system ? "Desativar" : "Remover"}</button></div></article>`).join('');
 }
 window.reloadFields=async()=>{const{data,error}=await sb.from('form_fields').select('*').order('sort_order');if(error)return toast(error.message);S.fields=data||[];renderFields();toast(`${S.fields.length} campo(s) carregado(s).`);};
 const typeLabel = (t) =>
@@ -544,7 +564,10 @@ window.openRequest = async (id, trigger=null) => {
 document.addEventListener("click",e=>{const btn=e.target.closest('.open-request-btn');if(!btn)return;e.preventDefault();window.openRequest(btn.dataset.requestId,btn);});
 
 function control(f, value, disabled) {
-  let common = `name="${esc(f.field_key)}" ${disabled ? "disabled" : ""} ${f.required ? 'data-required="true"' : ""}`;
+  // data-field-id identifica o campo sem depender do field_key: dois campos com
+  // a mesma chave (Escolaridade mínima e desejável, por exemplo) deixavam de ser
+  // lidos individualmente, porque a busca por name devolvia sempre o primeiro.
+  let common = `name="${esc(f.field_key)}" data-field-id="${esc(f.id)}" ${disabled ? "disabled" : ""} ${f.required ? 'data-required="true"' : ""}`;
   if (f.field_type === "select")
     return `<select class="select-control" ${common}><option value="">Selecione...</option>${(f.options || []).map((o) => `<option ${String(value) === String(o) ? "selected" : ""}>${esc(o)}</option>`).join("")}</select>`;
   if (f.field_type === "checkbox")
@@ -606,6 +629,9 @@ function renderDetail() {
     (r.request_kind==='UPDATE'?`<div class="review-scope-note"><b>Escopo da revisão:</b> ${(r.intake_selected_sections||[]).map(sectionLabel).join(', ')||'não informado'}. Somente os campos desse escopo podem ser alterados.</div>`:'')+
     (isApprovedStatus(r.status)
       ? '<div class="approved-readonly-note">Solicitação concluída. Os campos estão disponíveis somente para consulta; os explicativos continuam visíveis no ícone ?.</div>'
+      : "") +
+    ((mgmt() && chavesRepetidas().length)
+      ? `<div class="notice warning" style="grid-column:1/-1"><b>Campos que dividem o mesmo conteúdo:</b> ${chavesRepetidas().map(([chave, lista]) => `${lista.map((x) => esc(x.label)).join(" e ")} (chave <code>${esc(chave)}</code>)`).join("; ")}. O que for preenchido em um substitui o outro ao salvar — ajuste as chaves na aba <b>Campos</b>.</div>`
       : "") +
     visibleFields
       .map((f) => {
@@ -685,12 +711,21 @@ function renderDetail() {
     )
     .join("");
 }
+// Localiza o controle de um campo dentro do formulario da solicitacao. Busca
+// pelo id do campo e, para telas antigas em cache, cai no name — sempre limitado
+// a #content, para nunca pegar um input de outro dialogo com o mesmo nome.
+function campoDaSolicitacao(f) {
+  const escopo = document.getElementById("content");
+  if (!escopo) return null;
+  return escopo.querySelector(`[data-field-id="${CSS.escape(String(f.id))}"]`) ||
+    escopo.querySelector(`[name="${CSS.escape(String(f.field_key || ""))}"]`);
+}
 function values() {
   let o = {};
   S.fields
     .filter((f) => f.active)
     .forEach((f) => {
-      let el = $(`[name="${f.field_key}"]`);
+      let el = campoDaSolicitacao(f);
       if (el && !el.disabled)
         o[f.field_key] =
           f.field_type === "checkbox" ? String(el.checked) : el.value;
@@ -952,7 +987,7 @@ function validateCurrentModelData(){
   if(!String(r.branch||"").trim())missing.push("Filial");
   const current=values();
   S.fields.filter(f=>f.active&&f.required).forEach(f=>{
-    const el=document.querySelector(`[name="${CSS.escape(f.field_key)}"]`);
+    const el=campoDaSolicitacao(f);
     const saved=(Array.isArray(r.request_field_values)?r.request_field_values:[]).find(v=>v.field_id===f.id||v.field_key===f.field_key)?.field_value;
     const value=el?(f.field_type==="checkbox"?String(el.checked):el.value):saved;
     if(f.field_type==="checkbox"?value!=="true":!String(value??"").trim())missing.push(f.label);

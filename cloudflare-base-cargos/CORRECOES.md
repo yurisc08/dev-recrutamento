@@ -1,4 +1,4 @@
-# Correções aplicadas sobre o v74 (publicação v79)
+# Correções aplicadas sobre o v74 (publicação v80)
 
 ## 1. Botões de Editar/Desativar não faziam nada
 
@@ -139,3 +139,29 @@ Agora o balão é posicionado na tela, fora do botão:
 Testado no cartão da solicitação, dentro do diálogo de nova solicitação e no
 celular, com um texto de 368 caracteres: em todos os casos o balão fica inteiro
 dentro da tela e mostra o texto completo.
+
+## 7. Campo de escolaridade que "não deixa editar" (v80)
+
+Investigando o relato, o campo não fica bloqueado para o ADMIN em nenhuma tela:
+na solicitação ele é sempre editável para esse perfil, e a edição pela aba
+Campos envia o identificador correto. O que existe é outro problema, que produz
+exatamente a mesma sensação quando há **dois campos com a mesma chave interna**
+— caso típico de "Escolaridade mínima" e "Escolaridade desejável":
+
+- o conteúdo da solicitação é gravado **por chave**, não por campo. Com a chave
+  repetida, o que for digitado em um substitui o outro ao salvar: o usuário
+  edita, salva, e o campo volta como estava;
+- a leitura do valor na tela também usava o `name` do campo e devolvia sempre o
+  primeiro elemento encontrado. Agora cada controle carrega o identificador do
+  campo e é lido individualmente, dentro do formulário da solicitação — o que
+  também evita confusão com campos de mesmo nome em diálogos abertos.
+
+Como a gravação por chave vem do banco, o portal passa a **mostrar o conflito**
+em vez de perder conteúdo em silêncio:
+
+- a aba **Campos** abre com um aviso listando quais campos dividem a mesma chave,
+  e os cartões envolvidos ficam destacados com a marca "chave repetida";
+- a própria solicitação mostra o aviso acima dos campos, para C&R e ADMIN.
+
+A correção definitiva é renomear a chave de um dos campos no banco (ou desativar
+o que não for usado).
