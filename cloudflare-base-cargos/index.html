@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260819-v83"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260819-v83"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260819-v84"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260819-v84"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   #login.login-shell { display:block!important; position:static!important; min-height:100vh!important; background:#fff!important; overflow:visible!important; }
@@ -1506,6 +1506,10 @@ $("#requestForm").onsubmit = async (e) => {
   if (error) return toast(error.message);
   const kindSave=await sb.rpc("cr_mark_request_kind",{p_request_id:requestId,p_request_kind:b.request_type});
   if(kindSave.error) return toast("Solicitação criada, mas não foi possível registrar o tipo: "+kindSave.error.message);
+  // Setor e justificativa nao cabem no create_request: sao gravados logo em
+  // seguida. Se a funcao ainda nao existir no banco, a criacao nao e perdida.
+  const detalhes=await sb.rpc("cr_set_request_details",{p_request_id:requestId,p_sector:b.sector||null,p_justification:b.justification||null});
+  if(detalhes.error) console.warn("Setor e justificativa não foram gravados",detalhes.error);
   if(b.request_type==="UPDATE"){const scopeSave=await sb.rpc("cr_set_request_update_scope",{p_request_id:requestId,p_source_job_id:b.source_job_id,p_update_sections:crSelectedSections,p_source_snapshot:S.selectedJobDetails||{},p_current_values:currentValues});if(scopeSave.error)return toast("Solicitação criada, mas não foi possível salvar os conteúdos para revisão: "+scopeSave.error.message);}
   if (b.use_additional_approval === "YES") {
     if (!b.additional_area_id || !b.additional_approver_id) return toast("Solicitação criada, mas selecione um aprovador válido para pré-configurar o fluxo.");

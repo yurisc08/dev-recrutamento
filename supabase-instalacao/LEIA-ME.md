@@ -1,7 +1,7 @@
-# Instalador do Supabase — Fluxo de Descritivos de Cargos (v83)
+# Instalador do Supabase — Fluxo de Descritivos de Cargos (v84)
 
 Este pacote cria o banco inteiro do portal em um **projeto Supabase novo**:
-as 12 tabelas, as 45 funções, as políticas de segurança (RLS), as permissões e
+as 12 tabelas, as 46 funções, as políticas de segurança (RLS), as permissões e
 os dados iniciais.
 
 > **Leia antes de rodar.** Estes scripts foram escritos para **um projeto novo,
@@ -16,21 +16,25 @@ No Supabase → **SQL Editor**, abra cada arquivo e execute na ordem. Todos usam
 `if not exists` / `create or replace`: podem ser executados de novo sem apagar
 nada.
 
-| Arquivo | O que faz |
-|---|---|
-| `01-esquema-e-tabelas.sql` | as 12 tabelas, chaves, índices e a base de cargos |
-| `02-funcoes-basicas.sql` | perfil, permissões, auditoria, acessos e administração de campos |
-| `03-funcoes-do-fluxo.sql` | solicitações: criar, listar, salvar valores e mover o fluxo |
-| `04-triagem-e-validacao-adicional.sql` | pedidos iniciados pelo Gestor e aprovação adicional |
-| `05-permissoes-e-dados-iniciais.sql` | RLS, `grant execute`, fluxo oficial, os 13 campos e o mapeamento do documento |
-| `06-pesquisa-de-cargos.sql` | pesquisa de cargo vigente e detalhes do cargo |
-| `07-base-de-cargos-admin.sql` | aba Base de cargos: importação, cadastro manual e exportação |
+| Arquivo | O que faz | Obrigatório |
+|---|---|---|
+| `01-esquema-e-tabelas.sql` | as 12 tabelas, chaves, índices e a base de cargos | sim |
+| `02-funcoes-basicas.sql` | perfil, permissões, auditoria, acessos e administração de campos | sim |
+| `03-funcoes-do-fluxo.sql` | solicitações: criar, listar, salvar valores e mover o fluxo | sim |
+| `04-triagem-e-validacao-adicional.sql` | pedidos iniciados pelo Gestor e aprovação adicional | sim |
+| `05-permissoes-e-dados-iniciais.sql` | RLS, `grant execute`, fluxo oficial, os 13 campos e o mapeamento do documento | sim |
+| `06-pesquisa-de-cargos.sql` | pesquisa de cargo vigente e detalhes do cargo | sim |
+| `07-base-de-cargos-admin.sql` | aba Base de cargos: importação, cadastro manual e exportação | sim |
+| `11-notificacoes-power-automate.sql` | avisa cada etapa do fluxo em um fluxo do Power Automate | opcional |
 
-Depois de rodar os sete, execute o `00-verificacao.sql`. Ele não altera nada e
-deve terminar com:
+Depois de rodar de 01 a 07, execute o `00-verificacao.sql`. Ele não altera nada
+e deve terminar com:
 
     tabelas_esperadas | tabelas_presentes | funcoes_esperadas | funcoes_presentes
                    12 |                12 |                45 |                45
+
+(o `cr_set_request_details` é a 46ª função e não entra nessa conferência, que é
+a mesma lista da v83.)
 
 ## Primeiro acesso
 
@@ -51,11 +55,18 @@ Duas funções precisam ser publicadas em **Supabase → Edge Functions**; nenhu
 SQL as cria:
 
 - `admin-users` — cadastro de usuários e geração do código de acesso;
-- `notify-workflow` — aviso a cada etapa do fluxo. Se falhar, o fluxo continua
-  normalmente; apenas a notificação deixa de ser enviada.
+- `notify-workflow` — chamada pela tela a cada transição. Se você usar o
+  `11-notificacoes-power-automate.sql`, ela deixa de ser necessária: os avisos
+  passam a sair do próprio banco, e uma falha nela nunca interrompe o fluxo.
 
 Sem a `admin-users`, o cadastro pela aba **Usuários** não funciona — nesse caso
 crie os usuários direto em Authentication, como no primeiro acesso.
+
+## Notificações por etapa no Power Automate
+
+O `11-notificacoes-power-automate.sql` pendura um gatilho no histórico das
+solicitações: a cada etapa gravada, o banco monta o aviso e faz um POST no seu
+fluxo. Passo a passo em `../COMO-LIGAR-O-POWER-AUTOMATE.md`.
 
 ## Arquivos de apoio
 
@@ -69,12 +80,11 @@ crie os usuários direto em Authentication, como no primeiro acesso.
 ## O que foi testado aqui
 
 1. Instalação limpa em um PostgreSQL 16 vazio: os sete arquivos rodaram com
-   **0 erros**.
+   **0 erros**, e a reexecução também.
 2. `00-verificacao.sql` no banco recém-criado: **12 de 12 tabelas** e **45 de 45
    funções**, nenhuma faltando.
-3. O portal (o `index.html` do outro zip) rodando de verdade contra esse banco:
-   login dos quatro perfis, solicitação criada pelo C&R, preenchida pelo Gestor,
-   devolvida, código do cargo salvo e concluída; download da prévia em Validação
-   C&R e do documento concluído, os dois com os 17 marcadores preenchidos; o
-   Gestor sem nenhum botão de download; as oito abas do ADMIN abrindo com
-   conteúdo; e a criação de campos gerando chaves distintas automaticamente.
+3. O portal rodando de verdade contra esse banco: login dos quatro perfis,
+   fluxo completo de C&R a Gestor e de volta, download da prévia e do documento
+   concluído com os 17 marcadores preenchidos, importação da planilha de 3.968
+   cargos e as oito abas do ADMIN.
+4. As notificações: cada etapa do fluxo gerou um aviso com o destinatário certo.

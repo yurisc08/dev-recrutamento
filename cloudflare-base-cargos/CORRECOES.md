@@ -1,4 +1,4 @@
-# Correções aplicadas sobre o v74 (publicação v83)
+# Correções aplicadas sobre o v74 (publicação v84)
 
 ## 1. Botões de Editar/Desativar não faziam nada
 
@@ -297,3 +297,29 @@ Medido aqui com a sua planilha de 3.968 cargos, contra um PostgreSQL real:
 3 segundos para ler o arquivo, 35 colunas e 30 de 30 campos reconhecidos
 automaticamente, 6 segundos para gravar, e a base terminando com 3.970 cargos
 ativos em 28 empresas.
+
+## 15. Setor e justificativa não eram gravados (v84)
+
+Os campos **Setor / área** (obrigatório na tela) e **Justificativa** eram
+digitados na nova solicitação e simplesmente descartados: o `create_request`
+recebia só título, código, empresa, filial, gestor e prazo. O conteúdo não
+aparecia em lugar nenhum depois.
+
+Agora, logo após criar a solicitação, o portal grava os dois com a função nova
+`cr_set_request_details`. Se ela ainda não existir no banco, a solicitação
+continua sendo criada normalmente — só os dois campos deixam de ser gravados,
+com o aviso no console. Testado: solicitação criada pela tela chega ao banco com
+`sector = "Qualidade"` e a justificativa completa.
+
+## 16. Notificações por etapa no Power Automate (v84)
+
+Novo arquivo `11-notificacoes-power-automate.sql` (opcional). Ele pendura um
+gatilho no histórico das solicitações e, a cada etapa, faz um POST no fluxo do
+Power Automate com o aviso pronto — inclusive com a lista de quem deve receber.
+
+O motivo de sair do banco e não da tela: a chamada `notify-workflow` que existia
+no navegador só acontecia no botão de transição. Pedido aberto pelo Gestor,
+validação adicional, recusa e conferência opcional passam por outros caminhos e
+não avisavam ninguém.
+
+O passo a passo está em `COMO-LIGAR-O-POWER-AUTOMATE.md`.

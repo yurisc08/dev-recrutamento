@@ -101,6 +101,23 @@ begin
 end;
 $$;
 
+-- Setor e justificativa sao digitados na tela de nova solicitacao, mas o
+-- create_request nao os recebia: o conteudo se perdia ao salvar. Esta funcao
+-- e chamada logo depois da criacao, sem alterar a assinatura do create_request.
+create or replace function public.cr_set_request_details(
+  p_request_id uuid, p_sector text default null, p_justification text default null)
+returns boolean language plpgsql security definer set search_path = public as $$
+begin
+  if not public.is_gestao_user() then raise exception 'Apenas C&R altera os dados da solicitação.'; end if;
+  update public.requests
+     set sector        = coalesce(nullif(btrim(p_sector), ''), sector),
+         justification = coalesce(nullif(btrim(p_justification), ''), justification),
+         updated_at    = now()
+   where id = p_request_id;
+  return found;
+end;
+$$;
+
 create or replace function public.cr_mark_request_kind(p_request_id uuid, p_request_kind text)
 returns boolean language plpgsql security definer set search_path = public as $$
 begin
