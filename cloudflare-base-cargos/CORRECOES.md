@@ -1,4 +1,4 @@
-# Correções aplicadas sobre o v74 (publicação v81)
+# Correções aplicadas sobre o v74 (publicação v82)
 
 ## 1. Botões de Editar/Desativar não faziam nada
 
@@ -211,3 +211,14 @@ Cloudflare serve — 12 suítes, todas verdes:
 Um defeito apareceu nesta bateria e foi corrigido: no celular, a rolagem logo
 após o toque fechava a explicação do campo. O balão agora acompanha o "?" e só
 some quando o ícone sai da tela.
+
+## 10. Exportação do esquema (v82)
+
+O pacote traz 17 das 45 funções do portal. Para permitir apagar tudo e recriar,
+foi incluído o `sql-03-exportar-esquema-atual.sql`, que lê o catálogo do próprio
+Supabase e devolve, prontos para executar: a definição completa de todas as
+funções, os `grant execute` e as políticas de RLS — além das instruções do
+`supabase db dump` para as tabelas e do download das Edge Functions.
+
+Testado: as funções exportadas por ele foram executadas em um banco vazio e
+recriadas sem nenhum erro.
