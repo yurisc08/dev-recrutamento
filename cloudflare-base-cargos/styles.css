@@ -348,3 +348,90 @@ input[list]{background-color:#fff}input[list]::-webkit-calendar-picker-indicator
 .help-bubble.hidden{display:none}
 @media(max-width:760px){.help-bubble{font-size:.9rem;max-width:calc(100vw - 24px)}}
 .rule-card.chave-repetida{border-color:#f1c5ce;box-shadow:0 0 0 2px #fdecef inset}
+
+/* ---------------------------------------------------------------------------
+   Painel administrativo — barra lateral e tela inicial do ADMIN.
+   Os demais perfis continuam com a barra de abas do topo; nada aqui altera as
+   telas existentes, que passam a ser exibidas dentro deste mesmo layout.
+--------------------------------------------------------------------------- */
+.admin-shell{display:block}
+.admin-console .admin-shell{display:grid;grid-template-columns:248px minmax(0,1fr);align-items:start}
+.admin-console main{max-width:1180px;margin:0;padding:26px 30px}
+
+.admin-sidebar{position:sticky;top:76px;align-self:start;height:calc(100vh - 76px);overflow-y:auto;
+  padding:20px 14px 28px;background:#fff;border-right:1px solid var(--line)}
+.admin-sidebar.hidden{display:none}
+.admin-sidebar-title{margin:0 0 14px 10px;font-size:.72rem;font-weight:700;letter-spacing:.12em;
+  text-transform:uppercase;color:var(--purple)}
+.admin-sidebar-nav{display:flex;flex-direction:column;gap:2px}
+.admin-group{margin:14px 0 4px 10px;font-size:.66rem;font-weight:700;letter-spacing:.1em;
+  text-transform:uppercase;color:var(--muted)}
+.admin-group:first-of-type{margin-top:0}
+.admin-link{display:flex;align-items:center;gap:10px;width:100%;padding:9px 10px;border:0;border-radius:9px;
+  background:transparent;color:var(--text);font:inherit;font-size:.9rem;font-weight:500;text-align:left;
+  cursor:pointer;transition:background .15s,color .15s}
+.admin-link:hover{background:#f4f1f7}
+.admin-link.active{background:var(--purple);color:#fff;font-weight:600}
+.admin-link.active .admin-link-icon{color:#fff;opacity:.9}
+.admin-link-icon{flex:none;width:20px;text-align:center;color:var(--purple);font-size:.95rem;opacity:.75}
+
+.admin-menu-btn{display:none}
+.admin-console .admin-menu-btn{display:none}
+
+/* Tela inicial */
+.admin-home-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(258px,1fr));gap:16px;margin:20px 0}
+.admin-home-card{display:flex;flex-direction:column;gap:10px;padding:18px}
+.admin-home-card-head{display:flex;align-items:center;gap:10px}
+.admin-home-card-head h2{margin:0;font-size:1rem}
+.admin-home-list{margin:0;padding-left:18px;color:var(--muted);font-size:.88rem;line-height:1.6}
+.admin-home-aviso{margin:0;padding:8px 10px;border-radius:8px;background:#fff3e8;color:#8a4a10;
+  font-size:.82rem;font-weight:600}
+.admin-home-card .btn{margin-top:auto;align-self:flex-start}
+
+@media(max-width:980px){
+  .admin-console .admin-shell{grid-template-columns:minmax(0,1fr)}
+  .admin-console .admin-menu-btn{display:inline-flex;align-items:center;justify-content:center;
+    font-size:1.2rem;margin-right:4px}
+  .admin-sidebar{position:fixed;top:0;left:0;z-index:60;width:min(84vw,300px);height:100vh;
+    transform:translateX(-102%);transition:transform .22s ease;box-shadow:0 12px 40px rgba(17,24,39,.22)}
+  .admin-sidebar.aberta{transform:translateX(0)}
+  .admin-console main{padding:18px 14px}
+}
+
+/* O botao do cabecalho do cartao esticava para ocupar toda a altura. */
+.admin-console .card-head > .btn{align-self:flex-start;white-space:nowrap}
+
+/* ---------------------------------------------------------------------------
+   Escolha do perfil de trabalho (mesmo e-mail com mais de um perfil liberado)
+--------------------------------------------------------------------------- */
+.role-dialog{width:min(520px,94vw);border:0;border-radius:16px;padding:24px;box-shadow:var(--shadow)}
+.role-dialog::backdrop{background:rgba(23,32,51,.45)}
+.role-choices{display:flex;flex-direction:column;gap:10px;margin:16px 0 6px}
+.role-choice{display:flex;align-items:center;gap:14px;width:100%;padding:14px;border:1px solid var(--line);
+  border-radius:12px;background:#fff;font:inherit;text-align:left;cursor:pointer;
+  transition:border-color .15s,box-shadow .15s,background .15s}
+.role-choice:hover{border-color:var(--purple);box-shadow:0 6px 20px rgba(76,42,107,.12)}
+.role-choice.atual{border-color:var(--purple);background:#faf8fc}
+.role-choice-icon{flex:none;width:38px;height:38px;display:flex;align-items:center;justify-content:center;
+  border-radius:10px;background:#f4f1f7;color:var(--purple);font-size:1.05rem}
+.role-choice-texto{display:flex;flex-direction:column;gap:3px;min-width:0}
+.role-choice-texto b{font-size:.98rem;color:var(--text)}
+.role-choice-texto small{color:var(--muted);font-size:.83rem;line-height:1.45}
+.role-choice-tag{margin-left:auto;flex:none;padding:3px 9px;border-radius:999px;background:var(--purple);
+  color:#fff;font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em}
+
+/* Liberação do segundo perfil, na aba Usuários */
+.extra-roles{margin:4px 0 2px;padding:12px 14px;border:1px solid var(--line);border-radius:12px}
+.extra-roles.hidden{display:none}
+.extra-roles legend{padding:0 6px;font-size:.82rem;font-weight:700;color:var(--purple)}
+.extra-roles .fine{margin:0 0 10px}
+.extra-roles-list{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:8px 14px}
+.extra-roles-list .checkbox-inline{margin:0}
+.extra-roles-list .perfil-padrao{opacity:.6}
+.extra-roles-list .perfil-padrao span::after{content:" (perfil padrão)";color:var(--muted);font-size:.78rem}
+.badge.multi-perfil{background:#f4f1f7;color:var(--purple)}
+
+@media(max-width:600px){
+  .role-dialog{padding:18px}
+  .role-choice{padding:12px}
+}

@@ -1,4 +1,4 @@
-# Publicação no Cloudflare — Fluxo de Descritivos de Cargos (v84)
+# Publicação no Cloudflare — Fluxo de Descritivos de Cargos (v86)
 
 Este zip é **só o site**. Os scripts do banco estão no outro zip
 (`supabase-instalacao`), e devem ser executados **antes** da primeira
@@ -24,7 +24,7 @@ publicação em um projeto novo.
    apontam para o projeto Supabase que vai atender o portal.
 2. Publique **todos os arquivos na raiz**, mantendo a pasta `vendor/` ao lado do
    `index.html`. No Cloudflare Pages, é só arrastar a pasta inteira.
-3. A versão publicada é identificada por `20260819-v84` (dentro do
+3. A versão publicada é identificada por `20260819-v86` (dentro do
    `index.html`). Se o navegador mostrar a tela antiga, é cache: recarregue com
    **Ctrl+F5**.
 

@@ -1,4 +1,4 @@
-# Instalador do Supabase — Fluxo de Descritivos de Cargos (v84)
+# Instalador do Supabase — Fluxo de Descritivos de Cargos (v86)
 
 Este pacote cria o banco inteiro do portal em um **projeto Supabase novo**:
 as 12 tabelas, as 46 funções, as políticas de segurança (RLS), as permissões e
@@ -26,6 +26,7 @@ nada.
 | `06-pesquisa-de-cargos.sql` | pesquisa de cargo vigente e detalhes do cargo | sim |
 | `07-base-de-cargos-admin.sql` | aba Base de cargos: importação, cadastro manual e exportação | sim |
 | `11-notificacoes-power-automate.sql` | avisa cada etapa do fluxo em um fluxo do Power Automate | opcional |
+| `12-perfis-multiplos.sql` | libera mais de um perfil para o mesmo e-mail (C&R + Administração) | opcional |
 
 Depois de rodar de 01 a 07, execute o `00-verificacao.sql`. Ele não altera nada
 e deve terminar com:
@@ -61,6 +62,22 @@ SQL as cria:
 
 Sem a `admin-users`, o cadastro pela aba **Usuários** não funciona — nesse caso
 crie os usuários direto em Authentication, como no primeiro acesso.
+
+## Dois perfis para o mesmo e-mail
+
+O `12-perfis-multiplos.sql` cria a coluna `profiles.extra_roles`. Com ela, um
+cadastro pode ter mais de um perfil liberado — C&R + Administração, por exemplo —
+e a pessoa escolhe na entrada com qual vai trabalhar, trocando depois sem sair.
+
+Libere pelo portal (Usuários → Editar → "Também pode entrar como") ou por SQL:
+
+    select public.admin_set_profile_roles(
+             (select id from public.profiles where email = 'fulano@marcopolo.com.br'),
+             array['ADMIN']);
+
+A escolha muda **a interface**. No banco, a permissão é a soma dos perfis
+liberados: quem tem ADMIN liberado segue com direito de ADMIN mesmo trabalhando
+no modo C&R. Para tirar o direito, retire o perfil.
 
 ## Notificações por etapa no Power Automate
 

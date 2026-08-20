@@ -1,4 +1,4 @@
-# Fluxo de Descritivos de Cargos — pacote completo (v84)
+# Fluxo de Descritivos de Cargos — pacote completo (v86)
 
 Tudo o que é preciso para montar o ambiente do zero: o banco e o site.
 
@@ -43,6 +43,10 @@ planilha (`base-cargos-atualizada.xlsx` já vai no pacote) → confira a prévia
 
 **7. Notificações (opcional).** Rode o `11-notificacoes-power-automate.sql` e
 siga o `COMO-LIGAR-O-POWER-AUTOMATE.md`.
+
+**8. Dois perfis no mesmo e-mail (opcional).** Rode o `12-perfis-multiplos.sql`.
+Depois, em Usuários → Editar, marque em "Também pode entrar como" o segundo
+perfil da pessoa. Ao entrar, ela escolhe com qual vai trabalhar.
 
 ## Aviso importante sobre o SQL
 

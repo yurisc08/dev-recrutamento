@@ -1,4 +1,4 @@
-# Correções aplicadas sobre o v74 (publicação v84)
+# Correções aplicadas sobre o v74 (publicação v86)
 
 ## 1. Botões de Editar/Desativar não faziam nada
 
@@ -323,3 +323,40 @@ validação adicional, recusa e conferência opcional passam por outros caminhos
 não avisavam ninguém.
 
 O passo a passo está em `COMO-LIGAR-O-POWER-AUTOMATE.md`.
+
+## 17. Painel administrativo para o ADMIN (v85)
+
+O ADMIN usava a mesma barra de abas de todo mundo, com as abas administrativas
+apenas escondidas para os outros perfis. Agora ele entra num painel próprio:
+
+- **barra lateral** com as áreas agrupadas — Visão geral, Operação, Cadastros,
+  Configuração, Dados e Auditoria;
+- **tela inicial** com os indicadores das solicitações e um cartão por área,
+  cada um com o que já está cadastrado e um atalho para abrir;
+- no celular, a barra vira um menu que abre pelo ☰ e fecha sozinho ao escolher.
+
+**C&R e Gestor continuam exatamente como estavam**, com a barra de abas do topo.
+Nenhuma regra do fluxo, função do banco ou permissão mudou: as telas são as
+mesmas, apenas exibidas dentro do novo layout.
+
+## 18. Dois perfis para o mesmo e-mail (v86)
+
+Um mesmo cadastro pode receber mais de um perfil — C&R + Administração, por
+exemplo. Ao entrar, a pessoa escolhe com qual vai trabalhar, e troca depois pelo
+botão **Trocar perfil**, sem sair do portal. Quem tem um perfil só não é
+perguntado e não vê o botão.
+
+Para liberar: aba **Usuários → Editar → "Também pode entrar como"**. O perfil
+padrão aparece marcado e travado, porque já vale por si.
+
+No banco, isso é a coluna `profiles.extra_roles` criada pelo
+`12-perfis-multiplos.sql`. O `profiles.role` continua sendo o perfil padrão, e
+por isso **nenhuma das 46 funções precisou mudar de assinatura**.
+
+**Uma ressalva importante:** a escolha muda *o que a tela oferece*. No banco, a
+permissão é a soma dos perfis liberados — quem tem Administração liberada
+continua com direito de administrador mesmo trabalhando no modo C&R. Para tirar
+o direito, retire o perfil da pessoa; não basta ela escolher o outro modo.
+
+O script também protege o portal de ficar sem administrador: ele recusa retirar
+o perfil de Administração do último administrador ativo.

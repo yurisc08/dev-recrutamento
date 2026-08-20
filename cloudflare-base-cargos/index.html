@@ -1,5 +1,5 @@
 <!doctype html><html lang="pt-BR"><head>
-<meta name="app-build" content="20260819-v84"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260819-v84"><style id="mobile-login-hard-fix">
+<meta name="app-build" content="20260819-v86"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>Fluxo de Descritivos de Cargos</title><link rel="icon" type="image/png" href="./logo-hub-carreira-recompensa.png"><link rel="stylesheet" href="./styles.css?v=20260819-v86"><style id="mobile-login-hard-fix">
 @media (max-width: 700px) {
   html, body { width:100%; min-height:100%; margin:0; overflow:auto!important; }
   #login.login-shell { display:block!important; position:static!important; min-height:100vh!important; background:#fff!important; overflow:visible!important; }
@@ -32,7 +32,34 @@
 <button id="codeLoginBtn" class="btn primary full" type="submit">Entrar com código</button>
 <div class="access-help" role="note"><strong>Dificuldade de acesso?</strong><span>Entre em contato com a equipe de Carreira &amp; Recompensa para receber suporte.</span></div>
 <p class="fine">O código individual é gerado no servidor para C&R e Gestores e enviado pelo fluxo de notificação.</p></form></section>
-<div id="app" class="hidden"><header class="topbar"><div class="logo-wrap"><div class="brand-logos brand-logos-header"><img class="hub-logo hub-logo-header" src="./logo-anterior.png" alt="Carreira e Recompensa"><img class="hub-logo hub-logo-header hub-logo-new" src="./logo-hub-carreira-recompensa.png" alt="Hub Carreira e Recompensa"></div><div><strong>Fluxo de Descritivos de Cargos</strong><small>Carreira &amp; Recompensa</small></div></div><nav><button class="nav active" data-view="dashboard">Painel</button><button class="nav" data-view="managers" id="navManagers">Usuários</button><button class="nav" data-view="fields" id="navFields">Campos</button><button class="nav" data-view="models" id="navModels">Modelos</button><button class="nav hidden" data-view="companies" id="navCompanies">Empresas e filiais</button><button class="nav hidden" data-view="workflows" id="navWorkflows">Fluxos</button><button class="nav hidden" data-view="jobBase" id="navJobBase">Base de cargos</button><button class="nav" data-view="audit" id="navAudit">Logs</button></nav><div class="userbox"><div><strong id="userName"></strong><small id="userRole"></small></div><button id="logout" class="btn ghost">Sair</button></div></header><main>
+<div id="app" class="hidden"><header class="topbar"><button id="adminMenuBtn" class="icon-btn admin-menu-btn hidden" type="button" aria-label="Abrir menu da administração" aria-expanded="false">☰</button><div class="logo-wrap"><div class="brand-logos brand-logos-header"><img class="hub-logo hub-logo-header" src="./logo-anterior.png" alt="Carreira e Recompensa"><img class="hub-logo hub-logo-header hub-logo-new" src="./logo-hub-carreira-recompensa.png" alt="Hub Carreira e Recompensa"></div><div><strong>Fluxo de Descritivos de Cargos</strong><small>Carreira &amp; Recompensa</small></div></div><nav><button class="nav active" data-view="dashboard">Painel</button><button class="nav" data-view="managers" id="navManagers">Usuários</button><button class="nav" data-view="fields" id="navFields">Campos</button><button class="nav" data-view="models" id="navModels">Modelos</button><button class="nav hidden" data-view="companies" id="navCompanies">Empresas e filiais</button><button class="nav hidden" data-view="workflows" id="navWorkflows">Fluxos</button><button class="nav hidden" data-view="jobBase" id="navJobBase">Base de cargos</button><button class="nav" data-view="audit" id="navAudit">Logs</button></nav><div class="userbox"><div><strong id="userName"></strong><small id="userRole"></small></div><button id="trocarPerfil" class="btn ghost hidden" type="button">Trocar perfil</button><button id="logout" class="btn ghost">Sair</button></div></header>
+<div id="adminShell" class="admin-shell">
+<aside id="adminSidebar" class="admin-sidebar hidden" aria-label="Administração">
+  <p class="admin-sidebar-title">Administração</p>
+  <nav class="admin-sidebar-nav">
+    <p class="admin-group">Visão geral</p>
+    <button class="nav admin-link" data-view="adminHome"><span class="admin-link-icon">◈</span>Início</button>
+    <p class="admin-group">Operação</p>
+    <button class="nav admin-link" data-view="dashboard"><span class="admin-link-icon">▤</span>Solicitações</button>
+    <p class="admin-group">Cadastros</p>
+    <button class="nav admin-link" data-view="managers"><span class="admin-link-icon">◎</span>Usuários</button>
+    <button class="nav admin-link" data-view="companies"><span class="admin-link-icon">▣</span>Empresas e filiais</button>
+    <button class="nav admin-link" data-view="workflows"><span class="admin-link-icon">⇉</span>Fluxos e aprovadores</button>
+    <p class="admin-group">Configuração</p>
+    <button class="nav admin-link" data-view="fields"><span class="admin-link-icon">≣</span>Campos do formulário</button>
+    <button class="nav admin-link" data-view="models"><span class="admin-link-icon">▢</span>Documento</button>
+    <p class="admin-group">Dados</p>
+    <button class="nav admin-link" data-view="jobBase"><span class="admin-link-icon">▦</span>Base de cargos</button>
+    <p class="admin-group">Auditoria</p>
+    <button class="nav admin-link" data-view="audit"><span class="admin-link-icon">◔</span>Logs</button>
+  </nav>
+</aside>
+<main>
+<section id="adminHomeView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Painel administrativo</h1><p class="muted">Situação do portal e atalho para cada área. As regras do fluxo continuam as mesmas.</p></div><button id="adminHomeRefresh" class="btn ghost" type="button">Atualizar</button></div>
+<div id="adminHomeMetrics" class="metrics"></div>
+<div id="adminHomeCards" class="admin-home-grid"></div>
+<article class="card"><div class="card-head"><div><h2>Últimas alterações</h2><p class="muted">Registro de quem mexeu em usuários e campos.</p></div><button id="adminHomeAudit" class="btn ghost" type="button">Ver todos os logs</button></div><div id="adminHomeLog" class="admin-list"></div></article>
+</section>
 <section id="dashboardView"><div class="page-head"><div><p class="eyebrow">Visão geral</p><h1 id="dashboardTitle"></h1><p id="dashboardSubtitle" class="muted"></p></div><button id="newRequest" class="btn primary">+ Novo cargo</button></div><div id="metrics" class="metrics"></div><section id="managerIntakesBox" class="card hidden"><div class="card-head"><div><h2>Solicitações iniciadas pelo Gestor</h2><p class="muted">Pedidos de criação ou atualização aguardando triagem de C&R.</p></div></div><div id="managerIntakes" class="admin-list"></div></section><div class="toolbar"><input id="search" placeholder="Pesquisar cargo, código ou gestor"><select id="status"><option value="">Todos os status</option></select></div><div id="requests" class="cards"></div><div id="empty" class="empty hidden"><h3>Nenhuma solicitação encontrada</h3></div></section>
 <section id="managersView" class="hidden"><div class="page-head"><div><p class="eyebrow">Administração</p><h1>Usuários</h1><p class="muted">Cadastre C&R e Gestores. Cada usuário recebe um código individual de acesso.</p></div><button id="newManager" class="btn primary">+ Novo usuário</button></div><div class="toolbar"><input id="userSearch" placeholder="Pesquisar nome ou e-mail"><select id="userRoleFilter"><option value="">Todos os perfis</option><option value="CR">C&R</option><option value="GESTOR">Gestores</option></select><select id="userActiveFilter"><option value="">Ativos e inativos</option><option value="true">Ativos</option><option value="false">Inativos</option></select></div><div id="managers" class="cards"></div></section>
 <section id="fieldsView" class="hidden"><div class="page-head"><div><p class="eyebrow">Configuração</p><h1>Campos do formulário</h1><p class="muted">Campos oficiais do documento. Para o Gestor, somente ATIV_DESC e DESCRICAO_CARGO aceitam sugestão; os demais permanecem somente leitura.</p></div><button id="newField" class="btn primary">+ Novo campo</button></div><div id="fieldRules" class="cards"></div></section>
@@ -57,12 +84,12 @@
 <div id="jobListBox" class="admin-list"></div>
 <div class="list-pager"><button id="jobListPrev" class="btn ghost" type="button">← Anterior</button><span id="jobListCount" class="muted"></span><button id="jobListNext" class="btn ghost" type="button">Próximos →</button></div></article>
 <article class="card"><h2>Histórico de atualizações</h2><div id="jobImportHistory" class="admin-list"></div></article></section>
-</main></div>
+</main></div></div>
 <dialog id="requestDialog"><form id="requestForm" class="modal-form" novalidate><div class="modal-head"><div><p class="eyebrow">C&R</p><h2>Nova solicitação</h2></div><button type="button" class="icon-btn close">×</button></div><label>Tipo de solicitação<select name="request_type" required><option value="NEW">Criar cargo novo</option><option value="UPDATE">Atualizar cargo existente</option></select></label><div id="existingJobBox" class="hidden"><label>Pesquisar cargo vigente<div class="job-combobox"><input id="existingJobSearch" placeholder="Digite nome ou código" autocomplete="off" aria-autocomplete="list" aria-controls="existingJobOptions" aria-expanded="false"><span class="job-search-icon">⌕</span><div id="existingJobOptions" class="job-options hidden" role="listbox"></div></div><input name="source_job_id" type="hidden"></label><div id="existingJobSelected" class="selected-manager muted">Selecione um cargo da base importada.</div></div><label>Nome do cargo<input name="title" required></label><label id="jobCodeCreateField">Código do cargo<input name="job_code"></label><div id="managerPickerBox"><label>Pesquisar gestor<input id="managerSearch" list="managerOptions" placeholder="Digite nome ou e-mail" autocomplete="off"><datalist id="managerOptions"></datalist><input name="manager_id" type="hidden"></label><div id="managerSelected" class="selected-manager muted">Selecione um gestor ativo.</div></div><div class="row"><label>Empresa<select name="company" required><option value="">Selecione...</option></select></label><label>Filial<select name="branch" required disabled><option value="">Selecione a empresa...</option></select></label></div><section id="updateFieldsBox" class="request-detail-box hidden"><h3>O que precisa ser atualizado?</h3><p class="muted">Selecione os conteúdos que precisam ser revisados. Os demais dados do cargo ficam disponíveis apenas para consulta.</p><div id="updateFieldChoices" class="update-field-choices"></div></section><section id="newManagerFieldsBox" class="request-detail-box hidden"><h3>Informações do Gestor</h3><p class="muted">Os campos abaixo são definidos na Administração de Campos. Nome, ordem, tipo, orientação e obrigatoriedade seguem a mesma configuração do fluxo oficial.</p><div id="newManagerFields"></div></section><label>Setor / área<input name="sector" placeholder="Informe o setor do cargo" required></label><label>Justificativa<textarea name="justification" placeholder="Explique a necessidade da criação ou atualização"></textarea></label><section id="requestOptionalApproval" class="optional-flow-box hidden"><label>Validação adicional<select name="use_additional_approval"><option value="NO">Não utilizar aprovador adicional</option><option value="YES">Pré-configurar aprovador adicional</option></select></label><div id="requestApprovalFields" class="hidden"><label>Área e aprovador<select name="additional_approver_id"><option value="">Selecione...</option></select></label><input name="additional_area_id" type="hidden"><label>Orientação para análise<textarea name="additional_approval_note" placeholder="Ex.: validar os campos relacionados à escolaridade"></textarea></label><p class="fine">O encaminhamento será confirmado pelo C&R quando a solicitação retornar do Gestor.</p></div></section><label id="requestDeadlineField">Prazo<input name="deadline" type="date" required></label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar solicitação</button></div></form></dialog>
 <dialog id="managerDialog"><form id="managerForm" class="modal-form"><div class="modal-head"><div><p class="eyebrow">Administração</p><h2>Novo usuário</h2></div><button type="button" class="icon-btn close">×</button></div><label>Nome<input name="name" required></label><label>Perfil<select name="role" required><option value="GESTOR">Gestor</option><option value="CR">Carreira & Recompensa</option></select></label><label id="newApproverAreaField" class="hidden">Área aprovadora<select name="approval_area_id"><option value="">Selecione...</option></select></label><label>E-mail corporativo<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" placeholder="nome@marcopolo.com.br" required></label><div class="row"><label>Empresa<input name="company" list="managerCompanyOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="managerCompanyOptions"></datalist></label><label>Filial<input name="branch" list="managerBranchOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="managerBranchOptions"></datalist></label></div><div class="row"><label>Área<input name="area"></label><label>Cargo do gestor<input name="role_title"></label></div><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar acesso e gerar código</button></div></form></dialog>
 <dialog id="managerSuccessDialog"><div class="modal-form"><div class="modal-head"><div><p class="eyebrow">Usuário cadastrado</p><h2>Acesso criado com sucesso</h2></div><button type="button" class="icon-btn close">×</button></div><p>O usuário foi incluído na lista administrativa e o código foi preparado para envio.</p><div class="access-code-box"><small>Código individual de acesso</small><strong id="generatedManagerCode"></strong><button id="copyManagerCode" class="btn ghost" type="button">Copiar código</button></div><p class="fine">Este código é exclusivo do usuário e não corresponde ao número de uma solicitação. O mesmo processo atende Gestores e C&R. Quando o Power Automate estiver configurado, o código será enviado por e-mail e poderá também ser enviado pelo Teams.</p><div class="modal-actions"><button type="button" class="btn primary close">Concluir</button></div></div></dialog>
-<dialog id="editUserDialog"><form id="editUserForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Administração</p><h2>Editar usuário</h2></div><button type="button" class="icon-btn close">×</button></div><label>Nome<input name="name" required></label><label>Perfil<select name="role"><option value="CR">Carreira & Recompensa</option><option value="GESTOR">Gestor</option></select></label><label id="editApproverAreaField" class="hidden">Área aprovadora<select name="approval_area_id"><option value="">Selecione...</option></select></label><label>E-mail<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" disabled></label><div class="row"><label>Empresa<input name="company" list="editCompanyOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="editCompanyOptions"></datalist></label><label>Filial<input name="branch" list="editBranchOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="editBranchOptions"></datalist></label></div><div class="row"><label>Área<input name="area"></label><label>Função/Cargo<input name="role_title"></label></div><label style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="active" type="checkbox"> Acesso ativo</label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Salvar alterações</button></div></form></dialog>
-<dialog id="codeDialog"><form id="codeForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Segurança</p><h2>Definir novo código</h2></div><button type="button" class="icon-btn close">×</button></div><p class="muted">A credencial atual não pode ser visualizada. Defina uma nova credencial e use o ícone para conferir antes de salvar.</p><label>Novo código<div style="display:flex;gap:8px"><input name="code" type="password" minlength="8" required style="flex:1"><button type="button" id="toggleCode" class="btn ghost">Mostrar</button></div></label><label>Confirmar código<input name="confirm_code" type="password" minlength="8" required></label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Aplicar novo código</button></div></form></dialog><dialog id="modelDialog"><form id="modelForm" class="modal-form"><input type="hidden" name="request_id"><div class="modal-head"><div><p class="eyebrow">Prévia do documento</p><h2>Baixar modelo preenchido</h2></div><button type="button" class="icon-btn close">×</button></div><p class="code-note">O documento será criado com todos os valores atuais salvos na solicitação. Em cargos existentes, campos não alterados usam os dados atuais da base.</p><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Gerar DOCX</button></div></form></dialog><dialog id="fieldDialog"><form id="fieldForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Administração</p><h2 id="fieldDialogTitle">Novo campo</h2></div><button type="button" class="icon-btn close">×</button></div><label>Nome exibido<input name="label" required></label><div class="row"><label>Área responsável<select name="owner_role"><option value="CR">Gestão — C&R</option><option value="GESTOR">Responsável — Gestor</option></select></label><label>Quem aprova?<select name="approval_area_id"><option value="">C&R — sem aprovação adicional</option></select></label></div><div class="row"><label>Tipo<select name="field_type"><option value="textarea">Texto longo</option><option value="text">Texto curto</option><option value="number">Número</option><option value="date">Data</option><option value="select">Lista suspensa</option><option value="checkbox">Sim/Não</option></select></label><div></div></div><label>Explicativo do campo<input name="help_text" placeholder="Explique o que deve ser informado neste campo"><small class="muted">O texto aparecerá no ícone ? e poderá ser editado posteriormente.</small></label><label>Exemplo de preenchimento<input name="placeholder" placeholder="Ex.: exemplo de resposta esperada"><small class="muted">O exemplo aparece dentro do campo enquanto estiver vazio.</small></label><label id="optionsField">Opções da lista suspensa (uma por linha)<textarea name="options" placeholder="Ex.: Básico\nIntermediário\nAvançado"></textarea><small class="muted">Visível somente quando o tipo for Lista suspensa.</small></label><div class="row"><label>Ordem<input name="sort_order" type="number" value="100"></label><label style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="required" type="checkbox"> Obrigatório</label></div><label id="updateEditableField" style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="update_editable" type="checkbox"> Permitir edição em atualização de cargo</label><label style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="active" type="checkbox" checked> Campo ativo</label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Salvar campo</button></div></form></dialog>
+<dialog id="editUserDialog"><form id="editUserForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Administração</p><h2>Editar usuário</h2></div><button type="button" class="icon-btn close">×</button></div><label>Nome<input name="name" required></label><label>Perfil<select name="role"><option value="CR">Carreira & Recompensa</option><option value="GESTOR">Gestor</option></select></label><label id="editApproverAreaField" class="hidden">Área aprovadora<select name="approval_area_id"><option value="">Selecione...</option></select></label><fieldset id="editExtraRoles" class="extra-roles"><legend>Também pode entrar como</legend><p class="fine">Libere um segundo perfil para o mesmo e-mail. Ao entrar, a pessoa escolhe com qual vai trabalhar.</p><div class="extra-roles-list"><label class="checkbox-inline"><input type="checkbox" name="extra_ADMIN" value="ADMIN"><span>Administração</span></label><label class="checkbox-inline"><input type="checkbox" name="extra_CR" value="CR"><span>Carreira &amp; Recompensa</span></label><label class="checkbox-inline"><input type="checkbox" name="extra_GESTOR" value="GESTOR"><span>Gestor</span></label><label class="checkbox-inline"><input type="checkbox" name="extra_APROVADOR" value="APROVADOR"><span>Aprovador</span></label></div></fieldset><label>E-mail<input name="email" type="email" inputmode="email" autocomplete="email" autocapitalize="none" autocorrect="off" spellcheck="false" disabled></label><div class="row"><label>Empresa<input name="company" list="editCompanyOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="editCompanyOptions"></datalist></label><label>Filial<input name="branch" list="editBranchOptions" placeholder="Selecione ou digite para buscar" autocomplete="off"><datalist id="editBranchOptions"></datalist></label></div><div class="row"><label>Área<input name="area"></label><label>Função/Cargo<input name="role_title"></label></div><label style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="active" type="checkbox"> Acesso ativo</label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Salvar alterações</button></div></form></dialog>
+<dialog id="codeDialog"><form id="codeForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Segurança</p><h2>Definir novo código</h2></div><button type="button" class="icon-btn close">×</button></div><p class="muted">A credencial atual não pode ser visualizada. Defina uma nova credencial e use o ícone para conferir antes de salvar.</p><label>Novo código<div style="display:flex;gap:8px"><input name="code" type="password" minlength="8" required style="flex:1"><button type="button" id="toggleCode" class="btn ghost">Mostrar</button></div></label><label>Confirmar código<input name="confirm_code" type="password" minlength="8" required></label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Aplicar novo código</button></div></form></dialog><dialog id="roleDialog" class="role-dialog"><div class="modal-head"><div><p class="eyebrow">Acesso</p><h2 id="roleDialogTitle">Como você quer entrar?</h2></div></div><p class="muted" id="roleDialogHint">Seu e-mail tem mais de um perfil liberado. Escolha com qual vai trabalhar agora — dá para trocar depois pelo botão “Trocar perfil”.</p><div id="roleChoices" class="role-choices"></div><div class="modal-actions"><button type="button" class="btn ghost hidden" id="roleCancel">Cancelar</button></div></dialog><dialog id="modelDialog"><form id="modelForm" class="modal-form"><input type="hidden" name="request_id"><div class="modal-head"><div><p class="eyebrow">Prévia do documento</p><h2>Baixar modelo preenchido</h2></div><button type="button" class="icon-btn close">×</button></div><p class="code-note">O documento será criado com todos os valores atuais salvos na solicitação. Em cargos existentes, campos não alterados usam os dados atuais da base.</p><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Gerar DOCX</button></div></form></dialog><dialog id="fieldDialog"><form id="fieldForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Administração</p><h2 id="fieldDialogTitle">Novo campo</h2></div><button type="button" class="icon-btn close">×</button></div><label>Nome exibido<input name="label" required></label><div class="row"><label>Área responsável<select name="owner_role"><option value="CR">Gestão — C&R</option><option value="GESTOR">Responsável — Gestor</option></select></label><label>Quem aprova?<select name="approval_area_id"><option value="">C&R — sem aprovação adicional</option></select></label></div><div class="row"><label>Tipo<select name="field_type"><option value="textarea">Texto longo</option><option value="text">Texto curto</option><option value="number">Número</option><option value="date">Data</option><option value="select">Lista suspensa</option><option value="checkbox">Sim/Não</option></select></label><div></div></div><label>Explicativo do campo<input name="help_text" placeholder="Explique o que deve ser informado neste campo"><small class="muted">O texto aparecerá no ícone ? e poderá ser editado posteriormente.</small></label><label>Exemplo de preenchimento<input name="placeholder" placeholder="Ex.: exemplo de resposta esperada"><small class="muted">O exemplo aparece dentro do campo enquanto estiver vazio.</small></label><label id="optionsField">Opções da lista suspensa (uma por linha)<textarea name="options" placeholder="Ex.: Básico\nIntermediário\nAvançado"></textarea><small class="muted">Visível somente quando o tipo for Lista suspensa.</small></label><div class="row"><label>Ordem<input name="sort_order" type="number" value="100"></label><label style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="required" type="checkbox"> Obrigatório</label></div><label id="updateEditableField" style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="update_editable" type="checkbox"> Permitir edição em atualização de cargo</label><label style="display:flex;align-items:center;gap:8px"><input style="width:auto" name="active" type="checkbox" checked> Campo ativo</label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Salvar campo</button></div></form></dialog>
 <dialog id="jobDialog" class="wide-dialog"><form id="jobForm" class="modal-form"><input type="hidden" name="id"><div class="modal-head"><div><p class="eyebrow">Base de cargos</p><h2 id="jobDialogTitle">Novo cargo na base</h2></div><button type="button" class="icon-btn close">×</button></div><p id="jobFormOrigin" class="notice warning"></p><h3 class="form-section">Identificação</h3><div class="row"><label><span>Código do cargo <b class="required-mark">*</b></span><input name="job_code" required></label><label><span>Cargo <b class="required-mark">*</b></span><input name="job_name" required></label></div><label>Nome completo do cargo<input name="full_name" placeholder="Ex.: ANALISTA DE DADOS PLENO"></label><div class="row"><label>Código da empresa<input name="company_code"></label><label>Empresa<input name="company"></label></div><h3 class="form-section">Classificação</h3><div class="row"><label>CBO<input name="cbo"></label><label>Natureza do cargo<input name="nature"></label></div><div class="row"><label>Trilha de carreira<input name="career_track"></label><label>Nível do cargo<input name="level"></label></div><div class="row"><label>Código da família<input name="family_code"></label><label>Chave de agrupamento<input name="grouping_key"></label></div><h3 class="form-section">Descritivo</h3><label>Resultado esperado (missão)<textarea name="expected_result"></textarea></label><label>Atividades<textarea name="activities"></textarea></label><label>Descrição do cargo / responsabilidades<textarea name="job_description"></textarea></label><h3 class="form-section">Requisitos do cargo</h3><label>Formação/Escolaridade mínima<textarea name="SKILL_30" rows="2"></textarea></label><label>Formação/Escolaridade desejável<textarea name="SKILL_31" rows="2"></textarea></label><label>Idioma mínimo<textarea name="SKILL_32" rows="2"></textarea></label><label>Idioma desejável<textarea name="SKILL_33" rows="2"></textarea></label><label>Competências técnicas mínimas<textarea name="SKILL_34" rows="2"></textarea></label><label>Competências técnicas desejáveis<textarea name="SKILL_35" rows="2"></textarea></label><label>Experiência profissional desejável<textarea name="SKILL_36" rows="2"></textarea></label><label>Competências Marcopolo desejáveis<textarea name="SKILL_37" rows="2"></textarea></label><label class="checkbox-inline standalone"><input name="active" type="checkbox" checked><span>Cargo ativo (aparece na pesquisa de cargos vigentes)</span></label><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Salvar cargo</button></div></form></dialog>
 <dialog id="triageDialog"><form id="triageForm" class="modal-form"><div class="modal-head"><div><p class="eyebrow">Triagem C&R</p><h2>Iniciar fluxo oficial</h2></div><button type="button" class="icon-btn close">×</button></div><input name="intake_id" type="hidden"><div id="triageSummary" class="triage-summary"></div><label>Prazo da solicitação<input name="deadline" type="date" required></label><p class="fine">Ao continuar, o pedido sai da caixa de triagem, recebe uma solicitação oficial e entra como Rascunho C&R. Depois C&R poderá preencher seus campos e enviar ao Gestor pelo fluxo já existente.</p><div class="modal-actions"><button type="button" class="btn ghost close">Cancelar</button><button type="submit" class="btn primary">Criar solicitação e abrir fluxo</button></div></form></dialog><script type="module">
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
@@ -211,6 +238,11 @@ async function executarInit() {
   }
   limparAvisoLogin();
   S.profile = p;
+  S.papelPadrao = p.role;
+  S.papeis = papeisDoPerfil(p);
+  // Com mais de um perfil liberado, a pessoa escolhe antes de a tela montar:
+  // tudo daqui para frente ja sai no perfil escolhido.
+  S.profile.role = await escolherPapel();
   if (!sessionStorage.getItem("access_logged")) {
     await registerAccess("SESSION_RESTORED");
     sessionStorage.setItem("access_logged", "1");
@@ -222,7 +254,7 @@ async function executarInit() {
   // botao para tentar de novo.
   try {
     await load();
-    show("dashboard");
+    show(admin() ? "adminHome" : "dashboard");
   } catch (loadError) {
     console.error("Falha ao carregar os dados", loadError);
     mostrarFalhaDeCarregamento(loadError);
@@ -274,11 +306,14 @@ async function load() {
 function render() {
   let isMgmt = mgmt();
   $("#userName").textContent = S.profile.name;
-  $("#userRole").textContent = admin()
-    ? "Administrador"
-    : S.profile.role === "CR"
-      ? "Carreira & Recompensa"
-      : S.profile.role === "APROVADOR" ? "Aprovador" : "Gestor";
+  $("#userRole").textContent = (S.papeis || []).length > 1
+    ? (PAPEIS[S.profile.role]?.nome || S.profile.role) + " · perfil em uso"
+    : admin()
+      ? "Administrador"
+      : S.profile.role === "CR"
+        ? "Carreira & Recompensa"
+        : S.profile.role === "APROVADOR" ? "Aprovador" : "Gestor";
+  $("#trocarPerfil").classList.toggle("hidden", (S.papeis || []).length <= 1);
   $("#navManagers").classList.toggle("hidden", !isMgmt);
   $("#navFields").classList.toggle("hidden", !isMgmt);
   $("#navModels").classList.toggle("hidden", !isMgmt);
@@ -286,6 +321,7 @@ function render() {
   $("#navCompanies")?.classList.toggle("hidden", !admin());
   $("#navWorkflows")?.classList.toggle("hidden", !admin());
   $("#navJobBase")?.classList.toggle("hidden", !admin());
+  aplicarPainelAdministrativo();
   $("#newRequest").classList.toggle("hidden", !(isMgmt || S.profile.role === "GESTOR"));
   $("#dashboardTitle").textContent = isMgmt
     ? "Painel administrativo"
@@ -467,7 +503,7 @@ function renderManagers() {
     filteredUsers()
       .map(
         (u) =>
-          `<article class="card user-card ${u.active ? "" : "inactive"}"><div class="card-head"><div><h3>${esc(u.name)}</h3><span class="muted">${esc(u.email)}</span></div><div><span class="badge ${u.role === "CR" ? "cr" : "manager"}">${u.role === "CR" ? "C&R" : u.role === "APROVADOR" ? "Aprovador" : "Gestor"}</span> <span class="badge ${u.active ? "approved" : "cancelled"}">${u.active ? "Ativo" : "Inativo"}</span></div></div><div class="meta"><span><b>Empresa:</b> ${esc(u.company || "-")}</span><span><b>Filial:</b> ${esc(u.branch || "-")}</span><span><b>Área:</b> ${esc(u.area || "-")}</span><span><b>Função:</b> ${esc(u.role_title || "-")}</span></div>${admin() ? `<div class="user-actions"><button class="btn ghost" onclick="editUser(${jsq(u.id)})">Editar</button><button class="btn secondary" onclick="regenerateCode(${jsq(u.id)})">Gerar novo código</button><button class="btn ghost" onclick="openCodeDialog(${jsq(u.id)})">Definir código</button><button class="btn ${u.active ? "danger-soft" : "primary"}" onclick="toggleUser(${jsq(u.id)},${!u.active})">${u.active ? "Desativar" : "Reativar"}</button></div>` : (S.profile?.role === "CR" && u.active ? `<div class="user-actions"><button class="btn danger-soft" onclick="toggleUser(${jsq(u.id)},false)">Desativar</button></div>` : "")}</article>`,
+          `<article class="card user-card ${u.active ? "" : "inactive"}"><div class="card-head"><div><h3>${esc(u.name)}</h3><span class="muted">${esc(u.email)}</span></div><div><span class="badge ${u.role === "CR" ? "cr" : "manager"}">${u.role === "CR" ? "C&R" : u.role === "APROVADOR" ? "Aprovador" : "Gestor"}</span> <span class="badge ${u.active ? "approved" : "cancelled"}">${u.active ? "Ativo" : "Inativo"}</span>${(u.extra_roles || []).length ? ` <span class="badge multi-perfil">+ ${(u.extra_roles || []).map((x) => PAPEIS[x]?.nome || x).join(", ")}</span>` : ""}</div></div><div class="meta"><span><b>Empresa:</b> ${esc(u.company || "-")}</span><span><b>Filial:</b> ${esc(u.branch || "-")}</span><span><b>Área:</b> ${esc(u.area || "-")}</span><span><b>Função:</b> ${esc(u.role_title || "-")}</span></div>${admin() ? `<div class="user-actions"><button class="btn ghost" onclick="editUser(${jsq(u.id)})">Editar</button><button class="btn secondary" onclick="regenerateCode(${jsq(u.id)})">Gerar novo código</button><button class="btn ghost" onclick="openCodeDialog(${jsq(u.id)})">Definir código</button><button class="btn ${u.active ? "danger-soft" : "primary"}" onclick="toggleUser(${jsq(u.id)},${!u.active})">${u.active ? "Desativar" : "Reativar"}</button></div>` : (S.profile?.role === "CR" && u.active ? `<div class="user-actions"><button class="btn danger-soft" onclick="toggleUser(${jsq(u.id)},false)">Desativar</button></div>` : "")}</article>`,
       )
       .join("") ||
     '<div class="empty"><h3>Nenhum usuário encontrado</h3></div>';
@@ -508,13 +544,165 @@ const typeLabel = (t) =>
     select: "Lista suspensa",
     checkbox: "Sim/Não",
   })[t] || t;
+/* --------------------------- Perfil de trabalho ---------------------------
+   O mesmo e-mail pode ter mais de um perfil liberado (C&R + ADMIN, por
+   exemplo). Ao entrar, a pessoa escolhe com qual vai trabalhar; a escolha vale
+   para a sessao e pode ser trocada pelo botao "Trocar perfil".
+
+   A escolha muda o que a tela oferece. No banco, a permissao continua sendo a
+   soma dos perfis liberados: quem tem ADMIN liberado segue com direito de
+   ADMIN mesmo trabalhando no modo C&R. Para tirar o direito, tire o perfil da
+   pessoa na aba Usuarios.                                                  */
+const PAPEIS = {
+  ADMIN: { nome: "Administração", icone: "◈",
+           texto: "Painel administrativo: usuários, campos, documento, base de cargos e logs." },
+  CR: { nome: "Carreira & Recompensa", icone: "▤",
+        texto: "Trabalho do dia a dia: criar, revisar, devolver e concluir os descritivos." },
+  GESTOR: { nome: "Gestor", icone: "◎",
+            texto: "Preencher e confirmar os descritivos da sua área." },
+  APROVADOR: { nome: "Aprovador", icone: "✓",
+               texto: "Dar parecer nas validações adicionais encaminhadas pelo C&R." },
+};
+function papeisDoPerfil(p) {
+  const lista = [p?.role, ...(Array.isArray(p?.extra_roles) ? p.extra_roles : [])]
+    .map((x) => String(x || "").trim().toUpperCase())
+    .filter((x) => x && PAPEIS[x]);
+  return [...new Set(lista)];
+}
+const chavePapel = (id) => "papel_escolhido_" + id;
+function escolherPapel({ forcado = false } = {}) {
+  const papeis = S.papeis || [];
+  if (papeis.length <= 1) return Promise.resolve(papeis[0] || S.papelPadrao);
+  const guardado = sessionStorage.getItem(chavePapel(S.profile.id));
+  if (!forcado && guardado && papeis.includes(guardado)) return Promise.resolve(guardado);
+
+  const dlg = $("#roleDialog");
+  $("#roleChoices").innerHTML = papeis.map((papel) => {
+    const info = PAPEIS[papel];
+    const atual = forcado && S.profile.role === papel;
+    return `<button type="button" class="role-choice${atual ? " atual" : ""}" data-papel="${esc(papel)}">
+      <span class="role-choice-icon">${info.icone}</span>
+      <span class="role-choice-texto"><b>${esc(info.nome)}</b><small>${esc(info.texto)}</small></span>
+      ${atual ? '<span class="role-choice-tag">em uso</span>' : ""}
+    </button>`;
+  }).join("");
+  $("#roleCancel").classList.toggle("hidden", !forcado);
+  $("#roleDialogHint").textContent = forcado
+    ? "Escolha o perfil que você quer usar agora. A troca não altera nada do que já foi gravado."
+    : "Seu e-mail tem mais de um perfil liberado. Escolha com qual vai trabalhar agora — dá para trocar depois pelo botão “Trocar perfil”.";
+  if (!dlg.open) dlg.showModal();
+
+  return new Promise((resolver) => {
+    $$("#roleChoices .role-choice").forEach((b) => {
+      b.onclick = () => {
+        const papel = b.dataset.papel;
+        sessionStorage.setItem(chavePapel(S.profile.id), papel);
+        dlg.close();
+        resolver(papel);
+      };
+    });
+    $("#roleCancel").onclick = () => { dlg.close(); resolver(S.profile.role); };
+  });
+}
+async function trocarPerfilDeTrabalho() {
+  const papel = await escolherPapel({ forcado: true });
+  if (!papel || papel === S.profile.role) return;
+  S.profile.role = papel;
+  try {
+    await load();
+    show(admin() ? "adminHome" : "dashboard");
+    toast("Agora você está em " + PAPEIS[papel].nome + ".");
+  } catch (erro) {
+    mostrarFalhaDeCarregamento(erro);
+  }
+}
+
+/* ------------------------- Painel administrativo -------------------------
+   O ADMIN passa a trabalhar num painel proprio: barra lateral com as areas
+   agrupadas e uma tela inicial com a situacao do portal. C&R e Gestor
+   continuam com a barra de abas de sempre. Nenhuma regra do fluxo muda: as
+   telas, as funcoes e as permissoes sao exatamente as mesmas.            */
+function aplicarPainelAdministrativo() {
+  const ehAdmin = admin();
+  $("#app").classList.toggle("admin-console", ehAdmin);
+  $("#adminSidebar").classList.toggle("hidden", !ehAdmin);
+  $("#adminMenuBtn").classList.toggle("hidden", !ehAdmin);
+  // A barra de abas do topo sai de cena para o ADMIN, que navega pela lateral.
+  document.querySelector(".topbar nav")?.classList.toggle("hidden", ehAdmin);
+}
+function fecharMenuAdmin() {
+  $("#adminSidebar")?.classList.remove("aberta");
+  $("#adminMenuBtn")?.setAttribute("aria-expanded", "false");
+}
+function contarPor(lista, filtro) {
+  return (lista || []).filter(filtro).length;
+}
+// "1 empresas ativas" ficava estranho no painel.
+function contagem(n, singular, plural) {
+  return `${n} ${n === 1 ? singular : plural}`;
+}
+function renderAdminHome() {
+  if (!admin()) return;
+  const r = S.requests || [];
+  $("#adminHomeMetrics").innerHTML = [
+    ["Solicitações", r.length],
+    ["Com o Gestor", contarPor(r, (x) => [ST.M, ST.R].includes(x.status))],
+    ["Com C&R", contarPor(r, (x) => [ST.D, ST.C].includes(x.status))],
+    ["Concluídas", contarPor(r, (x) => x.status === ST.A)],
+    ["Pedidos em triagem", (S.managerIntakes || []).filter((x) => x.status === "PENDENTE").length],
+  ].map(([rotulo, valor]) => `<div class="metric"><b>${valor}</b><span>${esc(rotulo)}</span></div>`).join("");
+
+  const repetidas = typeof chavesRepetidas === "function" ? chavesRepetidas() : [];
+  const cargos = JB.overview?.stats?.active;
+  const areas = [
+    { view: "managers", titulo: "Usuários", icone: "◎",
+      linhas: [contagem(contarPor(S.managers, (x) => x.active), "usuário ativo", "usuários ativos"),
+               contagem(contarPor(S.managers, (x) => !x.active), "inativo", "inativos")],
+      aviso: contarPor(S.managers, (x) => x.active && x.role === "GESTOR") ? "" : "Nenhum Gestor ativo cadastrado." },
+    { view: "fields", titulo: "Campos do formulário", icone: "≣",
+      linhas: [contagem(contarPor(S.fields, (x) => x.active), "campo ativo", "campos ativos"),
+               contagem(contarPor(S.fields, (x) => x.active && x.required), "obrigatório", "obrigatórios")],
+      aviso: repetidas.length ? `${repetidas.length} chave(s) repetida(s) — o conteúdo de um campo sobrescreve o outro.` : "" },
+    { view: "models", titulo: "Documento", icone: "▢",
+      linhas: [(S.modelMappings || []).length ? contagem(S.modelMappings.length, "campo configurado", "campos configurados") : "Abra para carregar",
+               "Origem de cada marcador do DOCX"], aviso: "" },
+    { view: "companies", titulo: "Empresas e filiais", icone: "▣",
+      linhas: [contagem(contarPor(S.companies, (x) => x.active), "empresa ativa", "empresas ativas"),
+               contagem(contarPor(S.branches, (x) => x.active), "filial ativa", "filiais ativas")],
+      aviso: contarPor(S.companies, (x) => x.active) ? "" : "Sem empresa ativa: não dá para abrir solicitação." },
+    { view: "workflows", titulo: "Fluxos e aprovadores", icone: "⇉",
+      linhas: [contagem(contarPor(S.workflows, (x) => x.active), "modelo ativo", "modelos ativos"),
+               contagem(contarPor(S.approvalAreas, (x) => x.active), "área aprovadora", "áreas aprovadoras")], aviso: "" },
+    { view: "jobBase", titulo: "Base de cargos", icone: "▦",
+      linhas: [cargos == null ? "Abra para carregar" : contagem(cargos, "cargo ativo", "cargos ativos"),
+               "Importação e cadastro manual"], aviso: "" },
+    { view: "audit", titulo: "Logs", icone: "◔",
+      linhas: [(S.auditLogs || []).length ? contagem((S.auditLogs || []).length, "alteração carregada", "alterações carregadas") : "Abra para carregar",
+               "Acessos e modificações"], aviso: "" },
+  ];
+  $("#adminHomeCards").innerHTML = areas.map((a) => `
+    <article class="card admin-home-card">
+      <div class="admin-home-card-head"><span class="admin-link-icon">${a.icone}</span><h2>${esc(a.titulo)}</h2></div>
+      <ul class="admin-home-list">${a.linhas.map((l) => `<li>${esc(l)}</li>`).join("")}</ul>
+      ${a.aviso ? `<p class="admin-home-aviso">${esc(a.aviso)}</p>` : ""}
+      <button class="btn secondary" type="button" data-abrir="${esc(a.view)}">Abrir</button>
+    </article>`).join("");
+  $$("#adminHomeCards [data-abrir]").forEach((b) => { b.onclick = () => show(b.dataset.abrir); });
+
+  const logs = (S.auditLogs || []).slice(0, 6);
+  $("#adminHomeLog").innerHTML = logs.length
+    ? logs.map((x) => `<div class="admin-item"><div><b>${esc(auditLabel(x))}</b><br><span class="muted">${esc(x.actor_name || "Sistema")} · ${fmt(x.created_at)}</span></div></div>`).join("")
+    : '<p class="muted">Abra a aba Logs para carregar o histórico.</p>';
+}
 function show(v) {
   if (v === "models" && mgmt()) loadModelMappings();
   if (v === "audit" && admin()) loadAuditLogs();
   if (v === "jobBase" && admin()) { loadJobBaseOverview(); loadJobList(); }
-  ["dashboard", "managers", "fields", "models", "companies", "workflows", "jobBase", "audit", "detail"].forEach((x) =>
-    $("#" + x + "View").classList.toggle("hidden", x !== v),
+  if (v === "adminHome" && admin()) renderAdminHome();
+  ["adminHome", "dashboard", "managers", "fields", "models", "companies", "workflows", "jobBase", "audit", "detail"].forEach((x) =>
+    $("#" + x + "View")?.classList.toggle("hidden", x !== v),
   );
+  fecharMenuAdmin();
 $$(".nav").forEach((n) => {
     const active = n.dataset.view === v;
     n.classList.toggle("active", active);
@@ -1310,6 +1498,7 @@ $("#loginForm").onsubmit = async (e) => {
 $("#logout").onclick = async () => {
   await registerAccess("LOGOUT");
   sessionStorage.removeItem("access_logged");
+  if (S.profile?.id) sessionStorage.removeItem(chavePapel(S.profile.id));
   await sb.auth.signOut();
   location.reload();
 };
@@ -1350,6 +1539,13 @@ window.deleteWorkflowStep=async id=>{if(confirm("Excluir etapa?")){await sb.from
 $$(".nav").forEach((n) => {
   n.onclick = () => show(n.dataset.view);
 });
+$("#adminMenuBtn").onclick = () => {
+  const barra = $("#adminSidebar"), aberta = barra.classList.toggle("aberta");
+  $("#adminMenuBtn").setAttribute("aria-expanded", aberta ? "true" : "false");
+};
+$("#adminHomeRefresh").onclick = async () => { await load(); renderAdminHome(); toast("Painel atualizado."); };
+$("#adminHomeAudit").onclick = () => show("audit");
+$("#trocarPerfil").onclick = () => trocarPerfilDeTrabalho();
 $("#newRequest").onclick=async()=>{const f=$("#requestForm"),isManager=S.profile.role==="GESTOR";f.reset();f.manager_id.value=isManager?S.profile.id:"";$("#managerPickerBox").classList.toggle("hidden",isManager);$("#managerOptions").innerHTML=S.managers.filter(m=>m.active&&m.role==="GESTOR").map(m=>`<option value="${esc(m.name)} — ${esc(m.email)}"></option>`).join("");$("#managerSelected").textContent=isManager?`${S.profile.name} — solicitante`:"Selecione um gestor ativo.";fillCompanySelects();if(isManager&&S.profile.company){f.company.value=S.profile.company;fillBranches();f.branch.value=S.profile.branch||"";}else fillBranches();const {data,error}=await sb.rpc("list_available_approvers");S.approvalMembers=error?[]:(data||[]);f.additional_approver_id.innerHTML='<option value="">Selecione...</option>'+S.approvalMembers.map(x=>`<option value="${x.user_id}" data-area="${x.area_id}">${esc(x.area_name)} — ${esc(x.user_name)} (${esc(x.user_email)})</option>`).join("");$("#requestApprovalFields").classList.add("hidden");$("#existingJobBox").classList.add("hidden");applyRequestFormRules();syncRequestValidation();$("#requestDialog").showModal();};
 function managerInitialControl(f){
  const name=`initial_${f.field_key}`,required=f.required?'required':'',placeholder=esc(f.placeholder||'');
@@ -1605,14 +1801,43 @@ window.editUser = (id) => {
   fillUserCompanyOptions("#editUserForm","#editCompanyOptions","#editBranchOptions");
   configureApproverRole(f,"#editApproverAreaField");
   if(u.approval_area_id) f.approval_area_id.value=u.approval_area_id;
+  marcarPerfisAdicionais(f, u);
   $("#editUserDialog").showModal();
 };
+function marcarPerfisAdicionais(f, u) {
+  const podeEditar = admin();
+  $("#editExtraRoles").classList.toggle("hidden", !podeEditar);
+  const liberados = Array.isArray(u.extra_roles) ? u.extra_roles.map((x) => String(x).toUpperCase()) : [];
+  Object.keys(PAPEIS).forEach((papel) => {
+    const caixa = f["extra_" + papel];
+    if (!caixa) return;
+    const ehPadrao = String(u.role || "").toUpperCase() === papel;
+    caixa.checked = liberados.includes(papel);
+    caixa.disabled = ehPadrao || !podeEditar;
+    // O perfil padrao aparece marcado e travado: nao e "adicional", ja e o dele.
+    if (ehPadrao) caixa.checked = true;
+    caixa.closest("label")?.classList.toggle("perfil-padrao", ehPadrao);
+  });
+}
+function perfisAdicionaisDoFormulario(f, papelPadrao) {
+  return Object.keys(PAPEIS).filter((papel) =>
+    papel !== String(papelPadrao || "").toUpperCase() && f["extra_" + papel]?.checked);
+}
 $("#editUserForm").onsubmit = async (e) => {
   e.preventDefault();
   let b = Object.fromEntries(new FormData(e.target));
   b.active = e.target.active.checked;
+  const adicionais = perfisAdicionaisDoFormulario(e.target, b.role);
+  Object.keys(PAPEIS).forEach((papel) => delete b["extra_" + papel]);
   try {
     await callAdminUsers({ action: "update", ...b });
+    if (admin()) {
+      const salvos = await sb.rpc("admin_set_profile_roles", { p_id: b.id, p_extra_roles: adicionais });
+      if (salvos.error) {
+        await load();
+        return toast("Usuário atualizado, mas os perfis adicionais não foram salvos: " + salvos.error.message);
+      }
+    }
     $("#editUserDialog").close();
     await load();
     toast("Usuário atualizado.");
