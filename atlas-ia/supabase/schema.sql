@@ -70,15 +70,34 @@ create table if not exists public.messages (
   sources          jsonb not null default '[]'::jsonb,
   -- Consumo de tokens reportado pela API da Anthropic.
   usage            jsonb not null default '{}'::jsonb,
+  -- Metricas usadas pelo dashboard.
+  model            text,
+  latency_ms       integer,
+  first_token_ms   integer,
+  -- Similaridade do melhor trecho recuperado. NULL nas mensagens do usuario.
+  -- E o sinal de cobertura da base: baixo = a pergunta nao tem resposta indexada.
+  top_similarity   double precision,
   created_at       timestamptz not null default now()
 );
 
 create index if not exists messages_conversation_id_idx
   on public.messages (conversation_id, created_at);
 
+-- O dashboard varre por data, entao o indice e por created_at.
+create index if not exists messages_created_at_idx
+  on public.messages (created_at desc);
+
+-- Colunas adicionadas depois da primeira versao do schema: rodar de novo e seguro.
+alter table public.messages add column if not exists model          text;
+alter table public.messages add column if not exists latency_ms     integer;
+alter table public.messages add column if not exists first_token_ms integer;
+alter table public.messages add column if not exists top_similarity double precision;
+
 -- -----------------------------------------------------------------------------
 -- Busca semantica
 -- -----------------------------------------------------------------------------
+
+drop function if exists public.match_document_chunks(vector, integer, double precision, uuid);
 
 -- Recebe o embedding da pergunta e devolve os trechos mais parecidos.
 -- A similaridade e 1 - distancia_de_cosseno, entao 1.0 = identico, 0.0 = sem relacao.
@@ -181,3 +200,195 @@ drop trigger if exists messages_touch_conversation on public.messages;
 create trigger messages_touch_conversation
   after insert on public.messages
   for each row execute function public.touch_conversation();
+
+-- =============================================================================
+-- Analytics — funcoes que alimentam o dashboard
+--
+-- A agregacao acontece no Postgres de proposito: o Worker recebe dezenas de
+-- linhas ja somadas em vez de puxar milhares de mensagens para contar em
+-- JavaScript. Isso mantem o dashboard rapido conforme o historico cresce.
+-- =============================================================================
+
+-- `create or replace` nao consegue alterar o tipo de retorno de uma funcao que
+-- ja existe. Sem estes drops, rodar o schema de novo depois de uma atualizacao
+-- falha com "cannot change return type of existing function".
+drop function if exists public.analytics_daily(timestamptz, timestamptz, uuid);
+drop function if exists public.analytics_summary(timestamptz, timestamptz, uuid);
+drop function if exists public.analytics_top_documents(timestamptz, timestamptz, uuid, integer);
+drop function if exists public.analytics_knowledge_gaps(timestamptz, timestamptz, uuid, integer, double precision);
+
+-- Serie diaria: volume, tokens e latencia por dia, com os dias vazios
+-- preenchidos com zero (senao o grafico "pula" datas sem movimento).
+create or replace function public.analytics_daily (
+  from_ts         timestamptz,
+  to_ts           timestamptz,
+  filter_owner_id uuid default null
+)
+returns table (
+  dia                  date,
+  perguntas            bigint,
+  tokens_entrada_novos bigint,
+  tokens_cache_escrita bigint,
+  tokens_cache_leitura bigint,
+  tokens_saida         bigint,
+  latencia_media_ms    double precision,
+  respostas_embasadas  bigint
+)
+language sql
+stable
+as $$
+  with respostas as (
+    select
+      m.created_at,
+      coalesce((m.usage ->> 'input_tokens')::bigint, 0)                 as entrada,
+      coalesce((m.usage ->> 'cache_creation_input_tokens')::bigint, 0)  as cache_escrita,
+      coalesce((m.usage ->> 'cache_read_input_tokens')::bigint, 0)      as cache_leitura,
+      coalesce((m.usage ->> 'output_tokens')::bigint, 0)                as saida,
+      m.latency_ms,
+      m.top_similarity
+    from public.messages m
+    join public.conversations c on c.id = m.conversation_id
+    where m.role = 'assistant'
+      and m.created_at >= from_ts
+      and m.created_at <  to_ts
+      and c.owner_id is not distinct from filter_owner_id
+  )
+  select
+    serie.dia::date,
+    count(r.created_at)                                    as perguntas,
+    coalesce(sum(r.entrada), 0)                            as tokens_entrada_novos,
+    coalesce(sum(r.cache_escrita), 0)                      as tokens_cache_escrita,
+    coalesce(sum(r.cache_leitura), 0)                      as tokens_cache_leitura,
+    coalesce(sum(r.saida), 0)                              as tokens_saida,
+    avg(r.latency_ms)                                      as latencia_media_ms,
+    count(*) filter (where r.top_similarity is not null)   as respostas_embasadas
+  from generate_series(from_ts::date, (to_ts - interval '1 microsecond')::date, interval '1 day') as serie(dia)
+  left join respostas r
+    on r.created_at >= serie.dia
+   and r.created_at <  serie.dia + interval '1 day'
+  group by serie.dia
+  order by serie.dia;
+$$;
+
+-- Totais do periodo, em uma linha so.
+create or replace function public.analytics_summary (
+  from_ts         timestamptz,
+  to_ts           timestamptz,
+  filter_owner_id uuid default null
+)
+returns table (
+  perguntas            bigint,
+  conversas            bigint,
+  tokens_entrada_novos bigint,
+  tokens_cache_escrita bigint,
+  tokens_cache_leitura bigint,
+  tokens_saida         bigint,
+  latencia_media_ms    double precision,
+  latencia_p95_ms      double precision,
+  respostas_embasadas  bigint,
+  similaridade_media   double precision
+)
+language sql
+stable
+as $$
+  select
+    count(*)                                                          as perguntas,
+    count(distinct m.conversation_id)                                 as conversas,
+    coalesce(sum((m.usage ->> 'input_tokens')::bigint), 0)                as tokens_entrada_novos,
+    coalesce(sum((m.usage ->> 'cache_creation_input_tokens')::bigint), 0) as tokens_cache_escrita,
+    coalesce(sum((m.usage ->> 'cache_read_input_tokens')::bigint), 0)     as tokens_cache_leitura,
+    coalesce(sum((m.usage ->> 'output_tokens')::bigint), 0)               as tokens_saida,
+    avg(m.latency_ms)                                                 as latencia_media_ms,
+    percentile_cont(0.95) within group (order by m.latency_ms)        as latencia_p95_ms,
+    count(*) filter (where m.top_similarity is not null)              as respostas_embasadas,
+    avg(m.top_similarity)                                             as similaridade_media
+  from public.messages m
+  join public.conversations c on c.id = m.conversation_id
+  where m.role = 'assistant'
+    and m.created_at >= from_ts
+    and m.created_at <  to_ts
+    and c.owner_id is not distinct from filter_owner_id;
+$$;
+
+-- Quais documentos da base realmente sustentam as respostas.
+-- Documento que nunca aparece aqui e conteudo que ninguem consulta.
+create or replace function public.analytics_top_documents (
+  from_ts         timestamptz,
+  to_ts           timestamptz,
+  filter_owner_id uuid default null,
+  max_rows        integer default 8
+)
+returns table (
+  document_id        uuid,
+  titulo             text,
+  citacoes           bigint,
+  similaridade_media double precision
+)
+language sql
+stable
+as $$
+  select
+    (fonte ->> 'documentId')::uuid                            as document_id,
+    max(fonte ->> 'title')                                    as titulo,
+    count(*)                                                  as citacoes,
+    avg((fonte ->> 'similarity')::double precision)           as similaridade_media
+  from public.messages m
+  join public.conversations c on c.id = m.conversation_id
+  cross join lateral jsonb_array_elements(m.sources) as fonte
+  where m.role = 'assistant'
+    and m.created_at >= from_ts
+    and m.created_at <  to_ts
+    and c.owner_id is not distinct from filter_owner_id
+  group by 1
+  order by citacoes desc, titulo
+  limit greatest(max_rows, 1);
+$$;
+
+-- Lacunas: perguntas que a base nao soube responder bem.
+-- E a lista de "o que escrever a seguir" — a metrica mais acionavel do painel.
+create or replace function public.analytics_knowledge_gaps (
+  from_ts         timestamptz,
+  to_ts           timestamptz,
+  filter_owner_id uuid default null,
+  max_rows        integer default 10,
+  limiar          double precision default 0.45
+)
+returns table (
+  pergunta          text,
+  ocorrencias       bigint,
+  melhor_similaridade double precision,
+  ultima_vez        timestamptz
+)
+language sql
+stable
+as $$
+  with pares as (
+    select
+      m.role,
+      m.created_at,
+      m.top_similarity,
+      -- a pergunta e a mensagem imediatamente anterior na mesma conversa
+      lag(m.content) over (
+        partition by m.conversation_id order by m.created_at
+      ) as pergunta
+    from public.messages m
+    join public.conversations c on c.id = m.conversation_id
+    where m.created_at >= from_ts
+      and m.created_at <  to_ts
+      and c.owner_id is not distinct from filter_owner_id
+  )
+  -- Agrupa por pergunta: a mesma duvida repetida dez vezes e um sinal muito
+  -- mais forte do que dez duvidas diferentes aparecendo uma vez cada.
+  select
+    pergunta,
+    count(*)                as ocorrencias,
+    max(top_similarity)     as melhor_similaridade,
+    max(created_at)         as ultima_vez
+  from pares
+  where role = 'assistant'
+    and pergunta is not null
+    and (top_similarity is null or top_similarity < limiar)
+  group by pergunta
+  order by ocorrencias desc, melhor_similaridade nulls first
+  limit greatest(max_rows, 1);
+$$;

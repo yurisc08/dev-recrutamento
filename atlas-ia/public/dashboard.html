@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Atlas IA — Painel</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#129504;</text></svg>"
+    />
+  </head>
+  <body class="viz-root">
+    <header class="topbar">
+      <div class="brand">
+        <span class="brand-mark">A</span>
+        <div>
+          <strong id="assistant-name">Atlas</strong>
+          <small id="model-name">carregando…</small>
+        </div>
+      </div>
+
+      <nav class="tabs">
+        <a href="/">Conversa</a>
+        <a href="/dashboard.html" class="active" aria-current="page">Painel</a>
+      </nav>
+    </header>
+
+    <main class="board">
+      <!-- Uma única linha de filtros, acima de tudo que ela controla. -->
+      <div class="filters">
+        <div class="period" role="group" aria-label="Período">
+          <button data-dias="7">7 dias</button>
+          <button data-dias="14">14 dias</button>
+          <button data-dias="30" class="active">30 dias</button>
+          <button data-dias="90">90 dias</button>
+        </div>
+        <span class="filters-note" id="period-note"></span>
+      </div>
+
+      <div id="board-content" hidden>
+        <!-- O número que o painel lidera. Só existe um por tela. -->
+        <section class="hero card">
+          <div>
+            <p class="hero-label">Perguntas respondidas</p>
+            <p class="hero-value" id="hero-value">—</p>
+            <p class="hero-meta">
+              <span id="hero-delta" class="delta"></span>
+              <span id="hero-context" class="muted"></span>
+            </p>
+          </div>
+          <div class="hero-spark" id="hero-spark"></div>
+        </section>
+
+        <section class="kpis" id="kpis"></section>
+
+        <section class="grid">
+          <article class="card" data-chart="volume">
+            <header class="card-head">
+              <div>
+                <h2>Perguntas por dia</h2>
+                <p class="card-sub">Volume de respostas geradas</p>
+              </div>
+              <button class="toggle" data-target="volume">Ver tabela</button>
+            </header>
+            <div class="plot" id="plot-volume"></div>
+            <div class="table-view" id="table-volume" hidden></div>
+          </article>
+
+          <article class="card" data-chart="tokens">
+            <header class="card-head">
+              <div>
+                <h2>Tokens por dia</h2>
+                <p class="card-sub">
+                  Quanto do contexto veio do cache em vez de ser cobrado cheio
+                </p>
+              </div>
+              <button class="toggle" data-target="tokens">Ver tabela</button>
+            </header>
+            <div class="legend" id="legend-tokens"></div>
+            <div class="plot" id="plot-tokens"></div>
+            <div class="table-view" id="table-tokens" hidden></div>
+          </article>
+
+          <article class="card" data-chart="documentos">
+            <header class="card-head">
+              <div>
+                <h2>Documentos mais consultados</h2>
+                <p class="card-sub">Quantas respostas cada documento sustentou</p>
+              </div>
+              <button class="toggle" data-target="documentos">Ver tabela</button>
+            </header>
+            <div class="plot" id="plot-documentos"></div>
+            <div class="table-view" id="table-documentos" hidden></div>
+          </article>
+
+          <article class="card">
+            <header class="card-head">
+              <div>
+                <h2>Lacunas da base</h2>
+                <p class="card-sub">
+                  Perguntas sem trecho relevante indexado — a lista do que escrever a seguir
+                </p>
+              </div>
+            </header>
+            <div class="gaps" id="gaps"></div>
+          </article>
+        </section>
+      </div>
+
+      <div class="board-state" id="board-state">Carregando o painel…</div>
+    </main>
+
+    <script src="/dashboard.js" type="module"></script>
+  </body>
+</html>

@@ -16,6 +16,7 @@ import {
   listConversationsRoute,
 } from "./routes/conversations";
 import { searchRoute } from "./routes/search";
+import { analyticsRoute } from "./routes/analytics";
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>();
 
@@ -89,6 +90,7 @@ app.get("/api/health", (c) => {
 
 app.post("/api/chat", chatRoute);
 app.post("/api/search", searchRoute);
+app.get("/api/analytics", analyticsRoute);
 
 app.get("/api/documents", listDocumentsRoute);
 app.post("/api/documents", createDocumentRoute);

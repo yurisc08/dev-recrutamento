@@ -8,6 +8,21 @@
   --accent: #6c8cff;
   --accent-soft: rgba(108, 140, 255, 0.14);
   --radius: 12px;
+
+  /* --- Tokens de visualizacao -------------------------------------------
+     Paleta categorica validada para daltonismo e contraste contra a
+     superficie real dos cartoes (#161a21 no escuro, #ffffff no claro).
+     Os passos do modo claro nao sao os mesmos "clareados": sao a mesma
+     familia de matiz, escolhida para a outra superficie. */
+  --surface-1: #161a21;
+  --series-1: #3987e5;  /* azul   — serie principal */
+  --series-2: #199e70;  /* aqua   — leitura de cache */
+  --series-3: #d95926;  /* laranja — saida */
+  --viz-grid: #272d39;
+  --viz-axis: #383f4d;
+  --viz-muted: #98a1b3;
+  --status-good: #0ca30c;
+  --status-bad: #d03b3b;
 }
 
 @media (prefers-color-scheme: light) {
@@ -20,10 +35,24 @@
     --text-dim: #5f6875;
     --accent: #3b5bdb;
     --accent-soft: rgba(59, 91, 219, 0.1);
+
+    --surface-1: #ffffff;
+    --series-1: #2a78d6;
+    --series-2: #1baf7a;
+    --series-3: #eb6834;
+    --viz-grid: #e2e5eb;
+    --viz-axis: #c3c2b7;
+    --viz-muted: #6f7787;
+    --status-good: #006300;
+    --status-bad: #c62828;
   }
 }
 
 * { box-sizing: border-box; }
+
+/* O atributo `hidden` do HTML perde para qualquer `display` declarado aqui —
+   sem esta regra, tooltip e legenda continuam visíveis depois de escondidos. */
+[hidden] { display: none !important; }
 
 body {
   margin: 0;
@@ -177,4 +206,183 @@ dialog::backdrop { background: rgba(0, 0, 0, .5); }
 @media (max-width: 820px) {
   .app { grid-template-columns: 1fr; }
   .sidebar { display: none; }
+}
+
+/* =========================================================================
+   Painel
+   ========================================================================= */
+
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 20px; padding: 14px 24px;
+  background: var(--bg-soft); border-bottom: 1px solid var(--border);
+}
+
+.tabs { display: flex; gap: 4px; }
+.tabs a {
+  padding: 7px 14px; border-radius: 8px; text-decoration: none;
+  color: var(--text-dim); font-size: 13px; font-weight: 500;
+}
+.tabs a:hover { background: var(--bg-elevated); color: var(--text); }
+.tabs a.active { background: var(--accent-soft); color: var(--text); }
+
+.board {
+  max-width: 1180px; margin: 0 auto; padding: 24px 24px 56px;
+  display: grid; gap: 18px;
+  /* minmax(0, 1fr) em vez de 1fr: sem isso os itens do grid herdam
+     min-width:auto e a pagina inteira estica ate o conteudo mais largo. */
+  grid-template-columns: minmax(0, 1fr);
+}
+.board > *, .grid > *, .kpis > * { min-width: 0; }
+
+/* --- Filtros: uma linha só, acima de tudo que ela controla --------------- */
+.filters {
+  display: flex; align-items: center; gap: 14px; flex-wrap: wrap;
+}
+.period {
+  display: inline-flex; gap: 2px; padding: 3px;
+  background: var(--bg-soft); border: 1px solid var(--border); border-radius: 10px;
+}
+.period button {
+  border: 0; background: none; color: var(--text-dim);
+  padding: 6px 13px; border-radius: 7px; cursor: pointer;
+  font: inherit; font-size: 13px;
+}
+.period button:hover { color: var(--text); }
+.period button.active { background: var(--accent); color: #fff; }
+.filters-note { color: var(--text-dim); font-size: 12px; }
+
+/* --- Cartões ------------------------------------------------------------ */
+.card {
+  background: var(--surface-1);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 18px;
+}
+
+.card-head {
+  display: flex; align-items: flex-start; justify-content: space-between;
+  gap: 12px; margin-bottom: 14px;
+}
+.card-head h2 { margin: 0; font-size: 14px; font-weight: 600; }
+.card-sub { margin: 3px 0 0; font-size: 12px; color: var(--text-dim); }
+
+.toggle {
+  border: 1px solid var(--border); background: none; color: var(--text-dim);
+  border-radius: 7px; padding: 5px 10px; font: inherit; font-size: 12px;
+  cursor: pointer; white-space: nowrap;
+}
+.toggle:hover { border-color: var(--accent); color: var(--text); }
+
+/* --- Figura principal: exatamente uma por tela -------------------------- */
+.hero {
+  display: flex; align-items: center; justify-content: space-between; gap: 24px;
+}
+.hero-label { margin: 0; font-size: 13px; color: var(--text-dim); }
+.hero-value {
+  margin: 4px 0 6px; font-size: 52px; line-height: 1;
+  font-weight: 600; letter-spacing: -0.02em;
+  /* Proporcional de propósito: tabular deixa números grandes soltos. */
+}
+.hero-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 12px; font-size: 13px; }
+.hero-meta .muted { color: var(--text-dim); }
+
+/* --- Indicadores -------------------------------------------------------- */
+.kpis {
+  display: grid; gap: 14px;
+  grid-template-columns: repeat(auto-fit, minmax(min(215px, 100%), 1fr));
+}
+.kpi { position: relative; }
+.kpi-label { margin: 0; font-size: 12px; color: var(--text-dim); }
+.kpi-value { margin: 6px 0 8px; font-size: 27px; font-weight: 600; letter-spacing: -0.01em; }
+.kpi-foot { display: flex; }
+.kpi-note { margin: 7px 0 0; font-size: 11px; color: var(--viz-muted); line-height: 1.4; }
+.kpi-spark { position: absolute; top: 14px; right: 14px; opacity: .9; }
+
+/* A direção nunca depende só da cor: vem com seta e com o texto do período. */
+.delta { font-size: 12px; display: inline-flex; align-items: center; gap: 4px; }
+.delta.bom { color: var(--status-good); }
+.delta.ruim { color: var(--status-bad); }
+.delta.neutro { color: var(--text-dim); }
+
+/* --- Grade dos gráficos ------------------------------------------------- */
+.grid {
+  display: grid; gap: 14px; align-items: start;
+  grid-template-columns: repeat(auto-fit, minmax(min(420px, 100%), 1fr));
+}
+.plot { position: relative; }
+.plot svg { display: block; overflow: visible; }
+.plot svg:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+.legend { display: flex; flex-wrap: wrap; gap: 14px; margin-bottom: 10px; }
+.legend-item, .viz-key {
+  display: inline-flex; align-items: center; gap: 6px;
+  font-size: 12px; color: var(--text-dim);
+}
+.legend-item i, .viz-key i {
+  width: 9px; height: 9px; border-radius: 3px; flex: none;
+}
+
+/* Texto do gráfico: sempre em tom de tinta, nunca na cor da série. */
+.viz-tick { font-size: 11px; font-variant-numeric: tabular-nums; }
+.viz-label { font-size: 11px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.viz-cat { font-size: 12px; }
+
+.viz-tooltip {
+  position: absolute; top: 0; left: 0; pointer-events: none;
+  background: var(--bg-elevated); border: 1px solid var(--border);
+  border-radius: 8px; padding: 8px 10px; font-size: 12px;
+  display: grid; gap: 3px; min-width: 120px; z-index: 5;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .18);
+}
+.viz-tooltip strong { font-size: 12px; }
+.viz-tooltip .viz-row {
+  display: flex; align-items: center; justify-content: space-between;
+  gap: 16px; color: var(--text-dim);
+}
+.viz-tooltip .viz-row b {
+  color: var(--text); font-weight: 600; font-variant-numeric: tabular-nums;
+}
+
+/* --- Tabela gêmea de cada gráfico --------------------------------------- */
+.table-view { max-height: 260px; overflow: auto; }
+.viz-table { min-width: 320px; }
+.viz-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+.viz-table th, .viz-table td {
+  text-align: right; padding: 6px 8px; border-bottom: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+}
+.viz-table th:first-child, .viz-table td:first-child {
+  text-align: left; font-variant-numeric: normal;
+}
+.viz-table th {
+  position: sticky; top: 0; background: var(--surface-1);
+  color: var(--text-dim); font-weight: 500;
+}
+
+/* --- Lacunas ------------------------------------------------------------ */
+.gap-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.gap-list li {
+  padding: 9px 10px; border-radius: 8px; background: var(--bg-soft);
+  border: 1px solid transparent;
+}
+.gap-list li:hover { border-color: var(--border); }
+.gap-question { margin: 0; font-size: 13px; }
+.gap-meta { margin: 3px 0 0; font-size: 11px; color: var(--viz-muted); }
+
+.empty-note { color: var(--text-dim); font-size: 13px; margin: 0; padding: 18px 0; }
+
+.board-state {
+  color: var(--text-dim); font-size: 14px; text-align: center; padding: 60px 0;
+}
+.board-state.erro { color: #ff8080; }
+
+/* Refetch segura o desenho anterior esmaecido — sem piscar nem pular altura. */
+.recarregando { opacity: .55; transition: opacity .15s ease; }
+
+@media (max-width: 900px) {
+  .grid { grid-template-columns: 1fr; }
+  .hero { flex-direction: column; align-items: flex-start; }
+  .hero-value { font-size: 44px; }
+  .board { padding: 18px 14px 40px; }
 }

@@ -17,11 +17,84 @@ Navegador ──▶ Cloudflare Worker ──▶ Workers AI  (transforma a pergun
 | Modelo | Claude Opus 5 (API Anthropic) | Gera as respostas |
 | Embeddings | Workers AI `@cf/baai/bge-m3` | Vetores multilíngues, 1024 dimensões |
 | Banco | Supabase (Postgres + pgvector) | Base de conhecimento, histórico, auth |
-| Front-end | HTML/CSS/JS puro | Chat com streaming, sem build |
+| Front-end | HTML/CSS/JS puro | Chat com streaming e painel, sem build |
+| Gráficos | SVG escrito à mão | Sem biblioteca, sem CDN, ~14 KB |
 
 > A Anthropic não oferece API de embeddings — por isso os vetores vêm da Workers AI.
 > O `bge-m3` foi escolhido por ser multilíngue: a maioria dos modelos abertos de
 > embedding é treinada só em inglês e vai mal com português.
+
+O projeto tem duas telas: **Conversa** (o chat) e **Painel** (analytics).
+
+---
+
+## O painel
+
+![Painel do Atlas IA](docs/painel.png)
+
+Todo dado do painel é subproduto do próprio uso — nada é instrumentado à parte.
+Cada resposta grava tokens, latência e a similaridade do melhor trecho
+recuperado, e é disso que saem os números.
+
+**O que ele responde:**
+
+| Indicador | Para que serve |
+|---|---|
+| Perguntas respondidas | Volume, com variação sobre o período anterior |
+| Custo estimado | Tokens × preço do modelo, mais quanto o cache economizou |
+| Latência média e p95 | A média engana; o p95 mostra a experiência do pior caso |
+| Cobertura da base | % das perguntas que acharam trecho relevante |
+| Aproveitamento do cache | % dos tokens de entrada que vieram do cache |
+| **Lacunas da base** | Perguntas que a base não soube responder, agrupadas por repetição |
+
+As **lacunas** são o indicador mais acionável: é a lista, ordenada por
+frequência, do conteúdo que falta indexar. Uma dúvida repetida 22 vezes é um
+sinal muito mais forte do que 22 dúvidas diferentes aparecendo uma vez cada.
+
+**Como os números são calculados.** As somas acontecem no Postgres, em quatro
+funções (`analytics_daily`, `analytics_summary`, `analytics_top_documents`,
+`analytics_knowledge_gaps`). O Worker recebe dezenas de linhas já agregadas em
+vez de puxar milhares de mensagens para contar em JavaScript — o painel continua
+rápido conforme o histórico cresce. O preço por token fica em `src/lib/pricing.ts`,
+isolado: quando a tabela da Anthropic mudar, muda-se um arquivo só.
+
+### Dados para apresentar
+
+Painel vazio não demonstra nada. Rode `supabase/demo-data.sql` no SQL Editor e
+ele gera 60 dias de histórico realista — volume crescente, fim de semana mais
+fraco, cache aquecendo ao longo das conversas e ~14% de perguntas fora do que a
+base cobre. Para limpar depois:
+
+```sql
+delete from public.conversations where title like '[demo]%';
+delete from public.documents where metadata ->> 'origem' = 'demo';
+```
+
+### Decisões de visualização
+
+Os gráficos seguem regras, não gosto:
+
+- **A paleta foi validada, não escolhida no olho.** As três cores de série
+  passam nos testes de separação para daltonismo (ΔE ≥ 8 em deuteranopia) e de
+  contraste contra a superfície real dos cartões, nos dois temas. No tema claro
+  o verde fica em 2,82:1 — abaixo de 3:1 — e por isso a legenda e a tabela são
+  obrigatórias ali, não opcionais.
+- **Nada depende só de cor.** Toda série tem legenda; toda variação vem com
+  seta e com o texto "vs. período anterior"; todo gráfico tem um botão
+  *Ver tabela* com os mesmos números.
+- **Uma figura principal por tela.** "Perguntas respondidas" lidera; o resto são
+  cartões-indicadores. Oito cores quando a história é um número só é o jeito
+  mais comum de um gráfico errar o alvo.
+- **Rótulo direto só onde importa** — a ponta da linha, o dia de maior volume.
+  Número em cada ponto vira ruído e ninguém lê.
+- **Uma linha de filtros, acima de tudo.** O seletor de período vale para o
+  painel inteiro; filtro dentro de cartão faz cada gráfico contar uma história
+  de um recorte diferente.
+- **Sem eixo duplo.** Nunca duas escalas verticais no mesmo gráfico: o
+  alinhamento entre elas é arbitrário e inventa correlação que não existe.
+- **A quantidade de datas no eixo sai da largura disponível**, não de um número
+  fixo — seis no desktop, três no celular. Data sobreposta não fica apertada,
+  fica ilegível.
 
 ---
 
@@ -113,6 +186,7 @@ Todas as rotas ficam sob `/api`. O header `Authorization: Bearer <token do Supab
 | Método | Rota | O que faz |
 |---|---|---|
 | `GET` | `/api/health` | Status e diagnóstico de configuração |
+| `GET` | `/api/analytics?dias=30` | Tudo que o painel precisa, em uma requisição (7/14/30/90) |
 | `POST` | `/api/chat` | Conversa (resposta em SSE) |
 | `POST` | `/api/search` | Busca semântica pura, sem passar pelo modelo |
 | `GET` | `/api/documents` | Lista a base de conhecimento |
@@ -234,15 +308,24 @@ atlas-ia/
 │   │   ├── chunk.ts          divisão do texto em pedaços
 │   │   ├── supabase.ts       clientes service_role e anon
 │   │   ├── auth.ts           validação do token do Supabase
+│   │   ├── pricing.ts        tabela de preços por token
 │   │   ├── config.ts         diagnóstico de variáveis faltando
 │   │   └── http.ts           erros HTTP e validação de entrada
 │   └── routes/
 │       ├── chat.ts           conversa com streaming SSE
 │       ├── documents.ts      indexação da base de conhecimento
+│       ├── conversations.ts  histórico
 │       ├── search.ts         busca semântica
-│       └── conversations.ts  histórico
-├── public/                   front-end (sem build)
-├── supabase/schema.sql       tabelas, índice HNSW, função de busca, RLS
+│       └── analytics.ts      agregações do painel
+├── public/
+│   ├── index.html            tela de conversa
+│   ├── dashboard.html        tela do painel
+│   ├── charts.js             gráficos em SVG, sem biblioteca
+│   ├── dashboard.js          monta o painel a partir de /api/analytics
+│   └── styles.css            tokens de tema e de visualização
+├── supabase/
+│   ├── schema.sql            tabelas, índice HNSW, busca, RLS, analytics
+│   └── demo-data.sql         60 dias de histórico para demonstração
 └── wrangler.toml
 ```
 

@@ -84,6 +84,10 @@ export async function chatRoute(c: Ctx): Promise<Response> {
 
       let answer = "";
 
+      // Metricas de latencia que alimentam o dashboard.
+      const inicio = Date.now();
+      let primeiroToken: number | null = null;
+
       try {
         send("meta", { conversationId });
         send("sources", chunks.map(toPublicSource));
@@ -93,6 +97,7 @@ export async function chatRoute(c: Ctx): Promise<Response> {
         for await (const event of stream) {
           if (event.type !== "content_block_delta") continue;
           if (event.delta.type === "text_delta") {
+            primeiroToken ??= Date.now() - inicio;
             answer += event.delta.text;
             send("delta", { text: event.delta.text });
           } else if (event.delta.type === "thinking_delta") {
@@ -124,6 +129,12 @@ export async function chatRoute(c: Ctx): Promise<Response> {
             cache_read_input_tokens: final.usage.cache_read_input_tokens ?? 0,
             cache_creation_input_tokens: final.usage.cache_creation_input_tokens ?? 0,
           },
+          model: final.model,
+          latency_ms: Date.now() - inicio,
+          first_token_ms: primeiroToken,
+          // Melhor similaridade recuperada: NULL quando a base nao tinha nada
+          // relevante. E esse NULL que vira "lacuna de conhecimento" no painel.
+          top_similarity: chunks[0]?.similarity ?? null,
         });
 
         send("done", {
