@@ -80,8 +80,8 @@ export function ThreadFeed({
       ) : threads.length === 0 ? (
         <EmptyState
           icon={MessageSquarePlus}
-          title="Nenhum tópico por aqui ainda"
-          description="Seja a primeira pessoa a abrir uma discussão — uma dúvida de SQL, um insight ou um update de projeto."
+          title="Nenhum tópico publicado"
+          description="Ainda não há discussões nesta seção. Crie o primeiro tópico para iniciar o registro."
           action={
             <Link to="/novo" className="btn btn-primary mt-2">
               <MessageSquarePlus size={16} /> Criar tópico

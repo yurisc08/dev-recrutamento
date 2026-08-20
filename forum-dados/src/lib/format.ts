@@ -54,3 +54,22 @@ export function avatarGradient(seed: string): string {
 export function compact(n: number): string {
   return new Intl.NumberFormat('pt-BR', { notation: 'compact' }).format(n)
 }
+
+/**
+ * Converte o markdown do corpo em texto corrido, para uso em resumos e prévias.
+ * Blocos de código viram um marcador curto em vez de despejar a query inteira.
+ */
+export function plainExcerpt(markdown: string, limit = 220): string {
+  const text = markdown
+    .replace(/```(\w*)\n?[\s\S]*?```/g, (_m, lang: string) => (lang ? `[código ${lang}]` : '[código]'))
+    .replace(/`([^`]+)`/g, '$1')
+    .replace(/^\s{0,3}#{1,6}\s+/gm, '')
+    .replace(/^\s{0,3}>\s?/gm, '')
+    .replace(/^\s*([-*]|\d+\.)\s+/gm, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/\s+/g, ' ')
+    .trim()
+
+  return text.length > limit ? `${text.slice(0, limit).trimEnd()}…` : text
+}

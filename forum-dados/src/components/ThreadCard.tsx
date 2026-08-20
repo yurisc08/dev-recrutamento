@@ -3,7 +3,7 @@ import { Eye, Lock, MessageSquare, Pin } from 'lucide-react'
 import type { Thread } from '../lib/types'
 import { Avatar } from './Avatar'
 import { CategoryIcon } from './CategoryIcon'
-import { compact, timeAgo } from '../lib/format'
+import { compact, plainExcerpt, timeAgo } from '../lib/format'
 import { VoteButtons } from './VoteButtons'
 
 export function ThreadCard({ thread, showCategory = true }: { thread: Thread; showCategory?: boolean }) {
@@ -50,7 +50,7 @@ export function ThreadCard({ thread, showCategory = true }: { thread: Thread; sh
             </Link>
           </h3>
 
-          <p className="mt-1 line-clamp-2 text-sm text-muted">{thread.content}</p>
+          <p className="mt-1 line-clamp-2 text-sm text-muted">{plainExcerpt(thread.content)}</p>
 
           {thread.tags.length > 0 && (
             <div className="mt-2.5 flex flex-wrap gap-1.5">

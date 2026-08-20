@@ -63,7 +63,7 @@ export function SearchPage() {
         <input
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="Ex.: receita recorrente, incremental dbt, retenção…"
+          placeholder="Digite um termo para buscar em títulos e conteúdos"
           className="input py-3 pl-11 pr-24 text-[15px]"
           autoFocus
         />

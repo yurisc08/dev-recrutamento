@@ -268,7 +268,7 @@ export function ThreadDetail() {
 
         {roots.length === 0 && (
           <p className="rounded-xl border border-dashed px-4 py-8 text-center text-sm text-muted">
-            Ainda não há respostas. Que tal começar a conversa?
+            Este tópico ainda não recebeu respostas.
           </p>
         )}
       </div>
@@ -484,11 +484,11 @@ function ReplyComposer({
             onChange={(e) => setContent(e.target.value)}
             rows={isCompact ? 3 : 5}
             autoFocus={autoFocus}
-            placeholder="Contribua com contexto, dados ou uma query. Use ``` para blocos de código."
+            placeholder="Escreva sua resposta. Use ``` para blocos de código."
             className="input resize-y text-[14px]"
           />
           <div className="mt-2.5 flex items-center justify-between">
-            <p className="text-xs text-muted">Markdown básico suportado</p>
+            <p className="text-xs text-muted">Formatação com markdown básico</p>
             <button type="submit" disabled={busy || !content.trim()} className="btn btn-primary">
               {busy ? <Spinner size={15} /> : <Send size={15} />}
               {busy ? 'Enviando…' : 'Responder'}

@@ -190,7 +190,7 @@ export function Chat() {
                   <span className="truncate text-xs text-body">{member.name}</span>
                 </div>
               ))}
-              {online.length === 0 && <p className="px-1 text-xs text-muted">Ninguém por aqui.</p>}
+              {online.length === 0 && <p className="px-1 text-xs text-muted">Nenhum membro conectado.</p>}
             </div>
           </div>
         </div>
@@ -241,7 +241,7 @@ export function Chat() {
               </span>
               <p className="text-sm font-semibold text-strong">Início de #{active?.name}</p>
               <p className="max-w-xs text-xs text-muted">
-                Mensagens rápidas ficam aqui. O que merecer histórico, vira tópico no fórum.
+                Nenhuma mensagem neste canal até o momento.
               </p>
             </div>
           )}

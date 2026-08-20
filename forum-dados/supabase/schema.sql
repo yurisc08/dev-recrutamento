@@ -1,5 +1,5 @@
 -- ============================================================================
--- DataHub Forum - Schema completo (PostgreSQL / Supabase)
+-- DataHub - Schema completo (PostgreSQL / Supabase)
 -- Execute este arquivo no SQL Editor do Supabase (roda de ponta a ponta).
 -- ============================================================================
 
@@ -44,7 +44,7 @@ create table if not exists public.categories (
 );
 
 -- ---------------------------------------------------------------------------
--- 4. TOPICOS (THREADS)
+-- 4. TÓPICOS (THREADS)
 -- ---------------------------------------------------------------------------
 create table if not exists public.threads (
   id            uuid primary key default gen_random_uuid(),
@@ -130,7 +130,7 @@ create table if not exists public.chat_messages (
 create index if not exists chat_messages_channel_idx on public.chat_messages(channel_id, created_at desc);
 
 -- ---------------------------------------------------------------------------
--- 8. NOTIFICACOES
+-- 8. NOTIFICAÇÕES
 -- ---------------------------------------------------------------------------
 create table if not exists public.notifications (
   id          uuid primary key default gen_random_uuid(),
@@ -146,10 +146,10 @@ create table if not exists public.notifications (
 create index if not exists notifications_user_idx on public.notifications(user_id, is_read, created_at desc);
 
 -- ============================================================================
--- FUNCOES E TRIGGERS
+-- FUNÇÕES E TRIGGERS
 -- ============================================================================
 
--- Cria o profile automaticamente ao cadastrar um usuario no Auth
+-- Cria o profile automaticamente ao cadastrar um usuário no Auth
 create or replace function public.handle_new_user()
 returns trigger
 language plpgsql
@@ -191,7 +191,7 @@ create trigger on_auth_user_created
   after insert on auth.users
   for each row execute function public.handle_new_user();
 
--- updated_at automatico
+-- updated_at automático
 create or replace function public.touch_updated_at()
 returns trigger language plpgsql as $$
 begin
@@ -212,7 +212,7 @@ drop trigger if exists profiles_touch on public.profiles;
 create trigger profiles_touch before update on public.profiles
   for each row execute function public.touch_updated_at();
 
--- Contador de respostas + ultima atividade
+-- Contador de respostas + última atividade
 create or replace function public.sync_reply_count()
 returns trigger language plpgsql security definer set search_path = public as $$
 begin
@@ -235,7 +235,7 @@ create trigger replies_count_sync
   after insert or delete on public.replies
   for each row execute function public.sync_reply_count();
 
--- Score dos topicos
+-- Score dos tópicos
 create or replace function public.sync_thread_score()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
@@ -271,7 +271,7 @@ create trigger reply_votes_sync
   after insert or update or delete on public.reply_votes
   for each row execute function public.sync_reply_score();
 
--- Notifica o autor do topico quando alguem responde
+-- Notifica o autor do tópico quando alguém responde
 create or replace function public.notify_thread_author()
 returns trigger language plpgsql security definer set search_path = public as $$
 declare
@@ -286,7 +286,7 @@ begin
   select full_name into actor_name from public.profiles where id = new.author_id;
   insert into public.notifications (user_id, actor_id, type, thread_id, message)
   values (owner, new.author_id, 'reply', new.thread_id,
-          coalesce(actor_name, 'Alguem') || ' respondeu em "' || t_title || '"');
+          coalesce(actor_name, 'Alguém') || ' respondeu em "' || t_title || '"');
   return null;
 end;
 $$;
@@ -296,7 +296,7 @@ create trigger replies_notify
   after insert on public.replies
   for each row execute function public.notify_thread_author();
 
--- Incremento de visualizacoes (RPC chamado pelo front)
+-- Incremento de visualizações (RPC chamado pelo front)
 create or replace function public.increment_thread_views(thread_uuid uuid)
 returns void language plpgsql security definer set search_path = public as $$
 begin
@@ -304,7 +304,7 @@ begin
 end;
 $$;
 
--- Estatisticas para a home
+-- Estatísticas para a home
 create or replace function public.forum_stats()
 returns table (total_threads bigint, total_replies bigint, total_members bigint, threads_today bigint)
 language sql stable as $$
@@ -417,7 +417,7 @@ drop policy if exists "chat_delete_own" on public.chat_messages;
 create policy "chat_delete_own" on public.chat_messages
   for delete to authenticated using (auth.uid() = author_id);
 
--- NOTIFICACOES
+-- NOTIFICAÇÕES
 drop policy if exists "notifications_own" on public.notifications;
 create policy "notifications_own" on public.notifications
   for select to authenticated using (auth.uid() = user_id);
@@ -443,19 +443,27 @@ exception when duplicate_object then null; end $$;
 -- SEED
 -- ============================================================================
 insert into public.categories (slug, name, description, icon, color, position) values
-  ('anuncios',      'Anuncios',              'Comunicados oficiais da area de dados',                     'Megaphone',   'amber',   1),
-  ('projetos',      'Projetos & Roadmap',    'Atualizacoes de projetos, entregas e prioridades',          'GitBranch',   'blue',    2),
-  ('analises',      'Analises & Insights',   'Descobertas, estudos e leituras de dados',                  'BarChart3',   'violet',  3),
-  ('sql-modelagem', 'SQL & Modelagem',       'Queries, performance, modelagem dimensional e dbt',         'Database',    'emerald', 4),
-  ('ml-ia',         'Machine Learning & IA', 'Modelos, experimentos, MLOps e IA generativa',              'Brain',       'rose',    5),
-  ('bi-dataviz',    'BI & Data Viz',         'Dashboards, Power BI, Looker, Metabase e boas praticas',    'PieChart',    'cyan',    6),
-  ('governanca',    'Governanca & Qualidade','Data quality, catalogo, LGPD e documentacao',               'ShieldCheck', 'slate',   7),
-  ('duvidas',       'Duvidas & Ajuda',       'Perguntas rapidas do time - ninguem trava sozinho',         'HelpCircle',  'orange',  8)
-on conflict (slug) do nothing;
+  ('anuncios',      'Anúncios',               'Comunicados oficiais da área de dados',                    'Megaphone',   'amber',   1),
+  ('projetos',      'Projetos & Roadmap',     'Atualizações de projetos, entregas e prioridades',         'GitBranch',   'blue',    2),
+  ('analises',      'Análises & Insights',    'Descobertas, estudos e leituras de dados',                 'BarChart3',   'violet',  3),
+  ('sql-modelagem', 'SQL & Modelagem',        'Queries, performance, modelagem dimensional e dbt',        'Database',    'emerald', 4),
+  ('ml-ia',         'Machine Learning & IA',  'Modelos, experimentos, MLOps e IA generativa',             'Brain',       'rose',    5),
+  ('bi-dataviz',    'BI & Data Viz',          'Dashboards, autoatendimento e boas práticas de visualização', 'PieChart', 'cyan',    6),
+  ('governanca',    'Governança & Qualidade', 'Qualidade de dados, catálogo, LGPD e documentação',        'ShieldCheck', 'slate',   7),
+  ('duvidas',       'Dúvidas & Ajuda',        'Perguntas pontuais do time no dia a dia',                  'HelpCircle',  'orange',  8)
+on conflict (slug) do update set
+  name        = excluded.name,
+  description = excluded.description,
+  icon        = excluded.icon,
+  color       = excluded.color,
+  position    = excluded.position;
 
 insert into public.chat_channels (slug, name, description, position) values
-  ('geral',      'geral',      'Conversa aberta do time de dados',            1),
-  ('duvidas',    'duvidas',    'Perguntas rapidas que nao viram topico',      2),
-  ('deploys',    'deploys',    'Avisos de pipeline, carga e deploy',          3),
-  ('aleatorio',  'aleatorio',  'Offtopic, memes e cafe',                      4)
-on conflict (slug) do nothing;
+  ('geral',     'geral',     'Comunicação geral do time de dados',                1),
+  ('duvidas',   'duvidas',   'Perguntas rápidas que não exigem um tópico',        2),
+  ('deploys',   'deploys',   'Avisos de pipeline, carga e publicação',            3),
+  ('aleatorio', 'aleatorio', 'Assuntos diversos fora da pauta de trabalho',       4)
+on conflict (slug) do update set
+  name        = excluded.name,
+  description = excluded.description,
+  position    = excluded.position;

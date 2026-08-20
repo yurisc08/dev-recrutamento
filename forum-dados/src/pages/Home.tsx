@@ -36,10 +36,10 @@ export function Home() {
         />
         <div className="relative">
           <p className="text-xs font-bold uppercase tracking-wider text-brand-500">Fórum da equipe de dados</p>
-          <h1 className="mt-2 text-2xl font-extrabold sm:text-3xl">Olá, {firstName} 👋</h1>
+          <h1 className="mt-2 text-2xl font-extrabold sm:text-3xl">Olá, {firstName}</h1>
           <p className="mt-2 max-w-xl text-sm leading-relaxed text-muted">
-            Compartilhe análises, tire dúvidas de modelagem, registre decisões e acompanhe o que cada
-            squad está entregando. Tudo em um lugar só — e pesquisável.
+            Acompanhe as discussões em andamento, registre decisões técnicas e publique atualizações
+            dos projetos da área.
           </p>
           <div className="mt-5 flex flex-wrap gap-2">
             <Link to="/novo" className="btn btn-primary">
@@ -97,16 +97,6 @@ export function Home() {
               </div>
             </div>
           )}
-
-          <div className="card p-4">
-            <h2 className="mb-2 text-sm font-bold text-strong">Boas práticas</h2>
-            <ul className="space-y-2 text-xs leading-relaxed text-muted">
-              <li>• Títulos descritivos ajudam a busca no futuro.</li>
-              <li>• Cole queries em blocos de código, não em prints.</li>
-              <li>• Marque o tópico com tags do stack (dbt, bigquery, powerbi).</li>
-              <li>• Atualizações de projeto vão em <strong className="text-body">Projetos &amp; Roadmap</strong>.</li>
-            </ul>
-          </div>
         </aside>
       </div>
     </div>

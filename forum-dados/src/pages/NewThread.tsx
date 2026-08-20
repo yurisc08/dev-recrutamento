@@ -8,18 +8,10 @@ import { CategoryIcon } from '../components/CategoryIcon'
 import { RichText } from '../components/RichText'
 import { Alert, Spinner } from '../components/ui'
 
-const PLACEHOLDER = `Descreva o contexto, o que você já tentou e o que precisa do time.
+const PLACEHOLDER = `Descreva o contexto, o que já foi verificado e o que você precisa do time.
 
-Dicas de formatação:
-**negrito**, *itálico*, \`código inline\`, > citação, listas com -
-
-\`\`\`sql
-select date_trunc('month', pedido_em) as mes,
-       count(*) as pedidos
-  from analytics.fato_pedidos
- group by 1
- order by 1;
-\`\`\``
+Formatação: **negrito**, *itálico*, \`código inline\`, > citação, listas com -
+Use \`\`\` para abrir um bloco de código.`
 
 export function NewThread() {
   const { profile } = useAuth()
@@ -96,7 +88,7 @@ export function NewThread() {
       <div className="card p-5 sm:p-6">
         <h1 className="text-xl font-extrabold">Novo tópico</h1>
         <p className="mt-1 text-sm text-muted">
-          Escreva de forma que outra pessoa consiga entender o contexto daqui a seis meses.
+          Inclua o contexto necessário para que a discussão seja compreendida sem consultas externas.
         </p>
 
         <form onSubmit={submit} className="mt-6 space-y-5">
@@ -132,7 +124,7 @@ export function NewThread() {
               value={title}
               onChange={(e) => setTitle(e.target.value)}
               maxLength={160}
-              placeholder="Ex.: Como padronizar a métrica de receita recorrente entre BI e Financeiro?"
+              placeholder="Resuma o assunto em uma frase objetiva"
               className="input"
             />
             <p className="mt-1 text-right text-xs text-muted">{title.length}/160</p>
@@ -199,7 +191,7 @@ export function NewThread() {
                 setTagInput('')
               }}
               disabled={tags.length >= 5}
-              placeholder="sql, dbt, powerbi…"
+              placeholder="Digite uma tag e pressione Enter"
               className="input"
             />
           </div>

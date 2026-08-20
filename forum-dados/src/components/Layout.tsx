@@ -2,7 +2,6 @@ import { useEffect, useRef, useState } from 'react'
 import { Link, NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import {
   Bell,
-  Hash,
   LogOut,
   Menu,
   MessagesSquare,
@@ -141,7 +140,7 @@ export function Layout() {
             <input
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Buscar tópicos, tags, decisões…"
+              placeholder="Buscar no fórum"
               className="input pl-9"
               aria-label="Buscar no fórum"
             />
@@ -275,16 +274,6 @@ export function Layout() {
           <Link to="/novo" className="btn btn-primary mt-6 w-full sm:hidden">
             <PenSquare size={16} /> Novo tópico
           </Link>
-
-          <div className="mt-8 hidden rounded-xl border border-dashed p-3.5 lg:block lg:mr-4">
-            <p className="flex items-center gap-1.5 text-xs font-semibold text-strong">
-              <Hash size={13} className="text-brand-500" /> Dica
-            </p>
-            <p className="mt-1 text-xs leading-relaxed text-muted">
-              Use blocos de código com <code className="font-mono text-brand-500">```sql</code> para
-              compartilhar queries formatadas.
-            </p>
-          </div>
         </aside>
 
         {/* ---------- CONTEÚDO ---------- */}

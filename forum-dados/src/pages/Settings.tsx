@@ -126,7 +126,7 @@ export function SettingsPage() {
               id="team-settings"
               value={team}
               onChange={(e) => setTeam(e.target.value)}
-              placeholder="Growth Analytics"
+              placeholder="Nome do seu time"
               className="input"
             />
           </div>
@@ -141,7 +141,7 @@ export function SettingsPage() {
             value={bio}
             onChange={(e) => setBio(e.target.value.slice(0, 280))}
             rows={3}
-            placeholder="Trabalho com modelagem dimensional e experimentação. Pergunte-me sobre dbt."
+            placeholder="Descreva brevemente sua atuação e suas áreas de domínio."
             className="input resize-y"
           />
           <p className="mt-1 text-right text-xs text-muted">{bio.length}/280</p>

@@ -3,10 +3,10 @@ import { BarChart3, Database, MessagesSquare, ShieldCheck } from 'lucide-react'
 import { Logo } from '../components/Logo'
 
 const HIGHLIGHTS = [
-  { icon: MessagesSquare, title: 'Discussões com contexto', text: 'Tópicos por categoria, tags e busca full-text.' },
-  { icon: Database, title: 'Feito para dados', text: 'Blocos de SQL e Python formatados nativamente.' },
-  { icon: BarChart3, title: 'Projetos visíveis', text: 'Atualizações de roadmap sem perder no chat.' },
-  { icon: ShieldCheck, title: 'Acesso controlado', text: 'Autenticação Supabase com RLS em todas as tabelas.' },
+  { icon: MessagesSquare, title: 'Discussões organizadas', text: 'Tópicos por categoria, com tags e busca.' },
+  { icon: Database, title: 'Conteúdo técnico', text: 'Queries e trechos de código formatados.' },
+  { icon: BarChart3, title: 'Acompanhamento', text: 'Atualizações de projeto registradas em um só lugar.' },
+  { icon: ShieldCheck, title: 'Acesso restrito', text: 'Somente contas autorizadas da organização.' },
 ]
 
 export function AuthLayout({
@@ -47,11 +47,11 @@ export function AuthLayout({
 
         <div className="relative max-w-lg">
           <h1 className="text-4xl font-extrabold leading-tight text-white">
-            O ponto de encontro do time de&nbsp;dados.
+            Fórum interno da equipe de&nbsp;dados.
           </h1>
           <p className="mt-4 text-[15px] leading-relaxed text-ink-300">
-            Um espaço só da equipe para compartilhar análises, discutir modelagem, registrar decisões
-            e acompanhar o andamento dos projetos — sem depender de threads perdidas no e-mail.
+            Espaço da equipe para compartilhar análises, discutir modelagem, registrar decisões
+            técnicas e acompanhar o andamento dos projetos.
           </p>
 
           <div className="mt-10 grid gap-4 sm:grid-cols-2">
@@ -65,9 +65,6 @@ export function AuthLayout({
           </div>
         </div>
 
-        <p className="relative text-xs text-ink-500">
-          Supabase · Cloudflare Pages · React + TypeScript
-        </p>
       </div>
 
       {/* Formulário */}

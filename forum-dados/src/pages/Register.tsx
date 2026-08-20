@@ -67,7 +67,7 @@ export function Register() {
               required
               value={fullName}
               onChange={(e) => setFullName(e.target.value)}
-              placeholder="Ana Ribeiro"
+              placeholder="Seu nome completo"
               className="input"
             />
           </div>
@@ -80,7 +80,7 @@ export function Register() {
               required
               value={username}
               onChange={(e) => setUsername(e.target.value.toLowerCase().replace(/[^a-z0-9_]/g, ''))}
-              placeholder="ana.ribeiro"
+              placeholder="nome.sobrenome"
               className="input"
             />
           </div>
@@ -128,7 +128,7 @@ export function Register() {
               id="team"
               value={team}
               onChange={(e) => setTeam(e.target.value)}
-              placeholder="Growth Analytics"
+              placeholder="Nome do seu time"
               className="input"
             />
           </div>
