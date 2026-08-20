@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="pt-BR">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Atlas IA</title>
+    <link rel="stylesheet" href="/styles.css" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#129504;</text></svg>"
+    />
+  </head>
+  <body>
+    <div class="app">
+      <aside class="sidebar">
+        <div class="brand">
+          <span class="brand-mark">A</span>
+          <div>
+            <strong id="assistant-name">Atlas</strong>
+            <small id="model-name">carregando…</small>
+          </div>
+        </div>
+
+        <button class="btn btn-primary" id="new-chat">Nova conversa</button>
+
+        <section class="panel">
+          <h2>Conversas</h2>
+          <ul class="list" id="conversation-list"></ul>
+        </section>
+
+        <section class="panel">
+          <h2>Base de conhecimento</h2>
+          <ul class="list" id="document-list"></ul>
+          <button class="btn" id="add-doc">+ Adicionar conteúdo</button>
+        </section>
+      </aside>
+
+      <main class="chat">
+        <div class="messages" id="messages">
+          <div class="empty" id="empty-state">
+            <h1>Em que posso ajudar?</h1>
+            <p>
+              Faça uma pergunta. Eu respondo com base nos documentos da base de
+              conhecimento e mostro de onde tirei cada informação.
+            </p>
+          </div>
+        </div>
+
+        <form class="composer" id="composer">
+          <textarea
+            id="input"
+            rows="1"
+            placeholder="Escreva sua pergunta…"
+            autocomplete="off"
+          ></textarea>
+          <button type="submit" class="btn btn-primary" id="send">Enviar</button>
+        </form>
+        <p class="hint">
+          Enter envia · Shift+Enter quebra linha · as respostas podem conter erros
+        </p>
+      </main>
+    </div>
+
+    <dialog id="doc-dialog">
+      <form method="dialog" class="doc-form" id="doc-form">
+        <h2>Adicionar conteúdo à base</h2>
+        <label>
+          Título
+          <input id="doc-title" required maxlength="200" placeholder="Ex.: Política de trocas" />
+        </label>
+        <label>
+          Origem (opcional)
+          <input id="doc-url" placeholder="https://…" />
+        </label>
+        <label>
+          Conteúdo
+          <textarea id="doc-content" rows="10" required placeholder="Cole aqui o texto…"></textarea>
+        </label>
+        <div class="doc-actions">
+          <button class="btn" value="cancel">Cancelar</button>
+          <button class="btn btn-primary" id="doc-save" value="save">Salvar</button>
+        </div>
+      </form>
+    </dialog>
+
+    <script src="/app.js" type="module"></script>
+  </body>
+</html>

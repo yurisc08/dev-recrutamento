@@ -1,0 +1,39 @@
+name = "atlas-ia"
+main = "src/index.ts"
+compatibility_date = "2025-08-01"
+compatibility_flags = ["nodejs_compat"]
+
+# Front-end estatico servido pelo proprio Worker
+[assets]
+directory = "./public"
+binding = "ASSETS"
+not_found_handling = "single-page-application"
+
+# Workers AI — usado para gerar os embeddings (multilingue, 1024 dimensoes)
+[ai]
+binding = "AI"
+
+# Rate limiting nativo da Cloudflare (namespace_id e um numero livre por Worker)
+[[ratelimits]]
+name = "RATE_LIMITER"
+namespace_id = "1001"
+simple = { limit = 30, period = 60 }
+
+[vars]
+CLAUDE_MODEL = "claude-opus-5"
+CLAUDE_EFFORT = "low"
+EMBEDDING_MODEL = "@cf/baai/bge-m3"
+ASSISTANT_NAME = "Atlas"
+REQUIRE_AUTH = "false"
+RAG_TOP_K = "6"
+RAG_MIN_SIMILARITY = "0.25"
+HISTORY_TURNS = "10"
+# Preencha com a URL do seu projeto Supabase (nao e segredo)
+SUPABASE_URL = "https://SEU-PROJETO.supabase.co"
+SUPABASE_ANON_KEY = "SUA_ANON_KEY"
+# Origens permitidas no CORS, separadas por virgula. "*" libera todas.
+ALLOWED_ORIGINS = "*"
+
+# Segredos (NAO coloque aqui — use `wrangler secret put`):
+#   ANTHROPIC_API_KEY
+#   SUPABASE_SERVICE_ROLE_KEY

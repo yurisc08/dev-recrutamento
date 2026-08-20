@@ -1,0 +1,3 @@
+# Copie para .dev.vars (fica fora do git) para rodar `npm run dev` localmente.
+ANTHROPIC_API_KEY="sk-ant-..."
+SUPABASE_SERVICE_ROLE_KEY="eyJ...service_role..."
