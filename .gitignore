@@ -1,0 +1,7 @@
+# Pacotes gerados para envio (o conteúdo já está versionado em cinevolt/)
+*.zip
+
+# Sistema / editor
+.DS_Store
+Thumbs.db
+node_modules/
