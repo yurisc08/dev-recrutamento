@@ -1,0 +1,154 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sobre — CINEVOLT</title>
+<meta name="description" content="O que é a CINEVOLT: revista de cinema com crítica, ensaio e ilustração original.">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/effects.css">
+</head>
+<body class="is-loading is-entering">
+
+<div class="preloader">
+  <div class="clapper"><div class="clapper__top"></div><div class="clapper__body">SOBRE</div></div>
+  <div class="preloader__pct">000%</div><div class="preloader__bar"></div>
+</div>
+
+<div class="fx-layer fx-grain"></div>
+<div class="fx-layer fx-scan"></div>
+<div class="fx-layer fx-vignette"></div>
+<div class="fx-layer fx-flash"></div>
+<div class="progress"></div>
+
+<header class="header">
+  <div class="wrap header__inner">
+    <a href="/" class="logo">
+      <svg class="logo__bolt" viewBox="0 0 24 32"><path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#00e5ff"/></svg>
+      <span class="logo__text">CINE<b>VOLT</b></span>
+    </a>
+    <nav class="nav">
+      <a class="nav__link" href="/">Início</a>
+      <a class="nav__link" href="/arquivo.html">Arquivo</a>
+      <a class="nav__link" href="/jogo.html">Jogo</a>
+      <a class="nav__link" href="/sobre.html" aria-current="page">Sobre</a>
+      <a class="nav__link" href="/admin.html">Publicar</a>
+    </nav>
+    <button class="burger" aria-label="Abrir menu" aria-expanded="false"><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="menu">
+  <ul class="menu__list">
+    <li><a href="/">Início</a></li><li><a href="/arquivo.html">Arquivo</a></li>
+    <li><a href="/jogo.html">Jogo</a></li><li><a href="/sobre.html">Sobre</a></li>
+    <li><a href="/admin.html">Publicar</a></li>
+  </ul>
+</div>
+
+<main>
+<section class="section" style="padding-top:clamp(120px,16vw,200px)">
+  <div class="wrap">
+    <span class="eyebrow" data-reveal>Quem somos</span>
+    <h1 style="font-size:clamp(3rem,10vw,8rem);margin-bottom:30px" data-split>Cinema em<br>alta<br>voltagem</h1>
+
+    <div class="artigo" style="margin-left:0">
+      <p data-reveal>
+        A CINEVOLT nasceu de uma teimosia: a de acreditar que ainda vale a pena
+        escrever devagar sobre filmes que foram feitos devagar. Aqui não tem
+        ranking gerado por algoritmo, nem resenha escrita antes da sessão acabar.
+      </p>
+      <p data-reveal>
+        Cada matéria vem com uma <strong>ilustração exclusiva</strong>, desenhada em
+        vetor a partir do próprio endereço do texto — nenhuma imagem de banco,
+        nenhum frame pinçado do trailer. Duas matérias nunca têm a mesma capa.
+      </p>
+
+      <blockquote data-reveal>Sala escura, sem celular, sem spoiler.</blockquote>
+
+      <h2 data-reveal>O que publicamos</h2>
+      <ul data-reveal>
+        <li><strong>Crítica</strong> — o filme, com nota e sem enrolação.</li>
+        <li><strong>Ensaio</strong> — texto longo sobre uma ideia que atravessa vários filmes.</li>
+        <li><strong>Estreia</strong> — o que chega ao cinema e o que vale o ingresso.</li>
+        <li><strong>Entrevista</strong> — conversa com quem faz.</li>
+        <li><strong>Lista</strong> — sim, também fazemos listas. As boas.</li>
+      </ul>
+
+      <h2 data-reveal>Como isso foi feito</h2>
+      <p data-reveal>
+        O site é estático, servido pela Cloudflare, com conteúdo no Supabase.
+        Os raios são gerados em canvas por deslocamento recursivo de ponto médio;
+        o manto do Guardião ondula com um filtro SVG de turbulência animada;
+        o trovão é sintetizado em ruído marrom pela Web Audio API. Nada de vídeo
+        de fundo, nada de biblioteca pesada.
+      </p>
+      <p data-reveal>
+        E tem um jogo. Porque intervalo também é parte da sessão.
+        <a class="link-fx" href="/jogo.html">Corre lá.</a>
+      </p>
+    </div>
+
+    <div class="stats" style="margin-top:70px">
+      <div class="stat" data-reveal>
+        <div class="stat__num"><span data-count="0">0</span></div>
+        <div class="stat__label">Fotos de banco usadas</div>
+      </div>
+      <div class="stat" data-reveal>
+        <div class="stat__num"><span data-count="100">0</span><span>%</span></div>
+        <div class="stat__label">Arte original</div>
+      </div>
+      <div class="stat" data-reveal>
+        <div class="stat__num"><span data-count="7">0</span></div>
+        <div class="stat__label">Composições de pôster</div>
+      </div>
+      <div class="stat" data-reveal>
+        <div class="stat__num"><span data-count="1">0</span></div>
+        <div class="stat__label">Guardião da tempestade</div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>Fale com a redação</h4>
+        <ul>
+          <li><a href="mailto:contato@cinevolt.com.br">contato@cinevolt.com.br</a></li>
+          <li><a href="/admin.html">Área da redação</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Newsletter</h4>
+        <form class="subscribe" data-newsletter>
+          <input class="field" type="email" placeholder="seu@email.com" required aria-label="Seu e-mail">
+          <button class="btn btn--solid" type="submit">Assinar</button>
+        </form>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© <span id="ano"></span> CINEVOLT</span>
+      <span><a class="link-fx" href="/">Início</a></span>
+    </div>
+  </div>
+</footer>
+
+<button class="totop" aria-label="Voltar ao topo">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/art.js"></script>
+<script src="/assets/js/md.js"></script>
+<script src="/assets/js/data.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/fx.js"></script>
+<script>document.getElementById('ano').textContent = new Date().getFullYear();</script>
+</body>
+</html>

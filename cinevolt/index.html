@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>CINEVOLT — Cinema em alta voltagem</title>
+<meta name="description" content="Críticas, ensaios, estreias e séries com a energia que o cinema merece. Ilustrações originais, leitura sem ruído.">
+<meta name="theme-color" content="#04040a">
+
+<meta property="og:type" content="website">
+<meta property="og:title" content="CINEVOLT — Cinema em alta voltagem">
+<meta property="og:description" content="Críticas, ensaios, estreias e séries com a energia que o cinema merece.">
+<meta property="og:image" content="/assets/img/og.png">
+<meta name="twitter:card" content="summary_large_image">
+
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/effects.css">
+<link rel="stylesheet" href="/assets/css/hero.css">
+</head>
+
+<body class="is-loading is-entering">
+
+<!-- ============ PRELOADER ============ -->
+<div class="preloader">
+  <div class="clapper">
+    <div class="clapper__top"></div>
+    <div class="clapper__body">CINEVOLT</div>
+  </div>
+  <div class="preloader__pct">000%</div>
+  <div class="preloader__bar"></div>
+</div>
+
+<!-- ============ CAMADAS DE ATMOSFERA ============ -->
+<div class="fx-layer fx-grain" aria-hidden="true"></div>
+<div class="fx-layer fx-scan" aria-hidden="true"></div>
+<div class="fx-layer fx-vignette" aria-hidden="true"></div>
+<div class="fx-layer fx-flash" aria-hidden="true"></div>
+<div class="progress" aria-hidden="true"></div>
+
+<!-- ============ HEADER ============ -->
+<header class="header">
+  <div class="wrap header__inner">
+    <a href="/" class="logo" aria-label="CINEVOLT, página inicial">
+      <svg class="logo__bolt" viewBox="0 0 24 32" fill="none" aria-hidden="true">
+        <path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="currentColor" style="color:#00e5ff"/>
+      </svg>
+      <span class="logo__text">CINE<b>VOLT</b></span>
+    </a>
+
+    <nav class="nav" aria-label="Principal">
+      <a class="nav__link" href="/" aria-current="page">Início</a>
+      <a class="nav__link" href="/arquivo.html">Arquivo</a>
+      <a class="nav__link" href="/jogo.html">Jogo</a>
+      <a class="nav__link" href="/sobre.html">Sobre</a>
+      <a class="nav__link" href="/admin.html">Publicar</a>
+    </nav>
+
+    <div class="row">
+      <button class="btn btn--sm btn--ghost" data-som aria-pressed="false">
+        <span>Som desligado</span>
+      </button>
+      <button class="burger" aria-label="Abrir menu" aria-expanded="false">
+        <span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ============ MENU FULLSCREEN ============ -->
+<div class="menu">
+  <ul class="menu__list">
+    <li><a href="/">Início</a></li>
+    <li><a href="/arquivo.html">Arquivo</a></li>
+    <li><a href="/jogo.html">Jogo</a></li>
+    <li><a href="/sobre.html">Sobre</a></li>
+    <li><a href="/admin.html">Publicar</a></li>
+  </ul>
+</div>
+
+<main>
+
+<!-- ============================================================
+     HERO — O GUARDIÃO DA TEMPESTADE
+     Conteúdo preenchido por home.js a partir do post em destaque.
+     ============================================================ -->
+<section class="cine-hero" id="palco">
+  <div class="ch-layer ch-sky" data-depth="14"></div>
+  <div class="ch-layer ch-clouds ch-clouds--far" data-nuvens="0.005" data-depth="26"></div>
+  <div class="ch-layer ch-clouds" data-nuvens="0.011" data-depth="44"></div>
+  <div class="ch-layer ch-rain ch-rain--back" data-depth="18"></div>
+  <div class="ch-layer ch-rain" data-depth="34"></div>
+  <canvas class="ch-bolts ch-bolts--back" aria-hidden="true"></canvas>
+  <div class="ch-layer ch-fog"></div>
+
+  <div class="ch-content">
+    <span class="ch-kicker"><i></i> <span data-hero-kicker>Em destaque nesta semana</span></span>
+
+    <h1 class="ch-title" data-hero-titulo>
+      A tempestade<br>chega aos<br><em>cinemas</em>
+    </h1>
+
+    <p class="ch-sub" data-hero-sub>
+      Uma vez na vida você assiste a algo que não esquece. A CINEVOLT existe para
+      registrar exatamente esses momentos — com crítica afiada, ensaio de verdade
+      e ilustração feita à mão, quadro por quadro.
+    </p>
+
+    <div class="ch-actions">
+      <a class="ch-btn ch-btn--primary" href="/arquivo.html" data-hero-cta>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <path d="M4 4h16v16H4z"/><path d="M4 9h16M9 4v16"/>
+        </svg>
+        Ler as matérias
+      </a>
+      <button class="ch-btn" data-trailer="" data-hero-trailer>
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M8 5v14l11-7z"/></svg>
+        Assista ao trailer
+      </button>
+    </div>
+
+    <div class="ch-meta" data-hero-meta>
+      <span>Edição <b>#001</b></span>
+      <span>Publicado <b>hoje</b></span>
+      <span>Leitura <b>6 min</b></span>
+    </div>
+  </div>
+
+  <!-- Ilustração original, carregada inline para poder animar -->
+  <div class="ch-figure" data-depth="10" id="guardiao">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 960" width="640" height="960"
+         role="img" aria-label="O Guardião da Tempestade — ilustração original CINEVOLT">
+      <title>O Guardião da Tempestade</title>
+      <defs>
+        <!-- Luz de contorno fria vinda de trás -->
+        <linearGradient id="rim" x1="0" y1="0" x2="1" y2="0.3">
+          <stop offset="0"   stop-color="#00e5ff"/>
+          <stop offset="0.5" stop-color="#7df9ff"/>
+          <stop offset="1"   stop-color="#7b2ff7"/>
+        </linearGradient>
+    
+        <linearGradient id="corpo" x1="0.2" y1="0" x2="0.9" y2="1">
+          <stop offset="0"    stop-color="#0b0f1c"/>
+          <stop offset="0.55" stop-color="#05060c"/>
+          <stop offset="1"    stop-color="#0a0716"/>
+        </linearGradient>
+    
+        <linearGradient id="mantoG" x1="0.1" y1="0" x2="0.9" y2="1">
+          <stop offset="0"   stop-color="#3a0d2a"/>
+          <stop offset="0.4" stop-color="#7a0f1e"/>
+          <stop offset="1"   stop-color="#1b0410"/>
+        </linearGradient>
+    
+        <radialGradient id="olho" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0"   stop-color="#ffffff"/>
+          <stop offset="0.35" stop-color="#7df9ff"/>
+          <stop offset="1"   stop-color="#00e5ff" stop-opacity="0"/>
+        </radialGradient>
+    
+        <radialGradient id="nucleo" cx="0.5" cy="0.5" r="0.5">
+          <stop offset="0"    stop-color="#ffffff"/>
+          <stop offset="0.25" stop-color="#bdf3ff"/>
+          <stop offset="0.6"  stop-color="#00e5ff" stop-opacity=".55"/>
+          <stop offset="1"    stop-color="#00e5ff" stop-opacity="0"/>
+        </radialGradient>
+    
+        <!-- TECIDO: deslocamento animado = o manto ondula sozinho -->
+        <filter id="tecido" x="-25%" y="-15%" width="150%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.006 0.014" numOctaves="3" seed="7" result="ruido">
+            <animate attributeName="baseFrequency"
+                     dur="9s" repeatCount="indefinite"
+                     values="0.006 0.014; 0.011 0.020; 0.005 0.011; 0.006 0.014"/>
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="ruido" scale="26" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+    
+        <filter id="tecidoLeve" x="-20%" y="-15%" width="140%" height="140%">
+          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.018" numOctaves="2" seed="19" result="r2">
+            <animate attributeName="baseFrequency"
+                     dur="6.5s" repeatCount="indefinite"
+                     values="0.008 0.018; 0.014 0.026; 0.008 0.018"/>
+          </feTurbulence>
+          <feDisplacementMap in="SourceGraphic" in2="r2" scale="14" xChannelSelector="R" yChannelSelector="G"/>
+        </filter>
+    
+        <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
+          <feGaussianBlur stdDeviation="10" result="b"/>
+          <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+        </filter>
+    
+        <filter id="glowForte" x="-90%" y="-90%" width="280%" height="280%">
+          <feGaussianBlur stdDeviation="22"/>
+        </filter>
+      </defs>
+    
+      <!-- ============ AURA TRASEIRA ============ -->
+      <g id="aura">
+        <ellipse cx="320" cy="430" rx="250" ry="330" fill="#00e5ff" opacity=".07" filter="url(#glowForte)"/>
+        <ellipse cx="320" cy="300" rx="150" ry="180" fill="#7b2ff7" opacity=".10" filter="url(#glowForte)"/>
+      </g>
+    
+      <!-- ============ MANTO (atrás do corpo) ============ -->
+      <g id="manto" filter="url(#tecido)">
+        <!-- aba esquerda, esvoaçando para fora do quadro -->
+        <path d="M232,300
+                 C150,340 78,430 40,560
+                 C10,660 22,760 70,880
+                 C96,820 120,770 168,716
+                 C138,800 130,860 140,930
+                 C196,846 244,742 262,640
+                 C276,556 268,420 232,300 Z"
+              fill="url(#mantoG)" opacity=".95"/>
+        <!-- aba direita -->
+        <path d="M408,300
+                 C486,346 556,440 588,566
+                 C614,668 600,772 552,890
+                 C528,824 502,776 458,724
+                 C486,806 494,864 486,932
+                 C428,846 384,740 370,638
+                 C358,552 370,418 408,300 Z"
+              fill="url(#mantoG)" opacity=".88"/>
+        <!-- dobras internas (mais escuras) -->
+        <path d="M252,340 C214,430 208,560 236,660 C250,560 256,440 252,340 Z" fill="#12040a" opacity=".7"/>
+        <path d="M392,340 C428,430 434,560 408,660 C394,560 388,440 392,340 Z" fill="#12040a" opacity=".7"/>
+      </g>
+    
+      <!-- Luz fria escorrendo pelas bordas do manto -->
+      <g id="mantoLuz" filter="url(#tecidoLeve)" opacity=".85">
+        <path d="M232,300 C150,340 78,430 40,560 C10,660 22,760 70,880"
+              fill="none" stroke="url(#rim)" stroke-width="3.5" stroke-linecap="round"/>
+        <path d="M408,300 C486,346 556,440 588,566 C614,668 600,772 552,890"
+              fill="none" stroke="url(#rim)" stroke-width="3.5" stroke-linecap="round"/>
+      </g>
+    
+      <!-- ============ CORPO ============ -->
+      <g id="corpo">
+        <!-- pernas -->
+        <path d="M268,600 L258,930 L306,930 L318,690 L330,930 L378,930 L370,600 Z" fill="url(#corpo)"/>
+        <!-- torso -->
+        <path d="M240,318
+                 C238,290 266,268 320,268
+                 C374,268 402,290 400,318
+                 L392,470 C388,540 384,580 378,614
+                 L262,614 C256,580 252,540 248,470 Z"
+              fill="url(#corpo)"/>
+        <!-- peitoral / armadura em placas -->
+        <path d="M262,340 L320,362 L378,340 L372,404 L320,424 L268,404 Z" fill="#0f1526" opacity=".95"/>
+        <path d="M262,340 L320,362 L378,340" fill="none" stroke="url(#rim)" stroke-width="2" opacity=".8"/>
+        <path d="M268,404 L320,424 L372,404" fill="none" stroke="url(#rim)" stroke-width="1.6" opacity=".55"/>
+        <!-- cinto -->
+        <rect x="256" y="470" width="128" height="22" rx="6" fill="#0c1120"/>
+        <rect x="256" y="470" width="128" height="22" rx="6" fill="none" stroke="url(#rim)" stroke-width="1.4" opacity=".7"/>
+        <circle cx="320" cy="481" r="9" fill="#00e5ff" opacity=".9" filter="url(#glow)"/>
+    
+        <!-- braço esquerdo (baixo, encostado no corpo) -->
+        <path d="M244,330 C214,360 200,430 206,510 C210,556 220,586 232,606
+                 L266,596 C252,560 244,520 244,470 C244,420 250,372 262,344 Z"
+              fill="url(#corpo)"/>
+    
+        <!-- braço direito ERGUIDO segurando o martelo -->
+        <path d="M396,326 C424,300 438,250 436,196 L470,186
+                 C480,250 466,308 430,346 Z" fill="url(#corpo)"/>
+        <path d="M396,326 C424,300 438,250 436,196" fill="none" stroke="url(#rim)" stroke-width="2.4" opacity=".9"/>
+    
+        <!-- ombreiras -->
+        <path d="M236,320 C244,292 276,276 320,274 C364,276 396,292 404,320
+                 C376,304 348,296 320,296 C292,296 264,304 236,320 Z"
+              fill="#121a2e"/>
+        <path d="M236,320 C244,292 276,276 320,274 C364,276 396,292 404,320"
+              fill="none" stroke="url(#rim)" stroke-width="2.6"/>
+      </g>
+    
+      <!-- ============ CABEÇA ============ -->
+      <g id="cabeca">
+        <!-- capuz -->
+        <path d="M268,268 C256,200 274,150 320,140 C366,150 384,200 372,268
+                 C352,254 336,248 320,248 C304,248 288,254 268,268 Z"
+              fill="#0a0e1a"/>
+        <path d="M268,268 C256,200 274,150 320,140 C366,150 384,200 372,268"
+              fill="none" stroke="url(#rim)" stroke-width="2.4"/>
+        <!-- sombra do rosto -->
+        <ellipse cx="320" cy="214" rx="40" ry="46" fill="#03040a"/>
+        <!-- OLHOS acesos -->
+        <g id="olhos">
+          <ellipse cx="303" cy="210" rx="26" ry="15" fill="url(#olho)" opacity=".75"/>
+          <ellipse cx="337" cy="210" rx="26" ry="15" fill="url(#olho)" opacity=".75"/>
+          <ellipse cx="303" cy="210" rx="9.5" ry="4.2" fill="#ffffff" filter="url(#glow)"/>
+          <ellipse cx="337" cy="210" rx="9.5" ry="4.2" fill="#ffffff" filter="url(#glow)"/>
+          <animate attributeName="opacity" dur="4.5s" repeatCount="indefinite"
+                   values="1;1;0.55;1;0.8;1;1" keyTimes="0;0.6;0.66;0.72;0.78;0.84;1"/>
+        </g>
+      </g>
+    
+      <!-- ============ MARTELO ============ -->
+      <g id="martelo">
+        <!-- cabo -->
+        <rect x="456" y="180" width="18" height="120" rx="6" fill="#141a2a"
+              transform="rotate(-8 465 240)"/>
+        <rect x="456" y="180" width="18" height="120" rx="6" fill="none" stroke="url(#rim)"
+              stroke-width="1.4" opacity=".8" transform="rotate(-8 465 240)"/>
+        <!-- cabeça do martelo -->
+        <g transform="rotate(-8 470 150)">
+          <rect x="410" y="106" width="124" height="76" rx="10" fill="#0e1424"/>
+          <rect x="410" y="106" width="124" height="76" rx="10" fill="none" stroke="url(#rim)" stroke-width="3"/>
+          <rect x="424" y="122" width="96" height="44" rx="6" fill="#060a14"/>
+          <path d="M436,144 L462,124 L458,142 L482,142 L456,166 L462,148 Z" fill="#7df9ff" filter="url(#glow)"/>
+        </g>
+        <!-- núcleo de energia -->
+        <circle id="nucleoMartelo" cx="470" cy="144" r="56" fill="url(#nucleo)">
+          <animate attributeName="r" dur="2.6s" repeatCount="indefinite" values="50;64;50"/>
+          <animate attributeName="opacity" dur="2.6s" repeatCount="indefinite" values=".75;1;.75"/>
+        </circle>
+      </g>
+    
+      <!-- ============ CHÃO / IMPACTO ============ -->
+      <g id="base">
+        <ellipse cx="320" cy="930" rx="210" ry="26" fill="#00e5ff" opacity=".16" filter="url(#glowForte)"/>
+        <ellipse cx="320" cy="930" rx="96" ry="12" fill="#7df9ff" opacity=".35" filter="url(#glow)"/>
+      </g>
+    </svg>
+  </div>
+
+  <canvas class="ch-bolts" aria-hidden="true"></canvas>
+  <div class="ch-bars" aria-hidden="true"></div>
+
+  <div class="scroll-hint">
+    <span>Role</span>
+    <span class="scroll-hint__line"></span>
+  </div>
+</section>
+
+<!-- ============ MARQUEE ============ -->
+<div class="marquee" aria-hidden="true">
+  <div class="marquee__track">
+    <span class="marquee__item"><i></i> Crítica sem spoiler</span>
+    <span class="marquee__item"><i></i> Estreias da semana</span>
+    <span class="marquee__item"><i></i> Ensaios de cinema</span>
+    <span class="marquee__item"><i></i> Séries que importam</span>
+    <span class="marquee__item"><i></i> Ilustração original</span>
+  </div>
+</div>
+
+<!-- ============ EM CARTAZ ============ -->
+<section class="section" id="cartaz">
+  <div class="wrap">
+    <div class="spread" style="margin-bottom:48px">
+      <div data-reveal>
+        <span class="eyebrow">Em cartaz</span>
+        <h2 data-split>As últimas<br>da redação</h2>
+      </div>
+      <a class="btn btn--ghost magnetic" href="/arquivo.html" data-reveal="right">Ver arquivo completo</a>
+    </div>
+
+    <div class="grid grid--3" data-lista-posts>
+      <div class="skeleton" style="aspect-ratio:3/4"></div>
+      <div class="skeleton" style="aspect-ratio:3/4"></div>
+      <div class="skeleton" style="aspect-ratio:3/4"></div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TIRA DE FILME ============ -->
+<div class="filmstrip" aria-hidden="true">
+  <div class="filmstrip__track" data-filmstrip></div>
+</div>
+
+<!-- ============ SPOTLIGHT ============ -->
+<section class="section" id="spotlight">
+  <div class="wrap">
+    <article class="spotlight" data-reveal="zoom" data-spotlight>
+      <div class="spotlight__img"></div>
+      <div class="spotlight__body">
+        <span class="eyebrow">Leitura longa</span>
+        <h2 class="glitch"></h2>
+        <p class="lead"></p>
+        <a class="btn btn--solid magnetic" href="#">Ler o ensaio</a>
+      </div>
+    </article>
+  </div>
+</section>
+
+<!-- ============ NÚMEROS ============ -->
+<section class="section section--tight">
+  <div class="wrap stats">
+    <div class="stat" data-reveal>
+      <div class="stat__num"><span data-count="238">0</span></div>
+      <div class="stat__label">Matérias publicadas</div>
+    </div>
+    <div class="stat" data-reveal>
+      <div class="stat__num"><span data-count="94">0</span><span>%</span></div>
+      <div class="stat__label">Sem spoiler</div>
+    </div>
+    <div class="stat" data-reveal>
+      <div class="stat__num"><span data-count="100">0</span><span>%</span></div>
+      <div class="stat__label">Arte original</div>
+    </div>
+    <div class="stat" data-reveal>
+      <div class="stat__num"><span data-count="24">0</span><span>k</span></div>
+      <div class="stat__label">Leitores por mês</div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ O JOGO ============ -->
+<section class="section" id="jogo">
+  <div class="wrap">
+    <div class="jogo-cta" data-reveal="zoom">
+      <div class="jogo-cta__txt">
+        <span class="eyebrow">Intervalo</span>
+        <h2>Corre,<br>rolo de filme!</h2>
+        <p class="lead">
+          Um corredor infinito no melhor estilo dinossauro do navegador — só que
+          você é um rolo de filme fugindo da tempestade, desviando de pipoca,
+          tripé e claquete. Espaço para pular, seta para baixo para deslizar.
+        </p>
+        <a class="btn btn--solid magnetic" href="/jogo.html">Jogar agora</a>
+      </div>
+      <div class="jogo-cta__art">
+        <canvas id="previaJogo" width="520" height="220" aria-label="Prévia do jogo"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <a href="/" class="logo" style="margin-bottom:18px">
+          <svg class="logo__bolt" viewBox="0 0 24 32" aria-hidden="true">
+            <path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#00e5ff"/>
+          </svg>
+          <span class="logo__text">CINE<b>VOLT</b></span>
+        </a>
+        <p class="lead" style="font-size:.92rem">
+          Cinema em alta voltagem. Crítica, ensaio e ilustração original —
+          publicado por gente que ainda acha que sala escura importa.
+        </p>
+      </div>
+
+      <div>
+        <h4>Seções</h4>
+        <ul>
+          <li><a href="/arquivo.html?cat=Crítica">Críticas</a></li>
+          <li><a href="/arquivo.html?cat=Estreia">Estreias</a></li>
+          <li><a href="/arquivo.html?cat=Ensaio">Ensaios</a></li>
+          <li><a href="/arquivo.html?cat=Streaming">Streaming</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Site</h4>
+        <ul>
+          <li><a href="/sobre.html">Sobre</a></li>
+          <li><a href="/jogo.html">Jogo</a></li>
+          <li><a href="/admin.html">Publicar</a></li>
+          <li><a href="mailto:contato@cinevolt.com.br">Contato</a></li>
+        </ul>
+      </div>
+
+      <div>
+        <h4>Newsletter</h4>
+        <p style="font-size:.9rem;color:var(--text-2)">Uma edição por semana. Sem spam, sem spoiler.</p>
+        <form class="subscribe" data-newsletter>
+          <input class="field" type="email" placeholder="seu@email.com" required aria-label="Seu e-mail">
+          <button class="btn btn--solid" type="submit">Assinar</button>
+        </form>
+      </div>
+    </div>
+
+    <div class="footer__bottom">
+      <span>© <span id="ano"></span> CINEVOLT — todos os direitos reservados</span>
+      <span>Feito com raio, café e sala escura</span>
+    </div>
+  </div>
+</footer>
+
+<button class="totop" aria-label="Voltar ao topo">↑</button>
+
+<!-- ============ SCRIPTS ============ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/art.js"></script>
+<script src="/assets/js/md.js"></script>
+<script src="/assets/js/data.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/lightning.js"></script>
+<script src="/assets/js/fx.js"></script>
+<script src="/assets/js/hero.js"></script>
+<script src="/assets/js/home.js"></script>
+</body>
+</html>

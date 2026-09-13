@@ -1,0 +1,104 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Arquivo — CINEVOLT</title>
+<meta name="description" content="Todas as críticas, ensaios, estreias e listas publicadas na CINEVOLT.">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/effects.css">
+</head>
+<body class="is-loading is-entering">
+
+<div class="preloader">
+  <div class="clapper"><div class="clapper__top"></div><div class="clapper__body">ARQUIVO</div></div>
+  <div class="preloader__pct">000%</div><div class="preloader__bar"></div>
+</div>
+
+<div class="fx-layer fx-grain"></div>
+<div class="fx-layer fx-scan"></div>
+<div class="fx-layer fx-vignette"></div>
+<div class="fx-layer fx-flash"></div>
+<div class="progress"></div>
+
+<header class="header">
+  <div class="wrap header__inner">
+    <a href="/" class="logo">
+      <svg class="logo__bolt" viewBox="0 0 24 32"><path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#00e5ff"/></svg>
+      <span class="logo__text">CINE<b>VOLT</b></span>
+    </a>
+    <nav class="nav">
+      <a class="nav__link" href="/">Início</a>
+      <a class="nav__link" href="/arquivo.html" aria-current="page">Arquivo</a>
+      <a class="nav__link" href="/jogo.html">Jogo</a>
+      <a class="nav__link" href="/sobre.html">Sobre</a>
+      <a class="nav__link" href="/admin.html">Publicar</a>
+    </nav>
+    <button class="burger" aria-label="Abrir menu" aria-expanded="false"><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="menu">
+  <ul class="menu__list">
+    <li><a href="/">Início</a></li><li><a href="/arquivo.html">Arquivo</a></li>
+    <li><a href="/jogo.html">Jogo</a></li><li><a href="/sobre.html">Sobre</a></li>
+    <li><a href="/admin.html">Publicar</a></li>
+  </ul>
+</div>
+
+<main>
+<section class="section" style="padding-top:clamp(120px,16vw,200px)">
+  <div class="wrap">
+    <span class="eyebrow" data-reveal>Tudo que já publicamos</span>
+    <h1 style="font-size:clamp(3rem,9vw,7rem);margin-bottom:24px" data-split>Arquivo<br>CINEVOLT</h1>
+    <p class="lead" data-reveal style="--d:200ms">
+      Filtre por editoria ou busque pelo título. Cada matéria vem com ilustração
+      original gerada para ela — nenhuma imagem de banco.
+    </p>
+
+    <div class="filtros" data-reveal style="--d:300ms">
+      <div class="tag-row" data-filtros></div>
+      <div class="busca">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+          <circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/>
+        </svg>
+        <input type="search" class="field" placeholder="Buscar por título…" data-busca aria-label="Buscar matérias">
+      </div>
+    </div>
+
+    <div class="grid grid--3" data-lista style="margin-top:44px">
+      <div class="skeleton" style="aspect-ratio:3/4"></div>
+      <div class="skeleton" style="aspect-ratio:3/4"></div>
+      <div class="skeleton" style="aspect-ratio:3/4"></div>
+    </div>
+
+    <div class="paginacao" data-paginacao></div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__bottom" style="margin-top:0;border-top:0">
+      <span>© <span id="ano"></span> CINEVOLT</span>
+      <span><a class="link-fx" href="/">Voltar ao início</a></span>
+    </div>
+  </div>
+</footer>
+
+<button class="totop" aria-label="Voltar ao topo">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/art.js"></script>
+<script src="/assets/js/md.js"></script>
+<script src="/assets/js/data.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/fx.js"></script>
+<script src="/assets/js/arquivo.js"></script>
+</body>
+</html>

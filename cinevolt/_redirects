@@ -1,0 +1,6 @@
+# Endereços curtos e amigáveis
+/materia/*   /post.html?p=:splat   200
+/arquivo     /arquivo.html         200
+/jogo        /jogo.html            200
+/sobre       /sobre.html           200
+/publicar    /admin.html           200
