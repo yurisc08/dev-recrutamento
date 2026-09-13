@@ -121,7 +121,7 @@
       ctx.clearRect(0, 0, W, H);
 
       // chão
-      ctx.strokeStyle = 'rgba(0,229,255,.45)';
+      ctx.strokeStyle = 'rgba(255,214,10,.45)';
       ctx.lineWidth = 2;
       ctx.beginPath();
       ctx.moveTo(0, chao); ctx.lineTo(W, chao); ctx.stroke();
@@ -140,11 +140,11 @@
       ctx.save();
       ctx.translate(hx, hy);
       ctx.rotate(t * 0.09);
-      ctx.strokeStyle = '#7df9ff';
+      ctx.strokeStyle = '#fff08a';
       ctx.lineWidth = 4;
-      ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 16;
+      ctx.shadowColor = '#ffd60a'; ctx.shadowBlur = 16;
       ctx.beginPath(); ctx.arc(0, 0, 20, 0, Math.PI * 2); ctx.stroke();
-      ctx.fillStyle = '#00e5ff';
+      ctx.fillStyle = '#ffd60a';
       for (let i = 0; i < 6; i++) {
         const a = (Math.PI * 2 / 6) * i;
         ctx.beginPath(); ctx.arc(Math.cos(a) * 12, Math.sin(a) * 12, 3, 0, Math.PI * 2); ctx.fill();
@@ -152,8 +152,8 @@
       ctx.restore();
 
       // obstáculos
-      ctx.fillStyle = '#ffd400';
-      ctx.shadowColor = '#ffd400'; ctx.shadowBlur = 10;
+      ctx.fillStyle = '#ff9d2e';
+      ctx.shadowColor = '#ff9d2e'; ctx.shadowBlur = 10;
       obstaculos.forEach(o => {
         o.x -= 3.4;
         if (o.x < -50) o.x = W + 120 + Math.random() * 200;

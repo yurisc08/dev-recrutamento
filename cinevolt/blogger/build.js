@@ -17,17 +17,15 @@ const ler = p => fs.readFileSync(path.join(raiz, p), 'utf8');
 const css = [
   'assets/css/base.css',
   'assets/css/effects.css',
-  'assets/css/hero.css'
+  'assets/css/arcade.css'
 ].map(ler).join('\n\n');
 
 const js = [
   'assets/js/art.js',
   'assets/js/lightning.js',
+  'assets/js/maze.js',
   'assets/js/fx.js'
 ].map(ler).join('\n\n');
-
-/* Ilustração do hero, sem o cabeçalho XML */
-const guardiao = ler('assets/img/guardiao.svg').trim();
 
 /* CSS específico do tema (o Blogger tem markup próprio) */
 const cssBlogger = `
@@ -55,7 +53,7 @@ const xml = `<?xml version="1.0" encoding="UTF-8" ?>
   <meta content='width=device-width, initial-scale=1' name='viewport'/>
   <b:include data='blog' name='all-head-content'/>
   <title><data:blog.pageTitle/></title>
-  <link href='https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Space+Grotesk:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@300;400;500&amp;display=swap' rel='stylesheet'/>
+  <link href='https://fonts.googleapis.com/css2?family=Bungee&amp;family=Press+Start+2P&amp;family=Space+Grotesk:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@300;400;500&amp;display=swap' rel='stylesheet'/>
   <b:skin><![CDATA[
 ${css}
 ${cssBlogger}
@@ -70,8 +68,8 @@ ${cssBlogger}
 </div>
 
 <div class='fx-layer fx-grain'></div>
-<div class='fx-layer fx-scan'></div>
-<div class='fx-layer fx-vignette'></div>
+<div class='crt'></div>
+<div class='crt-vinheta'></div>
 <div class='fx-layer fx-flash'></div>
 <div class='progress'></div>
 
@@ -106,40 +104,32 @@ ${cssBlogger}
 
 <!-- ================= HERO (só na home) ================= -->
 <b:if cond='data:blog.url == data:blog.homepageUrl'>
-<section class='cine-hero' id='palco'>
-  <div class='ch-layer ch-sky' data-depth='14'></div>
-  <div class='ch-layer ch-clouds ch-clouds--far' data-nuvens='0.005' data-depth='26'></div>
-  <div class='ch-layer ch-clouds' data-nuvens='0.011' data-depth='44'></div>
-  <div class='ch-layer ch-rain ch-rain--back' data-depth='18'></div>
-  <div class='ch-layer ch-rain' data-depth='34'></div>
-  <canvas class='ch-bolts ch-bolts--back'></canvas>
-  <div class='ch-layer ch-fog'></div>
+<section class='arcade-hero' id='palco'>
+  <canvas class='arcade-hero__maze arcade-hero__maze--fundo'></canvas>
+  <canvas class='arcade-hero__maze arcade-hero__maze--frente'></canvas>
+  <div class='arcade-hero__veu'></div>
 
-  <div class='ch-content'>
-    <span class='ch-kicker'><i></i> <span>Em destaque nesta semana</span></span>
-    <h1 class='ch-title' data-hero-titulo='true'>A tempestade<br/>chega aos<br/><em>cinemas</em></h1>
-    <p class='ch-sub' data-hero-sub='true'><data:blog.title/></p>
-    <div class='ch-actions'>
-      <a class='ch-btn ch-btn--primary' data-hero-cta='true' expr:href='data:blog.homepageUrl'>Ler a matéria</a>
+  <div class='hud'>
+    <div class='hud__linha'>Pontos <span class='hud__valor' data-placar='true'>000000</span></div>
+    <div class='hud__linha'>Recorde <span class='hud__valor' data-recorde='true'>000000</span></div>
+    <div class='hud__dica' data-dica='true'>← ↑ ↓ → para jogar</div>
+  </div>
+
+  <div class='arcade-hero__conteudo'>
+    <span class='insert-coin pixel'><i></i> <span>Insira uma ficha</span></span>
+    <h1 class='titulo-arcade' data-hero-titulo='true'>Cinema<br/>em modo<br/><em>arcade</em></h1>
+    <p class='sub-arcade' data-hero-sub='true'><data:blog.title/></p>
+    <div class='acoes-arcade'>
+      <a class='btn-arcade' data-hero-cta='true' expr:href='data:blog.homepageUrl'>▶ Ler as matérias</a>
     </div>
   </div>
-
-  <div class='ch-figure' data-depth='10' id='guardiao'>
-${guardiao.split('\n').map(l => '    ' + l).join('\n')}
-  </div>
-
-  <canvas class='ch-bolts'></canvas>
-  <div class='ch-bars'></div>
-  <div class='scroll-hint'><span>Role</span><span class='scroll-hint__line'></span></div>
 </section>
 
-<div class='marquee'>
-  <div class='marquee__track'>
-    <span class='marquee__item'><i></i> Crítica sem spoiler</span>
-    <span class='marquee__item'><i></i> Estreias da semana</span>
-    <span class='marquee__item'><i></i> Ensaios de cinema</span>
-    <span class='marquee__item'><i></i> Ilustração original</span>
-  </div>
+<div class='marquise'><div class='lampadas' data-lampadas='true'></div></div>
+
+<div class='perseguicao'>
+  <div class='perseguicao__pontos'></div>
+  <div class='perseguicao__trilha' data-perseguicao='true'></div>
 </div>
 </b:if>
 
@@ -240,7 +230,7 @@ ${guardiao.split('\n').map(l => '    ' + l).join('\n')}
 //<![CDATA[
 ${js}
 
-/* ---- cola do tema: capas geradas, hero e nuvens ---- */
+/* ---- cola do tema: capas geradas, sprites, hero e labirinto ---- */
 (function () {
   'use strict';
 
@@ -251,16 +241,25 @@ ${js}
     });
   });
 
-  // 2) Nuvens por turbulência
-  document.querySelectorAll('[data-nuvens]').forEach(function (el, i) {
-    el.innerHTML = '<svg width="100%" height="100%" preserveAspectRatio="none">' +
-      '<filter id="nv' + i + '"><feTurbulence type="fractalNoise" baseFrequency="' +
-      (el.dataset.nuvens || '0.009') + '" numOctaves="5" seed="' + (3 + i * 7) + '" result="n"/>' +
-      '<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.64  0 0 0 0 0.95  0 0 0 -1.5 1.05"/>' +
-      '</filter><rect width="100%" height="100%" filter="url(#nv' + i + ')"/></svg>';
-  });
+  // 2) Lâmpadas da marquise
+  var faixa = document.querySelector('[data-lampadas]');
+  if (faixa) faixa.innerHTML = new Array(Math.max(12, Math.floor(innerWidth / 34)) + 1).join('<i></i>');
 
-  // 3) O hero aponta para a matéria mais recente
+  // 3) Sprites da faixa de perseguição
+  var trilha = document.querySelector('[data-perseguicao]');
+  if (trilha) {
+    var fant = function (cor) {
+      return '<svg class="sprite" viewBox="0 0 32 32" style="color:' + cor + '">' +
+        '<path fill="' + cor + '" d="M16 2a12 12 0 0 0-12 12v16l4-3 4 3 4-3 4 3 4-3 4 3V14A12 12 0 0 0 16 2Z"/>' +
+        '<circle cx="11" cy="13" r="4.2" fill="#fff"/><circle cx="21" cy="13" r="4.2" fill="#fff"/>' +
+        '<circle cx="9.6" cy="13" r="2.1" fill="#14103a"/><circle cx="19.6" cy="13" r="2.1" fill="#14103a"/></svg>';
+    };
+    trilha.innerHTML =
+      '<svg class="sprite" viewBox="0 0 32 32" style="color:#ffd60a"><path fill="#ffd60a" d="M16 16 29 8a15 15 0 1 0 0 16Z"/></svg>' +
+      ['#ff2b4e', '#ff6ad5', '#22e7ff', '#ff9d2e'].map(fant).join('');
+  }
+
+  // 4) O hero aponta para a matéria mais recente
   var primeiro = document.querySelector('.card');
   var alvoTitulo = document.querySelector('[data-hero-titulo]');
   if (primeiro && alvoTitulo) {
@@ -276,69 +275,35 @@ ${js}
     if (cta && link) cta.setAttribute('href', link);
   }
 
-  // 4) A tempestade
-  var hero = document.querySelector('.cine-hero');
-  if (!hero || !window.Storm || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // 5) O labirinto em modo atração
+  var cv = document.querySelector('.arcade-hero__maze--frente');
+  if (!cv || !window.Labirinto || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  var frente = hero.querySelector('.ch-bolts:not(.ch-bolts--back)');
-  var fundo = hero.querySelector('.ch-bolts--back');
-  var figura = hero.querySelector('.ch-figure');
-  var nucleo = hero.querySelector('#nucleoMartelo');
+  var placar = document.querySelector('[data-placar]');
+  var recordeEl = document.querySelector('[data-recorde]');
+  var dica = document.querySelector('[data-dica]');
+  var recorde = Number(localStorage.getItem('cinevolt:maze') || 0);
+  if (recordeEl) recordeEl.textContent = String(recorde).padStart(6, '0');
 
-  function alvo() {
-    var cr = frente.getBoundingClientRect();
-    if (nucleo) {
-      var nr = nucleo.getBoundingClientRect();
-      if (nr.width) return { x: nr.left + nr.width / 2 - cr.left, y: nr.top + nr.height / 2 - cr.top };
-    }
-    return { x: cr.width * 0.66, y: cr.height * 0.3 };
-  }
-
-  var storm = new window.Storm(frente, {
-    alvo: alvo, intervalo: [1700, 3900],
-    cores: ['#9fe9ff', '#cfefff', '#b9a6ff'],
-    aoRaio: function (e) {
-      var w = frente.getBoundingClientRect().width || 1;
-      window.FX.flash((e.x / w) * 100);
-      window.FX.trovao(e.forca);
-      if (figura) { figura.classList.remove('is-hit'); void figura.offsetWidth; figura.classList.add('is-hit'); }
-    }
-  });
-  storm.start();
-
-  if (fundo) {
-    new window.Storm(fundo, {
-      ambiente: false, densidade: .5, intervalo: [2600, 6000],
-      cores: ['#6fc8ff', '#8fb6ff', '#9a7cff'],
-      alvo: function () {
-        var r = fundo.getBoundingClientRect();
-        return { x: r.width * (0.08 + Math.random() * 0.84), y: r.height * (0.8 + Math.random() * 0.12) };
-      },
-      aoRaio: function (e) {
-        var w = fundo.getBoundingClientRect().width || 1;
-        window.FX.flash((e.x / w) * 100);
+  var lab = new window.Labirinto(cv, {
+    canvasFundo: document.querySelector('.arcade-hero__maze--fundo'),
+    aoComer: function (pts) { if (placar) placar.textContent = String(pts).padStart(6, '0'); },
+    aoPilula: function () { window.FX && window.FX.flash(40 + Math.random() * 30); },
+    aoMorrer: function (pts) {
+      if (pts > recorde) {
+        recorde = pts;
+        localStorage.setItem('cinevolt:maze', String(pts));
+        if (recordeEl) recordeEl.textContent = String(recorde).padStart(6, '0');
       }
-    }).start();
-  }
-
-  // parallax das camadas
-  var camadas = [].slice.call(hero.querySelectorAll('[data-depth]'));
-  var mx = 0, my = 0, cx = 0, cy = 0;
-  hero.addEventListener('mousemove', function (e) {
-    var r = hero.getBoundingClientRect();
-    mx = (e.clientX - r.left) / r.width - .5;
-    my = (e.clientY - r.top) / r.height - .5;
+    },
+    aoAssumir: function () {
+      if (!dica) return;
+      dica.textContent = '1 PLAYER · VOCÊ ESTÁ NO CONTROLE';
+      dica.classList.add('is-on');
+    }
   });
-  (function anim() {
-    cx += (mx - cx) * .06; cy += (my - cy) * .06;
-    camadas.forEach(function (c) {
-      var d = parseFloat(c.dataset.depth) || 10;
-      c.style.transform = 'translate3d(' + (-cx * d).toFixed(2) + 'px,' + (-cy * d * .6).toFixed(2) + 'px,0)';
-    });
-    requestAnimationFrame(anim);
-  })();
-
-  setTimeout(function () { storm.strike({ largura: 3.6, forca: 1.4 }); }, 900);
+  lab.start();
+  document.addEventListener('visibilitychange', function () { lab.pausado = document.hidden; });
 })();
 //]]>
 </script>

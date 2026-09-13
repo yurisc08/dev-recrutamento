@@ -71,7 +71,7 @@
      --------------------------------------------------------- */
   class Bolt {
     constructor(opts) {
-      this.cor = opts.cor || '#9fe9ff';
+      this.cor = opts.cor || '#ffe680';
       this.core = opts.core || '#ffffff';
       this.largura = opts.largura || 2.4;
       this.vida = opts.vida || rnd(170, 380);
@@ -238,7 +238,7 @@
       this.ultimo = 0;
       this.proximo = rnd(900, 2200);
 
-      this.cores = o.cores || ['#9fe9ff', '#bfe4ff', '#cbb4ff'];
+      this.cores = o.cores || ['#ffe680', '#bfe4ff', '#cbb4ff'];
       this.intervalo = o.intervalo || [1400, 4200];   // ms entre raios grandes
       this.ambiente = o.ambiente !== false;            // arcos pequenos constantes
       this.alvo = o.alvo || null;                      // () => {x, y} ponto de convergência

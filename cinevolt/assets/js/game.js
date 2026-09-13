@@ -56,9 +56,9 @@
 
   /* ---------- Cenário: prédios gerados uma vez ---------- */
   const camadas = [
-    { vel: 0.18, cor: '#080c18', predios: gerarSkyline(28, 40, 110) },
-    { vel: 0.38, cor: '#0b1224', predios: gerarSkyline(22, 60, 150) },
-    { vel: 0.70, cor: '#101a33', predios: gerarSkyline(16, 30, 80) }
+    { vel: 0.18, cor: '#170733', predios: gerarSkyline(28, 40, 110) },
+    { vel: 0.38, cor: '#1e0a42', predios: gerarSkyline(22, 60, 150) },
+    { vel: 0.70, cor: '#2a1055', predios: gerarSkyline(16, 30, 80) }
   ];
 
   function gerarSkyline(n, hMin, hMax) {
@@ -167,7 +167,7 @@
       vx: (Math.random() - 0.5) * (forte ? 9 : 3) - G.vel * 0.3,
       vy: -Math.random() * (forte ? 8 : 2.6),
       vida: 1,
-      cor: forte ? (Math.random() > .5 ? '#00e5ff' : '#ffd400') : 'rgba(150,200,255,.7)',
+      cor: forte ? (Math.random() > .5 ? '#ffd60a' : '#ff9d2e') : 'rgba(150,200,255,.7)',
       r: 1 + Math.random() * (forte ? 3.4 : 2)
     });
   }
@@ -216,9 +216,9 @@
   function desenharFundo() {
     // céu
     const g = ctx.createLinearGradient(0, 0, 0, A);
-    g.addColorStop(0, '#050914');
-    g.addColorStop(.55, '#0a1730');
-    g.addColorStop(1, '#04060e');
+    g.addColorStop(0, '#10032a');
+    g.addColorStop(.55, '#1d0940');
+    g.addColorStop(1, '#07030f');
     ctx.fillStyle = g;
     ctx.fillRect(0, 0, L, A);
 
@@ -244,7 +244,7 @@
           if (x > L + 60 || x < -140) return;
           ctx.fillRect(x, CHAO - p.h, p.w, p.h);
           if (c.vel > .3 && p.luzes > .35) {
-            ctx.fillStyle = 'rgba(0,229,255,.30)';
+            ctx.fillStyle = 'rgba(255,106,213,.55)';
             for (let j = 0; j < 3; j++) {
               ctx.fillRect(x + 8 + j * 13, CHAO - p.h + 12 + (j % 2) * 16, 5, 7);
             }
@@ -265,11 +265,11 @@
   }
 
   function desenharChao() {
-    ctx.strokeStyle = 'rgba(0,229,255,.55)';
+    ctx.strokeStyle = 'rgba(255,214,10,.55)';
     ctx.lineWidth = 2;
     ctx.beginPath(); ctx.moveTo(0, CHAO + 2); ctx.lineTo(L, CHAO + 2); ctx.stroke();
 
-    ctx.fillStyle = 'rgba(0,229,255,.07)';
+    ctx.fillStyle = 'rgba(255,214,10,.07)';
     ctx.fillRect(0, CHAO + 4, L, A - CHAO);
 
     ctx.strokeStyle = 'rgba(255,255,255,.16)';
@@ -289,15 +289,15 @@
     ctx.rotate(jogador.giro);
 
     // rolo de filme
-    ctx.strokeStyle = '#7df9ff';
+    ctx.strokeStyle = '#fff08a';
     ctx.lineWidth = 5;
-    ctx.shadowColor = '#00e5ff'; ctx.shadowBlur = 18;
+    ctx.shadowColor = '#ffd60a'; ctx.shadowBlur = 18;
     ctx.beginPath(); ctx.arc(0, 0, jogador.r, 0, Math.PI * 2); ctx.stroke();
 
     ctx.fillStyle = '#04101c';
     ctx.beginPath(); ctx.arc(0, 0, jogador.r - 3, 0, Math.PI * 2); ctx.fill();
 
-    ctx.fillStyle = '#00e5ff';
+    ctx.fillStyle = '#ffd60a';
     for (let i = 0; i < 6; i++) {
       const a = (Math.PI * 2 / 6) * i;
       ctx.beginPath();
@@ -311,7 +311,7 @@
     const alt = Math.max(0, CHAO - jogador.y);
     ctx.save();
     ctx.globalAlpha = Math.max(0, .34 - alt / 420);
-    ctx.fillStyle = '#00e5ff';
+    ctx.fillStyle = '#ffd60a';
     ctx.beginPath();
     ctx.ellipse(jogador.x, CHAO + 4, 22 + alt * .04, 5, 0, 0, Math.PI * 2);
     ctx.fill();
@@ -323,7 +323,7 @@
     ctx.shadowBlur = 12;
 
     if (o.tipo === 'pipoca') {
-      ctx.fillStyle = '#ff2d55'; ctx.shadowColor = '#ff2d55';
+      ctx.fillStyle = '#ff2b4e'; ctx.shadowColor = '#ff2b4e';
       ctx.beginPath();
       ctx.moveTo(o.x, o.y + o.h); ctx.lineTo(o.x + 5, o.y + 12);
       ctx.lineTo(o.x + o.w - 5, o.y + 12); ctx.lineTo(o.x + o.w, o.y + o.h);
@@ -335,13 +335,13 @@
         ctx.fill();
       }
     } else if (o.tipo === 'tripe') {
-      ctx.strokeStyle = '#ffd400'; ctx.shadowColor = '#ffd400'; ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ff9d2e'; ctx.shadowColor = '#ff9d2e'; ctx.lineWidth = 3;
       ctx.beginPath();
       ctx.moveTo(o.x + o.w / 2, o.y + 14); ctx.lineTo(o.x, o.y + o.h);
       ctx.moveTo(o.x + o.w / 2, o.y + 14); ctx.lineTo(o.x + o.w, o.y + o.h);
       ctx.moveTo(o.x + o.w / 2, o.y + 14); ctx.lineTo(o.x + o.w / 2, o.y + o.h);
       ctx.stroke();
-      ctx.fillStyle = '#ffd400';
+      ctx.fillStyle = '#ff9d2e';
       ctx.fillRect(o.x + 4, o.y, o.w - 8, 15);
     } else if (o.tipo === 'claquete') {
       ctx.fillStyle = '#e9e9f2'; ctx.shadowColor = '#ffffff';
@@ -351,17 +351,17 @@
       ctx.fillStyle = '#e9e9f2';
       for (let i = 0; i < 4; i++) ctx.fillRect(o.x + 2 + i * 11, o.y, 5, 10);
     } else if (o.tipo === 'drone') {
-      ctx.strokeStyle = '#b47cff'; ctx.shadowColor = '#7b2ff7'; ctx.lineWidth = 3;
+      ctx.strokeStyle = '#ffa8e6'; ctx.shadowColor = '#ff6ad5'; ctx.lineWidth = 3;
       ctx.strokeRect(o.x + 10, o.y + 8, o.w - 20, o.h - 12);
       const bat = Math.sin(G.t * .6) * 4;
       ctx.beginPath();
       ctx.moveTo(o.x, o.y + bat); ctx.lineTo(o.x + 16, o.y + 8);
       ctx.moveTo(o.x + o.w, o.y - bat); ctx.lineTo(o.x + o.w - 16, o.y + 8);
       ctx.stroke();
-      ctx.fillStyle = '#00e5ff';
+      ctx.fillStyle = '#ffd60a';
       ctx.beginPath(); ctx.arc(o.x + o.w / 2, o.y + o.h - 6, 3.5, 0, Math.PI * 2); ctx.fill();
     } else { // duplo
-      ctx.fillStyle = '#ff2d55'; ctx.shadowColor = '#ff2d55';
+      ctx.fillStyle = '#ff2b4e'; ctx.shadowColor = '#ff2b4e';
       ctx.fillRect(o.x, o.y + 8, 26, o.h - 8);
       ctx.fillRect(o.x + 38, o.y, 26, o.h);
     }
@@ -372,8 +372,8 @@
     ctx.save();
     ctx.translate(it.x, it.y);
     ctx.rotate(it.giro);
-    ctx.fillStyle = '#ffd400';
-    ctx.shadowColor = '#ffd400'; ctx.shadowBlur = 20;
+    ctx.fillStyle = '#ff9d2e';
+    ctx.shadowColor = '#ff9d2e'; ctx.shadowBlur = 20;
     ctx.beginPath();
     ctx.moveTo(4, -14); ctx.lineTo(-8, 2); ctx.lineTo(-1, 2);
     ctx.lineTo(-4, 14); ctx.lineTo(9, -3); ctx.lineTo(1, -3);
@@ -386,8 +386,8 @@
       ctx.save();
       ctx.globalCompositeOperation = 'lighter';
       ctx.globalAlpha = r.vida;
-      ctx.strokeStyle = '#cfefff';
-      ctx.shadowColor = '#9fe9ff';
+      ctx.strokeStyle = '#fff6d0';
+      ctx.shadowColor = '#ffe680';
       ctx.shadowBlur = 22;
       ctx.lineWidth = 2.2;
       ctx.beginPath();
@@ -400,12 +400,12 @@
 
   function desenharHUD() {
     ctx.save();
-    ctx.font = '600 15px "JetBrains Mono", monospace';
+    ctx.font = '400 12px "Press Start 2P", monospace';
     ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(255,255,255,.55)';
     ctx.fillText('REC ' + String(G.recorde).padStart(5, '0'), L - 22, 34);
-    ctx.fillStyle = '#00e5ff';
-    ctx.font = '600 22px "JetBrains Mono", monospace';
+    ctx.fillStyle = '#ffd60a';
+    ctx.font = '400 17px "Press Start 2P", monospace';
     ctx.fillText(String(Math.floor(G.pontos)).padStart(5, '0'), L - 22, 62);
     ctx.restore();
   }
@@ -418,22 +418,22 @@
 
     if (G.fase === 'pronto') {
       ctx.fillStyle = '#fff';
-      ctx.font = '400 54px "Bebas Neue", Impact, sans-serif';
+      ctx.font = '400 54px "Bungee", Impact, sans-serif';
       ctx.fillText('CINE RUNNER', L / 2, A / 2 - 14);
       ctx.fillStyle = 'rgba(255,255,255,.6)';
-      ctx.font = '400 14px "JetBrains Mono", monospace';
+      ctx.font = '400 10px "Press Start 2P", monospace';
       ctx.fillText('ESPAÇO PARA PULAR  ·  ↓ PARA DESLIZAR', L / 2, A / 2 + 22);
-      ctx.fillStyle = '#00e5ff';
+      ctx.fillStyle = '#ffd60a';
       ctx.fillText('CLIQUE OU APERTE ESPAÇO PARA COMEÇAR', L / 2, A / 2 + 50);
     } else {
-      ctx.fillStyle = '#ff2d55';
-      ctx.font = '400 54px "Bebas Neue", Impact, sans-serif';
+      ctx.fillStyle = '#ff2b4e';
+      ctx.font = '400 54px "Bungee", Impact, sans-serif';
       ctx.fillText('CORTA!', L / 2, A / 2 - 16);
       ctx.fillStyle = '#fff';
-      ctx.font = '400 20px "JetBrains Mono", monospace';
+      ctx.font = '400 15px "Press Start 2P", monospace';
       ctx.fillText(Math.floor(G.pontos) + ' PONTOS', L / 2, A / 2 + 16);
       ctx.fillStyle = 'rgba(255,255,255,.55)';
-      ctx.font = '400 13px "JetBrains Mono", monospace';
+      ctx.font = '400 9px "Press Start 2P", monospace';
       ctx.fillText('ENTER OU CLIQUE PARA JOGAR DE NOVO', L / 2, A / 2 + 46);
     }
     ctx.restore();

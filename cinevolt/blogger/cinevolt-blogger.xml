@@ -9,7 +9,7 @@
   <meta content='width=device-width, initial-scale=1' name='viewport'/>
   <b:include data='blog' name='all-head-content'/>
   <title><data:blog.pageTitle/></title>
-  <link href='https://fonts.googleapis.com/css2?family=Bebas+Neue&amp;family=Space+Grotesk:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@300;400;500&amp;display=swap' rel='stylesheet'/>
+  <link href='https://fonts.googleapis.com/css2?family=Bungee&amp;family=Press+Start+2P&amp;family=Space+Grotesk:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@300;400;500&amp;display=swap' rel='stylesheet'/>
   <b:skin><![CDATA[
 /* ============================================================
    CINEVOLT — base.css
@@ -17,44 +17,63 @@
    ============================================================ */
 
 :root {
-  /* --- Cores --- */
-  --void: #040406;
-  --ink: #08080d;
-  --ink-2: #0d0d16;
-  --ink-3: #14141f;
-  --line: rgba(255, 255, 255, .09);
-  --line-2: rgba(255, 255, 255, .16);
+  /* --- Cores: fliperama. Preto de gabinete, amarelo de moeda,
+         neon dos fantasmas. Tudo quente, nada de azul gelado. --- */
+  --void: #08030f;
+  --ink: #0e0619;
+  --ink-2: #150a24;
+  --ink-3: #1f1033;
+  --line: rgba(255, 232, 180, .10);
+  --line-2: rgba(255, 232, 180, .20);
 
-  --bolt: #00e5ff;          /* raio ciano */
-  --bolt-soft: #7df9ff;
-  --plasma: #7b2ff7;        /* roxo elétrico */
-  --plasma-soft: #b47cff;
-  --amber: #ffd400;         /* marquise de cinema */
-  --blood: #ff2d55;
+  /* moeda: a cor principal da marca */
+  --coin: #ffd60a;
+  --coin-soft: #fff08a;
 
-  --text: #f2f2f7;
-  --text-2: rgba(242, 242, 247, .72);
-  --text-3: rgba(242, 242, 247, .45);
+  /* os quatro fantasmas */
+  --blinky: #ff2b4e;
+  --pinky: #ff6ad5;
+  --inky: #22e7ff;
+  --clyde: #ff9d2e;
 
-  --grad-bolt: linear-gradient(120deg, var(--bolt), var(--plasma) 55%, var(--blood));
-  --grad-amber: linear-gradient(120deg, var(--amber), #ff8a00);
+  --maze: #4b2bff;
+  --life: #4dff88;
+
+  /* nomes antigos mantidos como apelidos: o site inteiro
+     já usa --bolt/--plasma, então a troca de tema é aqui */
+  --bolt: var(--coin);
+  --bolt-soft: var(--coin-soft);
+  --plasma: var(--pinky);
+  --plasma-soft: #ffa8e6;
+  --amber: var(--clyde);
+  --blood: var(--blinky);
+
+  --text: #fff6e8;
+  --text-2: rgba(255, 246, 232, .74);
+  --text-3: rgba(255, 246, 232, .46);
+
+  --grad-bolt: linear-gradient(100deg, var(--coin), var(--clyde) 45%, var(--pinky));
+  --grad-neon: linear-gradient(100deg, var(--inky), var(--pinky) 50%, var(--coin));
+  --grad-amber: linear-gradient(120deg, var(--coin), #ff6a00);
 
   /* --- Tipografia --- */
-  --font-display: "Bebas Neue", "Anton", "Arial Narrow", Impact, sans-serif;
-  --font-body: "Space Grotesk", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "Bungee", "Bebas Neue", Impact, sans-serif;
+  --font-pixel: "Press Start 2P", "Courier New", monospace;
+  --font-body: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
 
   /* --- Métrica --- */
   --wrap: 1280px;
   --gut: clamp(18px, 4vw, 56px);
-  --r-sm: 8px;
-  --r-md: 16px;
-  --r-lg: 26px;
+  --r-sm: 6px;
+  --r-md: 14px;
+  --r-lg: 22px;
 
-  /* --- Sombras / brilhos --- */
-  --glow-bolt: 0 0 24px rgba(0, 229, 255, .45), 0 0 64px rgba(0, 229, 255, .18);
-  --glow-plasma: 0 0 24px rgba(123, 47, 247, .5), 0 0 72px rgba(123, 47, 247, .22);
-  --shadow-card: 0 24px 60px -24px rgba(0, 0, 0, .9);
+  /* --- Brilhos de neon --- */
+  --glow-bolt: 0 0 18px rgba(255, 214, 10, .55), 0 0 54px rgba(255, 214, 10, .22);
+  --glow-plasma: 0 0 18px rgba(255, 106, 213, .55), 0 0 64px rgba(255, 106, 213, .25);
+  --glow-inky: 0 0 18px rgba(34, 231, 255, .5), 0 0 54px rgba(34, 231, 255, .2);
+  --shadow-card: 0 22px 54px -22px rgba(0, 0, 0, .92);
 
   /* --- Timing --- */
   --ease-out: cubic-bezier(.16, 1, .3, 1);
@@ -85,6 +104,9 @@ body {
 body.is-locked { overflow: hidden; }
 
 img, svg, video, canvas { display: block; max-width: 100%; }
+
+/* o atributo hidden precisa vencer qualquer display de classe */
+[hidden] { display: none !important; }
 img { height: auto; }
 
 a { color: inherit; text-decoration: none; }
@@ -97,15 +119,15 @@ button, input, textarea, select {
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   font-weight: 400;
-  line-height: .92;
-  letter-spacing: .01em;
+  line-height: 1;
+  letter-spacing: -.01em;
   margin: 0;
   text-transform: uppercase;
 }
 
-h1 { font-size: clamp(3.2rem, 11vw, 9.5rem); }
-h2 { font-size: clamp(2.2rem, 6vw, 4.6rem); }
-h3 { font-size: clamp(1.3rem, 2.4vw, 2rem); }
+h1 { font-size: clamp(2.6rem, 8vw, 7rem); }
+h2 { font-size: clamp(1.8rem, 4.6vw, 3.4rem); }
+h3 { font-size: clamp(1.1rem, 2vw, 1.6rem); }
 
 p { margin: 0 0 1em; }
 
@@ -598,8 +620,8 @@ p { margin: 0 0 1em; }
   color: var(--text-2);
 }
 
-.note--ok { border-color: rgba(0, 229, 255, .5); color: var(--bolt-soft); }
-.note--err { border-color: rgba(255, 45, 85, .5); color: #ff8098; }
+.note--ok { border-color: rgba(255, 214, 10, .5); color: var(--bolt-soft); }
+.note--err { border-color: rgba(255, 43, 78, .5); color: #ff8098; }
 
 .skeleton {
   position: relative;
@@ -742,7 +764,7 @@ p { margin: 0 0 1em; }
 
 /* Flash do raio — disparado por JS com .fire */
 .fx-flash {
-  background: radial-gradient(circle at var(--fx, 50%) 20%, rgba(190, 235, 255, .85), rgba(123, 47, 247, .25) 40%, transparent 70%);
+  background: radial-gradient(circle at var(--fx, 50%) 20%, rgba(190, 235, 255, .85), rgba(255, 106, 213, .25) 40%, transparent 70%);
   opacity: 0;
   z-index: 75;
 }
@@ -858,9 +880,9 @@ p { margin: 0 0 1em; }
   inset: -10%;
   z-index: 0;
   background:
-    radial-gradient(60% 50% at 20% 15%, rgba(123, 47, 247, .30), transparent 65%),
-    radial-gradient(45% 45% at 82% 30%, rgba(0, 229, 255, .22), transparent 65%),
-    radial-gradient(70% 60% at 50% 100%, rgba(255, 45, 85, .14), transparent 70%),
+    radial-gradient(60% 50% at 20% 15%, rgba(255, 106, 213, .30), transparent 65%),
+    radial-gradient(45% 45% at 82% 30%, rgba(255, 214, 10, .22), transparent 65%),
+    radial-gradient(70% 60% at 50% 100%, rgba(255, 43, 78, .14), transparent 70%),
     var(--void);
   filter: blur(6px);
   animation: auroraDrift 22s var(--ease-in-out) infinite alternate;
@@ -879,8 +901,8 @@ p { margin: 0 0 1em; }
   height: 52vh;
   z-index: 1;
   background-image:
-    linear-gradient(rgba(0, 229, 255, .16) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 229, 255, .16) 1px, transparent 1px);
+    linear-gradient(rgba(255, 214, 10, .16) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 214, 10, .16) 1px, transparent 1px);
   background-size: 68px 68px;
   transform: perspective(420px) rotateX(72deg);
   transform-origin: bottom;
@@ -902,7 +924,7 @@ p { margin: 0 0 1em; }
 
 .hero__title .word:hover {
   transform: translateY(-8px) rotate(-2deg);
-  text-shadow: 0 0 40px rgba(0, 229, 255, .8);
+  text-shadow: 0 0 40px rgba(255, 214, 10, .8);
 }
 
 /* Aberração cromática no título */
@@ -980,7 +1002,7 @@ p { margin: 0 0 1em; }
   display: flex;
   overflow: hidden;
   border-block: 1px solid var(--line);
-  background: linear-gradient(90deg, rgba(123, 47, 247, .12), rgba(0, 229, 255, .10));
+  background: linear-gradient(90deg, rgba(255, 106, 213, .12), rgba(255, 214, 10, .10));
   padding-block: 14px;
   user-select: none;
 }
@@ -1172,7 +1194,7 @@ p { margin: 0 0 1em; }
   font-size: clamp(2.4rem, 5vw, 3.6rem);
   line-height: 1;
   color: var(--bolt);
-  text-shadow: 0 0 30px rgba(0, 229, 255, .35);
+  text-shadow: 0 0 30px rgba(255, 214, 10, .35);
 }
 
 .stat__label {
@@ -1387,8 +1409,8 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   border: 1px solid var(--line);
   border-radius: var(--r-lg);
   background:
-    radial-gradient(80% 120% at 100% 0%, rgba(0, 229, 255, .12), transparent 60%),
-    radial-gradient(70% 100% at 0% 100%, rgba(123, 47, 247, .14), transparent 60%),
+    radial-gradient(80% 120% at 100% 0%, rgba(255, 214, 10, .12), transparent 60%),
+    radial-gradient(70% 100% at 0% 100%, rgba(255, 106, 213, .14), transparent 60%),
     var(--ink);
   overflow: hidden;
 }
@@ -1468,7 +1490,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   line-height: 1.15;
   text-transform: none;
   color: #fff;
-  text-shadow: 0 0 30px rgba(0, 229, 255, .25);
+  text-shadow: 0 0 30px rgba(255, 214, 10, .25);
 }
 
 .artigo ul, .artigo ol { margin: 0 0 1.6em; padding-left: 1.3em; }
@@ -1480,7 +1502,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   font-size: .88em;
   padding: 2px 7px;
   border-radius: 5px;
-  background: rgba(0, 229, 255, .1);
+  background: rgba(255, 214, 10, .1);
   color: var(--bolt-soft);
 }
 
@@ -1502,7 +1524,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   background: linear-gradient(90deg, transparent, var(--line-2), transparent);
 }
 
-.artigo mark { background: rgba(255, 212, 0, .22); color: var(--amber); padding: 0 4px; }
+.artigo mark { background: rgba(255, 157, 46, .22); color: var(--amber); padding: 0 4px; }
 
 .tabela-wrap { overflow-x: auto; margin: 2em 0; }
 .tabela-wrap table { width: 100%; border-collapse: collapse; font-size: .95rem; }
@@ -1517,7 +1539,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   line-height: .78;
   padding: 6px 14px 0 0;
   color: var(--bolt);
-  text-shadow: 0 0 26px rgba(0, 229, 255, .4);
+  text-shadow: 0 0 26px rgba(255, 214, 10, .4);
 }
 
 /* ------------------------------------------------------------
@@ -1593,7 +1615,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   z-index: 1;
   background:
     linear-gradient(to top, var(--void) 4%, rgba(4, 4, 8, .55) 45%, rgba(4, 4, 8, .25) 100%),
-    radial-gradient(70% 60% at 20% 90%, rgba(123, 47, 247, .3), transparent 70%);
+    radial-gradient(70% 60% at 20% 90%, rgba(255, 106, 213, .3), transparent 70%);
 }
 
 .post-capa__bolts {
@@ -1690,7 +1712,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   border-radius: var(--r-lg);
   overflow: hidden;
   background: #04060e;
-  box-shadow: var(--shadow-card), 0 0 90px -30px rgba(0, 229, 255, .5);
+  box-shadow: var(--shadow-card), 0 0 90px -30px rgba(255, 214, 10, .5);
 }
 
 .jogo-palco canvas {
@@ -1739,9 +1761,9 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   gap: 26px;
   margin-top: 26px;
   padding: 26px 30px;
-  border: 1px solid rgba(0, 229, 255, .35);
+  border: 1px solid rgba(255, 214, 10, .35);
   border-radius: var(--r-md);
-  background: radial-gradient(70% 140% at 0% 0%, rgba(0, 229, 255, .10), transparent 60%), var(--ink-2);
+  background: radial-gradient(70% 140% at 0% 0%, rgba(255, 214, 10, .10), transparent 60%), var(--ink-2);
   animation: fimIn .5s var(--ease-out);
 }
 
@@ -1770,7 +1792,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 
 .ranking__item.is-topo {
   border-color: var(--amber);
-  background: linear-gradient(90deg, rgba(255, 212, 0, .12), transparent);
+  background: linear-gradient(90deg, rgba(255, 157, 46, .12), transparent);
 }
 
 .ranking__pos { font-family: var(--font-mono); font-size: .72rem; color: var(--text-3); }
@@ -1801,305 +1823,471 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 
 
 /* ============================================================
-   CINEVOLT — hero.css
-   O palco cinematográfico: céu de tempestade, nuvens em turbulência,
-   chuva, o Guardião com manto que ondula e raios em canvas por cima.
+   CINEVOLT — arcade.css
+   A camada de fliperama: gabinete, marquise de lâmpadas, tela CRT,
+   neon, pixel art e o palco onde o labirinto roda.
    ============================================================ */
 
-.cine-hero {
+/* ------------------------------------------------------------
+   1. PALCO / HERO
+   ------------------------------------------------------------ */
+.arcade-hero {
   position: relative;
   min-height: 100svh;
   display: grid;
-  grid-template-columns: 1.05fr .95fr;
   align-items: center;
   overflow: hidden;
   isolation: isolate;
-  background: #02030a;
-  perspective: 1400px;
+  background: radial-gradient(120% 100% at 50% 0%, #1a0b33 0%, #0a0417 55%, #07030f 100%);
 }
 
-/* ---------- Camadas de fundo ---------- */
-.ch-layer {
-  position: absolute;
-  inset: -6%;
-  pointer-events: none;
-}
-
-/* 1. Céu */
-.ch-sky {
-  z-index: 0;
-  background:
-    radial-gradient(80% 60% at 72% 22%, rgba(0, 140, 200, .34), transparent 62%),
-    radial-gradient(60% 50% at 22% 40%, rgba(80, 30, 180, .28), transparent 66%),
-    radial-gradient(90% 70% at 50% 108%, rgba(0, 40, 80, .55), transparent 70%),
-    linear-gradient(180deg, #030512 0%, #061024 45%, #02030a 100%);
-}
-
-/* 2. Nuvens (feTurbulence via SVG inline no HTML) */
-.ch-clouds {
-  z-index: 1;
-  opacity: .34;
-  mix-blend-mode: screen;
-  animation: cloudDrift 46s linear infinite alternate;
-  /* a tempestade se acumula em cima e abre embaixo */
-  mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.5) 52%, transparent 88%);
-  -webkit-mask-image: linear-gradient(to bottom, #000 0%, rgba(0,0,0,.5) 52%, transparent 88%);
-}
-
-.ch-clouds--far { opacity: .17; animation-duration: 78s; animation-direction: alternate-reverse; }
-
-@keyframes cloudDrift {
-  0%   { transform: translate3d(-3%, 0, 0) scale(1.06); }
-  100% { transform: translate3d(4%, -2%, 0) scale(1.16); }
-}
-
-/* 3. Chuva */
-.ch-rain {
-  z-index: 2;
-  opacity: .62;
-  background-image:
-    repeating-linear-gradient(101deg, rgba(200, 240, 255, .30) 0 1.2px, transparent 1.2px 11px);
-  background-size: 100% 320px;
-  animation: rainFall .55s linear infinite;
-  mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
-  -webkit-mask-image: linear-gradient(to bottom, transparent, #000 22%, #000 78%, transparent);
-}
-
-.ch-rain--back { opacity: .22; animation-duration: .95s; background-size: 100% 460px; filter: blur(1px); }
-
-@keyframes rainFall { to { background-position: -120px 320px; } }
-
-/* 4. Canvas dos raios (por cima de tudo, abaixo do texto) */
-.ch-bolts {
+/* o labirinto ocupa a tela inteira, atrás de tudo */
+.arcade-hero__maze {
   position: absolute;
   inset: 0;
-  /* canvas é elemento replaced: sem width/height explícitos ele
-     ficaria no tamanho intrínseco (300x150) mesmo com inset: 0 */
   width: 100%;
   height: 100%;
-  z-index: 6;
+  z-index: 1;
+  opacity: .95;
+}
+
+/* paredes e pontinhos ficam nesta camada, pintados uma vez só */
+.arcade-hero__maze--fundo { z-index: 0; opacity: .72; }
+
+/* véu que garante leitura do texto sem apagar o jogo */
+.arcade-hero__veu {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background:
+    linear-gradient(100deg, rgba(7, 3, 15, .96) 0%, rgba(7, 3, 15, .88) 32%,
+                    rgba(7, 3, 15, .35) 58%, rgba(7, 3, 15, .1) 100%),
+    linear-gradient(to top, rgba(7, 3, 15, .9), transparent 40%);
+}
+
+@media (max-width: 1000px) {
+  .arcade-hero__veu {
+    background:
+      linear-gradient(to top, rgba(7, 3, 15, .97) 30%, rgba(7, 3, 15, .55) 70%, rgba(7, 3, 15, .25)),
+      radial-gradient(80% 50% at 50% 80%, rgba(7, 3, 15, .9), transparent);
+  }
+}
+
+.arcade-hero__conteudo {
+  position: relative;
+  z-index: 4;
+  padding: 150px var(--gut) 110px;
+  max-width: 820px;
+}
+
+/* ------------------------------------------------------------
+   2. TIPOGRAFIA DE FLIPERAMA
+   ------------------------------------------------------------ */
+.pixel {
+  font-family: var(--font-pixel);
+  font-size: .62rem;
+  line-height: 1.9;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+}
+
+.insert-coin {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 26px;
+  padding: 9px 18px;
+  border: 2px solid var(--coin);
+  border-radius: 4px;
+  background: rgba(255, 214, 10, .08);
+  color: var(--coin);
+  box-shadow: var(--glow-bolt), inset 0 0 18px rgba(255, 214, 10, .12);
+  animation: piscaCoin 1.4s steps(1) infinite;
+}
+
+@keyframes piscaCoin { 50% { opacity: .35; } }
+
+.insert-coin i {
+  width: 12px; height: 12px;
+  border-radius: 50%;
+  background: var(--coin);
+  box-shadow: 0 0 12px var(--coin);
+  animation: giraMoeda 1.6s linear infinite;
+}
+
+@keyframes giraMoeda {
+  0%, 100% { transform: scaleX(1); }
+  50% { transform: scaleX(.15); }
+}
+
+/* Título com relevo de letreiro: camadas deslocadas em cores */
+.titulo-arcade {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 7.4vw, 6.4rem);
+  line-height: .98;
+  text-transform: uppercase;
+  margin: 0 0 26px;
+  color: var(--text);
+  text-shadow:
+     3px 3px 0 var(--blinky),
+     6px 6px 0 var(--pinky),
+     9px 9px 0 rgba(75, 43, 255, .75),
+     0 0 42px rgba(255, 106, 213, .45);
+  animation: letreiro 6s var(--ease-in-out) infinite;
+}
+
+@keyframes letreiro {
+  0%, 92%, 100% { text-shadow: 3px 3px 0 var(--blinky), 6px 6px 0 var(--pinky), 9px 9px 0 rgba(75,43,255,.75), 0 0 42px rgba(255,106,213,.45); }
+  94% { text-shadow: 3px 3px 0 var(--inky), 6px 6px 0 var(--coin), 9px 9px 0 rgba(255,43,78,.8), 0 0 60px rgba(255,214,10,.6); }
+  96% { text-shadow: none; color: #fff; }
+}
+
+.titulo-arcade em {
+  font-style: normal;
+  color: var(--coin);
+  -webkit-text-stroke: 2px rgba(0, 0, 0, .35);
+}
+
+.sub-arcade {
+  font-size: clamp(.95rem, 1.3vw, 1.1rem);
+  line-height: 1.8;
+  color: var(--text-2);
+  max-width: 46ch;
+  margin-bottom: 34px;
+}
+
+/* ------------------------------------------------------------
+   3. BOTÕES DE GABINETE
+   ------------------------------------------------------------ */
+.btn-arcade {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  padding: 16px 30px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--coin);
+  color: #1a1000;
+  font-family: var(--font-pixel);
+  font-size: .66rem;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  cursor: pointer;
+  /* o "corpo" do botão físico */
+  box-shadow: 0 6px 0 #a8860a, 0 10px 24px rgba(255, 214, 10, .34);
+  transition: transform .12s var(--ease-out), box-shadow .12s var(--ease-out), background .3s;
+}
+
+.btn-arcade:hover { background: var(--coin-soft); transform: translateY(-2px); box-shadow: 0 8px 0 #a8860a, 0 14px 30px rgba(255,214,10,.42); }
+.btn-arcade:active { transform: translateY(6px); box-shadow: 0 0 0 #a8860a, 0 4px 12px rgba(255,214,10,.3); }
+
+.btn-arcade--ghost {
+  background: transparent;
+  color: var(--inky);
+  border: 2px solid var(--inky);
+  box-shadow: 0 6px 0 rgba(34, 231, 255, .3), inset 0 0 20px rgba(34, 231, 255, .1);
+}
+
+.btn-arcade--ghost:hover { background: rgba(34, 231, 255, .12); color: #fff; }
+
+.btn-arcade--rosa {
+  background: var(--pinky);
+  color: #2a0018;
+  box-shadow: 0 6px 0 #a8306f, 0 10px 24px rgba(255, 106, 213, .34);
+}
+
+.acoes-arcade { display: flex; gap: 14px; flex-wrap: wrap; }
+
+@media (max-width: 560px) { .acoes-arcade .btn-arcade { flex: 1 1 100%; justify-content: center; } }
+
+/* Ficha da matéria em destaque, embaixo dos botões */
+.ch-meta {
+  display: flex;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding-top: 22px;
+  border-top: 1px solid var(--line);
+  font-family: var(--font-pixel);
+  font-size: .5rem;
+  line-height: 2.2;
+  letter-spacing: .04em;
+  text-transform: uppercase;
+  color: var(--text-3);
+}
+
+.ch-meta b { color: var(--coin); font-weight: 400; }
+
+/* ------------------------------------------------------------
+   4. HUD DE PLACAR (sobre o labirinto)
+   ------------------------------------------------------------ */
+.hud {
+  position: absolute;
+  z-index: 5;
+  top: 96px;
+  right: var(--gut);
+  display: grid;
+  gap: 10px;
+  justify-items: end;
+  text-align: right;
   pointer-events: none;
 }
 
-/* Raios atrás do Guardião: recuados, mais frios e desfocados */
-.ch-bolts--back {
-  z-index: 3;
-  opacity: .72;
-  filter: blur(1.2px);
+.hud__linha {
+  font-family: var(--font-pixel);
+  font-size: .58rem;
+  letter-spacing: .06em;
+  color: var(--text-3);
 }
 
-/* 5. Névoa baixa */
-.ch-fog {
-  z-index: 5;
-  inset: auto 0 -8% 0;
-  height: 46%;
-  background: radial-gradient(70% 100% at 50% 100%, rgba(120, 200, 255, .20), transparent 72%);
-  filter: blur(24px);
-  animation: fogBreath 12s var(--ease-in-out) infinite alternate;
+.hud__valor {
+  display: block;
+  font-family: var(--font-pixel);
+  font-size: 1.1rem;
+  color: var(--coin);
+  text-shadow: 0 0 16px rgba(255, 214, 10, .7);
+  margin-top: 6px;
 }
 
-@keyframes fogBreath {
-  from { opacity: .55; transform: translateY(10px) scaleX(1); }
-  to   { opacity: .95; transform: translateY(-6px) scaleX(1.1); }
+.hud__dica {
+  margin-top: 8px;
+  padding: 7px 12px;
+  border: 1px solid var(--line-2);
+  border-radius: 4px;
+  background: rgba(10, 4, 23, .8);
+  font-family: var(--font-pixel);
+  font-size: .5rem;
+  color: var(--inky);
+  animation: piscaCoin 2s steps(1) infinite;
 }
 
-/* ---------- O Guardião ---------- */
-.ch-figure {
-  position: relative;
-  z-index: 4;
-  justify-self: center;
-  align-self: end;
-  width: min(620px, 92%);
-  filter: drop-shadow(0 0 70px rgba(0, 200, 255, .30));
-  transform-origin: bottom center;
-  animation: figureIdle 7s var(--ease-in-out) infinite alternate;
-  will-change: transform;
+.hud__dica.is-on { color: var(--life); border-color: var(--life); animation: none; }
+
+@media (max-width: 900px) { .hud { top: 84px; } .hud__valor { font-size: .9rem; } }
+
+/* ------------------------------------------------------------
+   5. TELA CRT — curvatura, linhas e brilho
+   ------------------------------------------------------------ */
+.crt {
+  position: fixed;
+  inset: 0;
+  z-index: 72;
+  pointer-events: none;
 }
 
-.ch-figure svg { width: 100%; height: auto; }
-
-@keyframes figureIdle {
-  from { transform: translateY(0) rotate(-.25deg); }
-  to   { transform: translateY(-14px) rotate(.25deg); }
-}
-
-/* Pulso elétrico quando cai um raio — classe adicionada por JS */
-.ch-figure.is-hit { animation: figureHit .5s var(--ease-out); }
-
-@keyframes figureHit {
-  0%   { filter: drop-shadow(0 0 70px rgba(0, 200, 255, .3)); transform: scale(1); }
-  12%  { filter: drop-shadow(0 0 120px rgba(255, 255, 255, .95)) brightness(2.4); transform: scale(1.015); }
-  40%  { filter: drop-shadow(0 0 90px rgba(0, 229, 255, .6)) brightness(1.3); }
-  100% { filter: drop-shadow(0 0 70px rgba(0, 200, 255, .3)); transform: scale(1); }
-}
-
-/* ---------- Conteúdo editorial ---------- */
-.ch-content {
-  position: relative;
-  z-index: 8;
-  padding: 140px var(--gut) 90px;
-  max-width: 760px;
-}
-
-.ch-kicker {
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  font-family: var(--font-mono);
-  font-size: .7rem;
-  letter-spacing: .34em;
-  text-transform: uppercase;
-  color: var(--bolt-soft);
-  margin-bottom: 22px;
-  padding: 7px 16px;
-  border: 1px solid rgba(125, 249, 255, .35);
-  border-radius: 999px;
-  background: rgba(0, 229, 255, .06);
-  backdrop-filter: blur(6px);
-}
-
-.ch-kicker i {
-  width: 7px; height: 7px; border-radius: 50%;
-  background: var(--bolt);
-  box-shadow: 0 0 12px var(--bolt);
-  animation: kickerBlink 1.8s infinite;
-}
-
-@keyframes kickerBlink { 50% { opacity: .25; } }
-
-.ch-title {
-  font-family: var(--font-display);
-  font-size: clamp(3.4rem, 8.4vw, 7.6rem);
-  line-height: .84;
-  letter-spacing: -.005em;
-  text-transform: uppercase;
-  margin: 0 0 26px;
-  text-shadow:
-    0 2px 0 rgba(0, 0, 0, .6),
-    0 0 60px rgba(0, 170, 255, .35);
-}
-
-.ch-title em {
-  font-style: normal;
-  background: linear-gradient(100deg, #ffffff 0%, #d8f6ff 25%, var(--bolt-soft) 55%, #e4d4ff 85%, #ffffff 100%);
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-  /* a sombra do h1 vazaria por trás do texto transparente e o deixaria cinza */
-  text-shadow: none;
-  filter: drop-shadow(0 0 30px rgba(0, 229, 255, .65)) drop-shadow(0 0 70px rgba(123, 47, 247, .35));
-}
-
-.ch-sub {
-  font-size: clamp(.95rem, 1.35vw, 1.12rem);
-  line-height: 1.75;
-  color: rgba(255, 255, 255, .74);
-  max-width: 48ch;
-  margin-bottom: 38px;
-}
-
-/* Botões no estilo do pôster: retângulo fino, texto espaçado */
-.ch-actions { display: flex; gap: 14px; flex-wrap: wrap; }
-
-.ch-btn {
-  position: relative;
-  display: inline-flex;
-  align-items: center;
-  gap: 12px;
-  padding: 17px 32px;
-  border: 1px solid rgba(255, 255, 255, .55);
-  background: rgba(4, 10, 20, .35);
-  backdrop-filter: blur(8px);
-  font-family: var(--font-mono);
-  font-size: .74rem;
-  letter-spacing: .26em;
-  text-transform: uppercase;
-  color: #fff;
-  cursor: pointer;
-  overflow: hidden;
-  transition: color .4s var(--ease-out), border-color .4s, transform .3s var(--ease-out);
-}
-
-.ch-btn::before {
+.crt::before {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(100deg, var(--bolt), #fff 55%, var(--plasma));
-  transform: translateX(-102%);
-  transition: transform .5s var(--ease-out);
-  z-index: -1;
+  background: repeating-linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, .045) 0 1px,
+    transparent 1px 3px);
 }
 
-.ch-btn:hover { color: #02030a; border-color: var(--bolt); }
-.ch-btn:hover::before { transform: translateX(0); }
-.ch-btn:active { transform: scale(.97); }
-
-.ch-btn--primary { border-color: var(--bolt); box-shadow: 0 0 30px rgba(0, 229, 255, .25); }
-
-.ch-btn svg { width: 15px; height: 15px; }
-
-/* Metadados do destaque (nota, ano, duração) */
-.ch-meta {
-  display: flex;
-  gap: 26px;
-  flex-wrap: wrap;
-  margin-top: 40px;
-  padding-top: 24px;
-  border-top: 1px solid rgba(255, 255, 255, .14);
-  font-family: var(--font-mono);
-  font-size: .68rem;
-  letter-spacing: .2em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, .5);
-}
-
-.ch-meta b { color: var(--bolt); font-weight: 400; }
-
-/* Barras laterais tipo "cinemascope" */
-.ch-bars { position: absolute; inset: 0; z-index: 9; pointer-events: none; }
-.ch-bars::before,
-.ch-bars::after {
+/* faixa clara descendo devagar, como varredura de tubo */
+.crt::after {
   content: "";
   position: absolute;
   left: 0; right: 0;
-  height: 42px;
-  background: #000;
-}
-.ch-bars::before { top: 0; mask-image: linear-gradient(#000, transparent); -webkit-mask-image: linear-gradient(#000, transparent); }
-.ch-bars::after  { bottom: 0; mask-image: linear-gradient(transparent, #000); -webkit-mask-image: linear-gradient(transparent, #000); }
-
-/* ---------- Responsivo ---------- */
-@media (max-width: 1000px) {
-  .cine-hero {
-    grid-template-columns: 1fr;
-    grid-template-rows: 1fr auto;
-    text-align: left;
-  }
-
-  .ch-figure {
-    grid-row: 1;
-    width: min(440px, 78%);
-    opacity: .55;
-    margin-top: 70px;
-  }
-
-  .ch-content {
-    grid-row: 2;
-    padding: 0 var(--gut) 84px;
-    margin-top: -80px;
-  }
-
-  .ch-title { font-size: clamp(2.8rem, 13vw, 4.6rem); }
+  height: 22vh;
+  background: linear-gradient(to bottom, transparent, rgba(255, 255, 255, .035), transparent);
+  animation: varredura 7s linear infinite;
 }
 
-@media (max-width: 560px) {
-  .ch-figure { width: 86%; opacity: .42; }
-  .ch-actions .ch-btn { flex: 1 1 100%; justify-content: center; }
+@keyframes varredura {
+  0% { top: -25vh; }
+  100% { top: 105vh; }
 }
 
+/* cantos escurecidos = vidro curvo */
+.crt-vinheta {
+  position: fixed;
+  inset: 0;
+  z-index: 71;
+  pointer-events: none;
+  background:
+    radial-gradient(120% 100% at 50% 50%, transparent 55%, rgba(0, 0, 0, .55) 88%, rgba(0, 0, 0, .9) 100%);
+}
+
+/* ------------------------------------------------------------
+   6. MARQUISE DE LÂMPADAS
+   ------------------------------------------------------------ */
+.marquise {
+  position: relative;
+  padding: 3px 0;
+  background: linear-gradient(90deg, var(--blinky), var(--pinky), var(--coin), var(--inky), var(--blinky));
+  background-size: 300% 100%;
+  animation: correLuz 9s linear infinite;
+}
+
+@keyframes correLuz { to { background-position: 300% 0; } }
+
+.lampadas {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: #0a0417;
+  overflow: hidden;
+}
+
+.lampadas i {
+  width: 9px; height: 9px;
+  flex: none;
+  border-radius: 50%;
+  background: var(--coin);
+  box-shadow: 0 0 10px var(--coin);
+  animation: lampada 1.2s steps(1) infinite;
+}
+
+.lampadas i:nth-child(2n) { animation-delay: .4s; background: var(--pinky); box-shadow: 0 0 10px var(--pinky); }
+.lampadas i:nth-child(3n) { animation-delay: .8s; background: var(--inky); box-shadow: 0 0 10px var(--inky); }
+
+@keyframes lampada { 50% { opacity: .18; } }
+
+/* ------------------------------------------------------------
+   7. CARDS EM FORMATO DE GABINETE
+   ------------------------------------------------------------ */
+.card {
+  border-radius: var(--r-md);
+  background: linear-gradient(175deg, var(--ink-2), var(--ink));
+}
+
+.card::after {
+  /* cantos em pixel, como moldura de máquina */
+  content: "";
+  position: absolute;
+  inset: 8px;
+  z-index: 2;
+  pointer-events: none;
+  border: 1px solid rgba(255, 214, 10, 0);
+  transition: border-color .35s;
+}
+
+.card:hover::after { border-color: rgba(255, 214, 10, .28); }
+
+.card__score {
+  font-family: var(--font-pixel);
+  font-size: .72rem;
+  border-color: var(--coin);
+  color: var(--coin);
+}
+
+.card__title { font-family: var(--font-display); letter-spacing: -.01em; }
+
+/* selo "1 PLAYER" no topo do card, feito com pseudo-elemento */
+.card__media::before {
+  content: "1 UP";
+  position: absolute;
+  top: 12px; left: 12px;
+  z-index: 2;
+  font-family: var(--font-pixel);
+  font-size: .48rem;
+  padding: 5px 8px;
+  border-radius: 3px;
+  background: rgba(10, 4, 23, .82);
+  color: var(--inky);
+  letter-spacing: .06em;
+  opacity: 0;
+  transform: translateY(-6px);
+  transition: .35s var(--ease-out);
+}
+
+.card:hover .card__media::before { opacity: 1; transform: none; }
+
+/* ------------------------------------------------------------
+   8. FAIXA DE FANTASMAS (divisor animado)
+   ------------------------------------------------------------ */
+.perseguicao {
+  position: relative;
+  height: 78px;
+  overflow: hidden;
+  border-block: 1px solid var(--line);
+  background:
+    repeating-linear-gradient(90deg, rgba(255, 255, 255, .04) 0 2px, transparent 2px 26px),
+    var(--ink);
+}
+
+.perseguicao__trilha {
+  position: absolute;
+  top: 50%;
+  left: 0;
+  display: flex;
+  align-items: center;
+  gap: 26px;
+  transform: translateY(-50%);
+  animation: persegue 11s linear infinite;
+}
+
+@keyframes persegue {
+  from { left: -240px; }
+  to { left: 100%; }
+}
+
+.perseguicao__pontos {
+  position: absolute;
+  top: 50%;
+  left: 0; right: 0;
+  height: 6px;
+  transform: translateY(-50%);
+  background-image: radial-gradient(circle, var(--coin) 40%, transparent 42%);
+  background-size: 34px 6px;
+  opacity: .55;
+}
+
+.sprite { width: 34px; height: 34px; flex: none; filter: drop-shadow(0 0 10px currentColor); }
+
+/* ------------------------------------------------------------
+   9. PLACAR / TABELA DE RECORDES
+   ------------------------------------------------------------ */
+.ranking__pts, .ranking__pos { font-family: var(--font-pixel); }
+.ranking__pts { font-size: .82rem; }
+
+/* ------------------------------------------------------------
+   10. GRADE DE FUNDO ESTILO ARCADE
+   ------------------------------------------------------------ */
+.grade-neon {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    linear-gradient(rgba(255, 106, 213, .07) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 231, 255, .07) 1px, transparent 1px);
+  background-size: 46px 46px;
+  mask-image: radial-gradient(80% 60% at 50% 40%, #000, transparent 75%);
+  -webkit-mask-image: radial-gradient(80% 60% at 50% 40%, #000, transparent 75%);
+}
+
+/* ------------------------------------------------------------
+   11. LOGO
+   ------------------------------------------------------------ */
+.logo__text {
+  font-family: var(--font-display);
+  letter-spacing: .02em;
+  text-shadow: 2px 2px 0 rgba(255, 43, 78, .9);
+}
+
+.logo__text b { color: var(--coin); }
+
+/* ------------------------------------------------------------
+   12. CABEÇALHO / MENU no clima novo
+   ------------------------------------------------------------ */
+.nav__link { font-family: var(--font-pixel); font-size: .56rem; letter-spacing: .04em; }
+.menu__list a { font-family: var(--font-display); }
+
+.eyebrow { font-family: var(--font-pixel); font-size: .56rem; letter-spacing: .06em; }
+.pill { font-family: var(--font-pixel); font-size: .52rem; letter-spacing: .04em; padding: 9px 14px; border-radius: 4px; }
+.btn { font-family: var(--font-pixel); font-size: .56rem; letter-spacing: .04em; border-radius: 6px; }
+.card__meta { font-family: var(--font-pixel); font-size: .48rem; letter-spacing: .04em; }
+
+/* ------------------------------------------------------------
+   13. MOVIMENTO REDUZIDO
+   ------------------------------------------------------------ */
 @media (prefers-reduced-motion: reduce) {
-  .ch-rain, .ch-clouds { animation: none; }
-  .ch-figure { animation: none; }
+  .crt::after, .lampadas i, .insert-coin, .marquise,
+  .perseguicao__trilha, .titulo-arcade { animation: none; }
 }
 
 
@@ -2125,8 +2313,8 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 </div>
 
 <div class='fx-layer fx-grain'></div>
-<div class='fx-layer fx-scan'></div>
-<div class='fx-layer fx-vignette'></div>
+<div class='crt'></div>
+<div class='crt-vinheta'></div>
 <div class='fx-layer fx-flash'></div>
 <div class='progress'></div>
 
@@ -2161,229 +2349,32 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 
 <!-- ================= HERO (só na home) ================= -->
 <b:if cond='data:blog.url == data:blog.homepageUrl'>
-<section class='cine-hero' id='palco'>
-  <div class='ch-layer ch-sky' data-depth='14'></div>
-  <div class='ch-layer ch-clouds ch-clouds--far' data-nuvens='0.005' data-depth='26'></div>
-  <div class='ch-layer ch-clouds' data-nuvens='0.011' data-depth='44'></div>
-  <div class='ch-layer ch-rain ch-rain--back' data-depth='18'></div>
-  <div class='ch-layer ch-rain' data-depth='34'></div>
-  <canvas class='ch-bolts ch-bolts--back'></canvas>
-  <div class='ch-layer ch-fog'></div>
+<section class='arcade-hero' id='palco'>
+  <canvas class='arcade-hero__maze arcade-hero__maze--fundo'></canvas>
+  <canvas class='arcade-hero__maze arcade-hero__maze--frente'></canvas>
+  <div class='arcade-hero__veu'></div>
 
-  <div class='ch-content'>
-    <span class='ch-kicker'><i></i> <span>Em destaque nesta semana</span></span>
-    <h1 class='ch-title' data-hero-titulo='true'>A tempestade<br/>chega aos<br/><em>cinemas</em></h1>
-    <p class='ch-sub' data-hero-sub='true'><data:blog.title/></p>
-    <div class='ch-actions'>
-      <a class='ch-btn ch-btn--primary' data-hero-cta='true' expr:href='data:blog.homepageUrl'>Ler a matéria</a>
+  <div class='hud'>
+    <div class='hud__linha'>Pontos <span class='hud__valor' data-placar='true'>000000</span></div>
+    <div class='hud__linha'>Recorde <span class='hud__valor' data-recorde='true'>000000</span></div>
+    <div class='hud__dica' data-dica='true'>← ↑ ↓ → para jogar</div>
+  </div>
+
+  <div class='arcade-hero__conteudo'>
+    <span class='insert-coin pixel'><i></i> <span>Insira uma ficha</span></span>
+    <h1 class='titulo-arcade' data-hero-titulo='true'>Cinema<br/>em modo<br/><em>arcade</em></h1>
+    <p class='sub-arcade' data-hero-sub='true'><data:blog.title/></p>
+    <div class='acoes-arcade'>
+      <a class='btn-arcade' data-hero-cta='true' expr:href='data:blog.homepageUrl'>▶ Ler as matérias</a>
     </div>
   </div>
-
-  <div class='ch-figure' data-depth='10' id='guardiao'>
-    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 960" width="640" height="960"
-         role="img" aria-label="O Guardião da Tempestade — ilustração original CINEVOLT">
-      <title>O Guardião da Tempestade</title>
-      <defs>
-        <!-- Luz de contorno fria vinda de trás -->
-        <linearGradient id="rim" x1="0" y1="0" x2="1" y2="0.3">
-          <stop offset="0"   stop-color="#00e5ff"/>
-          <stop offset="0.5" stop-color="#7df9ff"/>
-          <stop offset="1"   stop-color="#7b2ff7"/>
-        </linearGradient>
-    
-        <linearGradient id="corpo" x1="0.2" y1="0" x2="0.9" y2="1">
-          <stop offset="0"    stop-color="#0b0f1c"/>
-          <stop offset="0.55" stop-color="#05060c"/>
-          <stop offset="1"    stop-color="#0a0716"/>
-        </linearGradient>
-    
-        <linearGradient id="mantoG" x1="0.1" y1="0" x2="0.9" y2="1">
-          <stop offset="0"   stop-color="#3a0d2a"/>
-          <stop offset="0.4" stop-color="#7a0f1e"/>
-          <stop offset="1"   stop-color="#1b0410"/>
-        </linearGradient>
-    
-        <radialGradient id="olho" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0"   stop-color="#ffffff"/>
-          <stop offset="0.35" stop-color="#7df9ff"/>
-          <stop offset="1"   stop-color="#00e5ff" stop-opacity="0"/>
-        </radialGradient>
-    
-        <radialGradient id="nucleo" cx="0.5" cy="0.5" r="0.5">
-          <stop offset="0"    stop-color="#ffffff"/>
-          <stop offset="0.25" stop-color="#bdf3ff"/>
-          <stop offset="0.6"  stop-color="#00e5ff" stop-opacity=".55"/>
-          <stop offset="1"    stop-color="#00e5ff" stop-opacity="0"/>
-        </radialGradient>
-    
-        <!-- TECIDO: deslocamento animado = o manto ondula sozinho -->
-        <filter id="tecido" x="-25%" y="-15%" width="150%" height="140%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.006 0.014" numOctaves="3" seed="7" result="ruido">
-            <animate attributeName="baseFrequency"
-                     dur="9s" repeatCount="indefinite"
-                     values="0.006 0.014; 0.011 0.020; 0.005 0.011; 0.006 0.014"/>
-          </feTurbulence>
-          <feDisplacementMap in="SourceGraphic" in2="ruido" scale="26" xChannelSelector="R" yChannelSelector="G"/>
-        </filter>
-    
-        <filter id="tecidoLeve" x="-20%" y="-15%" width="140%" height="140%">
-          <feTurbulence type="fractalNoise" baseFrequency="0.008 0.018" numOctaves="2" seed="19" result="r2">
-            <animate attributeName="baseFrequency"
-                     dur="6.5s" repeatCount="indefinite"
-                     values="0.008 0.018; 0.014 0.026; 0.008 0.018"/>
-          </feTurbulence>
-          <feDisplacementMap in="SourceGraphic" in2="r2" scale="14" xChannelSelector="R" yChannelSelector="G"/>
-        </filter>
-    
-        <filter id="glow" x="-60%" y="-60%" width="220%" height="220%">
-          <feGaussianBlur stdDeviation="10" result="b"/>
-          <feMerge><feMergeNode in="b"/><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
-        </filter>
-    
-        <filter id="glowForte" x="-90%" y="-90%" width="280%" height="280%">
-          <feGaussianBlur stdDeviation="22"/>
-        </filter>
-      </defs>
-    
-      <!-- ============ AURA TRASEIRA ============ -->
-      <g id="aura">
-        <ellipse cx="320" cy="430" rx="250" ry="330" fill="#00e5ff" opacity=".07" filter="url(#glowForte)"/>
-        <ellipse cx="320" cy="300" rx="150" ry="180" fill="#7b2ff7" opacity=".10" filter="url(#glowForte)"/>
-      </g>
-    
-      <!-- ============ MANTO (atrás do corpo) ============ -->
-      <g id="manto" filter="url(#tecido)">
-        <!-- aba esquerda, esvoaçando para fora do quadro -->
-        <path d="M232,300
-                 C150,340 78,430 40,560
-                 C10,660 22,760 70,880
-                 C96,820 120,770 168,716
-                 C138,800 130,860 140,930
-                 C196,846 244,742 262,640
-                 C276,556 268,420 232,300 Z"
-              fill="url(#mantoG)" opacity=".95"/>
-        <!-- aba direita -->
-        <path d="M408,300
-                 C486,346 556,440 588,566
-                 C614,668 600,772 552,890
-                 C528,824 502,776 458,724
-                 C486,806 494,864 486,932
-                 C428,846 384,740 370,638
-                 C358,552 370,418 408,300 Z"
-              fill="url(#mantoG)" opacity=".88"/>
-        <!-- dobras internas (mais escuras) -->
-        <path d="M252,340 C214,430 208,560 236,660 C250,560 256,440 252,340 Z" fill="#12040a" opacity=".7"/>
-        <path d="M392,340 C428,430 434,560 408,660 C394,560 388,440 392,340 Z" fill="#12040a" opacity=".7"/>
-      </g>
-    
-      <!-- Luz fria escorrendo pelas bordas do manto -->
-      <g id="mantoLuz" filter="url(#tecidoLeve)" opacity=".85">
-        <path d="M232,300 C150,340 78,430 40,560 C10,660 22,760 70,880"
-              fill="none" stroke="url(#rim)" stroke-width="3.5" stroke-linecap="round"/>
-        <path d="M408,300 C486,346 556,440 588,566 C614,668 600,772 552,890"
-              fill="none" stroke="url(#rim)" stroke-width="3.5" stroke-linecap="round"/>
-      </g>
-    
-      <!-- ============ CORPO ============ -->
-      <g id="corpo">
-        <!-- pernas -->
-        <path d="M268,600 L258,930 L306,930 L318,690 L330,930 L378,930 L370,600 Z" fill="url(#corpo)"/>
-        <!-- torso -->
-        <path d="M240,318
-                 C238,290 266,268 320,268
-                 C374,268 402,290 400,318
-                 L392,470 C388,540 384,580 378,614
-                 L262,614 C256,580 252,540 248,470 Z"
-              fill="url(#corpo)"/>
-        <!-- peitoral / armadura em placas -->
-        <path d="M262,340 L320,362 L378,340 L372,404 L320,424 L268,404 Z" fill="#0f1526" opacity=".95"/>
-        <path d="M262,340 L320,362 L378,340" fill="none" stroke="url(#rim)" stroke-width="2" opacity=".8"/>
-        <path d="M268,404 L320,424 L372,404" fill="none" stroke="url(#rim)" stroke-width="1.6" opacity=".55"/>
-        <!-- cinto -->
-        <rect x="256" y="470" width="128" height="22" rx="6" fill="#0c1120"/>
-        <rect x="256" y="470" width="128" height="22" rx="6" fill="none" stroke="url(#rim)" stroke-width="1.4" opacity=".7"/>
-        <circle cx="320" cy="481" r="9" fill="#00e5ff" opacity=".9" filter="url(#glow)"/>
-    
-        <!-- braço esquerdo (baixo, encostado no corpo) -->
-        <path d="M244,330 C214,360 200,430 206,510 C210,556 220,586 232,606
-                 L266,596 C252,560 244,520 244,470 C244,420 250,372 262,344 Z"
-              fill="url(#corpo)"/>
-    
-        <!-- braço direito ERGUIDO segurando o martelo -->
-        <path d="M396,326 C424,300 438,250 436,196 L470,186
-                 C480,250 466,308 430,346 Z" fill="url(#corpo)"/>
-        <path d="M396,326 C424,300 438,250 436,196" fill="none" stroke="url(#rim)" stroke-width="2.4" opacity=".9"/>
-    
-        <!-- ombreiras -->
-        <path d="M236,320 C244,292 276,276 320,274 C364,276 396,292 404,320
-                 C376,304 348,296 320,296 C292,296 264,304 236,320 Z"
-              fill="#121a2e"/>
-        <path d="M236,320 C244,292 276,276 320,274 C364,276 396,292 404,320"
-              fill="none" stroke="url(#rim)" stroke-width="2.6"/>
-      </g>
-    
-      <!-- ============ CABEÇA ============ -->
-      <g id="cabeca">
-        <!-- capuz -->
-        <path d="M268,268 C256,200 274,150 320,140 C366,150 384,200 372,268
-                 C352,254 336,248 320,248 C304,248 288,254 268,268 Z"
-              fill="#0a0e1a"/>
-        <path d="M268,268 C256,200 274,150 320,140 C366,150 384,200 372,268"
-              fill="none" stroke="url(#rim)" stroke-width="2.4"/>
-        <!-- sombra do rosto -->
-        <ellipse cx="320" cy="214" rx="40" ry="46" fill="#03040a"/>
-        <!-- OLHOS acesos -->
-        <g id="olhos">
-          <ellipse cx="303" cy="210" rx="26" ry="15" fill="url(#olho)" opacity=".75"/>
-          <ellipse cx="337" cy="210" rx="26" ry="15" fill="url(#olho)" opacity=".75"/>
-          <ellipse cx="303" cy="210" rx="9.5" ry="4.2" fill="#ffffff" filter="url(#glow)"/>
-          <ellipse cx="337" cy="210" rx="9.5" ry="4.2" fill="#ffffff" filter="url(#glow)"/>
-          <animate attributeName="opacity" dur="4.5s" repeatCount="indefinite"
-                   values="1;1;0.55;1;0.8;1;1" keyTimes="0;0.6;0.66;0.72;0.78;0.84;1"/>
-        </g>
-      </g>
-    
-      <!-- ============ MARTELO ============ -->
-      <g id="martelo">
-        <!-- cabo -->
-        <rect x="456" y="180" width="18" height="120" rx="6" fill="#141a2a"
-              transform="rotate(-8 465 240)"/>
-        <rect x="456" y="180" width="18" height="120" rx="6" fill="none" stroke="url(#rim)"
-              stroke-width="1.4" opacity=".8" transform="rotate(-8 465 240)"/>
-        <!-- cabeça do martelo -->
-        <g transform="rotate(-8 470 150)">
-          <rect x="410" y="106" width="124" height="76" rx="10" fill="#0e1424"/>
-          <rect x="410" y="106" width="124" height="76" rx="10" fill="none" stroke="url(#rim)" stroke-width="3"/>
-          <rect x="424" y="122" width="96" height="44" rx="6" fill="#060a14"/>
-          <path d="M436,144 L462,124 L458,142 L482,142 L456,166 L462,148 Z" fill="#7df9ff" filter="url(#glow)"/>
-        </g>
-        <!-- núcleo de energia -->
-        <circle id="nucleoMartelo" cx="470" cy="144" r="56" fill="url(#nucleo)">
-          <animate attributeName="r" dur="2.6s" repeatCount="indefinite" values="50;64;50"/>
-          <animate attributeName="opacity" dur="2.6s" repeatCount="indefinite" values=".75;1;.75"/>
-        </circle>
-      </g>
-    
-      <!-- ============ CHÃO / IMPACTO ============ -->
-      <g id="base">
-        <ellipse cx="320" cy="930" rx="210" ry="26" fill="#00e5ff" opacity=".16" filter="url(#glowForte)"/>
-        <ellipse cx="320" cy="930" rx="96" ry="12" fill="#7df9ff" opacity=".35" filter="url(#glow)"/>
-      </g>
-    </svg>
-  </div>
-
-  <canvas class='ch-bolts'></canvas>
-  <div class='ch-bars'></div>
-  <div class='scroll-hint'><span>Role</span><span class='scroll-hint__line'></span></div>
 </section>
 
-<div class='marquee'>
-  <div class='marquee__track'>
-    <span class='marquee__item'><i></i> Crítica sem spoiler</span>
-    <span class='marquee__item'><i></i> Estreias da semana</span>
-    <span class='marquee__item'><i></i> Ensaios de cinema</span>
-    <span class='marquee__item'><i></i> Ilustração original</span>
-  </div>
+<div class='marquise'><div class='lampadas' data-lampadas='true'></div></div>
+
+<div class='perseguicao'>
+  <div class='perseguicao__pontos'></div>
+  <div class='perseguicao__trilha' data-perseguicao='true'></div>
 </div>
 </b:if>
 
@@ -2484,22 +2475,20 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 //<![CDATA[
 /* ============================================================
    CINEVOLT — art.js
-   Gerador de ILUSTRAÇÕES EXCLUSIVAS em SVG.
+   Gerador de ILUSTRAÇÕES EXCLUSIVAS em SVG, no clima de fliperama.
    Nenhuma imagem de banco: cada pôster é desenhado por código a
    partir de uma semente (o slug do post), então o mesmo post gera
    sempre a mesma arte e dois posts nunca geram a mesma.
 
    API:
-     Art.poster('meu-slug', { tema: 'noir', titulo: 'X', ratio: '3/4' })
-       -> string SVG
+     Art.poster('meu-slug', { categoria: 'Crítica' }) -> string SVG
      Art.posterURL(slug, opts) -> data URI pronto para <img src>
-     Art.TEMAS -> lista de temas disponíveis
    ============================================================ */
 
 (function () {
   'use strict';
 
-  /* --------- PRNG determinístico (mulberry32 + hash de string) --------- */
+  /* --------- PRNG determinístico --------- */
   function hash(str) {
     let h = 1779033703 ^ str.length;
     for (let i = 0; i < str.length; i++) {
@@ -2519,373 +2508,455 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
     };
   }
 
-  /* --------- Paletas por tema --------- */
+  const f = n => Math.round(n * 100) / 100;
+
+  /* --------- Paletas: cada uma é um "gabinete" --------- */
   const TEMAS = {
-    'sci-fi':  { fundo: ['#04050f', '#0a1030'], luz: '#00e5ff', acento: '#7b2ff7', quente: '#ff2d55' },
-    'noir':    { fundo: ['#050505', '#141414'], luz: '#e8e8e8', acento: '#8a8a8a', quente: '#ffd400' },
-    'terror':  { fundo: ['#0a0305', '#22060c'], luz: '#ff2d55', acento: '#7b2ff7', quente: '#ff6b00' },
-    'acao':    { fundo: ['#06060c', '#171033'], luz: '#00e5ff', acento: '#ffd400', quente: '#ff2d55' },
-    'drama':   { fundo: ['#0b0710', '#2a1230'], luz: '#ff8a00', acento: '#ffd400', quente: '#ff2d55' },
-    'doc':     { fundo: ['#05070a', '#0c1a20'], luz: '#7df9ff', acento: '#3ddc84', quente: '#ffd400' },
-    'romance': { fundo: ['#0c050c', '#2b0c24'], luz: '#ff6fa5', acento: '#ffd400', quente: '#7b2ff7' },
-    'anime':   { fundo: ['#060412', '#1b0a3a'], luz: '#b47cff', acento: '#00e5ff', quente: '#ff2d55' }
+    'fliperama': { fundo: ['#12042a', '#07030f'], luz: '#ffd60a', acento: '#ff6ad5', quente: '#ff2b4e', frio: '#22e7ff' },
+    'invasores': { fundo: ['#04120c', '#03060a'], luz: '#4dff88', acento: '#22e7ff', quente: '#ffd60a', frio: '#4dff88' },
+    'neon':      { fundo: ['#1b0430', '#0a0318'], luz: '#ff6ad5', acento: '#22e7ff', quente: '#ffd60a', frio: '#b388ff' },
+    'perigo':    { fundo: ['#26040c', '#0d0207'], luz: '#ff2b4e', acento: '#ff9d2e', quente: '#ffd60a', frio: '#ff6ad5' },
+    'bloco':     { fundo: ['#0a1030', '#04060f'], luz: '#22e7ff', acento: '#ffd60a', quente: '#ff6ad5', frio: '#7aa8ff' },
+    'sepia':     { fundo: ['#1e1204', '#0b0703'], luz: '#ff9d2e', acento: '#ffd60a', quente: '#ff2b4e', frio: '#ffe9a8' },
+    'ouro':      { fundo: ['#191104', '#0a0702'], luz: '#ffd60a', acento: '#ff9d2e', quente: '#fff08a', frio: '#4dff88' },
+    'gelo':      { fundo: ['#041022', '#020810'], luz: '#22e7ff', acento: '#b388ff', quente: '#ff6ad5', frio: '#ffffff' }
   };
 
   const NOMES = Object.keys(TEMAS);
 
-  /* Mapa categoria editorial -> tema visual */
   const POR_CATEGORIA = {
-    'Crítica': 'noir', 'Estreia': 'acao', 'Ensaio': 'drama',
-    'Entrevista': 'doc', 'Lista': 'sci-fi', 'Clássico': 'noir',
-    'Streaming': 'anime', 'Série': 'terror'
+    'Crítica': 'fliperama', 'Estreia': 'perigo', 'Ensaio': 'neon',
+    'Entrevista': 'sepia', 'Lista': 'bloco', 'Clássico': 'ouro',
+    'Streaming': 'gelo', 'Série': 'invasores'
   };
 
-  /* --------- Helpers de desenho --------- */
-  const f = n => Math.round(n * 100) / 100;
+  /* =========================================================
+     SPRITES EM PIXEL — matrizes desenhadas à mão.
+     1 = corpo · 2 = detalhe · 0 = vazio
+     ========================================================= */
+  const SPRITES = {
+    invasor: [
+      '0010000100',
+      '0001010000',
+      '0011111100',
+      '0110111100',
+      '1111111111',
+      '1011111101',
+      '1010000101',
+      '0001101100'
+    ],
+    fantasma: [
+      '00111100',
+      '01111110',
+      '11111111',
+      '11211211',
+      '11211211',
+      '11111111',
+      '11111111',
+      '10110110'
+    ],
+    heroi: [
+      '00111100',
+      '01111110',
+      '11110000',
+      '11100000',
+      '11100000',
+      '11110000',
+      '01111110',
+      '00111100'
+    ],
+    nave: [
+      '00011000',
+      '00111100',
+      '01111110',
+      '11111111',
+      '11122111',
+      '10111101',
+      '00100100',
+      '01000010'
+    ],
+    caveira: [
+      '00111100',
+      '01111110',
+      '11111111',
+      '12211221',
+      '12211221',
+      '11111111',
+      '01121110',
+      '01010100'
+    ],
+    coracao: [
+      '01100110',
+      '11111111',
+      '11111111',
+      '11111111',
+      '01111110',
+      '00111100',
+      '00011000',
+      '00000000'
+    ],
+    moeda: [
+      '00111100',
+      '01122110',
+      '11211211',
+      '11211211',
+      '11211211',
+      '11211211',
+      '01122110',
+      '00111100'
+    ]
+  };
 
-  function poligono(pts) {
-    return pts.map(p => `${f(p[0])},${f(p[1])}`).join(' ');
-  }
 
-  /* Raio estilizado (vetorial, para compor a arte) */
-  function raioPath(x, y, alt, larg, r) {
-    const seg = 5;
-    let d = `M${f(x)},${f(y)}`;
-    let cx = x, cy = y;
-    for (let i = 1; i <= seg; i++) {
-      const ny = y + (alt / seg) * i;
-      const nx = x + (r() - 0.5) * larg * 2;
-      d += ` L${f(nx)},${f(ny)}`;
-      cx = nx; cy = ny;
+  /* =========================================================
+     FONTE PIXEL 3x5 — desenhada à mão, só maiúsculas e números.
+     É o que faz o pôster parecer tela de fliperama de verdade.
+     ========================================================= */
+  const FONTE = {
+    A: '111101111101101', B: '110101110101110', C: '111100100100111',
+    D: '110101101101110', E: '111100110100111', F: '111100110100100',
+    G: '111100101101111', H: '101101111101101', I: '111010010010111',
+    J: '001001001101111', K: '101101110101101', L: '100100100100111',
+    M: '101111111101101', N: '110101101101101', O: '111101101101111',
+    P: '111101111100100', Q: '111101101111001', R: '111101110101101',
+    S: '111100111001111', T: '111010010010010', U: '101101101101111',
+    V: '101101101101010', W: '101101111111101', X: '101101010101101',
+    Y: '101101010010010', Z: '111001010100111',
+    0: '111101101101111', 1: '010110010010111', 2: '111001111100111',
+    3: '111001111001111', 4: '101101111001001', 5: '111100111001111',
+    6: '111100111101111', 7: '111001001001001', 8: '111101111101111',
+    9: '111101111001111',
+    ' ': '000000000000000', '!': '010010010000010', '?': '111001010000010',
+    '.': '000000000000010', '-': '000000111000000', ':': '000010000010000'
+  };
+
+  /* Escreve em pixels. `alt` é a altura da letra; a largura sai dela. */
+  function texto(str, x, y, alt, cor, opacidade) {
+    const p = alt / 5;
+    let out = '';
+    let cursor = x;
+    for (const ch of String(str).toUpperCase()) {
+      const g = FONTE[ch];
+      if (g) {
+        for (let ly = 0; ly < 5; ly++) {
+          for (let lx = 0; lx < 3; lx++) {
+            if (g[ly * 3 + lx] !== '1') continue;
+            out += `<rect x="${f(cursor + lx * p)}" y="${f(y + ly * p)}"
+                     width="${f(p + .4)}" height="${f(p + .4)}" fill="${cor}"${
+                     opacidade != null ? ` opacity="${opacidade}"` : ''}/>`;
+          }
+        }
+      }
+      cursor += p * 4;
     }
-    return d;
+    return out;
   }
 
-  /* --------- Composições (uma função por tema visual) --------- */
-
-  // Silhueta de figura num vão de porta iluminado
-  function cenaPorta(r, W, H, p) {
-    const px = W * (0.3 + r() * 0.4);
-    const pw = W * (0.24 + r() * 0.14);
-    const ph = H * (0.52 + r() * 0.18);
-    const py = H - ph;
-    const fh = ph * (0.72 + r() * 0.16);
-    const fw = fh * 0.26;
-    const fx = px + pw / 2;
-    return `
-      <rect x="${f(px)}" y="${f(py)}" width="${f(pw)}" height="${f(ph)}" fill="url(#luzQ)"/>
-      <polygon points="${poligono([[px, py], [px + pw, py], [px + pw * 1.7, H], [px - pw * 0.7, H]])}"
-               fill="url(#feixe)" opacity=".55"/>
-      <g fill="#000" opacity=".93">
-        <ellipse cx="${f(fx)}" cy="${f(H - fh)}" rx="${f(fw * 0.42)}" ry="${f(fw * 0.48)}"/>
-        <path d="M${f(fx - fw / 2)},${f(H)} L${f(fx - fw * 0.42)},${f(H - fh * 0.82)}
-                 Q${f(fx)},${f(H - fh * 0.95)} ${f(fx + fw * 0.42)},${f(H - fh * 0.82)}
-                 L${f(fx + fw / 2)},${f(H)} Z"/>
-      </g>
-      <rect x="${f(px)}" y="${f(py)}" width="${f(pw)}" height="${f(ph)}" fill="none"
-            stroke="${p.luz}" stroke-width="2" opacity=".5"/>`;
+  /* Largura que um texto vai ocupar, para centralizar */
+  function larguraTexto(str, alt) {
+    return String(str).length * (alt / 5) * 4 - (alt / 5);
   }
 
-  // Planeta + nave + horizonte de estrelas
-  function cenaOrbita(r, W, H, p) {
-    const cx = W * (0.3 + r() * 0.4);
-    const cy = H * (0.62 + r() * 0.14);
-    const rad = W * (0.34 + r() * 0.16);
-    let estrelas = '';
+  function textoCentrado(str, meioX, y, alt, cor, op) {
+    return texto(str, meioX - larguraTexto(str, alt) / 2, y, alt, cor, op);
+  }
+
+  /* Desenha um sprite como retângulos alinhados numa grade */
+  function pixels(nome, x, y, lado, cor, detalhe, sombra) {
+    const m = SPRITES[nome];
+    if (!m) return '';
+    const cols = m[0].length;
+    const p = lado / cols;
+    let out = '';
+    for (let ly = 0; ly < m.length; ly++) {
+      for (let lx = 0; lx < cols; lx++) {
+        const c = m[ly][lx];
+        if (c === '0') continue;
+        const px = x + lx * p, py = y + ly * p;
+        if (sombra) {
+          out += `<rect x="${f(px + p * .35)}" y="${f(py + p * .35)}" width="${f(p + .5)}" height="${f(p + .5)}" fill="#000" opacity=".45"/>`;
+        }
+        out += `<rect x="${f(px)}" y="${f(py)}" width="${f(p + .5)}" height="${f(p + .5)}" fill="${c === '2' ? detalhe : cor}"/>`;
+      }
+    }
+    return out;
+  }
+
+  /* =========================================================
+     COMPOSIÇÕES
+     ========================================================= */
+
+  // 0. Sprite gigante centrado, com chuva de pixels
+  function cenaSprite(r, W, H, p) {
+    const quais = ['invasor', 'fantasma', 'nave', 'caveira', 'heroi'];
+    const nome = quais[(r() * quais.length) | 0];
+    const lado = W * (0.5 + r() * 0.16);
+    const x = (W - lado) / 2;
+    const y = H * 0.30 - lado * 0.1;
+
+    let poeira = '';
     for (let i = 0; i < 70; i++) {
-      const x = r() * W, y = r() * H * 0.75, s = r() * 1.7 + 0.3;
-      estrelas += `<circle cx="${f(x)}" cy="${f(y)}" r="${f(s)}" fill="#fff" opacity="${f(0.15 + r() * 0.7)}"/>`;
+      const s = W * 0.012;
+      poeira += `<rect x="${f(r() * W)}" y="${f(r() * H)}" width="${f(s)}" height="${f(s)}"
+                  fill="${r() > .6 ? p.acento : p.luz}" opacity="${f(.06 + r() * .30)}"/>`;
     }
-    const anel = `<ellipse cx="${f(cx)}" cy="${f(cy)}" rx="${f(rad * 1.55)}" ry="${f(rad * 0.3)}"
-                    fill="none" stroke="${p.acento}" stroke-width="${f(rad * 0.07)}" opacity=".8"
-                    transform="rotate(${f(-18 - r() * 16)} ${f(cx)} ${f(cy)})"/>`;
-    const naveX = W * (0.15 + r() * 0.2), naveY = H * (0.24 + r() * 0.16);
-    return `${estrelas}
-      ${r() > 0.4 ? anel : ''}
-      <circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rad)}" fill="url(#planeta)"/>
-      <circle cx="${f(cx)}" cy="${f(cy)}" r="${f(rad)}" fill="none" stroke="${p.luz}" stroke-width="1.5" opacity=".65"/>
-      <path d="M${f(naveX)},${f(naveY)} l22,7 -22,7 6,-7 Z" fill="${p.luz}" opacity=".95"/>
-      <path d="M${f(naveX - 60)},${f(naveY + 7)} L${f(naveX)},${f(naveY + 7)}" stroke="${p.luz}"
-            stroke-width="1.5" opacity=".45"/>`;
+    return `${poeira}
+      <ellipse cx="${f(W / 2)}" cy="${f(y + lado * .55)}" rx="${f(lado * .8)}" ry="${f(lado * .7)}"
+               fill="${p.luz}" opacity=".13" filter="url(#brilho)"/>
+      ${pixels(nome, x, y, lado, p.luz, p.quente, true)}`;
   }
 
-  // Casa/torre na colina sob lua enorme
-  function cenaColina(r, W, H, p) {
-    const luaX = W * (0.25 + r() * 0.5);
-    const luaY = H * (0.3 + r() * 0.12);
-    const luaR = W * (0.2 + r() * 0.12);
-    const hY = H * (0.72 + r() * 0.08);
-    const cx = W * (0.34 + r() * 0.32);
-    const cw = W * 0.13, ch = H * 0.14;
-    let arvores = '';
-    for (let i = 0; i < 9; i++) {
-      const x = r() * W;
-      const h = H * (0.05 + r() * 0.07);
-      arvores += `<polygon points="${poligono([[x, hY + 12], [x - h * 0.22, hY + 12], [x, hY + 12 - h], [x + h * 0.22, hY + 12]])}" fill="#000"/>`;
+  // 1. Gabinete de fliperama visto de frente
+  function cenaGabinete(r, W, H, p) {
+    const gw = W * 0.62, gx = (W - gw) / 2, gy = H * 0.12, gh = H * 0.8;
+    const tw = gw * 0.78, tx = gx + (gw - tw) / 2, ty = gy + gh * 0.12, th = gh * 0.34;
+    let botoes = '';
+    for (let i = 0; i < 4; i++) {
+      botoes += `<circle cx="${f(tx + tw * (0.34 + i * 0.16))}" cy="${f(ty + th * 1.52)}"
+                  r="${f(gw * 0.035)}" fill="${[p.quente, p.luz, p.acento, p.frio][i]}"/>`;
     }
     return `
-      <circle cx="${f(luaX)}" cy="${f(luaY)}" r="${f(luaR)}" fill="url(#lua)"/>
-      <circle cx="${f(luaX)}" cy="${f(luaY)}" r="${f(luaR * 1.5)}" fill="${p.luz}" opacity=".07"/>
-      <path d="M0,${f(hY + 40)} Q${f(W * 0.3)},${f(hY - 18)} ${f(W * 0.55)},${f(hY + 10)}
-               T${f(W)},${f(hY + 26)} L${f(W)},${f(H)} L0,${f(H)} Z" fill="#000"/>
-      ${arvores}
-      <g fill="#000">
-        <rect x="${f(cx)}" y="${f(hY - ch)}" width="${f(cw)}" height="${f(ch + 20)}"/>
-        <polygon points="${poligono([[cx - cw * 0.18, hY - ch], [cx + cw * 1.18, hY - ch], [cx + cw / 2, hY - ch * 1.55]])}"/>
-      </g>
-      <rect x="${f(cx + cw * 0.3)}" y="${f(hY - ch * 0.72)}" width="${f(cw * 0.26)}" height="${f(ch * 0.3)}"
-            fill="${p.quente}" opacity=".95"/>`;
+      <rect x="${f(gx)}" y="${f(gy)}" width="${f(gw)}" height="${f(gh)}" rx="${f(gw * .06)}" fill="#000"/>
+      <rect x="${f(gx)}" y="${f(gy)}" width="${f(gw)}" height="${f(gh)}" rx="${f(gw * .06)}"
+            fill="none" stroke="${p.acento}" stroke-width="3" opacity=".9"/>
+      <!-- marquise -->
+      <rect x="${f(gx + gw * .06)}" y="${f(gy + gh * .03)}" width="${f(gw * .88)}" height="${f(gh * .07)}"
+            rx="3" fill="${p.luz}" opacity=".92"/>
+      ${textoCentrado('CINEVOLT', gx + gw / 2, gy + gh * .043, gh * .045, '#0a0417')}
+      <!-- tela -->
+      <rect x="${f(tx)}" y="${f(ty)}" width="${f(tw)}" height="${f(th)}" rx="4" fill="url(#tela)"/>
+      ${pixels('heroi', tx + tw * .40, ty + th * .3, th * .38, '#000', '#000', false)}
+      <!-- painel de controle -->
+      <path d="M${f(gx + gw * .04)},${f(ty + th * 1.25)} L${f(gx + gw * .96)},${f(ty + th * 1.25)}
+               L${f(gx + gw * .90)},${f(ty + th * 1.75)} L${f(gx + gw * .10)},${f(ty + th * 1.75)} Z"
+            fill="#14102e" stroke="${p.acento}" stroke-width="2" opacity=".95"/>
+      <circle cx="${f(tx + tw * .14)}" cy="${f(ty + th * 1.5)}" r="${f(gw * .05)}" fill="#1c1638"/>
+      <circle cx="${f(tx + tw * .14)}" cy="${f(ty + th * 1.5)}" r="${f(gw * .05)}" fill="none" stroke="${p.frio}" stroke-width="2"/>
+      <rect x="${f(tx + tw * .125)}" y="${f(ty + th * 1.22)}" width="${f(gw * .028)}" height="${f(gh * .1)}" rx="3" fill="${p.quente}"/>
+      <circle cx="${f(tx + tw * .14)}" cy="${f(ty + th * 1.2)}" r="${f(gw * .035)}" fill="${p.quente}"/>
+      ${botoes}`;
   }
 
-  // Close de rosto atravessado por um raio
-  function cenaRosto(r, W, H, p) {
-    const cx = W * 0.5, cy = H * 0.46;
-    const rw = W * (0.26 + r() * 0.06);   // meia-largura do crânio
-    const rh = rw * 1.30;                 // meia-altura
-    const olhoY = cy - rh * 0.10;
-    const dx = rw * 0.40;
-    const queixo = cy + rh;
-
-    // silhueta: testa larga, maçãs, queixo estreito
-    const cabeca = `M${f(cx - rw)},${f(cy - rh * 0.30)}
-        C${f(cx - rw)},${f(cy - rh * 1.05)} ${f(cx - rw * 0.55)},${f(cy - rh * 1.28)} ${f(cx)},${f(cy - rh * 1.28)}
-        C${f(cx + rw * 0.55)},${f(cy - rh * 1.28)} ${f(cx + rw)},${f(cy - rh * 1.05)} ${f(cx + rw)},${f(cy - rh * 0.30)}
-        C${f(cx + rw)},${f(cy + rh * 0.30)} ${f(cx + rw * 0.60)},${f(queixo)} ${f(cx)},${f(queixo)}
-        C${f(cx - rw * 0.60)},${f(queixo)} ${f(cx - rw)},${f(cy + rh * 0.30)} ${f(cx - rw)},${f(cy - rh * 0.30)} Z`;
-
-    // ombros, para o rosto não flutuar
-    const ombroY = queixo + rh * 0.22;
-    const ombros = `M${f(cx - rw * 2.1)},${f(H)} 
-        C${f(cx - rw * 1.5)},${f(ombroY)} ${f(cx - rw * 0.7)},${f(ombroY - rh * 0.1)} ${f(cx)},${f(ombroY - rh * 0.12)}
-        C${f(cx + rw * 0.7)},${f(ombroY - rh * 0.1)} ${f(cx + rw * 1.5)},${f(ombroY)} ${f(cx + rw * 2.1)},${f(H)} Z`;
-
-    return `
-      <path d="${ombros}" fill="#000" opacity=".92"/>
-      <path d="${cabeca}" fill="url(#pele)"/>
-      <path d="${cabeca}" fill="none" stroke="${p.luz}" stroke-width="1.8" opacity=".55"/>
-      <!-- sombra dura de um lado: luz lateral de cinema -->
-      <path d="M${f(cx)},${f(cy - rh * 1.28)}
-               C${f(cx + rw * 0.55)},${f(cy - rh * 1.28)} ${f(cx + rw)},${f(cy - rh * 1.05)} ${f(cx + rw)},${f(cy - rh * 0.30)}
-               C${f(cx + rw)},${f(cy + rh * 0.30)} ${f(cx + rw * 0.60)},${f(queixo)} ${f(cx)},${f(queixo)} Z"
-            fill="#000" opacity=".42"/>
-      <!-- olhos acesos -->
-      <g>
-        <ellipse cx="${f(cx - dx)}" cy="${f(olhoY)}" rx="${f(rw * 0.30)}" ry="${f(rw * 0.17)}" fill="${p.luz}" opacity=".20"/>
-        <ellipse cx="${f(cx + dx)}" cy="${f(olhoY)}" rx="${f(rw * 0.30)}" ry="${f(rw * 0.17)}" fill="${p.luz}" opacity=".20"/>
-        <path d="M${f(cx - dx - rw * 0.17)},${f(olhoY)} Q${f(cx - dx)},${f(olhoY - rw * 0.09)} ${f(cx - dx + rw * 0.17)},${f(olhoY)}
-                 Q${f(cx - dx)},${f(olhoY + rw * 0.07)} ${f(cx - dx - rw * 0.17)},${f(olhoY)} Z" fill="${p.luz}"/>
-        <path d="M${f(cx + dx - rw * 0.17)},${f(olhoY)} Q${f(cx + dx)},${f(olhoY - rw * 0.09)} ${f(cx + dx + rw * 0.17)},${f(olhoY)}
-                 Q${f(cx + dx)},${f(olhoY + rw * 0.07)} ${f(cx + dx - rw * 0.17)},${f(olhoY)} Z" fill="${p.luz}"/>
-      </g>
-      <!-- raio cortando o quadro -->
-      <path d="${raioPath(W * (0.16 + r() * 0.68), 0, H * 0.99, W * 0.055, r)}"
-            stroke="${p.luz}" stroke-width="3" fill="none" stroke-linejoin="round"
-            opacity=".92" filter="url(#brilho)"/>`;
+  // 2. Labirinto com pontinhos
+  function cenaLabirinto(r, W, H, p) {
+    const cols = 9, linhas = 12;
+    const t = Math.min(W / cols, H / linhas);
+    const ox = (W - t * cols) / 2, oy = (H - t * linhas) / 2;
+    let blocos = '', pontinhos = '';
+    for (let y = 0; y < linhas; y++) {
+      for (let x = 0; x < cols; x++) {
+        const borda = x === 0 || y === 0 || x === cols - 1 || y === linhas - 1;
+        const dentro = !borda && (x % 2 === 0 && y % 2 === 0 || r() > 0.82);
+        if (borda || dentro) {
+          blocos += `<rect x="${f(ox + x * t)}" y="${f(oy + y * t)}" width="${f(t)}" height="${f(t)}"
+                      fill="none" stroke="${p.frio}" stroke-width="${f(t * .1)}" opacity=".75"/>`;
+        } else {
+          pontinhos += `<circle cx="${f(ox + x * t + t / 2)}" cy="${f(oy + y * t + t / 2)}"
+                         r="${f(t * .09)}" fill="${p.luz}" opacity=".9"/>`;
+        }
+      }
+    }
+    const hx = ox + t * (1 + ((r() * (cols - 2)) | 0));
+    const hy = oy + t * (1 + ((r() * (linhas - 2)) | 0));
+    return `${blocos}${pontinhos}
+      ${textoCentrado('READY!', W / 2, H * .52, H * .05, p.quente)}
+      ${pixels('heroi', hx, hy, t * .9, p.luz, p.luz, false)}
+      ${pixels('fantasma', ox + t * 3, oy + t * 8, t * .9, p.quente, '#fff', false)}`;
   }
 
-  // Poltronas + feixe do projetor (ensaio / documentário)
-  function cenaSala(r, W, H, p) {
-    const baseY = H * 0.84;
-    let poltronas = '';
-    const n = 5 + ((r() * 3) | 0);
-    const larg = W / n;
+  // 3. Tela de GAME OVER / CONTINUE
+  function cenaTela(r, W, H, p) {
+    const frases = [['GAME OVER', 'CONTINUE?', '9'], ['PLAYER ONE', 'READY', '!'],
+                    ['ROUND 2', 'FIGHT', '!'], ['INSERT COIN', 'CREDIT 01', '']];
+    const frase = frases[(r() * frases.length) | 0];
+    const barras = [
+      textoCentrado(frase[0], W / 2, H * .62, H * .07, p.luz),
+      textoCentrado(frase[1], W / 2, H * .74, H * .05, p.frio, '.9'),
+      textoCentrado(frase[2], W / 2, H * .83, H * .04, p.quente, '.85')
+    ];
+    const n = 3 + ((r() * 4) | 0);
+    let creditos = '';
     for (let i = 0; i < n; i++) {
-      const x = i * larg + larg * 0.12;
-      const w = larg * 0.76;
-      const h = H * (0.1 + r() * 0.04);
-      poltronas += `<path d="M${f(x)},${f(baseY + h)} L${f(x)},${f(baseY - h * 0.5)}
-                    Q${f(x + w / 2)},${f(baseY - h * 1.25)} ${f(x + w)},${f(baseY - h * 0.5)}
-                    L${f(x + w)},${f(baseY + h)} Z" fill="#000"/>`;
+      creditos += pixels('moeda', W * (.12 + i * .1), H * .86, W * .06, p.acento, p.quente, false);
     }
-    const telaY = H * 0.16, telaH = H * 0.4;
     return `
-      <rect x="${f(W * 0.1)}" y="${f(telaY)}" width="${f(W * 0.8)}" height="${f(telaH)}" fill="url(#luzQ)" opacity=".92"/>
-      <rect x="${f(W * 0.1)}" y="${f(telaY)}" width="${f(W * 0.8)}" height="${f(telaH)}" fill="none"
-            stroke="${p.acento}" stroke-width="2" opacity=".6"/>
-      <polygon points="${poligono([[W * 0.5, H], [W * 0.1, telaY], [W * 0.9, telaY]])}" fill="url(#feixe)" opacity=".3"/>
-      ${poltronas}`;
+      <rect x="${f(W * .08)}" y="${f(H * .1)}" width="${f(W * .84)}" height="${f(H * .44)}" rx="6"
+            fill="url(#tela)" opacity=".9"/>
+      <rect x="${f(W * .08)}" y="${f(H * .1)}" width="${f(W * .84)}" height="${f(H * .44)}" rx="6"
+            fill="none" stroke="${p.acento}" stroke-width="2.5"/>
+      ${pixels('caveira', W * .5 - W * .11, H * .18, W * .22, p.quente, '#000', false)}
+      ${barras.join('')}
+      ${creditos}`;
   }
 
-  // Skyline neon (cidade)
-  function cenaCidade(r, W, H, p) {
-    const linha = H * (0.58 + r() * 0.1);   // altura média do horizonte
-    let predios = '';
-    let x = -20;
-    while (x < W + 20) {
-      const w = W * (0.055 + r() * 0.09);
-      const h = H * (0.14 + r() * 0.34);
-      const y = H - h;
-      predios += `<rect x="${f(x)}" y="${f(y)}" width="${f(w)}" height="${f(h)}" fill="#000"/>`;
-      // antena ou caixa d'água no topo
-      if (r() > 0.62) {
-        predios += `<rect x="${f(x + w * 0.44)}" y="${f(y - H * 0.055)}" width="${f(W * 0.006)}" height="${f(H * 0.055)}" fill="#000"/>`;
-        predios += `<circle cx="${f(x + w * 0.46)}" cy="${f(y - H * 0.055)}" r="${f(W * 0.007)}" fill="${p.quente}" opacity=".9"/>`;
+  // 4. Chuva de invasores em formação
+  function cenaFormacao(r, W, H, p) {
+    const cols = 5, linhas = 4;
+    const lado = W * 0.13;
+    const gx = (W - (cols * lado * 1.35 - lado * .35)) / 2;
+    const gy = H * 0.16;
+    let grade = '';
+    for (let y = 0; y < linhas; y++) {
+      for (let x = 0; x < cols; x++) {
+        const cor = [p.luz, p.acento, p.frio, p.quente][y % 4];
+        grade += pixels(y % 2 ? 'invasor' : 'fantasma',
+          gx + x * lado * 1.35, gy + y * lado * 1.3, lado, cor, '#000', false);
       }
-      const jan = (r() * 7) | 0;
-      for (let j = 0; j < jan; j++) {
-        predios += `<rect x="${f(x + w * (0.12 + r() * 0.7))}" y="${f(y + h * (0.08 + r() * 0.8))}"
-                     width="${f(w * 0.1)}" height="${f(h * 0.03)}" fill="${r() > .5 ? p.luz : p.quente}" opacity="${f(.35 + r() * .6)}"/>`;
-      }
-      x += w * (1 + r() * 0.1);
     }
-
-    // letreiro de neon vertical
-    const lx = W * (0.12 + r() * 0.74);
-    const ly = H * (0.3 + r() * 0.2);
-    let letreiro = `<rect x="${f(lx)}" y="${f(ly)}" width="${f(W * 0.012)}" height="${f(H * 0.22)}"
-                     fill="${p.acento}" opacity=".85" filter="url(#brilho)"/>`;
-
-    // chuva fina
-    let chuva = '';
-    for (let i = 0; i < 80; i++) {
-      const rx = r() * W, ry = r() * H;
-      chuva += `<line x1="${f(rx)}" y1="${f(ry)}" x2="${f(rx - 5)}" y2="${f(ry + 26)}"
-                 stroke="${p.luz}" stroke-width="1" opacity="${f(0.05 + r() * 0.16)}"/>`;
-    }
-
-    // lua/sol pequeno, alto no quadro
-    const sx = W * (0.2 + r() * 0.6), sy = H * (0.16 + r() * 0.12), sr = W * (0.055 + r() * 0.03);
-
-    return `
-      <circle cx="${f(sx)}" cy="${f(sy)}" r="${f(sr * 3.4)}" fill="url(#sol)" opacity=".5"/>
-      <circle cx="${f(sx)}" cy="${f(sy)}" r="${f(sr)}" fill="${p.quente}" opacity=".92"/>
-      <rect x="0" y="${f(linha)}" width="${W}" height="${f(H * 0.09)}" fill="${p.luz}" opacity=".05"/>
-      ${predios}${letreiro}${chuva}
-      <rect x="0" y="${f(H * 0.92)}" width="${W}" height="${f(H * 0.08)}" fill="${p.luz}" opacity=".07"/>`;
-  }
-
-  // Rolo de filme / espiral (listas, clássicos)
-  function cenaRolo(r, W, H, p) {
-    const cx = W * 0.5, cy = H * 0.5;
-    const R = Math.min(W, H) * 0.3;
-    let furos = '';
-    for (let i = 0; i < 8; i++) {
-      const a = (Math.PI * 2 / 8) * i + r() * 0.2;
-      furos += `<circle cx="${f(cx + Math.cos(a) * R * 0.62)}" cy="${f(cy + Math.sin(a) * R * 0.62)}"
-                 r="${f(R * 0.13)}" fill="#000"/>`;
-    }
-    let fita = '';
+    // a nave lá embaixo, resistindo
+    const nx = W * (0.2 + r() * 0.6);
+    let tiros = '';
     for (let i = 0; i < 3; i++) {
-      const off = (i - 1) * R * 0.9;
-      fita += `<path d="M${f(-20)},${f(cy + off + R * 1.3)} Q${f(W * 0.5)},${f(cy + off + R * (0.6 + r()))} ${f(W + 20)},${f(cy + off + R * 1.25)}"
-                stroke="${p.acento}" stroke-width="${f(R * 0.14)}" fill="none" opacity=".35"/>`;
+      tiros += `<rect x="${f(nx + W * .055)}" y="${f(H * (.62 - i * .08))}" width="${f(W * .012)}"
+                 height="${f(H * .045)}" fill="${p.quente}" opacity="${f(.9 - i * .25)}"/>`;
     }
-    return `${fita}
-      <circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R * 1.6)}" fill="${p.luz}" opacity=".12" filter="url(#brilho)"/>
-      <circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R * 1.18)}" fill="${p.luz}" opacity=".1"/>
-      <circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R)}" fill="none" stroke="${p.luz}" stroke-width="${f(R * 0.16)}"/>
-      <circle cx="${f(cx)}" cy="${f(cy)}" r="${f(R * 0.2)}" fill="${p.luz}"/>
-      ${furos}`;
+    return `
+      ${texto('1UP', W * .06, H * .05, H * .045, p.quente)}
+      ${texto(String(hash(String(Math.floor(r() * 9e5)))).slice(0, 5), W * .62, H * .05, H * .045, p.luz)}
+      ${grade}${tiros}
+      ${pixels('nave', nx, H * .76, W * .14, p.frio, p.quente, false)}
+      <rect x="0" y="${f(H * .93)}" width="${W}" height="${f(H * .02)}" fill="${p.acento}" opacity=".5"/>`;
   }
 
-  const CENAS = [cenaPorta, cenaOrbita, cenaColina, cenaRosto, cenaSala, cenaCidade, cenaRolo];
+  // 5. Tabela de recordes, com iniciais e pontuação
+  function cenaRecordes(r, W, H, p) {
+    const iniciais = ['CVT', 'PAC', 'ZOE', 'RAY', 'ANA', 'BIT', 'LUZ', 'VHS', 'JOY', 'KIM'];
+    const alt = H * 0.042;
+    let linhas = '';
+    let pontos = 98000 + ((r() * 40000) | 0);
 
-  /* Cada tema só usa composições que combinam com ele — assim o
-     resultado nunca é "planeta cinza num ensaio de drama". */
+    for (let i = 0; i < 6; i++) {
+      const y = H * (0.30 + i * 0.095);
+      const op = String(f(1 - i * 0.11));
+      const nome = iniciais[(r() * iniciais.length) | 0];
+      const valor = String(pontos).padStart(6, '0');
+      pontos = Math.max(1000, pontos - 6000 - ((r() * 12000) | 0));
+
+      linhas += texto((i + 1) + '.', W * 0.12, y, alt, p.acento, op);
+      linhas += texto(nome, W * 0.34, y, alt, p.frio, op);
+      linhas += texto(valor, W * 0.56, y, alt, p.luz, op);
+    }
+
+    return `
+      <rect x="${f(W * .06)}" y="${f(H * .07)}" width="${f(W * .88)}" height="${f(H * .84)}" rx="6"
+            fill="#000" opacity=".5"/>
+      ${textoCentrado('HIGH SCORE', W / 2, H * .15, H * .062, p.luz)}
+      <rect x="${f(W * .12)}" y="${f(H * .245)}" width="${f(W * .76)}" height="2" fill="${p.acento}" opacity=".6"/>
+      ${linhas}
+      ${textoCentrado('INSERT COIN', W / 2, H * .88, H * .034, p.quente, '.8')}`;
+  }
+
+  // 6. Cartucho / fita de vídeo
+  function cenaCartucho(r, W, H, p) {
+    const cw = W * 0.66, cx = (W - cw) / 2, ch = cw * 0.82, cy = (H - ch) / 2;
+    return `
+      <rect x="${f(cx)}" y="${f(cy)}" width="${f(cw)}" height="${f(ch)}" rx="${f(cw * .05)}"
+            fill="#18132e" stroke="${p.acento}" stroke-width="3"/>
+      <rect x="${f(cx + cw * .1)}" y="${f(cy + ch * .12)}" width="${f(cw * .8)}" height="${f(ch * .34)}" rx="4"
+            fill="url(#tela)"/>
+      ${pixels('invasor', cx + cw * .38, cy + ch * .18, ch * .22, '#000', '#000', false)}
+      <rect x="${f(cx + cw * .18)}" y="${f(cy + ch * .56)}" width="${f(cw * .64)}" height="${f(ch * .3)}" rx="3"
+            fill="#0b0820" stroke="${p.frio}" stroke-width="2"/>
+      <circle cx="${f(cx + cw * .34)}" cy="${f(cy + ch * .71)}" r="${f(ch * .09)}" fill="${p.luz}" opacity=".85"/>
+      <circle cx="${f(cx + cw * .66)}" cy="${f(cy + ch * .71)}" r="${f(ch * .09)}" fill="${p.luz}" opacity=".85"/>
+      <rect x="${f(cx + cw * .42)}" y="${f(cy + ch * .68)}" width="${f(cw * .16)}" height="${f(ch * .06)}" fill="${p.acento}"/>`;
+  }
+
+  // 7. Explosão de pixels
+  function cenaExplosao(r, W, H, p) {
+    const cxp = W * 0.5, cyp = H * 0.46;
+    let anel = '';
+    for (let camada = 1; camada <= 4; camada++) {
+      const n = camada * 7;
+      const raio = (W * 0.09) * camada;
+      for (let i = 0; i < n; i++) {
+        const a = (Math.PI * 2 / n) * i + camada * .3;
+        const s = W * (0.035 - camada * 0.004);
+        anel += `<rect x="${f(cxp + Math.cos(a) * raio - s / 2)}" y="${f(cyp + Math.sin(a) * raio - s / 2)}"
+                  width="${f(s)}" height="${f(s)}"
+                  fill="${[p.luz, p.quente, p.acento, p.frio][camada % 4]}"
+                  opacity="${f(.95 - camada * .17)}"/>`;
+      }
+    }
+    return `
+      <circle cx="${f(cxp)}" cy="${f(cyp)}" r="${f(W * .3)}" fill="${p.quente}" opacity=".16" filter="url(#brilho)"/>
+      ${anel}
+      ${pixels('nave', cxp - W * .07, cyp - W * .07, W * .14, '#ffffff', p.quente, false)}`;
+  }
+
+  const CENAS = [cenaSprite, cenaGabinete, cenaLabirinto, cenaTela,
+                 cenaFormacao, cenaRecordes, cenaCartucho, cenaExplosao];
+
   const CENAS_POR_TEMA = {
-    'sci-fi':  [1, 3, 6],
-    'noir':    [0, 5, 6],
-    'terror':  [2, 0, 3],
-    'acao':    [3, 1, 5],
-    'drama':   [0, 4, 2],
-    'doc':     [4, 6, 0],
-    'romance': [0, 2, 4],
-    'anime':   [3, 1, 4]
+    'fliperama': [1, 2, 0, 5, 7],
+    'invasores': [4, 0, 7, 3, 6],
+    'neon':      [0, 2, 6, 7, 1],
+    'perigo':    [3, 7, 0, 4, 6],
+    'bloco':     [5, 2, 1, 0, 4],
+    'sepia':     [6, 1, 5, 3, 0],
+    'ouro':      [5, 1, 6, 2, 7],
+    'gelo':      [7, 4, 2, 6, 3]
   };
 
-  /* --------- Montagem do pôster --------- */
+  /* =========================================================
+     MONTAGEM
+     ========================================================= */
   function poster(semente, opcoes) {
     const o = opcoes || {};
-    const r = rng(hash(String(semente || 'cinevolt')));
-    const tema = TEMAS[o.tema] || TEMAS[POR_CATEGORIA[o.categoria]] || TEMAS[NOMES[(r() * NOMES.length) | 0]];
+    const sem = String(semente || 'cinevolt');
+    const r = rng(hash(sem));
+    const nomeTema = TEMAS[o.tema] ? o.tema
+      : (POR_CATEGORIA[o.categoria] || NOMES[hash(sem + '|tema') % NOMES.length]);
+    const tema = TEMAS[nomeTema];
+
     const W = o.w || 800;
     const H = o.h || Math.round(W * (o.ratio === '16/9' ? 9 / 16 : o.ratio === '1/1' ? 1 : 4 / 3));
 
-    // hash próprio para a cena: garante variedade entre slugs parecidos
-    const nomeTema = Object.keys(TEMAS).find(k => TEMAS[k] === tema) || 'noir';
-    const permitidas = CENAS_POR_TEMA[nomeTema] || [0, 1, 2, 3, 4, 5, 6];
+    const permitidas = CENAS_POR_TEMA[nomeTema] || [0, 1, 2, 3, 4, 5, 6, 7];
     const idx = o.cena != null
       ? Number(o.cena) % CENAS.length
-      : permitidas[hash(String(semente) + '|cena') % permitidas.length];
-    const cena = CENAS[idx];
-    const conteudo = cena(r, W, H, tema);
+      : permitidas[(hash(sem + '|cena|' + nomeTema) >>> 3) % permitidas.length];
 
-    // faixas horizontais de "interferência"
-    let faixas = '';
-    const nf = 2 + ((r() * 4) | 0);
-    for (let i = 0; i < nf; i++) {
-      const y = r() * H;
-      faixas += `<rect x="0" y="${f(y)}" width="${W}" height="${f(1 + r() * 3)}" fill="#fff" opacity="${f(0.02 + r() * 0.05)}"/>`;
-    }
-
-    // número de série — dá ar de material de arquivo
-    const serie = String(hash(String(semente))).slice(0, 6);
+    const conteudo = CENAS[idx](r, W, H, tema);
+    const serie = String(hash(sem)).slice(0, 6);
+    const pix = Math.max(2, W * 0.006);
 
     return `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ${W} ${H}" width="${W}" height="${H}" role="img" aria-label="Ilustração original CINEVOLT">
   <defs>
-    <linearGradient id="bg" x1="0" y1="0" x2="0.4" y2="1">
-      <stop offset="0" stop-color="${tema.fundo[1]}"/>
-      <stop offset="1" stop-color="${tema.fundo[0]}"/>
+    <linearGradient id="bg" x1="0" y1="0" x2=".3" y2="1">
+      <stop offset="0" stop-color="${tema.fundo[0]}"/>
+      <stop offset="1" stop-color="${tema.fundo[1]}"/>
     </linearGradient>
-    <radialGradient id="luzQ" cx="0.5" cy="0.5" r="0.7">
+    <linearGradient id="tela" x1="0" y1="0" x2="0" y2="1">
       <stop offset="0" stop-color="${tema.luz}" stop-opacity=".95"/>
-      <stop offset="1" stop-color="${tema.acento}" stop-opacity=".25"/>
-    </radialGradient>
-    <linearGradient id="feixe" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="${tema.luz}" stop-opacity=".75"/>
-      <stop offset="1" stop-color="${tema.luz}" stop-opacity="0"/>
+      <stop offset="1" stop-color="${tema.acento}" stop-opacity=".55"/>
     </linearGradient>
-    <radialGradient id="planeta" cx="0.32" cy="0.28" r="0.85">
-      <stop offset="0" stop-color="${tema.luz}" stop-opacity=".85"/>
-      <stop offset="0.55" stop-color="${tema.acento}" stop-opacity=".55"/>
-      <stop offset="1" stop-color="#000" stop-opacity=".95"/>
+    <radialGradient id="vig" cx=".5" cy=".5" r=".75">
+      <stop offset=".55" stop-color="#000" stop-opacity="0"/>
+      <stop offset="1" stop-color="#000" stop-opacity=".75"/>
     </radialGradient>
-    <radialGradient id="lua" cx="0.4" cy="0.35" r="0.7">
-      <stop offset="0" stop-color="#ffffff"/>
-      <stop offset="0.7" stop-color="${tema.luz}"/>
-      <stop offset="1" stop-color="${tema.acento}" stop-opacity=".7"/>
-    </radialGradient>
-    <radialGradient id="sol" cx="0.5" cy="0.5" r="0.5">
-      <stop offset="0" stop-color="${tema.quente}" stop-opacity=".9"/>
-      <stop offset="1" stop-color="${tema.quente}" stop-opacity="0"/>
-    </radialGradient>
-    <linearGradient id="pele" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="${tema.acento}" stop-opacity=".65"/>
-      <stop offset="0.5" stop-color="#000" stop-opacity=".9"/>
-      <stop offset="1" stop-color="${tema.luz}" stop-opacity=".45"/>
-    </linearGradient>
-    <filter id="brilho" x="-40%" y="-40%" width="180%" height="180%">
-      <feGaussianBlur stdDeviation="6" result="b"/>
-      <feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge>
+    <filter id="brilho" x="-50%" y="-50%" width="200%" height="200%">
+      <feGaussianBlur stdDeviation="${f(W * 0.03)}"/>
     </filter>
-    <filter id="grao">
-      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="3" stitchTiles="stitch"/>
-      <feColorMatrix type="saturate" values="0"/>
-    </filter>
-    <linearGradient id="vinheta" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#000" stop-opacity=".32"/>
-      <stop offset="0.42" stop-color="#000" stop-opacity="0"/>
-      <stop offset="1" stop-color="#000" stop-opacity=".80"/>
-    </linearGradient>
+    <pattern id="scan" width="${f(pix)}" height="${f(pix * 2)}" patternUnits="userSpaceOnUse">
+      <rect width="${f(pix)}" height="${f(pix)}" fill="#fff" opacity=".05"/>
+    </pattern>
+    <pattern id="grade" width="${f(W / 16)}" height="${f(W / 16)}" patternUnits="userSpaceOnUse">
+      <path d="M${f(W / 16)},0 L0,0 0,${f(W / 16)}" fill="none" stroke="${tema.acento}" stroke-width="1" opacity=".14"/>
+    </pattern>
   </defs>
 
   <rect width="${W}" height="${H}" fill="url(#bg)"/>
+  <rect width="${W}" height="${H}" fill="url(#grade)"/>
   ${conteudo}
-  ${faixas}
-  <rect width="${W}" height="${H}" fill="url(#vinheta)"/>
-  <rect width="${W}" height="${H}" filter="url(#grao)" opacity=".09" style="mix-blend-mode:overlay"/>
-  <!-- billing block: aquelas linhas de crédito do rodapé de pôster -->
-  <g opacity=".28" fill="#ffffff">
-    ${[0, 1, 2].map(i => {
-      const y = H - W * 0.085 + i * W * 0.018;
-      const larg = W * (0.62 - i * 0.13);
-      return `<rect x="${f((W - larg) / 2)}" y="${f(y)}" width="${f(larg)}" height="${f(W * 0.006)}" rx="${f(W * 0.003)}"/>`;
-    }).join('')}
+  <rect width="${W}" height="${H}" fill="url(#scan)"/>
+  <rect width="${W}" height="${H}" fill="url(#vig)"/>
+  <rect x="${f(pix)}" y="${f(pix)}" width="${f(W - pix * 2)}" height="${f(H - pix * 2)}"
+        fill="none" stroke="${tema.acento}" stroke-opacity=".45" stroke-width="${f(pix)}"/>
+  <g font-family="monospace" font-size="${f(W * 0.019)}" fill="#fff" opacity=".6" letter-spacing="2">
+    <text x="${f(W * .05)}" y="${f(H - W * .028)}">CINEVOLT</text>
+    <text x="${f(W * .95)}" y="${f(H - W * .028)}" text-anchor="end">${serie}</text>
   </g>
-  <g opacity=".55" font-family="monospace" font-size="${f(W * 0.018)}" fill="#fff" letter-spacing="2">
-    <text x="${f(W * 0.04)}" y="${f(H - W * 0.028)}">CINEVOLT · ${serie}</text>
-  </g>
-  <rect x="1" y="1" width="${W - 2}" height="${H - 2}" fill="none" stroke="${tema.luz}" stroke-opacity=".22" stroke-width="2"/>
 </svg>`;
   }
 
@@ -2893,7 +2964,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
     return 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(poster(semente, opcoes));
   }
 
-  window.Art = { poster, posterURL, TEMAS, NOMES, POR_CATEGORIA, rng, hash };
+  window.Art = { poster, posterURL, TEMAS, NOMES, POR_CATEGORIA, SPRITES, rng, hash };
 })();
 
 
@@ -2970,7 +3041,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
      --------------------------------------------------------- */
   class Bolt {
     constructor(opts) {
-      this.cor = opts.cor || '#9fe9ff';
+      this.cor = opts.cor || '#ffe680';
       this.core = opts.core || '#ffffff';
       this.largura = opts.largura || 2.4;
       this.vida = opts.vida || rnd(170, 380);
@@ -3137,7 +3208,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
       this.ultimo = 0;
       this.proximo = rnd(900, 2200);
 
-      this.cores = o.cores || ['#9fe9ff', '#bfe4ff', '#cbb4ff'];
+      this.cores = o.cores || ['#ffe680', '#bfe4ff', '#cbb4ff'];
       this.intervalo = o.intervalo || [1400, 4200];   // ms entre raios grandes
       this.ambiente = o.ambiente !== false;            // arcos pequenos constantes
       this.alvo = o.alvo || null;                      // () => {x, y} ponto de convergência
@@ -3265,6 +3336,677 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 
   window.Storm = Storm;
   window.gerarBolt = gerarBolt;
+})();
+
+
+/* ============================================================
+   CINEVOLT — maze.js
+   O labirinto do hero. Roda sozinho em MODO ATRAÇÃO, como um
+   fliperama esperando ficha; se o visitante apertar as setas
+   (ou arrastar no celular), ele assume o controle.
+
+   Duas decisões que importam:
+
+   1. MOVIMENTO POR TILE EXATO. Nada de "está perto do centro?":
+      cada entidade guarda o tile em que está e o progresso de 0 a 1
+      até o próximo. Assim nenhuma delas atravessa parede quando o
+      quadro demora (celular fraco, aba em segundo plano, tela 144Hz).
+
+   2. DUAS CAMADAS DE CANVAS. Paredes e pontinhos são desenhados
+      UMA vez numa camada de fundo; o quadro a quadro só redesenha
+      as cinco entidades e as faíscas. Desenhar 180 paredes com
+      sombra a cada quadro derrubava a página para 1 fps.
+   ============================================================ */
+
+(function () {
+  'use strict';
+
+  /* ---------- Mapa (28 x 17). # parede · . ponto · o pílula ---------- */
+  const MAPA = [
+    '############################',
+    '#............##............#',
+    '#.####.#####.##.#####.####.#',
+    '#o####.#####.##.#####.####o#',
+    '#.####.#####.##.#####.####.#',
+    '#..........................#',
+    '#.####.##.########.##.####.#',
+    '#.####.##.########.##.####.#',
+    '#......##....##....##......#',
+    '######.##### ## #####.######',
+    '     #.##          ##.#     ',
+    '######.##  ##  ##  ##.######',
+    '     #.##  #    #  ##.#     ',
+    '######.##  ######  ##.######',
+    '     #.##          ##.#     ',
+    '######.##### ## #####.######',
+    '#............##............#',
+    '#.####.#####.##.#####.####.#',
+    '#o..##................##..o#',
+    '###.##.##.########.##.##.###',
+    '#......##....##....##......#',
+    '############################'
+  ];
+
+  const COLS = 28, LINHAS = MAPA.length;
+
+  const DIRS = {
+    dir: { x: 1, y: 0 }, esq: { x: -1, y: 0 },
+    cima: { x: 0, y: -1 }, baixo: { x: 0, y: 1 }
+  };
+  const NOMES_DIR = Object.keys(DIRS);
+  const OPOSTA = { dir: 'esq', esq: 'dir', cima: 'baixo', baixo: 'cima' };
+
+  const envolve = x => (x % COLS + COLS) % COLS;
+
+  class Labirinto {
+    constructor(canvas, opcoes) {
+      const o = opcoes || {};
+      this.cv = canvas;
+      this.ctx = canvas.getContext('2d');
+      this.cvFundo = o.canvasFundo || null;
+      this.ctxFundo = this.cvFundo ? this.cvFundo.getContext('2d') : null;
+
+      this.aoComer = o.aoComer || null;
+      this.aoPilula = o.aoPilula || null;
+      this.aoMorrer = o.aoMorrer || null;
+      this.aoAssumir = o.aoAssumir || null;
+
+      this.pontos = 0;
+      this.modoJogador = false;
+      this.pausado = false;
+      this.t = 0;
+      this.assustadoAte = -1;
+      this.particulas = [];
+
+      this.reiniciarMapa();
+      this.criarEntidades();
+
+      this._resize = this._resize.bind(this);
+      this._loop = this._loop.bind(this);
+      this._resize();
+      addEventListener('resize', this._resize, { passive: true });
+      this._ligarControles();
+    }
+
+    /* =======================================================
+       MAPA
+       ======================================================= */
+    reiniciarMapa() {
+      this.grade = MAPA.map(l => l.padEnd(COLS, ' ').slice(0, COLS).split(''));
+      this.restantes = this.grade.reduce(
+        (n, linha) => n + linha.filter(c => c === '.' || c === 'o').length, 0);
+    }
+
+    parede(cx, cy) {
+      if (cy < 0 || cy >= LINHAS) return true;
+      return this.grade[cy][envolve(cx)] === '#';
+    }
+
+    /* =======================================================
+       ENTIDADES
+       ======================================================= */
+    novaEntidade(tx, ty, dir, vel, extra) {
+      return Object.assign({
+        tx, ty, dir, prox: dir, prog: 0, vel,
+        cx: tx, cy: ty, parado: false
+      }, extra || {});
+    }
+
+    criarEntidades() {
+      this.heroi = this.novaEntidade(21, 5, 'baixo', 0.09, { boca: 0 });
+
+      const cores = ['#ff2b4e', '#ff6ad5', '#22e7ff', '#ff9d2e'];
+      const personas = ['direto', 'emboscada', 'errante', 'medroso'];
+      const cantos = [{ x: 1, y: 1 }, { x: 26, y: 1 }, { x: 1, y: 15 }, { x: 26, y: 15 }];
+
+      this.fantasmas = cores.map((cor, i) =>
+        this.novaEntidade(12 + i, 12, 'cima', 0.062 + i * 0.004, {
+          cor, persona: personas[i], casa: cantos[i], assustado: false, olhos: DIRS.cima
+        }));
+    }
+
+    /* =======================================================
+       DIMENSÕES E CAMADA DE FUNDO
+       ======================================================= */
+    _resize() {
+      const r = this.cv.getBoundingClientRect();
+      /* O labirinto é cenário: fica atrás de um véu e da textura de CRT.
+         Renderizar em retina cheia dobra o custo sem ganho visível, então
+         o limite aqui é menor que o da interface. */
+      const dpr = Math.min(window.devicePixelRatio || 1, 1.25);
+      this.w = r.width; this.h = r.height; this.dpr = dpr;
+
+      [this.cv, this.cvFundo].forEach(c => {
+        if (!c) return;
+        c.width = Math.max(1, r.width * dpr);
+        c.height = Math.max(1, r.height * dpr);
+        c.getContext('2d').setTransform(dpr, 0, 0, dpr, 0, 0);
+      });
+
+      /* Em tela larga o labirinto inteiro aparece ("contain"), como a
+         tela de um gabinete. Em celular, caber inteiro deixaria uma
+         faixa minúscula no meio, então ele preenche e sobra para fora. */
+      this.tile = r.width < 760
+        ? Math.max(r.width / COLS, r.height / LINHAS) * 0.62
+        : Math.min(r.width / COLS, r.height / LINHAS);
+      this.offX = (r.width - this.tile * COLS) / 2;
+      this.offY = (r.height - this.tile * LINHAS) / 2;
+
+      this.pintarFundo();
+      this.prepararBrilhos();
+    }
+
+    /* Um borrão radial pronto por cor. Desenhar sombra (shadowBlur)
+       em cinco entidades a cada quadro é caro demais; colar uma imagem
+       pronta atrás da forma custa quase nada e fica igual. */
+    prepararBrilhos() {
+      const raio = Math.max(8, this.tile * 1.05);
+      const fazer = cor => {
+        const lado = Math.ceil(raio * 2);
+        const c = document.createElement('canvas');
+        c.width = c.height = lado;
+        const cx = c.getContext('2d');
+        const g = cx.createRadialGradient(raio, raio, 0, raio, raio, raio);
+        g.addColorStop(0, cor + 'cc');
+        g.addColorStop(.35, cor + '55');
+        g.addColorStop(1, cor + '00');
+        cx.fillStyle = g;
+        cx.fillRect(0, 0, lado, lado);
+        return c;
+      };
+
+      this.brilhos = {};
+      ['#ffd60a', '#ff6ad5', '#ff2b4e', '#22e7ff', '#ff9d2e', '#4b2bff', '#ffffff']
+        .forEach(c => { this.brilhos[c] = fazer(c); });
+      this.raioBrilho = raio;
+    }
+
+    brilho(cor, x, y, escala) {
+      const img = this.brilhos && this.brilhos[cor];
+      if (!img) return;
+      const lado = this.raioBrilho * 2 * (escala || 1);
+      this.ctx.drawImage(img, x - lado / 2, y - lado / 2, lado, lado);
+    }
+
+    px(cx) { return this.offX + (cx + 0.5) * this.tile; }
+    py(cy) { return this.offY + (cy + 0.5) * this.tile; }
+
+    /* Paredes e pontinhos: pintados uma vez só */
+    pintarFundo() {
+      const ctx = this.ctxFundo;
+      if (!ctx) return;
+      const t = this.tile;
+      ctx.clearRect(0, 0, this.w, this.h);
+
+      for (let y = 0; y < LINHAS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          if (this.grade[y][x] !== '#') continue;
+          const px = this.offX + x * t, py = this.offY + y * t;
+
+          // preenchimento tile a tile, SEM folga: paredes vizinhas
+          // se encostam e viram um bloco só, como no fliperama
+          const g = ctx.createLinearGradient(px, py, px, py + t);
+          g.addColorStop(0, 'rgba(58, 38, 170, .55)');
+          g.addColorStop(1, 'rgba(26, 12, 96, .40)');
+          ctx.fillStyle = g;
+          ctx.fillRect(px, py, t + .5, t + .5);
+        }
+      }
+
+      /* Contorno de neon: uma linha só nas faces que dão para o
+         corredor. Desenhar depois de todos os preenchimentos evita
+         que o bloco vizinho cubra o traço. */
+      ctx.strokeStyle = 'rgba(150, 132, 255, .95)';
+      ctx.lineWidth = Math.max(1.5, t * .055);
+      ctx.lineCap = 'square';
+      ctx.shadowColor = '#6a4bff';
+      ctx.shadowBlur = Math.max(6, t * .3);
+      ctx.beginPath();
+      for (let y = 0; y < LINHAS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          if (this.grade[y][x] !== '#') continue;
+          const px = this.offX + x * t, py = this.offY + y * t;
+          const m = ctx.lineWidth / 2;
+          if (!this.parede(x, y - 1)) { ctx.moveTo(px, py + m); ctx.lineTo(px + t, py + m); }
+          if (!this.parede(x, y + 1)) { ctx.moveTo(px, py + t - m); ctx.lineTo(px + t, py + t - m); }
+          if (!this.parede(x - 1, y)) { ctx.moveTo(px + m, py); ctx.lineTo(px + m, py + t); }
+          if (!this.parede(x + 1, y)) { ctx.moveTo(px + t - m, py); ctx.lineTo(px + t - m, py + t); }
+        }
+      }
+      ctx.stroke();
+      ctx.shadowBlur = 0;
+
+      // pontinhos (as pílulas ficam na camada de cima, pulsando)
+      ctx.fillStyle = '#ffe9a8';
+      ctx.shadowColor = '#ffd60a';
+      ctx.shadowBlur = t * .24;
+      for (let y = 0; y < LINHAS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          if (this.grade[y][x] !== '.') continue;
+          ctx.beginPath();
+          ctx.arc(this.px(x), this.py(y), Math.max(1.4, t * .07), 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.shadowBlur = 0;
+    }
+
+    /* Apaga um pontinho da camada de fundo, sem repintar tudo */
+    apagarDoFundo(x, y) {
+      if (!this.ctxFundo) return;
+      const t = this.tile;
+      this.ctxFundo.clearRect(this.offX + x * t, this.offY + y * t, t, t);
+    }
+
+    /* =======================================================
+       CONTROLES
+       ======================================================= */
+    _ligarControles() {
+      const mapa = {
+        ArrowRight: 'dir', ArrowLeft: 'esq', ArrowUp: 'cima', ArrowDown: 'baixo',
+        KeyD: 'dir', KeyA: 'esq', KeyW: 'cima', KeyS: 'baixo'
+      };
+
+      addEventListener('keydown', e => {
+        const d = mapa[e.code];
+        if (!d) return;
+        // não rouba a seta de quem está rolando a página lá embaixo
+        if (this.cv.getBoundingClientRect().bottom < 120) return;
+        e.preventDefault();
+        this.heroi.prox = d;
+        this.assumir();
+      });
+
+      let ini = null;
+      this.cv.addEventListener('touchstart', e => {
+        ini = { x: e.touches[0].clientX, y: e.touches[0].clientY };
+      }, { passive: true });
+
+      this.cv.addEventListener('touchmove', e => {
+        if (!ini) return;
+        const dx = e.touches[0].clientX - ini.x;
+        const dy = e.touches[0].clientY - ini.y;
+        if (Math.hypot(dx, dy) < 26) return;
+        this.heroi.prox = Math.abs(dx) > Math.abs(dy)
+          ? (dx > 0 ? 'dir' : 'esq') : (dy > 0 ? 'baixo' : 'cima');
+        this.assumir();
+        ini = null;
+      }, { passive: true });
+    }
+
+    assumir() {
+      if (this.modoJogador) return;
+      this.modoJogador = true;
+      this.aoAssumir && this.aoAssumir();
+    }
+
+    /* =======================================================
+       BUSCA EM LARGURA
+       ======================================================= */
+    rota(de, para, evitar) {
+      const chave = (x, y) => y * COLS + x;
+      const alvoK = chave(envolve(para.x), Math.max(0, Math.min(LINHAS - 1, para.y)));
+      const fila = [{ x: envolve(de.x), y: de.y, primeiro: null }];
+      const visto = new Set([chave(envolve(de.x), de.y)]);
+      const bloqueado = new Set((evitar || []).map(p => chave(envolve(p.x), p.y)));
+
+      let cabeca = 0;
+      while (cabeca < fila.length) {
+        const no = fila[cabeca++];
+        if (chave(no.x, no.y) === alvoK && no.primeiro) return no.primeiro;
+
+        for (const nome of NOMES_DIR) {
+          const d = DIRS[nome];
+          const nx = envolve(no.x + d.x);
+          const ny = no.y + d.y;
+          if (ny < 0 || ny >= LINHAS || this.parede(nx, ny)) continue;
+          const k = chave(nx, ny);
+          if (visto.has(k) || bloqueado.has(k)) continue;
+          visto.add(k);
+          fila.push({ x: nx, y: ny, primeiro: no.primeiro || nome });
+        }
+      }
+      return null;
+    }
+
+    pontoMaisPerto(de) {
+      let melhor = null, dist = 1e9;
+      for (let y = 0; y < LINHAS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          const c = this.grade[y][x];
+          if (c !== '.' && c !== 'o') continue;
+          const dx = Math.min(Math.abs(x - de.x), COLS - Math.abs(x - de.x));
+          const d = dx + Math.abs(y - de.y) - (c === 'o' ? 6 : 0);
+          if (d < dist) { dist = d; melhor = { x, y }; }
+        }
+      }
+      return melhor;
+    }
+
+    /* =======================================================
+       MOVIMENTO — passo exato, um tile por vez
+       ======================================================= */
+    mover(e, dt) {
+      const passo = Math.min(0.5, e.vel * dt / 16.6);
+
+      if (e.parado) {
+        this.decidir(e);              // tenta destravar (virar) a cada quadro
+        if (e.parado) { this.posicionar(e); return; }
+      }
+
+      e.prog += passo;
+      while (e.prog >= 1) {
+        e.prog -= 1;
+        const d = DIRS[e.dir];
+        e.tx = envolve(e.tx + d.x);
+        e.ty += d.y;
+        e.chegou = true;              // entrou num tile novo
+        this.decidir(e);
+        if (e.parado) { e.prog = 0; break; }
+      }
+      this.posicionar(e);
+    }
+
+    posicionar(e) {
+      const d = DIRS[e.dir];
+      e.cx = e.tx + d.x * e.prog;
+      e.cy = e.ty + d.y * e.prog;
+      if (e.cx < -0.5) e.cx += COLS;
+      if (e.cx > COLS - 0.5) e.cx -= COLS;
+    }
+
+    /* Decide direção no centro do tile: o cérebro escolhe, aqui só valida */
+    decidir(e) {
+      if (e.cerebro) e.cerebro(e);
+
+      if (e.prox && e.prox !== e.dir) {
+        const d = DIRS[e.prox];
+        if (!this.parede(e.tx + d.x, e.ty + d.y)) e.dir = e.prox;
+      }
+      const d = DIRS[e.dir];
+      e.parado = this.parede(e.tx + d.x, e.ty + d.y);
+    }
+
+    /* =======================================================
+       CÉREBROS
+       ======================================================= */
+    cerebroHeroi(h) {
+      if (this.modoJogador) return;    // quem manda é o teclado
+      const alvo = this.pontoMaisPerto({ x: h.tx, y: h.ty });
+      if (!alvo) return;
+
+      const assustado = this.t < this.assustadoAte;
+      const perigo = assustado ? [] : this.fantasmas.flatMap(f => [
+        { x: f.tx, y: f.ty },
+        { x: f.tx + 1, y: f.ty }, { x: f.tx - 1, y: f.ty },
+        { x: f.tx, y: f.ty + 1 }, { x: f.tx, y: f.ty - 1 }
+      ]);
+
+      h.prox = this.rota({ x: h.tx, y: h.ty }, alvo, perigo)
+            || this.rota({ x: h.tx, y: h.ty }, alvo)
+            || h.dir;
+    }
+
+    cerebroFantasma(f) {
+      const h = this.heroi;
+      const assustado = this.t < this.assustadoAte;
+      let alvo;
+
+      if (assustado) {
+        alvo = f.casa;                                       // foge para o canto
+      } else if (f.persona === 'direto') {
+        alvo = { x: h.tx, y: h.ty };                         // vai em cima
+      } else if (f.persona === 'emboscada') {
+        const d = DIRS[h.dir];                               // corta o caminho
+        alvo = { x: h.tx + d.x * 4, y: h.ty + d.y * 4 };
+      } else if (f.persona === 'errante') {
+        alvo = (this.t % 9000) < 4500 ? f.casa : { x: h.tx, y: h.ty };
+      } else {
+        const dist = Math.hypot(f.tx - h.tx, f.ty - h.ty);   // se aproxima e recua
+        alvo = dist > 7 ? { x: h.tx, y: h.ty } : f.casa;
+      }
+
+      const nova = this.rota({ x: f.tx, y: f.ty }, alvo);
+      // fantasma não dá meia-volta no corredor, como no original
+      f.prox = (nova && nova !== OPOSTA[f.dir]) ? nova : (nova || f.dir);
+      f.vel = assustado ? 0.045 : f.velBase;
+    }
+
+    /* =======================================================
+       ATUALIZAÇÃO
+       ======================================================= */
+    atualizar(dt) {
+      this.t += dt;
+      const h = this.heroi;
+
+      if (!h.cerebro) {
+        h.cerebro = e => this.cerebroHeroi(e);
+        this.fantasmas.forEach(f => {
+          f.velBase = f.vel;
+          f.cerebro = e => this.cerebroFantasma(e);
+        });
+      }
+
+      h.chegou = false;
+      this.mover(h, dt);
+      h.boca += dt * 0.014;
+      if (h.chegou) this.comer(h.tx, h.ty);
+
+      this.fantasmas.forEach((f, i) => {
+        f.assustado = this.t < this.assustadoAte;
+        this.mover(f, dt);
+        f.olhos = DIRS[f.dir];
+        this.encontro(f, i);
+      });
+
+      this.particulas.forEach(p => {
+        p.x += p.vx; p.y += p.vy; p.vy += 0.14; p.vida -= 0.02;
+      });
+      this.particulas = this.particulas.filter(p => p.vida > 0);
+    }
+
+    comer(x, y) {
+      const c = this.grade[y][envolve(x)];
+      if (c !== '.' && c !== 'o') return;
+
+      this.grade[y][envolve(x)] = ' ';
+      this.restantes--;
+      this.pontos += c === 'o' ? 50 : 10;
+      this.apagarDoFundo(envolve(x), y);
+      this.faiscas(this.px(x), this.py(y), c === 'o' ? 16 : 4, '#ffd60a');
+
+      if (c === 'o') {
+        this.assustadoAte = this.t + 6500;
+        this.aoPilula && this.aoPilula(this.pontos);
+      } else {
+        this.aoComer && this.aoComer(this.pontos);
+      }
+
+      if (this.restantes <= 0) {
+        this.reiniciarMapa();
+        this.pintarFundo();
+        this.faiscas(this.px(x), this.py(y), 44, '#ff6ad5');
+      }
+    }
+
+    encontro(f, i) {
+      const h = this.heroi;
+      const dx = Math.abs(f.cx - h.cx);
+      const dist = Math.hypot(Math.min(dx, COLS - dx), f.cy - h.cy);
+      if (dist > 0.7) return;
+
+      if (f.assustado) {
+        this.pontos += 200;
+        this.faiscas(this.px(f.cx), this.py(f.cy), 26, f.cor);
+        Object.assign(f, { tx: 13, ty: 12, prog: 0, dir: 'cima', prox: 'cima', parado: false });
+      } else {
+        this.faiscas(this.px(h.cx), this.py(h.cy), 32, '#ffd60a');
+        this.aoMorrer && this.aoMorrer(this.pontos);
+        Object.assign(h, { tx: 21, ty: 5, prog: 0, dir: 'baixo', prox: 'baixo', parado: false });
+        this.modoJogador = false;
+        this.fantasmas.forEach((g, j) =>
+          Object.assign(g, { tx: 12 + j, ty: 12, prog: 0, dir: 'cima', prox: 'cima', parado: false }));
+      }
+    }
+
+    faiscas(x, y, n, cor) {
+      for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const v = Math.random() * 3.4 + .6;
+        this.particulas.push({
+          x, y, vx: Math.cos(a) * v, vy: Math.sin(a) * v,
+          vida: 1, cor, r: Math.random() * 2.4 + 1
+        });
+      }
+    }
+
+    /* =======================================================
+       DESENHO (só o que se move)
+       ======================================================= */
+    desenharPilulas() {
+      const ctx = this.ctx, t = this.tile;
+      const pulso = 0.78 + Math.sin(this.t * 0.005) * 0.22;
+      ctx.save();
+      ctx.globalCompositeOperation = 'lighter';
+      for (let y = 0; y < LINHAS; y++) {
+        for (let x = 0; x < COLS; x++) {
+          if (this.grade[y][x] !== 'o') continue;
+          const px = this.px(x), py = this.py(y);
+          this.brilho('#ff6ad5', px, py, .85 * pulso);
+          ctx.fillStyle = '#ffd7f4';
+          ctx.beginPath();
+          ctx.arc(px, py, t * .17 * pulso, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      }
+      ctx.restore();
+    }
+
+    desenharHeroi() {
+      const ctx = this.ctx, t = this.tile, h = this.heroi;
+      const x = this.px(h.cx), y = this.py(h.cy);
+      const r = t * .42;
+      const abertura = (Math.abs(Math.sin(h.boca)) * 0.32 + 0.03) * Math.PI;
+      const ang = { dir: 0, esq: Math.PI, cima: -Math.PI / 2, baixo: Math.PI / 2 }[h.dir];
+
+      this.brilho('#ffd60a', x, y, 1.15);
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.rotate(ang);
+
+      ctx.fillStyle = '#ffd60a';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.arc(0, 0, r, abertura, Math.PI * 2 - abertura);
+      ctx.closePath();
+      ctx.fill();
+
+      // furos de rolo de filme: é cinema, não só fliperama
+      ctx.fillStyle = 'rgba(28, 14, 0, .45)';
+      for (let i = 0; i < 6; i++) {
+        const a = (Math.PI * 2 / 6) * i + this.t * 0.0014;
+        const norm = Math.abs(((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2) - Math.PI);
+        if (norm > Math.PI - abertura) continue;   // não fura a boca
+        ctx.beginPath();
+        ctx.arc(Math.cos(a) * r * .6, Math.sin(a) * r * .6, r * .12, 0, Math.PI * 2);
+        ctx.fill();
+      }
+      ctx.restore();
+    }
+
+    desenharFantasma(f) {
+      const ctx = this.ctx, t = this.tile;
+      const x = this.px(f.cx), y = this.py(f.cy);
+      const r = t * .40;
+      const piscando = f.assustado && this.assustadoAte - this.t < 1800 &&
+                       Math.floor(this.t / 220) % 2 === 0;
+      const cor = f.assustado ? (piscando ? '#ffffff' : '#4b2bff') : f.cor;
+
+      this.brilho(cor, x, y, 1);
+
+      ctx.save();
+      ctx.translate(x, y);
+      ctx.fillStyle = cor;
+
+      ctx.beginPath();
+      ctx.arc(0, -r * .12, r, Math.PI, 0);
+      ctx.lineTo(r, r * .72);
+      const ondas = 4, larg = (r * 2) / ondas;
+      for (let i = 0; i < ondas; i++) {
+        const x0 = r - i * larg;
+        const fase = Math.sin(this.t * 0.008 + i) * r * .1;
+        ctx.quadraticCurveTo(x0 - larg / 2, r * (i % 2 ? .5 : .95) + fase, x0 - larg, r * .72);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      if (f.assustado && !piscando) {
+        ctx.fillStyle = '#fff';
+        [-r * .35, r * .35].forEach(ox => {
+          ctx.beginPath(); ctx.arc(ox, -r * .16, r * .12, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.strokeStyle = '#fff';
+        ctx.lineWidth = Math.max(1, r * .1);
+        ctx.beginPath();
+        ctx.moveTo(-r * .45, r * .28);
+        for (let i = 0; i < 4; i++) ctx.lineTo(-r * .45 + (i + 1) * r * .22, r * (i % 2 ? .28 : .1));
+        ctx.stroke();
+      } else {
+        [-r * .38, r * .38].forEach(ox => {
+          ctx.fillStyle = '#fff';
+          ctx.beginPath(); ctx.ellipse(ox, -r * .2, r * .27, r * .32, 0, 0, Math.PI * 2); ctx.fill();
+          ctx.fillStyle = '#14103a';
+          ctx.beginPath();
+          ctx.arc(ox + f.olhos.x * r * .12, -r * .2 + f.olhos.y * r * .14, r * .13, 0, Math.PI * 2);
+          ctx.fill();
+        });
+      }
+      ctx.restore();
+    }
+
+    desenhar() {
+      const ctx = this.ctx;
+      ctx.clearRect(0, 0, this.w, this.h);
+
+      this.desenharPilulas();
+      this.fantasmas.forEach(f => this.desenharFantasma(f));
+      this.desenharHeroi();
+
+      if (this.particulas.length) {
+        ctx.save();
+        ctx.globalCompositeOperation = 'lighter';
+        this.particulas.forEach(p => {
+          ctx.globalAlpha = Math.max(0, p.vida);
+          ctx.fillStyle = p.cor;
+          ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        });
+        ctx.restore();
+      }
+    }
+
+    /* =======================================================
+       CICLO
+       ======================================================= */
+    start() {
+      if (this.rodando) return;
+      this.rodando = true;
+      this.ultimo = performance.now();
+      requestAnimationFrame(this._loop);
+    }
+
+    stop() { this.rodando = false; }
+
+    _loop(agora) {
+      if (!this.rodando) return;
+      const dt = Math.min(48, agora - this.ultimo);
+      this.ultimo = agora;
+      if (!this.pausado) { this.atualizar(dt); this.desenhar(); }
+      requestAnimationFrame(this._loop);
+    }
+  }
+
+  window.Labirinto = Labirinto;
 })();
 
 
@@ -3751,7 +4493,7 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 })();
 
 
-/* ---- cola do tema: capas geradas, hero e nuvens ---- */
+/* ---- cola do tema: capas geradas, sprites, hero e labirinto ---- */
 (function () {
   'use strict';
 
@@ -3762,16 +4504,25 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
     });
   });
 
-  // 2) Nuvens por turbulência
-  document.querySelectorAll('[data-nuvens]').forEach(function (el, i) {
-    el.innerHTML = '<svg width="100%" height="100%" preserveAspectRatio="none">' +
-      '<filter id="nv' + i + '"><feTurbulence type="fractalNoise" baseFrequency="' +
-      (el.dataset.nuvens || '0.009') + '" numOctaves="5" seed="' + (3 + i * 7) + '" result="n"/>' +
-      '<feColorMatrix in="n" type="matrix" values="0 0 0 0 0.36  0 0 0 0 0.64  0 0 0 0 0.95  0 0 0 -1.5 1.05"/>' +
-      '</filter><rect width="100%" height="100%" filter="url(#nv' + i + ')"/></svg>';
-  });
+  // 2) Lâmpadas da marquise
+  var faixa = document.querySelector('[data-lampadas]');
+  if (faixa) faixa.innerHTML = new Array(Math.max(12, Math.floor(innerWidth / 34)) + 1).join('<i></i>');
 
-  // 3) O hero aponta para a matéria mais recente
+  // 3) Sprites da faixa de perseguição
+  var trilha = document.querySelector('[data-perseguicao]');
+  if (trilha) {
+    var fant = function (cor) {
+      return '<svg class="sprite" viewBox="0 0 32 32" style="color:' + cor + '">' +
+        '<path fill="' + cor + '" d="M16 2a12 12 0 0 0-12 12v16l4-3 4 3 4-3 4 3 4-3 4 3V14A12 12 0 0 0 16 2Z"/>' +
+        '<circle cx="11" cy="13" r="4.2" fill="#fff"/><circle cx="21" cy="13" r="4.2" fill="#fff"/>' +
+        '<circle cx="9.6" cy="13" r="2.1" fill="#14103a"/><circle cx="19.6" cy="13" r="2.1" fill="#14103a"/></svg>';
+    };
+    trilha.innerHTML =
+      '<svg class="sprite" viewBox="0 0 32 32" style="color:#ffd60a"><path fill="#ffd60a" d="M16 16 29 8a15 15 0 1 0 0 16Z"/></svg>' +
+      ['#ff2b4e', '#ff6ad5', '#22e7ff', '#ff9d2e'].map(fant).join('');
+  }
+
+  // 4) O hero aponta para a matéria mais recente
   var primeiro = document.querySelector('.card');
   var alvoTitulo = document.querySelector('[data-hero-titulo]');
   if (primeiro && alvoTitulo) {
@@ -3787,69 +4538,35 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
     if (cta && link) cta.setAttribute('href', link);
   }
 
-  // 4) A tempestade
-  var hero = document.querySelector('.cine-hero');
-  if (!hero || !window.Storm || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  // 5) O labirinto em modo atração
+  var cv = document.querySelector('.arcade-hero__maze--frente');
+  if (!cv || !window.Labirinto || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
-  var frente = hero.querySelector('.ch-bolts:not(.ch-bolts--back)');
-  var fundo = hero.querySelector('.ch-bolts--back');
-  var figura = hero.querySelector('.ch-figure');
-  var nucleo = hero.querySelector('#nucleoMartelo');
+  var placar = document.querySelector('[data-placar]');
+  var recordeEl = document.querySelector('[data-recorde]');
+  var dica = document.querySelector('[data-dica]');
+  var recorde = Number(localStorage.getItem('cinevolt:maze') || 0);
+  if (recordeEl) recordeEl.textContent = String(recorde).padStart(6, '0');
 
-  function alvo() {
-    var cr = frente.getBoundingClientRect();
-    if (nucleo) {
-      var nr = nucleo.getBoundingClientRect();
-      if (nr.width) return { x: nr.left + nr.width / 2 - cr.left, y: nr.top + nr.height / 2 - cr.top };
-    }
-    return { x: cr.width * 0.66, y: cr.height * 0.3 };
-  }
-
-  var storm = new window.Storm(frente, {
-    alvo: alvo, intervalo: [1700, 3900],
-    cores: ['#9fe9ff', '#cfefff', '#b9a6ff'],
-    aoRaio: function (e) {
-      var w = frente.getBoundingClientRect().width || 1;
-      window.FX.flash((e.x / w) * 100);
-      window.FX.trovao(e.forca);
-      if (figura) { figura.classList.remove('is-hit'); void figura.offsetWidth; figura.classList.add('is-hit'); }
-    }
-  });
-  storm.start();
-
-  if (fundo) {
-    new window.Storm(fundo, {
-      ambiente: false, densidade: .5, intervalo: [2600, 6000],
-      cores: ['#6fc8ff', '#8fb6ff', '#9a7cff'],
-      alvo: function () {
-        var r = fundo.getBoundingClientRect();
-        return { x: r.width * (0.08 + Math.random() * 0.84), y: r.height * (0.8 + Math.random() * 0.12) };
-      },
-      aoRaio: function (e) {
-        var w = fundo.getBoundingClientRect().width || 1;
-        window.FX.flash((e.x / w) * 100);
+  var lab = new window.Labirinto(cv, {
+    canvasFundo: document.querySelector('.arcade-hero__maze--fundo'),
+    aoComer: function (pts) { if (placar) placar.textContent = String(pts).padStart(6, '0'); },
+    aoPilula: function () { window.FX && window.FX.flash(40 + Math.random() * 30); },
+    aoMorrer: function (pts) {
+      if (pts > recorde) {
+        recorde = pts;
+        localStorage.setItem('cinevolt:maze', String(pts));
+        if (recordeEl) recordeEl.textContent = String(recorde).padStart(6, '0');
       }
-    }).start();
-  }
-
-  // parallax das camadas
-  var camadas = [].slice.call(hero.querySelectorAll('[data-depth]'));
-  var mx = 0, my = 0, cx = 0, cy = 0;
-  hero.addEventListener('mousemove', function (e) {
-    var r = hero.getBoundingClientRect();
-    mx = (e.clientX - r.left) / r.width - .5;
-    my = (e.clientY - r.top) / r.height - .5;
+    },
+    aoAssumir: function () {
+      if (!dica) return;
+      dica.textContent = '1 PLAYER · VOCÊ ESTÁ NO CONTROLE';
+      dica.classList.add('is-on');
+    }
   });
-  (function anim() {
-    cx += (mx - cx) * .06; cy += (my - cy) * .06;
-    camadas.forEach(function (c) {
-      var d = parseFloat(c.dataset.depth) || 10;
-      c.style.transform = 'translate3d(' + (-cx * d).toFixed(2) + 'px,' + (-cy * d * .6).toFixed(2) + 'px,0)';
-    });
-    requestAnimationFrame(anim);
-  })();
-
-  setTimeout(function () { storm.strike({ largura: 3.6, forca: 1.4 }); }, 900);
+  lab.start();
+  document.addEventListener('visibilitychange', function () { lab.pausado = document.hidden; });
 })();
 //]]>
 </script>

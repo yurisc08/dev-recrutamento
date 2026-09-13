@@ -4,44 +4,63 @@
    ============================================================ */
 
 :root {
-  /* --- Cores --- */
-  --void: #040406;
-  --ink: #08080d;
-  --ink-2: #0d0d16;
-  --ink-3: #14141f;
-  --line: rgba(255, 255, 255, .09);
-  --line-2: rgba(255, 255, 255, .16);
+  /* --- Cores: fliperama. Preto de gabinete, amarelo de moeda,
+         neon dos fantasmas. Tudo quente, nada de azul gelado. --- */
+  --void: #08030f;
+  --ink: #0e0619;
+  --ink-2: #150a24;
+  --ink-3: #1f1033;
+  --line: rgba(255, 232, 180, .10);
+  --line-2: rgba(255, 232, 180, .20);
 
-  --bolt: #00e5ff;          /* raio ciano */
-  --bolt-soft: #7df9ff;
-  --plasma: #7b2ff7;        /* roxo elétrico */
-  --plasma-soft: #b47cff;
-  --amber: #ffd400;         /* marquise de cinema */
-  --blood: #ff2d55;
+  /* moeda: a cor principal da marca */
+  --coin: #ffd60a;
+  --coin-soft: #fff08a;
 
-  --text: #f2f2f7;
-  --text-2: rgba(242, 242, 247, .72);
-  --text-3: rgba(242, 242, 247, .45);
+  /* os quatro fantasmas */
+  --blinky: #ff2b4e;
+  --pinky: #ff6ad5;
+  --inky: #22e7ff;
+  --clyde: #ff9d2e;
 
-  --grad-bolt: linear-gradient(120deg, var(--bolt), var(--plasma) 55%, var(--blood));
-  --grad-amber: linear-gradient(120deg, var(--amber), #ff8a00);
+  --maze: #4b2bff;
+  --life: #4dff88;
+
+  /* nomes antigos mantidos como apelidos: o site inteiro
+     já usa --bolt/--plasma, então a troca de tema é aqui */
+  --bolt: var(--coin);
+  --bolt-soft: var(--coin-soft);
+  --plasma: var(--pinky);
+  --plasma-soft: #ffa8e6;
+  --amber: var(--clyde);
+  --blood: var(--blinky);
+
+  --text: #fff6e8;
+  --text-2: rgba(255, 246, 232, .74);
+  --text-3: rgba(255, 246, 232, .46);
+
+  --grad-bolt: linear-gradient(100deg, var(--coin), var(--clyde) 45%, var(--pinky));
+  --grad-neon: linear-gradient(100deg, var(--inky), var(--pinky) 50%, var(--coin));
+  --grad-amber: linear-gradient(120deg, var(--coin), #ff6a00);
 
   /* --- Tipografia --- */
-  --font-display: "Bebas Neue", "Anton", "Arial Narrow", Impact, sans-serif;
-  --font-body: "Space Grotesk", "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-mono: "JetBrains Mono", ui-monospace, "SF Mono", Menlo, monospace;
+  --font-display: "Bungee", "Bebas Neue", Impact, sans-serif;
+  --font-pixel: "Press Start 2P", "Courier New", monospace;
+  --font-body: "Space Grotesk", "Inter", system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", ui-monospace, Menlo, monospace;
 
   /* --- Métrica --- */
   --wrap: 1280px;
   --gut: clamp(18px, 4vw, 56px);
-  --r-sm: 8px;
-  --r-md: 16px;
-  --r-lg: 26px;
+  --r-sm: 6px;
+  --r-md: 14px;
+  --r-lg: 22px;
 
-  /* --- Sombras / brilhos --- */
-  --glow-bolt: 0 0 24px rgba(0, 229, 255, .45), 0 0 64px rgba(0, 229, 255, .18);
-  --glow-plasma: 0 0 24px rgba(123, 47, 247, .5), 0 0 72px rgba(123, 47, 247, .22);
-  --shadow-card: 0 24px 60px -24px rgba(0, 0, 0, .9);
+  /* --- Brilhos de neon --- */
+  --glow-bolt: 0 0 18px rgba(255, 214, 10, .55), 0 0 54px rgba(255, 214, 10, .22);
+  --glow-plasma: 0 0 18px rgba(255, 106, 213, .55), 0 0 64px rgba(255, 106, 213, .25);
+  --glow-inky: 0 0 18px rgba(34, 231, 255, .5), 0 0 54px rgba(34, 231, 255, .2);
+  --shadow-card: 0 22px 54px -22px rgba(0, 0, 0, .92);
 
   /* --- Timing --- */
   --ease-out: cubic-bezier(.16, 1, .3, 1);
@@ -72,6 +91,9 @@ body {
 body.is-locked { overflow: hidden; }
 
 img, svg, video, canvas { display: block; max-width: 100%; }
+
+/* o atributo hidden precisa vencer qualquer display de classe */
+[hidden] { display: none !important; }
 img { height: auto; }
 
 a { color: inherit; text-decoration: none; }
@@ -84,15 +106,15 @@ button, input, textarea, select {
 h1, h2, h3, h4 {
   font-family: var(--font-display);
   font-weight: 400;
-  line-height: .92;
-  letter-spacing: .01em;
+  line-height: 1;
+  letter-spacing: -.01em;
   margin: 0;
   text-transform: uppercase;
 }
 
-h1 { font-size: clamp(3.2rem, 11vw, 9.5rem); }
-h2 { font-size: clamp(2.2rem, 6vw, 4.6rem); }
-h3 { font-size: clamp(1.3rem, 2.4vw, 2rem); }
+h1 { font-size: clamp(2.6rem, 8vw, 7rem); }
+h2 { font-size: clamp(1.8rem, 4.6vw, 3.4rem); }
+h3 { font-size: clamp(1.1rem, 2vw, 1.6rem); }
 
 p { margin: 0 0 1em; }
 
@@ -585,8 +607,8 @@ p { margin: 0 0 1em; }
   color: var(--text-2);
 }
 
-.note--ok { border-color: rgba(0, 229, 255, .5); color: var(--bolt-soft); }
-.note--err { border-color: rgba(255, 45, 85, .5); color: #ff8098; }
+.note--ok { border-color: rgba(255, 214, 10, .5); color: var(--bolt-soft); }
+.note--err { border-color: rgba(255, 43, 78, .5); color: #ff8098; }
 
 .skeleton {
   position: relative;
