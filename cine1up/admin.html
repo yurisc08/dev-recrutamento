@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Publicar — CINE 1UP</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/effects.css">
+<link rel="stylesheet" href="/assets/css/arcade.css">
+<link rel="stylesheet" href="/assets/css/admin.css">
+</head>
+<body class="admin-body">
+
+<div class="fx-layer fx-grain"></div>
+<div class="crt-vinheta"></div>
+
+<!-- ============ LOGIN ============ -->
+<section class="login" data-login>
+  <form class="login__box" data-form-login>
+    <div class="logo" style="margin-bottom:26px">
+      <svg class="logo__bolt" viewBox="0 0 24 32"><path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#ffd60a"/></svg>
+      <span class="logo__text">CINE<b>1UP</b></span>
+    </div>
+    <h2 style="margin-bottom:8px">Redação</h2>
+    <p style="color:var(--text-3);font-size:.9rem;margin-bottom:26px">
+      Entre para escrever, editar e publicar.
+    </p>
+
+    <label class="campo">
+      <span>E-mail</span>
+      <input class="field" type="email" name="email" autocomplete="username" required>
+    </label>
+
+    <label class="campo">
+      <span>Senha</span>
+      <input class="field" type="password" name="senha" autocomplete="current-password" required>
+    </label>
+
+    <button class="btn btn--solid" type="submit" style="width:100%;margin-top:8px">Entrar</button>
+    <p class="note" data-login-erro hidden></p>
+    <p class="note" data-login-demo hidden>
+      Supabase ainda não configurado — entrando em <b>modo demonstração</b>.
+      Tudo que você publicar fica salvo só neste navegador.
+    </p>
+  </form>
+</section>
+
+<!-- ============ PAINEL ============ -->
+<div class="painel" data-painel hidden>
+
+  <!-- Barra superior -->
+  <header class="painel__topo">
+    <a href="/" class="logo">
+      <svg class="logo__bolt" viewBox="0 0 24 32"><path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#ffd60a"/></svg>
+      <span class="logo__text">CINE<b>1UP</b></span>
+    </a>
+
+    <div class="painel__status" data-status>Pronto</div>
+
+    <div class="row">
+      <button class="btn btn--sm btn--ghost" data-novo>+ Nova matéria</button>
+      <button class="btn btn--sm btn--ghost" data-ver-site>Ver site</button>
+      <button class="btn btn--sm btn--ghost" data-sair>Sair</button>
+    </div>
+  </header>
+
+  <div class="painel__corpo">
+
+    <!-- Lista lateral -->
+    <aside class="painel__lista">
+      <input class="field" type="search" placeholder="Buscar matéria…" data-busca-admin aria-label="Buscar">
+      <div class="lista-posts" data-lista-admin></div>
+    </aside>
+
+    <!-- Editor -->
+    <main class="editor">
+      <div class="editor__cabecalho">
+        <input class="entrada-titulo" placeholder="Título da matéria" data-campo="titulo" aria-label="Título">
+        <input class="entrada-sub" placeholder="Linha fina / subtítulo" data-campo="subtitulo" aria-label="Subtítulo">
+        <div class="slug-linha">
+          <span class="mono">/post.html?p=</span>
+          <input class="entrada-slug mono" data-campo="slug" aria-label="Endereço da matéria">
+          <button class="btn btn--sm btn--ghost" data-regerar-slug type="button">Regerar</button>
+        </div>
+      </div>
+
+      <div class="editor__barra">
+        <button type="button" data-md="titulo" title="Título (Ctrl+H)">H</button>
+        <button type="button" data-md="negrito" title="Negrito (Ctrl+B)"><b>B</b></button>
+        <button type="button" data-md="italico" title="Itálico (Ctrl+I)"><i>I</i></button>
+        <button type="button" data-md="citacao" title="Citação">❝</button>
+        <button type="button" data-md="lista" title="Lista">•</button>
+        <button type="button" data-md="numerada" title="Lista numerada">1.</button>
+        <button type="button" data-md="link" title="Link (Ctrl+K)">🔗</button>
+        <button type="button" data-md="imagem" title="Inserir imagem">🖼</button>
+        <button type="button" data-md="separador" title="Separador">—</button>
+        <span class="editor__contador" data-contador>0 palavras</span>
+        <button type="button" class="editor__previa" data-toggle-previa>Prévia</button>
+      </div>
+
+      <div class="editor__area">
+        <textarea class="editor__texto" data-campo="corpo" spellcheck="true"
+          placeholder="Escreva aqui. Markdown funciona: ## título, **negrito**, > citação, - lista, [link](url), ![imagem](url).
+
+Dica: arraste uma imagem para dentro deste campo e ela é enviada e inserida sozinha."></textarea>
+        <div class="editor__preview artigo" data-preview hidden></div>
+      </div>
+    </main>
+
+    <!-- Ajustes -->
+    <aside class="painel__ajustes">
+      <div class="bloco">
+        <h4>Publicação</h4>
+        <label class="campo">
+          <span>Status</span>
+          <select class="field" data-campo="status">
+            <option value="rascunho">Rascunho</option>
+            <option value="publicado">Publicado</option>
+          </select>
+        </label>
+        <label class="campo">
+          <span>Data de publicação</span>
+          <input class="field" type="datetime-local" data-campo="publicado_em">
+        </label>
+        <label class="check">
+          <input type="checkbox" data-campo="destaque">
+          <span>Usar como destaque da capa (hero)</span>
+        </label>
+      </div>
+
+      <div class="bloco">
+        <h4>Editoria</h4>
+        <label class="campo">
+          <span>Categoria</span>
+          <select class="field" data-campo="categoria"></select>
+        </label>
+        <label class="campo">
+          <span>Autor</span>
+          <input class="field" data-campo="autor" placeholder="Redação CINE 1UP">
+        </label>
+        <label class="campo">
+          <span>Tags (separe por vírgula)</span>
+          <input class="field" data-campo="tags" placeholder="noir, fotografia">
+        </label>
+      </div>
+
+      <div class="bloco">
+        <h4>Ilustração de capa</h4>
+        <div class="capa-preview" data-capa-preview></div>
+        <div class="row" style="gap:8px;margin-top:10px">
+          <button class="btn btn--sm btn--ghost" type="button" data-variar-arte>Outra variação</button>
+          <button class="btn btn--sm btn--ghost" type="button" data-subir-capa>Enviar imagem</button>
+          <button class="btn btn--sm btn--ghost" type="button" data-limpar-capa hidden>Usar arte gerada</button>
+        </div>
+        <input type="file" accept="image/*" hidden data-input-capa>
+        <p class="dica">
+          Sem imagem enviada, a capa é uma ilustração exclusiva gerada a partir do
+          endereço da matéria — nenhuma foto de banco.
+        </p>
+      </div>
+
+      <div class="bloco">
+        <h4>Ficha do filme <span class="opcional">opcional</span></h4>
+        <div class="grid-2">
+          <label class="campo"><span>Direção</span><input class="field" data-campo="diretor"></label>
+          <label class="campo"><span>Ano</span><input class="field" type="number" data-campo="ano"></label>
+          <label class="campo"><span>Duração (min)</span><input class="field" type="number" data-campo="duracao"></label>
+          <label class="campo"><span>Nota (0–10)</span><input class="field" type="number" step="0.1" min="0" max="10" data-campo="nota"></label>
+        </div>
+        <label class="campo"><span>Link do trailer (YouTube)</span><input class="field" data-campo="trailer_url" placeholder="https://youtu.be/…"></label>
+      </div>
+
+      <div class="acoes">
+        <button class="btn btn--ghost" data-salvar>Salvar rascunho</button>
+        <button class="btn btn--solid" data-publicar>Publicar</button>
+        <button class="btn btn--ghost btn--sm" data-excluir hidden>Excluir</button>
+      </div>
+    </aside>
+  </div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/art.js"></script>
+<script src="/assets/js/md.js"></script>
+<script src="/assets/js/data.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/fx.js"></script>
+<script src="/assets/js/admin.js"></script>
+</body>
+</html>

@@ -1,0 +1,151 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Séries — CINE 1UP</title>
+<meta name="description" content="As séries que mais bombaram na semana, com nota, temporadas, elenco e trailer.">
+<meta name="theme-color" content="#07030f">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://image.tmdb.org">
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/effects.css">
+<link rel="stylesheet" href="/assets/css/arcade.css">
+</head>
+
+<body class="is-loading is-entering">
+
+<div class="preloader">
+  <div class="clapper"><div class="clapper__top"></div><div class="clapper__body">CINE 1UP</div></div>
+  <div class="preloader__pct">000%</div><div class="preloader__bar"></div>
+</div>
+
+<div class="fx-layer fx-grain"></div>
+<div class="crt"></div>
+<div class="crt-vinheta"></div>
+<div class="fx-layer fx-flash"></div>
+<div class="progress"></div>
+
+<header class="header">
+  <div class="wrap header__inner">
+    <a href="/" class="logo" aria-label="CINE 1UP, página inicial">
+      <svg class="logo__bolt" viewBox="0 0 24 32" aria-hidden="true">
+        <path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#ffd60a"/>
+      </svg>
+      <span class="logo__text">CINE<b>1UP</b></span>
+    </a>
+    <nav class="nav" aria-label="Principal">
+      <a class="nav__link" href="/emcartaz.html">Em cartaz</a>
+      <a class="nav__link" href="/series.html" aria-current="page">Séries</a>
+      <a class="nav__link" href="/criticas.html">Críticas</a>
+      <a class="nav__link" href="/jogo.html">Fliperama</a>
+      <a class="nav__link" href="/sobre.html">Sobre</a>
+    </nav>
+    <div class="row">
+      <button class="btn btn--sm btn--ghost" data-som aria-pressed="false"><span>Som desligado</span></button>
+      <button class="burger" aria-label="Abrir menu" aria-expanded="false"><span></span><span></span></button>
+    </div>
+  </div>
+</header>
+
+<div class="menu">
+  <ul class="menu__list">
+    <li><a href="/emcartaz.html">Em cartaz</a></li>
+    <li><a href="/series.html">Séries</a></li>
+    <li><a href="/criticas.html">Críticas</a></li>
+    <li><a href="/jogo.html">Fliperama</a></li>
+    <li><a href="/sobre.html">Sobre</a></li>
+    <li><a href="/admin.html">Publicar</a></li>
+  </ul>
+</div>
+
+<main>
+<section class="section" style="padding-top:clamp(110px,14vw,170px)">
+  <div class="wrap">
+    <span class="eyebrow" data-reveal>Maratona liberada</span>
+    <h1 style="font-size:clamp(2.4rem,7vw,5.4rem);margin-bottom:22px" data-split>Séries<br>em alta</h1>
+    <p class="lead" data-reveal style="--d:180ms">
+      O que o mundo inteiro assistiu nos últimos sete dias, atualizado sozinho.
+      Clique para ver temporadas, episódios, elenco e trailer.
+    </p>
+
+    <div class="vitrine vitrine--grade" data-alta style="margin-top:44px"></div>
+  </div>
+</section>
+
+<div class="marquise" aria-hidden="true"><div class="lampadas" data-lampadas></div></div>
+
+<section class="section">
+  <div class="wrap">
+    <div class="vitrine-cabeca">
+      <div data-reveal>
+        <span class="eyebrow">Sempre cheio</span>
+        <h2>Populares de sempre</h2>
+      </div>
+      <div class="vitrine-setas">
+        <button data-rolar="[data-populares]" data-dir="tras" aria-label="Voltar">←</button>
+        <button data-rolar="[data-populares]" data-dir="frente" aria-label="Avançar">→</button>
+      </div>
+    </div>
+    <div class="vitrine" data-populares></div>
+  </div>
+</section>
+
+<section class="section section--tight">
+  <div class="wrap">
+    <div class="jogo-cta" data-reveal="zoom">
+      <div class="jogo-cta__txt">
+        <span class="eyebrow">Enquanto o próximo episódio carrega</span>
+        <h2>Dá tempo<br>de uma partida</h2>
+        <p class="lead">
+          Dois gabinetes na casa: o labirinto da capa e o Cine Runner, um
+          corredor infinito com placar online.
+        </p>
+        <a class="btn-arcade" href="/jogo.html">▶ Inserir ficha</a>
+      </div>
+      <div class="jogo-cta__art">
+        <canvas id="previaJogo" width="520" height="220" aria-label="Prévia do jogo"></canvas>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__bottom" style="margin-top:0;border-top:0">
+      <span>© <span id="ano"></span> CINE 1UP · dados de filmes e séries por
+        <a class="link-fx" href="https://www.themoviedb.org" target="_blank" rel="noopener">TMDB</a></span>
+      <span><a class="link-fx" href="/admin.html">Publicar</a></span>
+    </div>
+  </div>
+</footer>
+
+<button class="totop" aria-label="Voltar ao topo">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/art.js"></script>
+<script src="/assets/js/md.js"></script>
+<script src="/assets/js/data.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/fx.js"></script>
+<script src="/assets/js/tmdb.js"></script>
+<script src="/assets/js/vitrine.js"></script>
+<script>
+  document.getElementById('ano').textContent = new Date().getFullYear();
+</script>
+
+<script>
+  Vitrine.montar('[data-alta]', () => TMDB.seriesEmAlta(), { quantos: 18 });
+  Vitrine.montar('[data-populares]', () => TMDB.populares('tv'), { quantos: 14 });
+  (function () {
+    var faixa = document.querySelector('[data-lampadas]');
+    if (faixa) faixa.innerHTML = '<i></i>'.repeat(Math.max(12, Math.floor(innerWidth / 34)));
+  })();
+</script>
+</body>
+</html>

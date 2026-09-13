@@ -1,0 +1,166 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sobre — CINE 1UP</title>
+<meta name="description" content="O que é a CINE 1UP: revista de cinema com crítica, ensaio e ilustração original.">
+<link rel="icon" href="/assets/img/favicon.svg" type="image/svg+xml">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/assets/css/base.css">
+<link rel="stylesheet" href="/assets/css/effects.css">
+<link rel="stylesheet" href="/assets/css/arcade.css">
+</head>
+<body class="is-loading is-entering">
+
+<div class="preloader">
+  <div class="clapper"><div class="clapper__top"></div><div class="clapper__body">SOBRE</div></div>
+  <div class="preloader__pct">000%</div><div class="preloader__bar"></div>
+</div>
+
+<div class="fx-layer fx-grain"></div>
+<div class="crt"></div>
+<div class="crt-vinheta"></div>
+<div class="fx-layer fx-flash"></div>
+<div class="progress"></div>
+
+<header class="header">
+  <div class="wrap header__inner">
+    <a href="/" class="logo">
+      <svg class="logo__bolt" viewBox="0 0 24 32"><path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#ffd60a"/></svg>
+      <span class="logo__text">CINE<b>1UP</b></span>
+    </a>
+    <nav class="nav" aria-label="Principal">
+      <a class="nav__link" href="/emcartaz.html">Em cartaz</a>
+      <a class="nav__link" href="/series.html">Séries</a>
+      <a class="nav__link" href="/criticas.html">Críticas</a>
+      <a class="nav__link" href="/jogo.html">Fliperama</a>
+      <a class="nav__link" href="/sobre.html" aria-current="page">Sobre</a>
+    </nav>
+    <button class="burger" aria-label="Abrir menu" aria-expanded="false"><span></span><span></span></button>
+  </div>
+</header>
+
+<div class="menu">
+  <ul class="menu__list">
+    <li><a href="/emcartaz.html">Em cartaz</a></li>
+    <li><a href="/series.html">Séries</a></li>
+    <li><a href="/criticas.html">Críticas</a></li>
+    <li><a href="/jogo.html">Fliperama</a></li>
+    <li><a href="/sobre.html">Sobre</a></li>
+    <li><a href="/admin.html">Publicar</a></li>
+  </ul>
+</div>
+
+<main>
+<section class="section" style="padding-top:clamp(120px,16vw,200px)">
+  <div class="wrap">
+    <span class="eyebrow" data-reveal>Quem somos</span>
+    <h1 style="font-size:clamp(2.4rem,7vw,5.4rem);margin-bottom:30px" data-split>Cinema<br>com ficha<br>na mesa</h1>
+
+    <div class="artigo" style="margin-left:0">
+      <p data-reveal>
+        A CINE 1UP nasceu de uma teimosia dupla: a de acreditar que ainda vale a
+        pena escrever devagar sobre filmes feitos devagar, e a de achar que um
+        site de cinema pode ser divertido de visitar — não só de ler.
+      </p>
+      <p data-reveal>
+        Por isso a capa tem um fliperama rodando atrás do título. Ele começa
+        sozinho, em modo atração, como máquina esperando ficha. Aperte uma seta
+        e o controle é seu.
+      </p>
+
+      <blockquote data-reveal>Sala escura, sem celular, sem spoiler.</blockquote>
+
+      <h2 data-reveal>O que tem aqui</h2>
+      <ul data-reveal>
+        <li><strong>Em cartaz</strong> — o que está passando nos cinemas agora, direto da base do TMDB.</li>
+        <li><strong>Séries</strong> — o que bombou na semana, com temporadas, elenco e trailer.</li>
+        <li><strong>Críticas e ensaios</strong> — texto escrito por gente, com nota e sem enrolação.</li>
+        <li><strong>Fliperama</strong> — dois gabinetes: o labirinto da capa e o Cine Runner.</li>
+      </ul>
+
+      <h2 data-reveal>Ilustração feita aqui</h2>
+      <p data-reveal>
+        Toda matéria sem foto ganha um pôster <strong>exclusivo</strong>, desenhado
+        em vetor a partir do próprio endereço do texto: oito composições, oito
+        paletas, sprites em pixel e até uma fonte 3×5 desenhada à mão para
+        escrever HIGH SCORE e INSERT COIN dentro da arte. Duas matérias nunca
+        têm a mesma capa.
+      </p>
+
+      <h2 data-reveal>Como isso foi feito</h2>
+      <p data-reveal>
+        O site é estático, servido pela Cloudflare, com os textos no Supabase e
+        os dados de filmes e séries no TMDB. O labirinto é canvas puro, com
+        busca em largura para a inteligência dos fantasmas e movimento por tile
+        exato para ninguém atravessar parede. Nada de vídeo de fundo, nada de
+        biblioteca pesada: o único script de terceiros é o do Supabase.
+      </p>
+      <p data-reveal>
+        E tem jogo. Porque intervalo também é parte da sessão.
+        <a class="link-fx" href="/jogo.html">Corre lá.</a>
+      </p>
+    </div>
+
+    <div class="stats" style="margin-top:70px">
+      <div class="stat" data-reveal>
+        <div class="stat__num"><span data-count="0">0</span></div>
+        <div class="stat__label">Fotos de banco nas matérias</div>
+      </div>
+      <div class="stat" data-reveal>
+        <div class="stat__num"><span data-count="100">0</span><span>%</span></div>
+        <div class="stat__label">Arte original</div>
+      </div>
+      <div class="stat" data-reveal>
+        <div class="stat__num"><span data-count="8">0</span></div>
+        <div class="stat__label">Composições de pôster</div>
+      </div>
+      <div class="stat" data-reveal>
+        <div class="stat__num"><span data-count="2">0</span></div>
+        <div class="stat__label">Gabinetes na casa</div>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__grid">
+      <div>
+        <h4>Fale com a redação</h4>
+        <ul>
+          <li><a href="mailto:contato@cine1up.com.br">contato@cine1up.com.br</a></li>
+          <li><a href="/admin.html">Área da redação</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>Newsletter</h4>
+        <form class="subscribe" data-newsletter>
+          <input class="field" type="email" placeholder="seu@email.com" required aria-label="Seu e-mail">
+          <button class="btn btn--solid" type="submit">Assinar</button>
+        </form>
+      </div>
+    </div>
+    <div class="footer__bottom">
+      <span>© <span id="ano"></span> CINE 1UP</span>
+      <span><a class="link-fx" href="/">Início</a></span>
+    </div>
+  </div>
+</footer>
+
+<button class="totop" aria-label="Voltar ao topo">↑</button>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="/assets/js/config.js"></script>
+<script src="/assets/js/art.js"></script>
+<script src="/assets/js/md.js"></script>
+<script src="/assets/js/data.js"></script>
+<script src="/assets/js/ui.js"></script>
+<script src="/assets/js/fx.js"></script>
+<script>document.getElementById('ano').textContent = new Date().getFullYear();</script>
+</body>
+</html>
