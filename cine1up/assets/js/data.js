@@ -278,6 +278,18 @@
     return true;
   }
 
+  /* A pessoa está logada E cadastrada na redação? Ter login não
+     basta: as policies do banco exigem estar na tabela `redacao`. */
+  async function naRedacao() {
+    if (!sb) return true;                       // modo demo: libera
+    const { data: { user } } = await sb.auth.getUser();
+    if (!user) return false;
+    const { data, error } = await sb.from('redacao')
+      .select('papel,nome').eq('user_id', user.id).maybeSingle();
+    if (error) return false;
+    return data || false;
+  }
+
   async function usuarioAtual() {
     if (!sb) return lsGet('cine1up:demo-user', null);
     const { data } = await sb.auth.getUser();
@@ -323,7 +335,7 @@
     slugify, dataBR, tempoLeitura, capaDe,
     listarPosts, postPorSlug, destaque, relacionados, registrarView,
     salvarPost, excluirPost, enviarImagem,
-    entrar, sair, usuarioAtual,
+    entrar, sair, usuarioAtual, naRedacao,
     assinar, salvarPontuacao, ranking,
     DEMO_POSTS
   };

@@ -1,0 +1,10 @@
+# ads.txt — CINE 1UP
+# O Google exige este arquivo para confirmar que os anúncios do seu
+# site são vendidos por você. Troque o número abaixo pelo SEU ID de
+# editor (aparece no AdSense em Conta → Informações da conta,
+# no formato pub-0000000000000000).
+#
+# Enquanto estiver com o número de exemplo, o AdSense vai apontar
+# "ads.txt não autorizado" no painel.
+
+google.com, pub-0000000000000000, DIRECT, f08c47fec0942fa0

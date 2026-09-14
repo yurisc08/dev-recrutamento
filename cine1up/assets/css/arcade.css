@@ -775,3 +775,95 @@
   90%, 94% { opacity: .35; }
   92% { opacity: 1; }
 }
+
+/* ============================================================
+   17. ANÚNCIOS
+   Espaço reservado antes de o anúncio chegar, para nada pular na
+   tela. O rótulo "Publicidade" é uma das palavras permitidas pelo
+   Google; e o bloco mantém distância de botões e de área de jogo,
+   para ninguém clicar sem querer.
+   ============================================================ */
+.anuncio {
+  display: block;
+  position: relative;
+  margin: clamp(34px, 5vw, 56px) auto;
+  padding: 26px 0 0;
+  min-height: 150px;
+  max-width: 100%;
+  text-align: center;
+  border-top: 1px solid var(--line);
+  border-bottom: 1px solid var(--line);
+  background: rgba(255, 255, 255, .015);
+  overflow: hidden;
+}
+
+.anuncio__rotulo {
+  position: absolute;
+  top: 8px; left: 50%;
+  transform: translateX(-50%);
+  font-family: var(--font-pixel);
+  font-size: .44rem;
+  letter-spacing: .14em;
+  text-transform: uppercase;
+  color: var(--text-3);
+  opacity: .8;
+}
+
+.anuncio .adsbygoogle { display: block; min-height: 120px; }
+
+/* dentro do texto: largura da coluna de leitura */
+.anuncio--artigo { max-width: 72ch; }
+
+/* entre seções: respira mais */
+.anuncio--faixa { min-height: 200px; }
+
+/* nunca encostado numa ação */
+.acoes-arcade + .anuncio,
+.anuncio + .acoes-arcade { margin-top: 48px; }
+
+@media (max-width: 600px) {
+  .anuncio { min-height: 120px; margin-block: 30px; }
+}
+
+/* ============================================================
+   18. AVISO DE COOKIES
+   ============================================================ */
+.consentimento {
+  position: fixed;
+  left: 50%;
+  bottom: 18px;
+  z-index: 185;
+  width: min(760px, calc(100vw - 32px));
+  transform: translate(-50%, 130%);
+  display: flex;
+  align-items: center;
+  gap: 22px;
+  flex-wrap: wrap;
+  padding: 20px 24px;
+  border: 2px solid var(--line-2);
+  border-radius: var(--r-md);
+  background: rgba(14, 6, 25, .97);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 24px 60px -20px #000;
+  transition: transform .55s var(--ease-out);
+}
+
+.consentimento.is-visivel { transform: translate(-50%, 0); }
+
+.consentimento__texto {
+  flex: 1 1 320px;
+  font-size: .88rem;
+  line-height: 1.6;
+  color: var(--text-2);
+}
+
+.consentimento__texto strong { color: var(--coin); display: block; margin-bottom: 4px; }
+
+.consentimento__acoes { display: flex; gap: 10px; flex-wrap: wrap; }
+.consentimento__acoes .btn-arcade { font-size: .56rem; padding: 13px 20px; }
+
+@media (max-width: 620px) {
+  .consentimento { padding: 18px; gap: 14px; }
+  .consentimento__acoes { width: 100%; }
+  .consentimento__acoes .btn-arcade { flex: 1; justify-content: center; }
+}

@@ -106,6 +106,9 @@
     /* --- corpo --- */
     $('[data-post-corpo]').innerHTML = window.MD.render(post.corpo);
 
+    /* --- anúncio no meio do texto, longe do título --- */
+    if (window.Ads) window.Ads.noArtigo('.artigo', 3);
+
     /* --- tags --- */
     const tags = post.tags || [];
     $('[data-post-tags]').innerHTML = tags

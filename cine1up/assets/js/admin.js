@@ -48,7 +48,11 @@
     if (window.CV.modoDemo) $('[data-login-demo]').hidden = false;
 
     const usuario = await window.CV.usuarioAtual();
-    if (usuario || sessionStorage.getItem('cv:demo-logado')) return abrirPainel();
+    if (usuario || sessionStorage.getItem('cv:demo-logado')) {
+      const membro = await window.CV.naRedacao();
+      if (membro) return abrirPainel(membro);
+      await window.CV.sair();
+    }
 
     $('[data-form-login]').addEventListener('submit', async e => {
       e.preventDefault();
@@ -58,8 +62,21 @@
       const senha = e.target.senha.value;
       try {
         await window.CV.entrar(email, senha);
+
+        const membro = await window.CV.naRedacao();
+        if (!membro) {
+          await window.CV.sair();
+          erro.hidden = false;
+          erro.className = 'note note--err';
+          erro.innerHTML = 'Este login existe, mas ainda não está liberado para publicar. ' +
+            'No Supabase, rode:<br><span class="mono" style="display:block;margin-top:8px">' +
+            "insert into public.redacao (user_id, nome, papel) select id, 'Seu Nome', 'admin' " +
+            "from auth.users where email = '" + window.UI.esc(email) + "';</span>";
+          return;
+        }
+
         if (window.CV.modoDemo) sessionStorage.setItem('cv:demo-logado', '1');
-        abrirPainel();
+        abrirPainel(membro);
       } catch (err) {
         erro.hidden = false;
         erro.className = 'note note--err';
@@ -67,10 +84,14 @@
       }
     });
 
-    function abrirPainel() {
+    function abrirPainel(membro) {
       box.hidden = true;
       box.style.display = 'none';
       painel.hidden = false;
+      if (membro && membro.nome) {
+        const quem = document.querySelector('[data-quem]');
+        if (quem) quem.textContent = membro.nome + ' · ' + membro.papel;
+      }
       montarPainel();
     }
   }

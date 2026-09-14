@@ -112,9 +112,37 @@ returns void language sql security definer set search_path = public as $$
 $$;
 
 -- ------------------------------------------------------------
--- 5. SEGURANÇA (RLS)
+-- 5. QUEM PODE PUBLICAR
+--    Ter conta não basta: a pessoa precisa estar nesta tabela.
+--    Assim, mesmo que alguém consiga criar um login, não escreve
+--    nada até você colocar o nome aqui.
+-- ------------------------------------------------------------
+create table if not exists public.redacao (
+  user_id    uuid primary key references auth.users(id) on delete cascade,
+  nome       text,
+  papel      text default 'editor' check (papel in ('editor', 'admin')),
+  criado_em  timestamptz default now()
+);
+
+-- É seguro chamar isso dentro das policies: roda como dono da função,
+-- então não entra em recursão com o RLS da própria tabela.
+create or replace function public.na_redacao()
+returns boolean
+language sql stable security definer set search_path = public as $$
+  select exists (select 1 from public.redacao where user_id = auth.uid());
+$$;
+
+alter table public.redacao enable row level security;
+
+drop policy if exists "redacao: cada um vê seu cadastro" on public.redacao;
+create policy "redacao: cada um vê seu cadastro"
+  on public.redacao for select to authenticated
+  using (user_id = auth.uid() or public.na_redacao());
+
+-- ------------------------------------------------------------
+-- 6. SEGURANÇA (RLS)
 --    Visitante só lê o que está publicado.
---    Quem está logado (a redação) faz tudo.
+--    Só quem está na tabela redacao escreve.
 -- ------------------------------------------------------------
 alter table public.posts      enable row level security;
 alter table public.newsletter enable row level security;
@@ -128,22 +156,22 @@ create policy "posts: leitura pública do publicado"
 drop policy if exists "posts: redação lê tudo" on public.posts;
 create policy "posts: redação lê tudo"
   on public.posts for select to authenticated
-  using (true);
+  using (public.na_redacao());
 
 drop policy if exists "posts: redação escreve" on public.posts;
 create policy "posts: redação escreve"
   on public.posts for insert to authenticated
-  with check (true);
+  with check (public.na_redacao());
 
 drop policy if exists "posts: redação edita" on public.posts;
 create policy "posts: redação edita"
   on public.posts for update to authenticated
-  using (true) with check (true);
+  using (public.na_redacao()) with check (public.na_redacao());
 
 drop policy if exists "posts: redação apaga" on public.posts;
 create policy "posts: redação apaga"
   on public.posts for delete to authenticated
-  using (true);
+  using (public.na_redacao());
 
 -- Newsletter: qualquer um assina, ninguém lê a lista pelo site
 drop policy if exists "newsletter: qualquer um assina" on public.newsletter;
@@ -154,7 +182,7 @@ create policy "newsletter: qualquer um assina"
 drop policy if exists "newsletter: só a redação lê" on public.newsletter;
 create policy "newsletter: só a redação lê"
   on public.newsletter for select to authenticated
-  using (true);
+  using (public.na_redacao());
 
 -- Placar: todo mundo lê e envia a própria pontuação
 drop policy if exists "placar: leitura pública" on public.placar;
@@ -168,7 +196,7 @@ create policy "placar: envio público"
   with check (pontos >= 0 and pontos <= 1000000);
 
 -- ------------------------------------------------------------
--- 6. BUCKET DE MÍDIA (imagens enviadas pelo painel)
+-- 7. BUCKET DE MÍDIA (imagens enviadas pelo painel)
 -- ------------------------------------------------------------
 insert into storage.buckets (id, name, public)
 values ('midia', 'midia', true)
@@ -182,15 +210,15 @@ create policy "midia: leitura pública"
 drop policy if exists "midia: redação envia" on storage.objects;
 create policy "midia: redação envia"
   on storage.objects for insert to authenticated
-  with check (bucket_id = 'midia');
+  with check (bucket_id = 'midia' and public.na_redacao());
 
 drop policy if exists "midia: redação apaga" on storage.objects;
 create policy "midia: redação apaga"
   on storage.objects for delete to authenticated
-  using (bucket_id = 'midia');
+  using (bucket_id = 'midia' and public.na_redacao());
 
 -- ------------------------------------------------------------
--- 7. MATÉRIA DE EXEMPLO (rode só se quiser começar com conteúdo)
+-- 8. MATÉRIA DE EXEMPLO (rode só se quiser começar com conteúdo)
 -- ------------------------------------------------------------
 insert into public.posts (slug, titulo, subtitulo, categoria, tags, corpo, autor, destaque, status)
 values (
@@ -205,3 +233,24 @@ values (
   'publicado'
 )
 on conflict (slug) do nothing;
+
+
+-- ------------------------------------------------------------
+-- 9. LIBERAR UMA PESSOA PARA PUBLICAR
+--    Crie o login em Authentication → Users → Add user e depois
+--    rode isto trocando o e-mail. Sem este passo, a pessoa entra
+--    no painel mas não consegue salvar nada.
+-- ------------------------------------------------------------
+-- insert into public.redacao (user_id, nome, papel)
+-- select id, 'Seu Nome', 'admin' from auth.users where email = 'voce@exemplo.com'
+-- on conflict (user_id) do nothing;
+
+-- Para ver quem tem acesso hoje:
+-- select r.papel, r.nome, u.email, r.criado_em
+--   from public.redacao r join auth.users u on u.id = r.user_id
+--  order by r.criado_em;
+
+-- Para tirar o acesso de alguém (o login continua existindo,
+-- mas deixa de poder escrever):
+-- delete from public.redacao
+--  where user_id = (select id from auth.users where email = 'ex@exemplo.com');

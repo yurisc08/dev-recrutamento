@@ -22,6 +22,29 @@ window.CINE1UP = {
   /* Bucket público criado pelo schema.sql */
   BUCKET: 'midia',
 
+  /* ---------------------------------------------------------
+     GOOGLE ADSENSE
+     Preencha depois que a conta for aprovada. Enquanto `cliente`
+     estiver vazio, nenhum script de anúncio é carregado e os
+     espaços simplesmente não aparecem.
+
+     cliente  → seu ID de editor: 'ca-pub-0000000000000000'
+     slots    → o ID de cada bloco criado no painel do AdSense
+     semConsentimento → o que fazer quando a pessoa recusa cookies:
+                'nada' (não carrega anúncio nenhum) ou
+                'nao-personalizado' (carrega sem personalização)
+     --------------------------------------------------------- */
+  ADSENSE: {
+    cliente: '',
+    slots: {
+      artigo: '',     // dentro da matéria
+      rodape: '',     // fim da matéria
+      lista: '',      // entre as seções de listagem
+      home: ''        // meio da home
+    },
+    semConsentimento: 'nada'
+  },
+
   /* Identidade */
   SITE: {
     nome: 'CINE 1UP',

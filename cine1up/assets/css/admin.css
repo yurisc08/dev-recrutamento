@@ -70,6 +70,13 @@ select.field option { background: #0d0d16; }
   backdrop-filter: blur(16px);
 }
 
+.painel__quem {
+  font-family: var(--font-pixel);
+  font-size: .5rem;
+  letter-spacing: .04em;
+  color: var(--coin);
+}
+
 .painel__status {
   font-family: var(--font-mono);
   font-size: .68rem;

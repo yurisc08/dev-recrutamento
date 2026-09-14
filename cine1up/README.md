@@ -148,7 +148,7 @@ wrangler pages deploy . --project-name=cine1up
 
 ---
 
-## 3.4 TMDB (filmes e séries de verdade)
+### 3.4 TMDB (filmes e séries de verdade)
 
 As vitrines **Em cartaz**, **Estreias**, **Séries em alta** e **Populares** não
 são escritas por ninguém: vêm da API do TMDB e se atualizam sozinhas.
@@ -190,38 +190,194 @@ dispara dezenas de chamadas. Para limpar: `TMDB.limparCache()` no console.
 
 ---
 
-## 4. Publicar conteúdo
+## 4. Como funcionam o acesso e as publicações
 
-Acesse **`/admin.html`** e entre com o e-mail e senha criados no Supabase.
+### 4.1 Quem enxerga o quê
 
-Três colunas: **lista** de matérias · **editor** · **ajustes**.
+Existem exatamente dois perfis. Não há tela de cadastro no site — ninguém
+consegue criar conta sozinho.
 
-- **Título** gera o endereço (slug) sozinho — dá para editar.
-- **Corpo** aceita Markdown. Barra com botões e atalhos:
-  `Ctrl+B` negrito · `Ctrl+I` itálico · `Ctrl+K` link · `Ctrl+H` título · `Ctrl+S` salvar.
-- **Imagens**: arraste para dentro do texto, ou cole (`Ctrl+V`) — sobem para o
-  Storage e o markdown entra sozinho.
-- **Capa**: sem imagem enviada, o site desenha uma **ilustração exclusiva** a
-  partir do endereço da matéria. "Outra variação" troca a composição.
-- **Destaque** marca a matéria que vira o título do hero (só uma por vez — o
-  banco garante isso com um trigger).
-- **Editorias**: Notícia, Crítica, Estreia, Série, Ensaio, Entrevista, Lista e
-  Clássico. A editoria também escolhe a paleta da ilustração gerada.
-- **Prévia** mostra o resultado final lado a lado enquanto você escreve.
-- **Rascunho** fica invisível no site; **Publicar** coloca no ar na hora.
+| | Visitante (qualquer pessoa) | Redação (você e quem você liberar) |
+|---|---|---|
+| Ler matérias publicadas | sim | sim |
+| Ver rascunhos | **não** | sim |
+| Criar, editar e apagar matérias | **não** | sim |
+| Enviar imagens | **não** | sim |
+| Ver a lista da newsletter | **não** | sim |
+| Jogar e mandar pontuação | sim | sim |
 
-O texto é guardado no navegador enquanto você escreve — fechou a aba sem querer,
-ele oferece continuar de onde parou.
+Isso não é só a tela escondendo botão: é o banco recusando. As regras de
+*Row Level Security* do `schema.sql` avaliam cada consulta no servidor do
+Supabase. Mesmo que alguém abra o console do navegador e chame a API na mão
+com a chave pública do site, o banco responde "não" para tudo que não seja
+leitura de matéria publicada.
 
-### Sem Supabase configurado
+### 4.2 Liberar alguém para publicar
 
-O site roda em **modo demonstração**: mostra 6 matérias de exemplo e salva o que
-você publicar no `localStorage`. Serve para ver tudo funcionando antes de
-configurar qualquer coisa.
+São dois passos — e os **dois** são necessários. Ter login não dá permissão
+nenhuma; quem manda é a tabela `redacao`.
+
+**Passo 1 — criar o login.**
+Supabase → **Authentication → Users → Add user** → e-mail e senha →
+marque *Auto Confirm User*.
+
+**Passo 2 — colocar na redação.**
+Supabase → **SQL Editor** → rode trocando o e-mail e o nome:
+
+```sql
+insert into public.redacao (user_id, nome, papel)
+select id, 'Seu Nome', 'admin' from auth.users
+ where email = 'voce@exemplo.com'
+on conflict (user_id) do nothing;
+```
+
+Pronto: entre em `/admin.html` com esse e-mail e senha.
+
+Se pular o passo 2, o painel avisa na cara: *"Este login existe, mas ainda não
+está liberado para publicar"* — e já mostra o comando que falta rodar.
+
+**Fechar o cadastro público.** Em *Authentication → Providers → Email*,
+desligue **Enable signup**. Assim nem contas inúteis são criadas.
+
+**Ver quem tem acesso hoje:**
+
+```sql
+select r.papel, r.nome, u.email, r.criado_em
+  from public.redacao r join auth.users u on u.id = r.user_id
+ order by r.criado_em;
+```
+
+**Tirar o acesso de alguém** (o login continua existindo, mas para de escrever):
+
+```sql
+delete from public.redacao
+ where user_id = (select id from auth.users where email = 'ex@exemplo.com');
+```
+
+**Esqueceu a senha?** Supabase → Authentication → Users → os três pontinhos ao
+lado do usuário → *Send password recovery*.
+
+### 4.3 O caminho de uma matéria
+
+1. Você entra em **`/admin.html`** e clica em **+ Nova matéria**.
+2. Escreve. O **título** gera o endereço (slug) sozinho; dá para editar.
+   O corpo aceita Markdown, com barra de botões e atalhos:
+   `Ctrl+B` negrito · `Ctrl+I` itálico · `Ctrl+K` link · `Ctrl+H` título · `Ctrl+S` salvar.
+3. **Imagens**: arraste para dentro do texto ou cole (`Ctrl+V`). Elas sobem
+   para o Storage do Supabase e o markdown entra sozinho.
+4. **Capa**: se você não enviar imagem, o site desenha uma ilustração exclusiva
+   a partir do endereço da matéria. "Outra variação" troca a composição.
+5. **Status `rascunho`** → a matéria existe só para a redação. Some do site.
+6. **Publicar** → aparece **na hora** em `/criticas.html`, na home e nos
+   relacionados. Não precisa fazer deploy de novo: o site é estático, mas o
+   conteúdo vem do banco em tempo real.
+7. **Destaque** marca a matéria que vira o título grande da capa. Só uma por
+   vez — um gatilho no banco desmarca a anterior sozinho.
+
+Enquanto você escreve, o texto é guardado no seu próprio navegador. Se a aba
+fechar sem querer, ao voltar o painel oferece continuar de onde parou.
+
+**Editorias disponíveis:** Notícia, Crítica, Estreia, Série, Ensaio, Entrevista,
+Lista e Clássico. A editoria também escolhe a paleta da ilustração gerada.
+
+### 4.4 O que é automático e o que é seu
+
+| Seção | De onde vem | Precisa de você? |
+|---|---|---|
+| Em cartaz, Estreias, Séries em alta, Populares | TMDB | não, atualiza sozinho |
+| Ticker de manchetes da home | TMDB | não |
+| Notícias, críticas, ensaios | você, pelo painel | sim |
+| Capa (matéria em destaque) | a matéria marcada como destaque | sim |
+| Placar do fliperama | quem jogar | não |
+
+### 4.5 Sem Supabase configurado
+
+O site roda em **modo demonstração**: mostra matérias de exemplo e salva o que
+você publicar no `localStorage` do navegador. Serve para ver tudo funcionando
+antes de configurar qualquer coisa — mas nada disso vai para o ar de verdade.
 
 ---
 
-## 5. Os jogos
+## 5. AdSense
+
+O site já vem com tudo montado para anúncios do Google. Falta só a conta.
+
+### 5.1 O que o código já faz pelas regras do programa
+
+| Regra | Como está resolvido |
+|---|---|
+| Precisa de política de privacidade dizendo que usa cookies e citando o Google | `privacidade.html`, com link no rodapé de todas as páginas |
+| Precisa de `ads.txt` na raiz | `ads.txt` — **troque o número pelo seu ID de editor** |
+| Consentimento de cookies | Nenhum script do Google carrega antes da pessoa escolher no aviso |
+| Nada de clique acidental | Nenhum anúncio no fliperama, e os blocos mantêm distância de botões |
+| Nada de anúncio em página sem conteúdo | `/404.html` e `/admin.html` não recebem anúncio |
+| Densidade razoável | No máximo 3 blocos por página, e o do meio do texto só entra se a matéria tiver fôlego |
+| Rótulo permitido | "Publicidade" — o Google só aceita esta palavra ou "Links patrocinados" |
+| Não empurrar o conteúdo quando o anúncio chega | Cada espaço nasce com altura reservada |
+
+### 5.2 Ligar a sua conta
+
+1. Inscreva-se em [adsense.google.com](https://adsense.google.com) com o domínio
+   do site **já no ar e com conteúdo publicado**. Site vazio é recusado.
+2. Aprovado, crie os blocos em **Anúncios → Por unidade de anúncio →
+   Display**. Crie quatro e anote o ID de cada um.
+3. Preencha em `assets/js/config.js`:
+
+```js
+ADSENSE: {
+  cliente: 'ca-pub-0000000000000000',   // seu ID de editor
+  slots: {
+    artigo: '1111111111',   // no meio da matéria
+    rodape: '2222222222',   // fim da matéria
+    lista:  '3333333333',   // entre seções de listagem
+    home:   '4444444444'    // meio da home
+  },
+  semConsentimento: 'nada'
+}
+```
+
+4. Edite `ads.txt` e troque `pub-0000000000000000` pelo seu número.
+5. Publique. Enquanto `cliente` estiver vazio, nenhum script de anúncio é
+   carregado e os espaços nem aparecem na página — o site continua limpo.
+
+### 5.3 Onde os anúncios aparecem
+
+- **Home** — um bloco entre as vitrines do TMDB e as matérias da redação
+- **Em cartaz / Séries** — um bloco entre seções
+- **Críticas** — um bloco depois da grade, antes da paginação
+- **Matéria** — um depois do terceiro parágrafo e um no fim do texto
+- **Fliperama, 404 e painel** — nenhum, de propósito
+
+### 5.4 Duas coisas que dependem de você
+
+**Aprovação.** O Google exige conteúdo próprio e suficiente, navegação clara e
+a política de privacidade no ar. As vitrines do TMDB **não contam como conteúdo
+próprio** — são dados de terceiros. Publique algumas críticas e notícias suas
+antes de se inscrever.
+
+**Visitantes da Europa e do Reino Unido.** Para essa audiência o Google exige
+uma CMP certificada por ele — o aviso de cookies deste site cumpre a LGPD
+brasileira, mas não substitui a certificação. A solução gratuita é do próprio
+Google: AdSense → **Privacidade e mensagens → Mensagem de consentimento da UE**,
+ative e ele passa a exibir o próprio banner para quem acessa de lá.
+
+**Se a pessoa recusar os cookies**, por padrão nenhum anúncio é exibido. Se
+preferir mostrar anúncios não personalizados nesse caso, troque em
+`config.js`:
+
+```js
+semConsentimento: 'nao-personalizado'
+```
+
+### 5.5 No Blogger
+
+A versão do Blogger não usa este código: lá os anúncios entram pelo próprio
+painel (**Ganhos → AdSense**) ou por um widget de HTML no tema. O `ads.txt` no
+Blogger fica em **Configurações → Monetização → ads.txt personalizado**.
+
+---
+
+## 6. Os jogos
 
 **No hero** — o labirinto, sempre rodando. Setas ou WASD assumem o controle;
 no celular, arraste. Recorde guardado no navegador.
@@ -238,7 +394,7 @@ Toda a arte dos dois jogos é desenhada em canvas por código.
 
 ---
 
-## 6. As ilustrações
+## 7. As ilustrações
 
 Nenhuma imagem de banco. `assets/js/art.js` desenha pôsteres de fliperama em SVG
 a partir de uma semente (o slug da matéria):
@@ -256,7 +412,7 @@ a partir de uma semente (o slug da matéria):
 
 ---
 
-## 7. Mexer no labirinto
+## 8. Mexer no labirinto
 
 O mapa fica no topo de `assets/js/maze.js`, como texto:
 
@@ -281,7 +437,7 @@ pílula, procure por `criarEntidades`, `cerebroFantasma` e `assustadoAte`.
 
 ---
 
-## 8. Blogger (alternativa)
+## 9. Blogger (alternativa)
 
 Em `blogger/` tem o mesmo site empacotado como tema do Blogger — labirinto,
 CRT, ilustrações geradas e tudo mais — para quem prefere publicar pelo editor
@@ -303,7 +459,7 @@ node blogger/build.js
 
 ---
 
-## 9. Desenvolvimento local
+## 10. Desenvolvimento local
 
 Não há build:
 
@@ -315,7 +471,7 @@ python3 -m http.server 8080
 
 ---
 
-## 10. Acessibilidade e performance
+## 11. Acessibilidade e performance
 
 - Sem framework, sem bundler: só a biblioteca do Supabase (via CDN, ~40 KB)
 - Todas as animações param com `prefers-reduced-motion: reduce`, inclusive o
