@@ -23,7 +23,14 @@ nenhum banco público, nenhum CDN — funciona em rede fechada.
 
 ## Instalação
 
-Pré-requisito: Docker e Docker Compose no servidor interno.
+Dois caminhos, conforme a infraestrutura disponível:
+
+* **Servidor interno da empresa** (preferível): siga esta seção — Docker Compose, dados sem sair da rede.
+* **Sem servidor interno**, com os gestores precisando acessar de qualquer forma:
+  veja **[IMPLANTACAO-NUVEM.md](IMPLANTACAO-NUVEM.md)** — publicação pelo navegador, com acesso
+  restrito às faixas de IP da empresa (`IPS_PERMITIDOS`) e checklist de aprovação/LGPD.
+
+Pré-requisito desta seção: Docker e Docker Compose no servidor interno.
 
 ```bash
 cp .env.example .env          # defina POSTGRES_PASSWORD e a porta
@@ -216,6 +223,8 @@ Tudo em banco, editável pelo RH/Admin, sem tocar no código:
 * **Autorização validada no backend** em toda consulta, inclusive exportação.
 * Banco PostgreSQL na rede interna do Compose, sem porta publicada.
 * Cabeçalhos `noindex`, `X-Frame-Options: DENY`, `nosniff`, `no-referrer`.
+* **Restrição por IP** (`IPS_PERMITIDOS`): fora das faixas da empresa/VPN o portal responde 403 —
+  é o que devolve o perímetro quando a hospedagem é externa.
 * Recomendações para a TI: HTTPS com certificado interno, acesso restrito por firewall/VPN,
   backup diário do volume do Postgres, revisão dos usuários ao fim do processo e definição da
   retenção dos dados (LGPD). **A validação final de segurança cabe à TI/Segurança da Informação.**

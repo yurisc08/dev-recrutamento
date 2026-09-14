@@ -1,0 +1,40 @@
+# Implantação em um clique no Render (tudo pelo navegador, sem instalar nada).
+# Passo a passo completo em IMPLANTACAO-NUVEM.md
+services:
+  - type: web
+    name: portal-decisoes
+    runtime: docker
+    dockerfilePath: ./portal-reestruturacao/Dockerfile
+    dockerContext: ./portal-reestruturacao
+    healthCheckPath: /api/saude
+    plan: starter
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: portal-banco
+          property: connectionString
+      - key: DB_SSL
+        value: "false"          # conexão interna do Render dispensa TLS; Supabase/Neon exigem "true"
+      - key: COOKIE_SECURE
+        value: "true"           # o Render já publica em HTTPS
+      - key: SESSION_HOURS
+        value: "8"
+      - key: MAX_UPLOAD_MB
+        value: "25"
+      # Faixas de IP autorizadas (rede da empresa / VPN). Preencha no painel do Render:
+      # exemplo "200.150.10.0/24, 187.44.7.9". Enquanto estiver vazio, qualquer origem acessa.
+      - key: IPS_PERMITIDOS
+        sync: false
+      # Administrador inicial, criado na primeira implantação (senha provisória, trocada no 1º acesso).
+      - key: ADMIN_USUARIO
+        value: rh.admin
+      - key: ADMIN_NOME
+        sync: false
+      - key: ADMIN_SENHA
+        sync: false
+
+databases:
+  - name: portal-banco
+    databaseName: portal
+    user: portal
+    plan: basic-256mb

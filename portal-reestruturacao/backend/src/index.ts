@@ -4,6 +4,7 @@ import { config } from './config.js';
 import { encerrarPool, pool } from './db/pool.js';
 import { tratarErros, ErroHttp } from './http/erros.js';
 import { exigirCabecalhoPortal, exigirLogin, sessao } from './http/auth.js';
+import { restringirPorIp } from './http/filtroIp.js';
 import { rotasAutenticacao } from './rotas/autenticacao.js';
 import { rotasColaboradores } from './rotas/colaboradores.js';
 import { rotasDashboard } from './rotas/dashboard.js';
@@ -40,6 +41,9 @@ export function criarApp() {
     }
     next();
   });
+
+  // A trava de rede vem antes de tudo: quem não está na faixa autorizada nem chega às rotas.
+  app.use(restringirPorIp);
 
   app.get('/api/saude', (_req, res) => {
     res.json({ ok: true, agora: new Date().toISOString() });

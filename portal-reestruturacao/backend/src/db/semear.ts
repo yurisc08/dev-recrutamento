@@ -1,4 +1,5 @@
-import { consultarUm, emTransacao, encerrarPool } from './pool.js';
+import { consultarUm, emTransacao, encerrarPool, pool } from './pool.js';
+import { gerarHash, validarSenha } from '../http/auth.js';
 import { ACOES_PADRAO, CAMPOS_PADRAO, PROCESSO_PADRAO, REGRAS_PADRAO } from './padroes.js';
 import { migrar } from './migrar.js';
 
@@ -73,9 +74,42 @@ export async function semear(): Promise<number> {
   });
 }
 
+/**
+ * Cria o administrador inicial a partir de variáveis de ambiente.
+ * Serve para quem implanta pelo navegador, sem terminal: basta preencher
+ * ADMIN_USUARIO / ADMIN_NOME / ADMIN_SENHA no painel do provedor.
+ * A senha informada é provisória — o portal exige a troca no primeiro acesso.
+ */
+export async function criarAdminInicial(): Promise<void> {
+  const usuario = String(process.env.ADMIN_USUARIO ?? '').trim().toLowerCase();
+  const nome = String(process.env.ADMIN_NOME ?? '').trim();
+  const senha = String(process.env.ADMIN_SENHA ?? '');
+  if (!usuario || !senha) return;
+
+  const problema = validarSenha(senha);
+  if (problema) {
+    console.warn('ADMIN_SENHA não atende à política de senha: ' + problema);
+    return;
+  }
+
+  const existente = await consultarUm<{ id: number }>('SELECT id FROM usuarios WHERE lower(usuario) = $1', [usuario]);
+  if (existente) {
+    console.log('Administrador "' + usuario + '" já existe — nada alterado.');
+    return;
+  }
+  await pool.query(
+    'INSERT INTO usuarios (usuario, nome, senha_hash, perfil, trocar_senha) VALUES ($1, $2, $3, $4, true)',
+    [usuario, nome || 'Administrador', gerarHash(senha), 'admin'],
+  );
+  console.log('Administrador inicial "' + usuario + '" criado (senha provisória: troca obrigatória no 1º acesso).');
+}
+
 if (require.main === module) {
   semear()
-    .then((id) => console.log(`Processo inicial pronto (id ${id}).`))
+    .then(async (id) => {
+      console.log(`Processo inicial pronto (id ${id}).`);
+      await criarAdminInicial();
+    })
     .catch((erro) => {
       console.error('Falha ao semear:', erro);
       process.exitCode = 1;

@@ -1,7 +1,12 @@
 import { Pool, type PoolClient, type QueryResultRow } from 'pg';
 import { config } from '../config.js';
 
-export const pool = new Pool({ connectionString: config.bancoUrl, max: 10 });
+// Bancos gerenciados (Supabase, Neon, Render externo) exigem TLS: ligue com DB_SSL=true.
+export const pool = new Pool({
+  connectionString: config.bancoUrl,
+  max: 10,
+  ...(config.bancoSsl ? { ssl: { rejectUnauthorized: false } } : {}),
+});
 
 export async function consultar<T extends QueryResultRow = QueryResultRow>(
   sql: string,
