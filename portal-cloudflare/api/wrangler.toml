@@ -1,0 +1,27 @@
+name = "portal-decisoes"
+main = "src/index.ts"
+compatibility_date = "2026-01-15"
+# nodejs_compat é o que permite o driver PostgreSQL (postgres.js) rodar no Worker.
+compatibility_flags = ["nodejs_compat"]
+
+# Rota: o mesmo domínio serve a interface (Cloudflare Pages) e a API (este Worker).
+# Assim o cookie de sessão é same-site e não há CORS.
+# [[routes]]
+# pattern = "portal.suaempresa.com.br/api/*"
+# zone_name = "suaempresa.com.br"
+
+[observability]
+enabled = true
+
+[vars]
+# Faixas de IP autorizadas (rede/VPN da empresa). Vazio = qualquer origem.
+IPS_PERMITIDOS = ""
+# Domínio do Cloudflare Access (ex.: "suaempresa.cloudflareaccess.com").
+# Preenchido = o Worker exige e valida o crachá do Access em toda requisição.
+ACCESS_DOMINIO = ""
+ACCESS_AUD = ""
+SESSAO_HORAS = "8"
+COOKIE_SEGURO = "true"
+
+# Segredos (nunca no arquivo): wrangler secret put DATABASE_URL
+# DATABASE_URL = "postgres://portal_app:SENHA@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"

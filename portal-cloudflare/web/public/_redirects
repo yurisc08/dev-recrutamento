@@ -1,0 +1,5 @@
+# SPA: qualquer caminho cai no index.html (as rotas são resolvidas no navegador).
+# /api/* não aparece aqui de propósito: quem responde é o Worker, publicado na
+# rota portal.suaempresa.com.br/api/* — mesmo domínio do Pages, para o cookie de
+# sessão continuar sendo same-site.
+/*  /index.html  200

@@ -1,0 +1,28 @@
+{
+  "name": "portal-decisoes-api",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "API do Portal de Decisões em Cloudflare Workers, com Supabase (PostgreSQL)",
+  "scripts": {
+    "dev": "wrangler dev",
+    "deploy": "wrangler deploy",
+    "verificar": "wrangler deploy --dry-run --outdir .wrangler/saida",
+    "tipos": "tsc --noEmit",
+    "test": "tsx --test test/*.test.ts",
+    "admin": "tsx scripts/criar-admin.ts",
+    "demonstracao": "tsx scripts/semear-demonstracao.ts",
+    "local": "tsx scripts/servidor-local.ts"
+  },
+  "dependencies": {
+    "hono": "^4.13.7",
+    "postgres": "^3.4.9"
+  },
+  "devDependencies": {
+    "@cloudflare/workers-types": "^5.20260914.1",
+    "@types/node": "^26.5.1",
+    "tsx": "^4.23.13",
+    "typescript": "^7.0.2",
+    "wrangler": "^4.131.2"
+  }
+}
