@@ -1,0 +1,48 @@
+# Portal de Decisões — instalação em servidor interno.
+# Suba com:  docker compose up -d --build
+services:
+  banco:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-portal}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?defina POSTGRES_PASSWORD no .env}
+      POSTGRES_DB: ${POSTGRES_DB:-portal}
+    volumes:
+      - dados-postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-portal} -d ${POSTGRES_DB:-portal}"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+    # O banco não é publicado para fora do host: só a rede interna do compose o enxerga.
+
+  api:
+    build: ./backend
+    restart: unless-stopped
+    depends_on:
+      banco:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER:-portal}:${POSTGRES_PASSWORD}@banco:5432/${POSTGRES_DB:-portal}
+      PORT: 4000
+      HOST: 0.0.0.0
+      COOKIE_SECURE: ${COOKIE_SECURE:-false}
+      SESSION_HOURS: ${SESSION_HOURS:-8}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-25}
+      NODE_ENV: production
+    volumes:
+      - dados-uploads:/app/dados
+
+  web:
+    build: ./frontend
+    restart: unless-stopped
+    depends_on:
+      - api
+    ports:
+      # Publique apenas na rede interna (troque por "127.0.0.1:8080:80" se houver proxy no host).
+      - "${PORTA_PUBLICA:-8080}:80"
+
+volumes:
+  dados-postgres:
+  dados-uploads:
