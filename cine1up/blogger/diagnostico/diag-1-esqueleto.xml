@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html b:version='2' class='v2' dir='ltr'
+      xmlns='http://www.w3.org/1999/xhtml'
+      xmlns:b='http://www.google.com/2005/gml/b'
+      xmlns:data='http://www.google.com/2005/gml/data'
+      xmlns:expr='http://www.google.com/2005/gml/expr'>
+<head>
+  <meta content='width=device-width, initial-scale=1' name='viewport'/>
+  <b:include data='blog' name='all-head-content'/>
+  <title><data:blog.pageTitle/></title>
+  <b:skin><![CDATA[
+body { background: #0e0619; color: #fff6e8; font-family: system-ui, sans-serif; }
+.aviso-diagnostico { padding: 18px 22px; margin: 20px; border: 2px solid #ffd60a;
+  border-radius: 8px; background: rgba(255,214,10,.08); color: #ffd60a;
+  font: 15px/1.6 system-ui, sans-serif; }
+
+  ]]></b:skin>
+</head>
+
+<body>
+
+<div class='aviso-diagnostico'>
+  <b>Teste 1 de 3 — esqueleto, sem CSS e sem JavaScript</b><br/>
+  Se você está lendo isto, este arquivo subiu sem erro.
+</div>
+
+<b:section class='principal' id='principal' showaddelement='no'>
+  <b:widget id='Blog1' locked='true' title='Matérias' type='Blog'>
+    <b:includable id='main'>
+      <b:loop values='data:posts' var='post'>
+        <div style='padding:20px'>
+          <h2><data:post.title/></h2>
+          <div class='post-body'><data:post.body/></div>
+        </div>
+      </b:loop>
+    </b:includable>
+  </b:widget>
+</b:section>
+
+
+</body>
+</html>

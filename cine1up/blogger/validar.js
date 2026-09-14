@@ -94,9 +94,11 @@ proibidos.forEach(([termo, motivo]) => {
 });
 
 /* ---------- 7. As Páginas do Blogger precisam renderizar ---------- */
-if (/data:post.body/.test(markup) && !/static_page/.test(markup)) {
-  erros.push('o tema renderiza o conteúdo só em "item": as Páginas ' +
-             '(como a do fliperama) sairiam vazias');
+/* A regra só vale quando o tema condiciona o conteúdo a "item".
+   Um tema que renderiza sempre (sem condicional) não tem o problema. */
+if (/pageType == &quot;item&quot;/.test(markup) && !/static_page/.test(markup)) {
+  erros.push('o conteúdo só sai em pageType "item": as Páginas do Blogger ' +
+             '(como a do fliperama) ficariam vazias');
 }
 
 /* ---------- 8. Tamanho ---------- */

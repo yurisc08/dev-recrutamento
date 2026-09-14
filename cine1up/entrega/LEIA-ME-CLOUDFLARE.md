@@ -36,6 +36,11 @@ README.md           Documentação completa do projeto
 
 ## 1. Subir o site
 
+> **Tem que ser Pages, não Worker.** Se o endereço final terminar em
+> `.workers.dev`, foi criado um Worker: ele devolve a mesma página para todo
+> endereço, inclusive para os arquivos de estilo, e o site abre sem CSS
+> nenhum. O endereço certo termina em `.pages.dev`.
+
 ### Pelo painel (recomendado)
 
 1. Suba esta pasta para um repositório no GitHub.

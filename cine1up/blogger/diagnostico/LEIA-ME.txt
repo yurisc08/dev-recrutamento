@@ -1,0 +1,32 @@
+TESTE DE DIAGNÓSTICO — tema do Blogger
+
+Suba um arquivo por vez, na ordem, em:
+  Blogger -> Tema -> seta ao lado de Personalizar -> Restaurar -> Fazer upload
+
+Depois de cada um, anote: subiu ou deu erro?
+
+  1) diag-1-esqueleto.xml
+  2) diag-2-css.xml
+  3) diag-3-css-js.xml
+
+O QUE O RESULTADO SIGNIFICA
+
+  o 1 ja da erro
+    O problema nao esta no conteudo do tema. Pode ser a conta, o
+    navegador, ou o arquivo chegando corrompido no download.
+    Tente por outro navegador ou baixe o arquivo de novo.
+
+  o 1 sobe e o 2 da erro
+    O problema esta no CSS (provavelmente tamanho ou alguma regra).
+
+  o 2 sobe e o 3 da erro
+    O problema esta no bloco de JavaScript.
+
+  os tres sobem, mas o tema-cine1up.xml da erro
+    O problema esta nas marcacoes do tema completo.
+
+EM QUALQUER CASO, me mande:
+  - qual numero falhou
+  - um print da tela de erro (a mensagem inteira)
+
+Com isso eu corrijo direto, sem ficar tentando as cegas.

@@ -1,12 +1,19 @@
-<!doctype html>
-<html lang="pt-BR">
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE html>
+<html b:version='2' class='v2' dir='ltr'
+      xmlns='http://www.w3.org/1999/xhtml'
+      xmlns:b='http://www.google.com/2005/gml/b'
+      xmlns:data='http://www.google.com/2005/gml/data'
+      xmlns:expr='http://www.google.com/2005/gml/expr'>
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Fliperama — prévia do tema CINE 1UP</title>
-<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-
+  <meta content='width=device-width, initial-scale=1' name='viewport'/>
+  <b:include data='blog' name='all-head-content'/>
+  <title><data:blog.pageTitle/></title>
+  <b:skin><![CDATA[
+body { background: #0e0619; color: #fff6e8; font-family: system-ui, sans-serif; }
+.aviso-diagnostico { padding: 18px 22px; margin: 20px; border: 2px solid #ffd60a;
+  border-radius: 8px; background: rgba(255,214,10,.08); color: #ffd60a;
+  font: 15px/1.6 system-ui, sans-serif; }
 /* ============================================================
    CINE 1UP — base.css
    Tokens, reset, tipografia, layout e componentes estruturais.
@@ -2634,178 +2641,32 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   .consentimento__acoes .btn-arcade { flex: 1; justify-content: center; }
 }
 
-
-/* ---- ajustes para o markup do Blogger ---- */
-.blogger-grid { display: grid; gap: clamp(18px,2.4vw,32px);
-  grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); }
-.status-msg-wrap, .feed-links, .blog-feeds { display: none !important; }
-.post-body img { max-width: 100%; height: auto; border-radius: var(--r-md); }
-.comentarios { max-width: 72ch; margin: 60px auto 0; padding-top: 30px;
-  border-top: 1px solid var(--line); }
-.mais-materias { display: flex; justify-content: center; margin-top: 48px; }
-.secao-feed { margin-bottom: clamp(40px,6vw,74px); }
-
-/* Páginas que pedem largura total, como a do fliperama: o corpo do
-   texto normalmente é estreito (boa leitura), mas o gabinete do jogo
-   fica espremido nessa medida. */
-.artigo:has(.pagina-larga) { max-width: none; }
-.pagina-larga { width: 100%; }
-
-  
-</style>
+  ]]></b:skin>
 </head>
-<body class="is-loading">
 
-<div class="preloader">
-  <div class="clapper"><div class="clapper__top"></div><div class="clapper__body">CINE 1UP</div></div>
-  <div class="preloader__pct">000%</div><div class="preloader__bar"></div>
+<body>
+
+<div class='aviso-diagnostico'>
+  <b>Teste 3 de 3 — com CSS e JavaScript</b><br/>
+  Se você está lendo isto, este arquivo subiu sem erro.
 </div>
 
-<div class="fx-layer fx-grain"></div>
-<div class="crt"></div>
-<div class="crt-vinheta"></div>
-<div class="fx-layer fx-flash"></div>
-<div class="progress"></div>
+<b:section class='principal' id='principal' showaddelement='no'>
+  <b:widget id='Blog1' locked='true' title='Matérias' type='Blog'>
+    <b:includable id='main'>
+      <b:loop values='data:posts' var='post'>
+        <div style='padding:20px'>
+          <h2><data:post.title/></h2>
+          <div class='post-body'><data:post.body/></div>
+        </div>
+      </b:loop>
+    </b:includable>
+  </b:widget>
+</b:section>
 
-<header class="header">
-  <div class="wrap header__inner">
-    <a class="logo" href="previa-capa.html">
-      <svg class="logo__bolt" viewBox="0 0 24 32"><path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#ffd60a"/></svg>
-      <span class="logo__text">CINE<b>1UP</b></span>
-    </a>
-    <nav class="nav">
-      <a class="nav__link" href="previa-capa.html">Notícias</a>
-      <a class="nav__link" href="previa-capa.html">Séries</a>
-      <a class="nav__link" href="previa-capa.html">Críticas</a>
-      <a class="nav__link" href="previa-fliperama.html">Fliperama</a>
-    </nav>
-    <div class="row">
-      <button class="btn btn--sm btn--ghost" data-som="true" type="button"><span>Som desligado</span></button>
-      <button class="burger" type="button"><span></span><span></span></button>
-    </div>
-  </div>
-</header>
-
-<div class="menu">
-  <ul class="menu__list">
-    <li><a href="previa-capa.html">Notícias</a></li>
-    <li><a href="previa-capa.html">Séries</a></li>
-    <li><a href="previa-capa.html">Críticas</a></li>
-    <li><a href="previa-fliperama.html">Fliperama</a></li>
-  </ul>
-</div>
-
-<main class="section" data-area-post="true" style="padding-top:clamp(110px,14vw,170px)">
-  <div class="wrap">
-    <article>
-      <h1 style="font-size:clamp(2.2rem,6vw,4.6rem);margin-bottom:26px">Fliperama</h1>
-      <div class="artigo post-body">
-        <div class="pagina-larga">
-  <span class="eyebrow">Intervalo · Cine Runner</span>
-  <p class="lead" style="margin:14px 0 34px">
-    Você é um rolo de filme fugindo da tempestade. Pule a pipoca, o tripé e a
-    claquete, deslize por baixo do drone e pegue os raios dourados.
-  </p>
-
-  <div class="jogo-palco">
-    <canvas id="jogo" width="900" height="300"
-            aria-label="Cine Runner, jogo de corredor infinito"></canvas>
-    <div class="jogo-controles">
-      <span class="tecla">Espaço</span> pular
-      <span class="tecla">↓</span> deslizar
-      <span class="tecla">Enter</span> recomeçar
-      <span class="jogo-toque">No celular: toque em cima para pular, embaixo para deslizar</span>
-    </div>
-  </div>
-
-  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:48px">
-    <div>
-      <span class="eyebrow">Como pontuar</span>
-      <h2 style="margin-bottom:22px">Regras</h2>
-      <ul class="regras">
-        <li><b>Distância</b> — os pontos sobem sozinhos e a velocidade aumenta junto.</li>
-        <li><b>Raio dourado</b> — vale 50 pontos e aparece no alto; exige pulo bem cronometrado.</li>
-        <li><b>Drone roxo</b> — voa baixo. Não dá para pular: tem que deslizar.</li>
-        <li><b>Obstáculo duplo</b> — só depois dos 180 pontos, quando a coisa fica séria.</li>
-      </ul>
-    </div>
-    <div>
-      <span class="eyebrow">E na capa</span>
-      <h2 style="margin-bottom:22px">Tem outro</h2>
-      <p class="lead" style="font-size:.95rem">
-        O labirinto da página inicial também é jogável: ele roda sozinho em modo
-        atração e passa o controle para você assim que apertar uma seta.
-      </p>
-    </div>
-  </div>
-</div>
-      </div>
-    </article>
-  </div>
-</main>
-
-<footer class="footer">
-  <div class="wrap">
-    <div class="footer__bottom" style="margin-top:0;border-top:0">
-      <span>© CINE 1UP · prévia local do tema</span>
-      <span><a class="link-fx" href="#">Privacidade</a></span>
-    </div>
-  </div>
-</footer>
-
-<button class="totop" type="button">↑</button>
-
-
-<script>
-// só na prévia: responde no lugar do feed do Blogger
-(function () {
-  var tudo = {"feed":{"entry":[{"title":{"$t":"Estreias da semana nos cinemas"},"summary":{"$t":"O que chega às salas e o que vale o ingresso."},"published":{"$t":"2026-09-14T07:53:53.692Z"},"category":[{"term":"Notícia"}],"link":[{"rel":"alternate","href":"#materia-0"}]},{"title":{"$t":"O elenco da nova temporada"},"summary":{"$t":"Quem entra e quem sai na virada da série."},"published":{"$t":"2026-09-13T07:53:53.692Z"},"category":[{"term":"Notícia"}],"link":[{"rel":"alternate","href":"#materia-1"}]},{"title":{"$t":"A série que ninguém viu chegar"},"summary":{"$t":"Oito episódios que reorganizam o gênero por dentro."},"published":{"$t":"2026-09-12T07:53:53.692Z"},"category":[{"term":"Série"}],"link":[{"rel":"alternate","href":"#materia-2"}]},{"title":{"$t":"Maratona de fim de semana"},"summary":{"$t":"Quatro temporadas que cabem em dois dias."},"published":{"$t":"2026-09-11T07:53:53.692Z"},"category":[{"term":"Série"}],"link":[{"rel":"alternate","href":"#materia-3"}]},{"title":{"$t":"O último analógico"},"summary":{"$t":"Filmado em película, aposta no grão como personagem."},"published":{"$t":"2026-09-10T07:53:53.692Z"},"category":[{"term":"Crítica"}],"link":[{"rel":"alternate","href":"#materia-4"}]},{"title":{"$t":"Na sala de projeção"},"summary":{"$t":"Uma conversa sobre restaurar filmes que quase se perderam."},"published":{"$t":"2026-09-09T07:53:53.692Z"},"category":[{"term":"Ensaio"}],"link":[{"rel":"alternate","href":"#materia-5"}]},{"title":{"$t":"As 10 aberturas mais elétricas"},"summary":{"$t":"Sequências que já chegam com a tensão no talo."},"published":{"$t":"2026-09-08T07:53:53.692Z"},"category":[{"term":"Lista"}],"link":[{"rel":"alternate","href":"#materia-6"}]},{"title":{"$t":"O clássico que envelheceu ao contrário"},"summary":{"$t":"Um fracasso de bilheteria virou gramática visual."},"published":{"$t":"2026-09-07T07:53:53.692Z"},"category":[{"term":"Crítica"}],"link":[{"rel":"alternate","href":"#materia-7"}]}]}};
-  var porRotulo = {"Notícia":{"feed":{"entry":[{"title":{"$t":"Estreias da semana nos cinemas"},"summary":{"$t":"O que chega às salas e o que vale o ingresso."},"published":{"$t":"2026-09-14T07:53:53.692Z"},"category":[{"term":"Notícia"}],"link":[{"rel":"alternate","href":"#materia-0"}]},{"title":{"$t":"O elenco da nova temporada"},"summary":{"$t":"Quem entra e quem sai na virada da série."},"published":{"$t":"2026-09-13T07:53:53.692Z"},"category":[{"term":"Notícia"}],"link":[{"rel":"alternate","href":"#materia-1"}]}]}},"Série":{"feed":{"entry":[{"title":{"$t":"A série que ninguém viu chegar"},"summary":{"$t":"Oito episódios que reorganizam o gênero por dentro."},"published":{"$t":"2026-09-14T07:53:53.692Z"},"category":[{"term":"Série"}],"link":[{"rel":"alternate","href":"#materia-0"}]},{"title":{"$t":"Maratona de fim de semana"},"summary":{"$t":"Quatro temporadas que cabem em dois dias."},"published":{"$t":"2026-09-13T07:53:53.692Z"},"category":[{"term":"Série"}],"link":[{"rel":"alternate","href":"#materia-1"}]}]}},"Crítica":{"feed":{"entry":[{"title":{"$t":"O último analógico"},"summary":{"$t":"Filmado em película, aposta no grão como personagem."},"published":{"$t":"2026-09-14T07:53:53.692Z"},"category":[{"term":"Crítica"}],"link":[{"rel":"alternate","href":"#materia-0"}]},{"title":{"$t":"O clássico que envelheceu ao contrário"},"summary":{"$t":"Um fracasso de bilheteria virou gramática visual."},"published":{"$t":"2026-09-13T07:53:53.692Z"},"category":[{"term":"Crítica"}],"link":[{"rel":"alternate","href":"#materia-1"}]}]}},"Ensaio":{"feed":{"entry":[{"title":{"$t":"Na sala de projeção"},"summary":{"$t":"Uma conversa sobre restaurar filmes que quase se perderam."},"published":{"$t":"2026-09-14T07:53:53.692Z"},"category":[{"term":"Ensaio"}],"link":[{"rel":"alternate","href":"#materia-0"}]}]}},"Lista":{"feed":{"entry":[{"title":{"$t":"As 10 aberturas mais elétricas"},"summary":{"$t":"Sequências que já chegam com a tensão no talo."},"published":{"$t":"2026-09-14T07:53:53.692Z"},"category":[{"term":"Lista"}],"link":[{"rel":"alternate","href":"#materia-0"}]}]}}};
-
-  var original = window.fetch;
-  window.fetch = function (url) {
-    var u = String(url);
-    if (u.indexOf('/feeds/') === 0) {
-      var corpo = tudo;
-      var m = u.match(/\/feeds\/posts\/summary\/default\/-\/([^?]+)/);
-      if (m) corpo = porRotulo[decodeURIComponent(m[1])] || { feed: { entry: [] } };
-      return Promise.resolve(new Response(JSON.stringify(corpo), {
-        status: 200, headers: { 'content-type': 'application/json' }
-      }));
-    }
-    return original.apply(this, arguments);
-  };
-})();
-</script>
-
-<script>
-
-
-/* ============================================================
-   CONFIGURE AQUI — a única coisa que você precisa mexer
-   ============================================================ */
-window.CINE1UP = {
-
-  /* AdSense: preencha depois que a conta for aprovada.
-     Com 'cliente' vazio, nenhum script de anúncio é carregado e os
-     espaços nem aparecem na página. */
-  ADSENSE: {
-    cliente: '',              // 'ca-pub-0000000000000000'
-    slots: { lista: '', artigo: '', rodape: '' },
-    semConsentimento: 'nada', // ou 'nao-personalizado'
-    semAnuncioEm: ['/p/fliperama.html']
-  },
-
-  /* Os marcadores que viram seções na capa. Precisam existir como
-     rótulos nas suas postagens, escritos igualzinho. */
-  SECOES: [
-    { rotulo: 'Notícia', titulo: 'Últimas notícias', olho: 'Acabou de sair' },
-    { rotulo: 'Série',   titulo: 'Séries',           olho: 'Maratona' }
-  ],
-
-  SITE: { nome: 'CINE 1UP', email: 'contato@exemplo.com' }
-};
-
+<script type='text/javascript'>
+//<![CDATA[
+window.CINE1UP = { ADSENSE: { cliente: '', slots: {}, semAnuncioEm: [] }, SECOES: [] };
 
 /* ============================================================
    CINE 1UP — art.js
@@ -5661,125 +5522,8 @@ window.CINE1UP = {
   window.BloggerFeed = { buscar, montarLista, card, imagemGrande, dataBR };
 })();
 
-
-
-/* ---- cola do tema ---- */
-(function () {
-  'use strict';
-
-  var ehCapa = !!document.querySelector('[data-capa]');
-
-  // 1) Na capa, monta as seções a partir do feed do próprio blog
-  if (ehCapa && window.BloggerFeed) {
-    var alvo = document.querySelector('[data-secoes]');
-    var cfg = (window.CINE1UP.SECOES || []);
-    var html = '';
-
-    cfg.forEach(function (s, i) {
-      html += '<section class="secao-feed">' +
-              '<span class="eyebrow">' + s.olho + '</span>' +
-              '<h2 style="margin-bottom:28px">' + s.titulo + '</h2>' +
-              '<div class="blogger-grid" data-feed="' + i + '">' +
-              '<div class="skeleton" style="aspect-ratio:3/4"></div>'.repeat(3) +
-              '</div></section>';
-    });
-
-    html += '<section class="secao-feed" id="materias">' +
-            '<span class="eyebrow">Tudo</span>' +
-            '<h2 style="margin-bottom:28px">As últimas da redação</h2>' +
-            '<div class="blogger-grid" data-feed="tudo">' +
-            '<div class="skeleton" style="aspect-ratio:3/4"></div>'.repeat(3) +
-            '</div></section>';
-
-    if (alvo) alvo.innerHTML = html;
-
-    cfg.forEach(function (s, i) {
-      window.BloggerFeed.montarLista('[data-feed="' + i + '"]', {
-        quantos: 6, rotulo: s.rotulo, sumirSeVazio: true
-      });
-    });
-
-    window.BloggerFeed.montarLista('[data-feed="tudo"]', { quantos: 9 })
-      .then(ligarHero);
-  }
-
-  // 2) Fora da capa, a área de conteúdo pode ficar vazia: some com ela
-  var areaPost = document.querySelector('[data-area-post]');
-  if (areaPost && !areaPost.querySelector('article')) {
-    areaPost.parentNode.removeChild(areaPost);
-  }
-
-  // 3) Lâmpadas da marquise
-  var faixa = document.querySelector('[data-lampadas]');
-  if (faixa) faixa.innerHTML = new Array(Math.max(12, Math.floor(innerWidth / 34)) + 1).join('<i></i>');
-
-  // 4) Sprites da faixa de perseguição
-  var trilha = document.querySelector('[data-perseguicao]');
-  if (trilha) {
-    var fant = function (cor) {
-      return '<svg class="sprite" viewBox="0 0 32 32" style="color:' + cor + '">' +
-        '<path fill="' + cor + '" d="M16 2a12 12 0 0 0-12 12v16l4-3 4 3 4-3 4 3 4-3 4 3V14A12 12 0 0 0 16 2Z"/>' +
-        '<circle cx="11" cy="13" r="4.2" fill="#fff"/><circle cx="21" cy="13" r="4.2" fill="#fff"/>' +
-        '<circle cx="9.6" cy="13" r="2.1" fill="#14103a"/><circle cx="19.6" cy="13" r="2.1" fill="#14103a"/></svg>';
-    };
-    trilha.innerHTML =
-      '<svg class="sprite" viewBox="0 0 32 32" style="color:#ffd60a"><path fill="#ffd60a" d="M16 16 29 8a15 15 0 1 0 0 16Z"/></svg>' +
-      ['#ff2b4e', '#ff6ad5', '#22e7ff', '#ff9d2e'].map(fant).join('');
-  }
-
-  // 5) O hero aponta para a matéria mais recente
-  function ligarHero() {
-    var primeiro = document.querySelector('.card');
-    var alvoTitulo = document.querySelector('[data-hero-titulo]');
-    if (!primeiro || !alvoTitulo) return;
-
-    var titulo = primeiro.querySelector('.card__title').textContent.trim();
-    var link = primeiro.querySelector('.card__link').getAttribute('href');
-    var partes = titulo.split(' ');
-    var corte = Math.ceil(partes.length / 2);
-    alvoTitulo.innerHTML = partes.slice(0, corte).join(' ') + '<br><em>' + partes.slice(corte).join(' ') + '</em>';
-
-    var sub = document.querySelector('[data-hero-sub]');
-    var resumo = primeiro.querySelector('.card__excerpt');
-    if (sub && resumo && resumo.textContent.trim()) sub.textContent = resumo.textContent;
-
-    var cta = document.querySelector('[data-hero-cta]');
-    if (cta && link) cta.setAttribute('href', link);
-  }
-
-  // 6) O labirinto em modo atração
-  var cv = document.querySelector('.arcade-hero__maze--frente');
-  if (!cv || !window.Labirinto || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
-
-  var placar = document.querySelector('[data-placar]');
-  var recordeEl = document.querySelector('[data-recorde]');
-  var dica = document.querySelector('[data-dica]');
-  var recorde = Number(localStorage.getItem('cine1up:maze') || 0);
-  if (recordeEl) recordeEl.textContent = String(recorde).padStart(6, '0');
-
-  var lab = new window.Labirinto(cv, {
-    canvasFundo: document.querySelector('.arcade-hero__maze--fundo'),
-    aoComer: function (pts) { if (placar) placar.textContent = String(pts).padStart(6, '0'); },
-    aoPilula: function () { window.FX && window.FX.flash(40 + Math.random() * 30); },
-    aoMorrer: function (pts) {
-      if (pts > recorde) {
-        recorde = pts;
-        localStorage.setItem('cine1up:maze', String(pts));
-        if (recordeEl) recordeEl.textContent = String(recorde).padStart(6, '0');
-      }
-    },
-    aoAssumir: function () {
-      if (!dica) return;
-      dica.textContent = '1 PLAYER · VOCÊ ESTÁ NO CONTROLE';
-      dica.classList.add('is-on');
-    }
-  });
-  lab.start();
-  window.CVLabirinto = lab;
-  document.addEventListener('visibilitychange', function () { lab.pausado = document.hidden; });
-})();
-
-
+//]]>
 </script>
+
 </body>
 </html>

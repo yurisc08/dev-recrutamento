@@ -37,7 +37,11 @@ node blogger/build.js && node blogger/validar.js
 3. **Fazer upload** → escolha **`tema-cine1up.xml`** → confirme.
 4. Abra o blog. O labirinto já está rodando na capa.
 
-> **Se o upload der erro**, tente o outro arquivo: **`tema-cine1up-v3.xml`**.
+> **Se o upload der erro**, faça o teste da pasta `diagnostico/` antes de
+> qualquer outra coisa — está explicado na seção logo abaixo. Ele diz em três
+> minutos onde está o problema, e sem isso eu só consigo chutar.
+>
+> Antes disso, vale tentar o outro arquivo: **`tema-cine1up-v3.xml`**.
 > Os dois têm exatamente o mesmo conteúdo; muda só o motor de template que o
 > Blogger usa para ler o arquivo (o segundo declara `layoutsVersion='3'` e
 > `version='2'` nos widgets). Um dos dois é o que a sua conta aceita.
@@ -46,6 +50,35 @@ node blogger/build.js && node blogger/validar.js
 > aponta a linha e o motivo, e é o que permite corrigir.
 
 > Antes de trocar, guarde uma cópia do tema atual: mesmo menu → **Fazer backup**.
+
+---
+
+## 1b. Se der erro no upload: o teste de três arquivos
+
+Na pasta `diagnostico/` tem três temas, do mais simples ao completo. Suba um
+por vez, na mesma tela de sempre (Tema → Restaurar → Fazer upload), e anote
+qual deu erro:
+
+| Arquivo | O que tem dentro | Tamanho |
+|---|---|---|
+| `diag-1-esqueleto.xml` | o mínimo que o Blogger aceita | 1 KB |
+| `diag-2-css.xml` | o mesmo + todo o CSS | 70 KB |
+| `diag-3-css-js.xml` | o mesmo + todo o JavaScript | 169 KB |
+
+O que cada resultado significa:
+
+- **O 1 já dá erro** → o problema não é o conteúdo do tema. Pode ser a conta, o
+  navegador ou o arquivo chegando corrompido. Tente por outro navegador.
+- **O 1 sobe, o 2 dá erro** → o problema está no CSS (provavelmente o tamanho).
+- **O 2 sobe, o 3 dá erro** → o problema está no bloco de JavaScript.
+- **Os três sobem, mas o tema completo dá erro** → o problema está nas
+  marcações do tema, e aí eu sei exatamente onde procurar.
+
+Depois de subir cada teste o blog fica com cara de rascunho — é esperado. Ao
+terminar, suba o tema de verdade (ou o seu anterior, se guardou o backup).
+
+**Me mande o número que falhou e um print da mensagem de erro.** Com isso eu
+corrijo de primeira.
 
 ---
 
