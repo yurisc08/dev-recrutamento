@@ -4,6 +4,30 @@ A mesma revista, publicando pelo editor do Google. Labirinto jogável na capa,
 prateleiras do TMDB, ilustrações geradas, tela de CRT, Cine Runner e AdSense —
 tudo dentro de um arquivo de tema.
 
+### Como o tema conversa com o Blogger
+
+O interpretador de temas do Blogger é rígido e recusa uma porção de coisas que
+parecem inofensivas: campos antigos como `data:post.snippet` e
+`data:post.firstImageUrl`, expressões com ternário dentro de `expr:`, widget sem
+`version='2'`. Qualquer um deles já derruba o upload com uma lista de erros.
+
+Por isso este tema pede ao Blogger o **mínimo possível**:
+
+- só `data:post.title` e `data:post.body`, e só na página da matéria
+- links do menu são endereços comuns (`/search/label/Notícia`), sem `expr:`
+- a lista de matérias da capa **não** vem do tema: é montada no navegador a
+  partir do feed JSON do próprio blog (`/feeds/posts/summary/default?alt=json`)
+
+Menos coisa para o Blogger interpretar, menos chance de erro no upload. Antes de
+subir, rode o validador — ele confere as regras conhecidas:
+
+```bash
+node blogger/build.js && node blogger/validar.js
+```
+
+> A validação final é do próprio Blogger. Se ainda aparecer erro no upload,
+> **copie a mensagem inteira**: ela diz a linha e o motivo.
+
 ---
 
 ## 1. Instalar o tema
@@ -91,7 +115,8 @@ Escreva normalmente em **Nova postagem**. O tema cuida do resto:
 - **Marcadores** viram a editoria do card e definem a paleta da ilustração
   gerada. Use os mesmos nomes do menu: `Notícia`, `Série`, `Crítica`, `Ensaio`,
   `Lista`, `Estreia`, `Clássico`, `Entrevista`.
-- **Primeira imagem do post** vira a capa do card automaticamente.
+- **Primeira imagem do post** vira a capa do card automaticamente (o tema usa a
+  miniatura do feed e pede a versão grande dela).
 - **Sem imagem nenhuma?** O tema desenha uma ilustração exclusiva em SVG a
   partir do endereço do post — a mesma arte generativa da versão principal.
 - A **matéria mais recente** vira o título grande da capa sozinha.

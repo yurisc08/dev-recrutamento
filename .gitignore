@@ -1,7 +1,8 @@
-# Pacotes gerados para envio (o conteúdo já está versionado em cinevolt/)
+# Pacotes gerados para envio (o conteúdo já está versionado em cine1up/)
 *.zip
 
 # Sistema / editor
 .DS_Store
 Thumbs.db
 node_modules/
+dist/

@@ -1,18 +1,28 @@
 /* ============================================================
    CINE 1UP — blogger/build.js
-   Monta o tema do Blogger a partir dos MESMOS arquivos do site
-   principal, para as duas versões nunca ficarem diferentes.
+   Monta o tema do Blogger a partir dos MESMOS arquivos do site.
 
    Uso:  node blogger/build.js
    Saída: blogger/cine1up-blogger.xml
 
-   O que muda em relação à versão Cloudflare:
-   · o conteúdo vem dos posts do Blogger, não do Supabase
-   · o TMDB é chamado direto do navegador (não existe /api/tmdb lá),
-     então a chave fica visível no tema — é uma chave só de leitura
-   · o jogo vai embutido no próprio tema; basta criar uma página
-     com o canvas (veja blogger/fliperama.html)
-   ============================================================ */
+   ------------------------------------------------------------
+   REGRA DE OURO DESTE ARQUIVO
+   O interpretador de temas do Blogger é rígido e recusa muita
+   coisa que parece inofensiva. Então o tema pede a ele o MÍNIMO:
+
+     · só data:post.title e data:post.body, e só na página da
+       matéria — são os dois campos que existem em toda versão
+     · nenhum expr: com conta, ternário ou concatenação
+     · nada de data:post.snippet, firstImageUrl, dateHeader,
+       data:post.author nem acessos tipo .first.name
+     · links do menu são endereços comuns (/search/label/...),
+       que funcionam em qualquer blog
+     · b:widget com version='2', como o Blogger exige hoje
+
+   A lista de matérias da capa não vem do tema: é montada no
+   navegador a partir do feed JSON do próprio blog (blogger.js).
+   Menos coisa para o Blogger interpretar, menos erro no upload.
+   ------------------------------------------------------------ */
 
 const fs = require('fs');
 const path = require('path');
@@ -35,7 +45,8 @@ const js = [
   'assets/js/tmdb.js',
   'assets/js/vitrine.js',
   'assets/js/ads.js',
-  'assets/js/game.js'
+  'assets/js/game.js',
+  'assets/js/blogger.js'
 ].map(ler).join('\n\n');
 
 /* ---------- Bloco que o usuário edita ---------- */
@@ -45,33 +56,22 @@ const config = `
    ============================================================ */
 window.CINE1UP = {
 
-  /* 1. TMDB — para as prateleiras de "em cartaz" e "séries em alta".
-        Pegue a chave v3 em themoviedb.org → Configurações → API.
-        Deixe vazio se não quiser essas seções.
-        No Blogger a chave fica visível no tema; é uma chave só de
-        leitura, então o risco é baixo. */
+  /* 1. TMDB — alimenta "nos cinemas agora" e "séries em alta".
+        Chave grátis em themoviedb.org → Configurações → API.
+        Deixando vazio, essas seções somem e o resto funciona igual. */
   TMDB_KEY: '',
   TMDB_PROXY: false,          // no Blogger não existe /api/tmdb
 
   /* 2. AdSense — preencha depois que a conta for aprovada.
-        Com 'cliente' vazio, nenhum script de anúncio carrega e os
-        espaços nem aparecem na página. */
+        Com 'cliente' vazio, nenhum script de anúncio carrega. */
   ADSENSE: {
     cliente: '',              // 'ca-pub-0000000000000000'
-    slots: {
-      lista:  '',             // entre seções da home
-      artigo: '',             // meio da matéria
-      rodape: ''              // fim da matéria
-    },
+    slots: { lista: '', artigo: '', rodape: '' },
     semConsentimento: 'nada', // ou 'nao-personalizado'
     semAnuncioEm: ['/p/fliperama.html']
   },
 
-  SITE: {
-    nome: 'CINE 1UP',
-    email: 'contato@exemplo.com'
-  },
-
+  SITE: { nome: 'CINE 1UP', email: 'contato@exemplo.com' },
   CATEGORIAS: ['Notícia', 'Crítica', 'Estreia', 'Série', 'Ensaio', 'Lista']
 };
 `;
@@ -81,33 +81,36 @@ const cssBlogger = `
 /* ---- ajustes para o markup do Blogger ---- */
 .blogger-grid { display: grid; gap: clamp(18px,2.4vw,32px);
   grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); }
-.status-msg-wrap, .feed-links { display: none !important; }
-.blog-pager { display: flex; justify-content: center; gap: 12px; margin-top: 54px; }
-.blog-pager a { padding: 12px 24px; border: 2px solid var(--line-2); border-radius: 6px;
-  font-family: var(--font-pixel); font-size: .56rem; letter-spacing: .04em; text-transform: uppercase; }
-.blog-pager a:hover { background: var(--coin); color: #1a1000; border-color: var(--coin); }
+.status-msg-wrap, .feed-links, .blog-feeds { display: none !important; }
 .post-body img { max-width: 100%; height: auto; border-radius: var(--r-md); }
-.comentarios { max-width: 72ch; margin: 60px auto 0; padding-top: 30px; border-top: 1px solid var(--line); }
+.comentarios { max-width: 72ch; margin: 60px auto 0; padding-top: 30px;
+  border-top: 1px solid var(--line); }
+.mais-materias { display: flex; justify-content: center; margin-top: 48px; }
 `;
 
-/* ---------- Cola: liga as peças no markup do Blogger ---------- */
+/* ---------- Cola: liga as peças ---------- */
 const cola = `
 /* ---- cola do tema ---- */
 (function () {
   'use strict';
 
-  // 1) Posts sem imagem ganham uma ilustração exclusiva
-  document.querySelectorAll('img.arte-gerada').forEach(function (img) {
-    img.src = window.Art.posterURL(img.dataset.seed || img.alt, {
-      categoria: img.dataset.cat, w: 700, ratio: '3/4'
-    });
-  });
+  // 1) Lista de matérias da capa, vinda do feed do blog
+  if (window.BloggerFeed && document.querySelector('[data-lista-blogger]')) {
+    window.BloggerFeed.montarLista('[data-lista-blogger]', { quantos: 9 })
+      .then(ligarHero);
+  } else {
+    ligarHero();
+  }
 
-  // 2) Lâmpadas da marquise
+  // 2) Na capa, a área reservada à matéria fica vazia: some com ela
+  var areaPost = document.querySelector('[data-area-post]');
+  if (areaPost && !areaPost.querySelector('article')) areaPost.parentNode.removeChild(areaPost);
+
+  // 3) Lâmpadas da marquise
   var faixa = document.querySelector('[data-lampadas]');
   if (faixa) faixa.innerHTML = new Array(Math.max(12, Math.floor(innerWidth / 34)) + 1).join('<i></i>');
 
-  // 3) Sprites da faixa de perseguição
+  // 4) Sprites da faixa de perseguição
   var trilha = document.querySelector('[data-perseguicao]');
   if (trilha) {
     var fant = function (cor) {
@@ -121,32 +124,37 @@ const cola = `
       ['#ff2b4e', '#ff6ad5', '#22e7ff', '#ff9d2e'].map(fant).join('');
   }
 
-  // 4) Prateleiras do TMDB e manchetes
+  // 5) Prateleiras do TMDB (somem se a chave não estiver preenchida)
   if (window.TMDB && window.Vitrine && window.CINE1UP.TMDB_KEY) {
     window.Vitrine.montar('[data-vitrine-cartaz]', function () { return window.TMDB.emCartaz(); }, { quantos: 12 });
     window.Vitrine.montar('[data-vitrine-series]', function () { return window.TMDB.seriesEmAlta(); }, { quantos: 12 });
     window.Vitrine.ticker('[data-manchetes]');
   } else {
-    document.querySelectorAll('[data-secao-tmdb]').forEach(function (el) { el.remove(); });
+    var secoes = document.querySelectorAll('[data-secao-tmdb]');
+    for (var i = 0; i < secoes.length; i++) secoes[i].parentNode.removeChild(secoes[i]);
   }
 
-  // 5) O hero aponta para a matéria mais recente
-  var primeiro = document.querySelector('.card');
-  var alvoTitulo = document.querySelector('[data-hero-titulo]');
-  if (primeiro && alvoTitulo) {
+  // 6) O hero aponta para a matéria mais recente
+  function ligarHero() {
+    var primeiro = document.querySelector('.card');
+    var alvoTitulo = document.querySelector('[data-hero-titulo]');
+    if (!primeiro || !alvoTitulo) return;
+
     var titulo = primeiro.querySelector('.card__title').textContent.trim();
     var link = primeiro.querySelector('.card__link').getAttribute('href');
     var partes = titulo.split(' ');
     var corte = Math.ceil(partes.length / 2);
     alvoTitulo.innerHTML = partes.slice(0, corte).join(' ') + '<br><em>' + partes.slice(corte).join(' ') + '</em>';
+
     var sub = document.querySelector('[data-hero-sub]');
     var resumo = primeiro.querySelector('.card__excerpt');
-    if (sub && resumo) sub.textContent = resumo.textContent;
+    if (sub && resumo && resumo.textContent.trim()) sub.textContent = resumo.textContent;
+
     var cta = document.querySelector('[data-hero-cta]');
     if (cta && link) cta.setAttribute('href', link);
   }
 
-  // 6) O labirinto em modo atração
+  // 7) O labirinto em modo atração
   var cv = document.querySelector('.arcade-hero__maze--frente');
   if (!cv || !window.Labirinto || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
@@ -179,21 +187,21 @@ const cola = `
 })();
 `;
 
-/* ---------- Pedaços de markup reaproveitados ---------- */
+/* ---------- Markup ---------- */
 const cabecalho = `<header class='header'>
   <div class='wrap header__inner'>
-    <a class='logo' expr:href='data:blog.homepageUrl'>
+    <a class='logo' href='/'>
       <svg class='logo__bolt' viewBox='0 0 24 32'><path d='M14 0 2 18h7l-3 14 14-19h-8l2-13Z' fill='#ffd60a'/></svg>
       <span class='logo__text'>CINE<b>1UP</b></span>
     </a>
     <nav class='nav'>
-      <a class='nav__link' expr:href='data:blog.homepageUrl + &quot;search/label/Notícia&quot;'>Notícias</a>
-      <a class='nav__link' expr:href='data:blog.homepageUrl + &quot;search/label/Série&quot;'>Séries</a>
-      <a class='nav__link' expr:href='data:blog.homepageUrl + &quot;search/label/Crítica&quot;'>Críticas</a>
-      <a class='nav__link' expr:href='data:blog.homepageUrl + &quot;p/fliperama.html&quot;'>Fliperama</a>
+      <a class='nav__link' href='/search/label/Not%C3%ADcia'>Notícias</a>
+      <a class='nav__link' href='/search/label/S%C3%A9rie'>Séries</a>
+      <a class='nav__link' href='/search/label/Cr%C3%ADtica'>Críticas</a>
+      <a class='nav__link' href='/p/fliperama.html'>Fliperama</a>
     </nav>
     <div class='row'>
-      <button class='btn btn--sm btn--ghost' data-som='true'><span>Som desligado</span></button>
+      <button class='btn btn--sm btn--ghost' data-som='true' type='button'><span>Som desligado</span></button>
       <button class='burger' type='button'><span></span><span></span></button>
     </div>
   </div>
@@ -201,18 +209,30 @@ const cabecalho = `<header class='header'>
 
 <div class='menu'>
   <ul class='menu__list'>
-    <li><a expr:href='data:blog.homepageUrl + &quot;search/label/Notícia&quot;'>Notícias</a></li>
-    <li><a expr:href='data:blog.homepageUrl + &quot;search/label/Série&quot;'>Séries</a></li>
-    <li><a expr:href='data:blog.homepageUrl + &quot;search/label/Crítica&quot;'>Críticas</a></li>
-    <li><a expr:href='data:blog.homepageUrl + &quot;search/label/Ensaio&quot;'>Ensaios</a></li>
-    <li><a expr:href='data:blog.homepageUrl + &quot;p/fliperama.html&quot;'>Fliperama</a></li>
+    <li><a href='/search/label/Not%C3%ADcia'>Notícias</a></li>
+    <li><a href='/search/label/S%C3%A9rie'>Séries</a></li>
+    <li><a href='/search/label/Cr%C3%ADtica'>Críticas</a></li>
+    <li><a href='/search/label/Ensaio'>Ensaios</a></li>
+    <li><a href='/p/fliperama.html'>Fliperama</a></li>
   </ul>
 </div>`;
+
+const rodape = `<footer class='footer'>
+  <div class='wrap'>
+    <div class='footer__bottom' style='margin-top:0;border-top:0'>
+      <span>© <data:blog.title/> · dados de filmes e séries por
+        <a class='link-fx' href='https://www.themoviedb.org' rel='noopener' target='_blank'>TMDB</a></span>
+      <span><a class='link-fx' href='/p/privacidade.html'>Privacidade</a></span>
+    </div>
+  </div>
+</footer>
+
+<button class='totop' type='button'>↑</button>`;
 
 /* ---------------------------------------------------------- */
 const xml = `<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE html>
-<html b:version='2' class='v2' expr:dir='data:blog.languageDirection'
+<html b:version='2' b:layoutsVersion='3' class='v2' dir='ltr'
       xmlns='http://www.w3.org/1999/xhtml'
       xmlns:b='http://www.google.com/2005/gml/b'
       xmlns:data='http://www.google.com/2005/gml/data'
@@ -244,101 +264,112 @@ ${cssBlogger}
 
 ${cabecalho}
 
-<!-- ================= HERO (só na home) ================= -->
-<b:if cond='data:blog.url == data:blog.homepageUrl'>
-<section class='arcade-hero' id='palco'>
-  <canvas class='arcade-hero__maze arcade-hero__maze--fundo'></canvas>
-  <canvas class='arcade-hero__maze arcade-hero__maze--frente'></canvas>
-  <div class='arcade-hero__veu'></div>
+<b:if cond='data:blog.pageType == &quot;item&quot;'>
+  <b:else/>
 
-  <div class='hud'>
-    <div class='hud__linha'>Pontos <span class='hud__valor' data-placar='true'>000000</span></div>
-    <div class='hud__linha'>Recorde <span class='hud__valor' data-recorde='true'>000000</span></div>
-    <div class='hud__dica' data-dica='true'>← ↑ ↓ → para jogar</div>
-  </div>
+  <!-- ===================== CAPA ===================== -->
+  <section class='arcade-hero' id='palco'>
+    <canvas class='arcade-hero__maze arcade-hero__maze--fundo'></canvas>
+    <canvas class='arcade-hero__maze arcade-hero__maze--frente'></canvas>
+    <div class='arcade-hero__veu'></div>
 
-  <div class='arcade-hero__conteudo'>
-    <span class='insert-coin pixel'><i></i> <span>Insira uma ficha</span></span>
-    <h1 class='titulo-arcade' data-hero-titulo='true'>Cinema<br/>em modo<br/><em>arcade</em></h1>
-    <p class='sub-arcade' data-hero-sub='true'><data:blog.title/></p>
-    <div class='acoes-arcade'>
-      <a class='btn-arcade' data-hero-cta='true' expr:href='data:blog.homepageUrl'>▶ Ler as matérias</a>
-      <a class='btn-arcade btn-arcade--ghost' expr:href='data:blog.homepageUrl + &quot;p/fliperama.html&quot;'>🕹 Jogar</a>
+    <div class='hud'>
+      <div class='hud__linha'>Pontos <span class='hud__valor' data-placar='true'>000000</span></div>
+      <div class='hud__linha'>Recorde <span class='hud__valor' data-recorde='true'>000000</span></div>
+      <div class='hud__dica' data-dica='true'>← ↑ ↓ → para jogar</div>
     </div>
-  </div>
-</section>
 
-<div class='marquise'><div class='lampadas' data-lampadas='true'></div></div>
-
-<div class='marquee' data-secao-tmdb='true'>
-  <div class='marquee__track' data-manchetes='true'>
-    <span class='marquee__item'><i></i> Carregando as estreias…</span>
-  </div>
-</div>
-
-<div class='perseguicao'>
-  <div class='perseguicao__pontos'></div>
-  <div class='perseguicao__trilha' data-perseguicao='true'></div>
-</div>
-
-<!-- Prateleiras do TMDB: somem sozinhas se a chave não estiver preenchida -->
-<section class='section' data-secao-tmdb='true'>
-  <div class='wrap'>
-    <div class='vitrine-cabeca'>
-      <div>
-        <span class='eyebrow'>Sessão de hoje</span>
-        <h2>Nos cinemas agora</h2>
-      </div>
-      <div class='vitrine-setas'>
-        <button data-rolar='[data-vitrine-cartaz]' data-dir='tras' type='button'>←</button>
-        <button data-rolar='[data-vitrine-cartaz]' data-dir='frente' type='button'>→</button>
+    <div class='arcade-hero__conteudo'>
+      <span class='insert-coin pixel'><i></i> <span>Insira uma ficha</span></span>
+      <h1 class='titulo-arcade' data-hero-titulo='true'>Cinema<br/>em modo<br/><em>arcade</em></h1>
+      <p class='sub-arcade' data-hero-sub='true'><data:blog.title/></p>
+      <div class='acoes-arcade'>
+        <a class='btn-arcade' data-hero-cta='true' href='#materias'>▶ Ler as matérias</a>
+        <a class='btn-arcade btn-arcade--ghost' href='/p/fliperama.html'>🕹 Jogar</a>
       </div>
     </div>
-    <div class='vitrine' data-vitrine-cartaz='true'></div>
-  </div>
-</section>
+  </section>
 
-<section class='section section--tight' data-secao-tmdb='true'>
-  <div class='wrap'>
-    <div class='vitrine-cabeca'>
-      <div>
-        <span class='eyebrow'>Maratona da semana</span>
-        <h2>Séries em alta</h2>
+  <div class='marquise'><div class='lampadas' data-lampadas='true'></div></div>
+
+  <div class='marquee' data-secao-tmdb='true'>
+    <div class='marquee__track' data-manchetes='true'>
+      <span class='marquee__item'><i></i> Carregando as estreias…</span>
+    </div>
+  </div>
+
+  <div class='perseguicao'>
+    <div class='perseguicao__pontos'></div>
+    <div class='perseguicao__trilha' data-perseguicao='true'></div>
+  </div>
+
+  <section class='section' data-secao-tmdb='true'>
+    <div class='wrap'>
+      <div class='vitrine-cabeca'>
+        <div>
+          <span class='eyebrow'>Sessão de hoje</span>
+          <h2>Nos cinemas agora</h2>
+        </div>
+        <div class='vitrine-setas'>
+          <button data-dir='tras' data-rolar='[data-vitrine-cartaz]' type='button'>←</button>
+          <button data-dir='frente' data-rolar='[data-vitrine-cartaz]' type='button'>→</button>
+        </div>
       </div>
-      <div class='vitrine-setas'>
-        <button data-rolar='[data-vitrine-series]' data-dir='tras' type='button'>←</button>
-        <button data-rolar='[data-vitrine-series]' data-dir='frente' type='button'>→</button>
+      <div class='vitrine' data-vitrine-cartaz='true'></div>
+    </div>
+  </section>
+
+  <section class='section section--tight' data-secao-tmdb='true'>
+    <div class='wrap'>
+      <div class='vitrine-cabeca'>
+        <div>
+          <span class='eyebrow'>Maratona da semana</span>
+          <h2>Séries em alta</h2>
+        </div>
+        <div class='vitrine-setas'>
+          <button data-dir='tras' data-rolar='[data-vitrine-series]' type='button'>←</button>
+          <button data-dir='frente' data-rolar='[data-vitrine-series]' type='button'>→</button>
+        </div>
+      </div>
+      <div class='vitrine' data-vitrine-series='true'></div>
+    </div>
+  </section>
+
+  <div class='wrap'><aside class='anuncio anuncio--faixa' data-anuncio='lista'></aside></div>
+
+  <section class='section' id='materias'>
+    <div class='wrap'>
+      <span class='eyebrow'>Escrito por gente</span>
+      <h2 style='margin-bottom:40px'>As últimas da redação</h2>
+
+      <!-- montado a partir do feed do próprio blog, em blogger.js -->
+      <div class='blogger-grid' data-lista-blogger='true'>
+        <div class='skeleton' style='aspect-ratio:3/4'></div>
+        <div class='skeleton' style='aspect-ratio:3/4'></div>
+        <div class='skeleton' style='aspect-ratio:3/4'></div>
       </div>
     </div>
-    <div class='vitrine' data-vitrine-series='true'></div>
-  </div>
-</section>
+  </section>
 
-<div class='wrap'><aside class='anuncio anuncio--faixa' data-anuncio='lista'></aside></div>
 </b:if>
 
-<!-- ================= CONTEÚDO ================= -->
-<main class='section'>
+<!-- ===================== MATÉRIA =====================
+     Um único widget de Blog no tema inteiro, fora de qualquer
+     condicional — é assim que o Blogger espera. Na capa ele não
+     imprime nada, e o JS remove esta área vazia.
+     ===================================================== -->
+<main class='section' data-area-post='true' style='padding-top:clamp(110px,14vw,170px)'>
   <div class='wrap'>
     <b:section class='principal' id='principal' showaddelement='no'>
-      <b:widget id='Blog1' locked='true' title='Matérias' type='Blog'>
+      <b:widget id='Blog1' locked='true' title='Matérias' type='Blog' version='2'>
         <b:includable id='main'>
-
           <b:if cond='data:blog.pageType == &quot;item&quot;'>
-            <!-- MATÉRIA -->
             <b:loop values='data:posts' var='post'>
               <article>
-                <span class='eyebrow'>
-                  <b:if cond='data:post.labels'>
-                    <b:loop values='data:post.labels' var='label'><data:label.name/> </b:loop>
-                  <b:else/>Cinema</b:if>
-                </span>
-                <h1 style='font-size:clamp(2.2rem,6vw,4.6rem);margin-bottom:20px'><data:post.title/></h1>
-                <div class='post-meta'>
-                  <span>Por <b><data:post.author/></b></span>
-                  <span><data:post.dateHeader/></span>
-                </div>
-                <div class='artigo post-body' style='margin-top:44px'>
+                <h1 style='font-size:clamp(2.2rem,6vw,4.6rem);margin-bottom:26px'>
+                  <data:post.title/>
+                </h1>
+                <div class='artigo post-body'>
                   <data:post.body/>
                 </div>
 
@@ -351,68 +382,20 @@ ${cabecalho}
                     </b:loop>
                   </div>
                 </div>
-                <b:if cond='data:post.allowComments'>
-                  <div class='comentarios'><b:include data='post' name='comments'/></div>
-                </b:if>
+
+                <div class='mais-materias'>
+                  <a class='btn-arcade' href='/'>▶ Ver todas as matérias</a>
+                </div>
               </article>
             </b:loop>
-
-          <b:else/>
-            <!-- LISTA -->
-            <span class='eyebrow'>Escrito por gente</span>
-            <h2 style='margin-bottom:40px'>As últimas da redação</h2>
-            <div class='blogger-grid'>
-              <b:loop values='data:posts' var='post'>
-                <article class='card' data-tilt='7' data-reveal='true'>
-                  <a class='card__link' expr:href='data:post.url'><span class='sr-only'><data:post.title/></span></a>
-                  <div class='card__media'>
-                    <b:if cond='data:post.firstImageUrl'>
-                      <img expr:src='data:post.firstImageUrl' expr:alt='data:post.title' loading='lazy'/>
-                    <b:else/>
-                      <img class='arte-gerada' expr:data-seed='data:post.url'
-                           expr:data-cat='data:post.labels ? data:post.labels.first.name : &quot;Crítica&quot;'
-                           expr:alt='data:post.title' src='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='/>
-                    </b:if>
-                  </div>
-                  <div class='card__body'>
-                    <div class='card__meta'>
-                      <span><b:if cond='data:post.labels'><data:post.labels.first.name/><b:else/>Cinema</b:if></span>
-                      <span><data:post.dateHeader/></span>
-                    </div>
-                    <h3 class='card__title'><data:post.title/></h3>
-                    <p class='card__excerpt'><data:post.snippet/></p>
-                  </div>
-                </article>
-              </b:loop>
-            </div>
-            <div class='blog-pager' id='blog-pager'>
-              <b:if cond='data:olderPageUrl'>
-                <a expr:href='data:olderPageUrl'>Matérias anteriores →</a>
-              </b:if>
-              <b:if cond='data:newerPageUrl'>
-                <a expr:href='data:newerPageUrl'>← Mais recentes</a>
-              </b:if>
-            </div>
           </b:if>
-
         </b:includable>
       </b:widget>
     </b:section>
   </div>
 </main>
 
-<!-- ================= RODAPÉ ================= -->
-<footer class='footer'>
-  <div class='wrap'>
-    <div class='footer__bottom' style='margin-top:0;border-top:0'>
-      <span>© <data:blog.title/> · dados de filmes e séries por
-        <a class='link-fx' href='https://www.themoviedb.org' rel='noopener' target='_blank'>TMDB</a></span>
-      <span><a class='link-fx' expr:href='data:blog.homepageUrl + &quot;p/privacidade.html&quot;'>Privacidade</a></span>
-    </div>
-  </div>
-</footer>
-
-<button class='totop' type='button'>↑</button>
+${rodape}
 
 <script type='text/javascript'>
 //<![CDATA[

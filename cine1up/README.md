@@ -82,20 +82,19 @@ Duas decisões técnicas que importam, documentadas em `maze.js`:
 | 12 | Ilustrações de fliperama geradas por semente | `art.js` |
 | 13 | Fonte pixel 3×5 desenhada à mão, usada dentro dos pôsteres | `art.js` |
 | 14 | Preloader de claquete batendo | `effects.css` |
-| 15 | Cursor customizado com trilha de faíscas | `fx.js` |
-| 16 | Grão de filme sobre a página toda | `effects.css` |
-| 17 | Revelação no scroll (fade, slide, zoom, clip) | `fx.js` |
-| 18 | Título subindo linha a linha | `fx.js` |
-| 19 | Tilt 3D nos cards com brilho seguindo o mouse | `fx.js` |
-| 20 | Botões magnéticos | `fx.js` |
-| 21 | Marquee infinito e tira de filme rolando | `effects.css` |
-| 22 | Contadores animados | `fx.js` |
-| 23 | Transição entre páginas com cortina + flash | `fx.js` |
-| 24 | Barra de progresso de leitura | `fx.js` |
-| 25 | Lightbox de trailer (YouTube) | `fx.js` |
-| 26 | Capitular na primeira letra do artigo | `effects.css` |
-| 27 | Menu fullscreen com abertura circular | `base.css` |
-| 28 | `prefers-reduced-motion` respeitado em tudo | `arcade.css` |
+| 15 | Grão de filme sobre a página toda | `effects.css` |
+| 16 | Revelação no scroll (fade, slide, zoom, clip) | `fx.js` |
+| 17 | Título subindo linha a linha | `fx.js` |
+| 18 | Tilt 3D nos cards com brilho seguindo o mouse | `fx.js` |
+| 19 | Botões magnéticos | `fx.js` |
+| 20 | Marquee infinito e tira de filme rolando | `effects.css` |
+| 21 | Contadores animados | `fx.js` |
+| 22 | Transição entre páginas com cortina + flash | `fx.js` |
+| 23 | Barra de progresso de leitura | `fx.js` |
+| 24 | Lightbox de trailer (YouTube) | `fx.js` |
+| 25 | Capitular na primeira letra do artigo | `effects.css` |
+| 26 | Menu fullscreen com abertura circular | `base.css` |
+| 27 | `prefers-reduced-motion` respeitado em tudo | `arcade.css` |
 
 ---
 

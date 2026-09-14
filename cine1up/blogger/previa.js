@@ -40,19 +40,37 @@ const EXEMPLOS = [
   ['O clássico que envelheceu ao contrário', 'Crítica', 'Um fracasso de bilheteria que virou gramática visual.']
 ];
 
-const cards = EXEMPLOS.map(([titulo, cat, resumo], i) => `
-  <article class="card" data-tilt="7" data-reveal="true">
-    <a class="card__link" href="#"><span class="sr-only">${titulo}</span></a>
-    <div class="card__media">
-      <img class="arte-gerada" data-seed="exemplo-${i}-${titulo}" data-cat="${cat}" alt="${titulo}"
-           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
-    </div>
-    <div class="card__body">
-      <div class="card__meta"><span>${cat}</span><span>14 de set. de 2026</span></div>
-      <h3 class="card__title">${titulo}</h3>
-      <p class="card__excerpt">${resumo}</p>
-    </div>
-  </article>`).join('');
+/* O tema monta a lista da capa pelo feed JSON do Blogger. Aqui não
+   existe blog nenhum, então a prévia devolve um feed de mentira no
+   mesmo formato — assim o código exercitado é exatamente o mesmo. */
+const feedFalso = {
+  feed: {
+    entry: EXEMPLOS.map(([titulo, cat, resumo], i) => ({
+      title: { $t: titulo },
+      summary: { $t: resumo },
+      published: { $t: new Date(Date.now() - i * 864e5).toISOString() },
+      category: [{ term: cat }],
+      link: [{ rel: 'alternate', href: '#materia-' + i }]
+    }))
+  }
+};
+
+const intercepta = `
+<script>
+// só na prévia: finge ser o feed do Blogger
+(function () {
+  var feed = ${JSON.stringify(feedFalso)};
+  var originalFetch = window.fetch;
+  window.fetch = function (url, opcoes) {
+    if (String(url).indexOf('/feeds/') === 0) {
+      return Promise.resolve(new Response(JSON.stringify(feed), {
+        status: 200, headers: { 'content-type': 'application/json' }
+      }));
+    }
+    return originalFetch.apply(this, arguments);
+  };
+})();
+<\/script>`;
 
 const html = `<!doctype html>
 <html lang="pt-BR">
@@ -171,7 +189,11 @@ ${css}
   <div class="wrap">
     <span class="eyebrow">Escrito por gente</span>
     <h2 style="margin-bottom:40px">As últimas da redação</h2>
-    <div class="blogger-grid">${cards}</div>
+    <div class="blogger-grid" data-lista-blogger="true">
+        <div class="skeleton" style="aspect-ratio:3/4"></div>
+        <div class="skeleton" style="aspect-ratio:3/4"></div>
+        <div class="skeleton" style="aspect-ratio:3/4"></div>
+      </div>
   </div>
 </main>
 
@@ -185,6 +207,8 @@ ${css}
 </footer>
 
 <button class="totop" type="button">↑</button>
+
+${intercepta}
 
 <script>
 ${js}

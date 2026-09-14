@@ -779,58 +779,6 @@ p { margin: 0 0 1em; }
 .fx-bolts { z-index: 2; position: absolute; inset: 0; width: 100%; height: 100%; }
 
 /* ------------------------------------------------------------
-   3. CURSOR CUSTOMIZADO
-   ------------------------------------------------------------ */
-@media (hover: hover) and (pointer: fine) {
-  body.has-cursor { cursor: none; }
-  body.has-cursor a,
-  body.has-cursor button { cursor: none; }
-
-  .cursor {
-    position: fixed;
-    top: 0; left: 0;
-    z-index: 150;
-    pointer-events: none;
-    mix-blend-mode: difference;
-  }
-
-  .cursor__dot {
-    position: absolute;
-    width: 7px; height: 7px;
-    margin: -3.5px 0 0 -3.5px;
-    border-radius: 50%;
-    background: #fff;
-  }
-
-  .cursor__ring {
-    position: absolute;
-    width: 38px; height: 38px;
-    margin: -19px 0 0 -19px;
-    border: 1px solid rgba(255, 255, 255, .6);
-    border-radius: 50%;
-    transition: width .3s var(--ease-out), height .3s var(--ease-out),
-                margin .3s var(--ease-out), border-color .3s, background .3s;
-  }
-
-  .cursor.is-hot .cursor__ring {
-    width: 68px; height: 68px;
-    margin: -34px 0 0 -34px;
-    background: rgba(255, 255, 255, .12);
-    border-color: #fff;
-  }
-
-  .cursor__spark {
-    position: absolute;
-    width: 3px; height: 3px;
-    border-radius: 50%;
-    background: var(--bolt);
-    opacity: .8;
-  }
-}
-
-@media (hover: none) { .cursor { display: none; } }
-
-/* ------------------------------------------------------------
    4. REVEAL NO SCROLL
    ------------------------------------------------------------ */
 [data-reveal] {
@@ -1388,8 +1336,6 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   [data-reveal] { opacity: 1 !important; transform: none !important; clip-path: none !important; }
   .split-line > span { transform: none !important; }
   .fx-grain, .fx-scan, .fx-flash, .hero__floor { display: none; }
-  .cursor { display: none; }
-  body.has-cursor { cursor: auto; }
 }
 
 /* ------------------------------------------------------------
@@ -2692,13 +2638,11 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 /* ---- ajustes para o markup do Blogger ---- */
 .blogger-grid { display: grid; gap: clamp(18px,2.4vw,32px);
   grid-template-columns: repeat(auto-fill, minmax(280px,1fr)); }
-.status-msg-wrap, .feed-links { display: none !important; }
-.blog-pager { display: flex; justify-content: center; gap: 12px; margin-top: 54px; }
-.blog-pager a { padding: 12px 24px; border: 2px solid var(--line-2); border-radius: 6px;
-  font-family: var(--font-pixel); font-size: .56rem; letter-spacing: .04em; text-transform: uppercase; }
-.blog-pager a:hover { background: var(--coin); color: #1a1000; border-color: var(--coin); }
+.status-msg-wrap, .feed-links, .blog-feeds { display: none !important; }
 .post-body img { max-width: 100%; height: auto; border-radius: var(--r-md); }
-.comentarios { max-width: 72ch; margin: 60px auto 0; padding-top: 30px; border-top: 1px solid var(--line); }
+.comentarios { max-width: 72ch; margin: 60px auto 0; padding-top: 30px;
+  border-top: 1px solid var(--line); }
+.mais-materias { display: flex; justify-content: center; margin-top: 48px; }
 
   
 </style>
@@ -2809,79 +2753,11 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
   <div class="wrap">
     <span class="eyebrow">Escrito por gente</span>
     <h2 style="margin-bottom:40px">As últimas da redação</h2>
-    <div class="blogger-grid">
-  <article class="card" data-tilt="7" data-reveal="true">
-    <a class="card__link" href="#"><span class="sr-only">Estreias da semana nos cinemas</span></a>
-    <div class="card__media">
-      <img class="arte-gerada" data-seed="exemplo-0-Estreias da semana nos cinemas" data-cat="Notícia" alt="Estreias da semana nos cinemas"
-           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
-    </div>
-    <div class="card__body">
-      <div class="card__meta"><span>Notícia</span><span>14 de set. de 2026</span></div>
-      <h3 class="card__title">Estreias da semana nos cinemas</h3>
-      <p class="card__excerpt">O que chega às salas e o que vale o ingresso.</p>
-    </div>
-  </article>
-  <article class="card" data-tilt="7" data-reveal="true">
-    <a class="card__link" href="#"><span class="sr-only">O último analógico</span></a>
-    <div class="card__media">
-      <img class="arte-gerada" data-seed="exemplo-1-O último analógico" data-cat="Crítica" alt="O último analógico"
-           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
-    </div>
-    <div class="card__body">
-      <div class="card__meta"><span>Crítica</span><span>14 de set. de 2026</span></div>
-      <h3 class="card__title">O último analógico</h3>
-      <p class="card__excerpt">Filmado em película, o longa aposta no grão como personagem.</p>
-    </div>
-  </article>
-  <article class="card" data-tilt="7" data-reveal="true">
-    <a class="card__link" href="#"><span class="sr-only">A série que ninguém viu chegar</span></a>
-    <div class="card__media">
-      <img class="arte-gerada" data-seed="exemplo-2-A série que ninguém viu chegar" data-cat="Série" alt="A série que ninguém viu chegar"
-           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
-    </div>
-    <div class="card__body">
-      <div class="card__meta"><span>Série</span><span>14 de set. de 2026</span></div>
-      <h3 class="card__title">A série que ninguém viu chegar</h3>
-      <p class="card__excerpt">Oito episódios que reorganizam o gênero por dentro.</p>
-    </div>
-  </article>
-  <article class="card" data-tilt="7" data-reveal="true">
-    <a class="card__link" href="#"><span class="sr-only">Na sala de projeção</span></a>
-    <div class="card__media">
-      <img class="arte-gerada" data-seed="exemplo-3-Na sala de projeção" data-cat="Ensaio" alt="Na sala de projeção"
-           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
-    </div>
-    <div class="card__body">
-      <div class="card__meta"><span>Ensaio</span><span>14 de set. de 2026</span></div>
-      <h3 class="card__title">Na sala de projeção</h3>
-      <p class="card__excerpt">Uma conversa sobre restaurar filmes que quase se perderam.</p>
-    </div>
-  </article>
-  <article class="card" data-tilt="7" data-reveal="true">
-    <a class="card__link" href="#"><span class="sr-only">As 10 aberturas mais elétricas</span></a>
-    <div class="card__media">
-      <img class="arte-gerada" data-seed="exemplo-4-As 10 aberturas mais elétricas" data-cat="Lista" alt="As 10 aberturas mais elétricas"
-           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
-    </div>
-    <div class="card__body">
-      <div class="card__meta"><span>Lista</span><span>14 de set. de 2026</span></div>
-      <h3 class="card__title">As 10 aberturas mais elétricas</h3>
-      <p class="card__excerpt">Sequências iniciais que já chegam com a tensão no talo.</p>
-    </div>
-  </article>
-  <article class="card" data-tilt="7" data-reveal="true">
-    <a class="card__link" href="#"><span class="sr-only">O clássico que envelheceu ao contrário</span></a>
-    <div class="card__media">
-      <img class="arte-gerada" data-seed="exemplo-5-O clássico que envelheceu ao contrário" data-cat="Crítica" alt="O clássico que envelheceu ao contrário"
-           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
-    </div>
-    <div class="card__body">
-      <div class="card__meta"><span>Crítica</span><span>14 de set. de 2026</span></div>
-      <h3 class="card__title">O clássico que envelheceu ao contrário</h3>
-      <p class="card__excerpt">Um fracasso de bilheteria que virou gramática visual.</p>
-    </div>
-  </article></div>
+    <div class="blogger-grid" data-lista-blogger="true">
+        <div class="skeleton" style="aspect-ratio:3/4"></div>
+        <div class="skeleton" style="aspect-ratio:3/4"></div>
+        <div class="skeleton" style="aspect-ratio:3/4"></div>
+      </div>
   </div>
 </main>
 
@@ -2896,6 +2772,23 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 
 <button class="totop" type="button">↑</button>
 
+
+<script>
+// só na prévia: finge ser o feed do Blogger
+(function () {
+  var feed = {"feed":{"entry":[{"title":{"$t":"Estreias da semana nos cinemas"},"summary":{"$t":"O que chega às salas e o que vale o ingresso."},"published":{"$t":"2026-09-14T07:29:15.284Z"},"category":[{"term":"Notícia"}],"link":[{"rel":"alternate","href":"#materia-0"}]},{"title":{"$t":"O último analógico"},"summary":{"$t":"Filmado em película, o longa aposta no grão como personagem."},"published":{"$t":"2026-09-13T07:29:15.284Z"},"category":[{"term":"Crítica"}],"link":[{"rel":"alternate","href":"#materia-1"}]},{"title":{"$t":"A série que ninguém viu chegar"},"summary":{"$t":"Oito episódios que reorganizam o gênero por dentro."},"published":{"$t":"2026-09-12T07:29:15.284Z"},"category":[{"term":"Série"}],"link":[{"rel":"alternate","href":"#materia-2"}]},{"title":{"$t":"Na sala de projeção"},"summary":{"$t":"Uma conversa sobre restaurar filmes que quase se perderam."},"published":{"$t":"2026-09-11T07:29:15.284Z"},"category":[{"term":"Ensaio"}],"link":[{"rel":"alternate","href":"#materia-3"}]},{"title":{"$t":"As 10 aberturas mais elétricas"},"summary":{"$t":"Sequências iniciais que já chegam com a tensão no talo."},"published":{"$t":"2026-09-10T07:29:15.284Z"},"category":[{"term":"Lista"}],"link":[{"rel":"alternate","href":"#materia-4"}]},{"title":{"$t":"O clássico que envelheceu ao contrário"},"summary":{"$t":"Um fracasso de bilheteria que virou gramática visual."},"published":{"$t":"2026-09-09T07:29:15.284Z"},"category":[{"term":"Crítica"}],"link":[{"rel":"alternate","href":"#materia-5"}]}]}};
+  var originalFetch = window.fetch;
+  window.fetch = function (url, opcoes) {
+    if (String(url).indexOf('/feeds/') === 0) {
+      return Promise.resolve(new Response(JSON.stringify(feed), {
+        status: 200, headers: { 'content-type': 'application/json' }
+      }));
+    }
+    return originalFetch.apply(this, arguments);
+  };
+})();
+</script>
+
 <script>
 
 
@@ -2904,33 +2797,22 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
    ============================================================ */
 window.CINE1UP = {
 
-  /* 1. TMDB — para as prateleiras de "em cartaz" e "séries em alta".
-        Pegue a chave v3 em themoviedb.org → Configurações → API.
-        Deixe vazio se não quiser essas seções.
-        No Blogger a chave fica visível no tema; é uma chave só de
-        leitura, então o risco é baixo. */
+  /* 1. TMDB — alimenta "nos cinemas agora" e "séries em alta".
+        Chave grátis em themoviedb.org → Configurações → API.
+        Deixando vazio, essas seções somem e o resto funciona igual. */
   TMDB_KEY: '',
   TMDB_PROXY: false,          // no Blogger não existe /api/tmdb
 
   /* 2. AdSense — preencha depois que a conta for aprovada.
-        Com 'cliente' vazio, nenhum script de anúncio carrega e os
-        espaços nem aparecem na página. */
+        Com 'cliente' vazio, nenhum script de anúncio carrega. */
   ADSENSE: {
     cliente: '',              // 'ca-pub-0000000000000000'
-    slots: {
-      lista:  '',             // entre seções da home
-      artigo: '',             // meio da matéria
-      rodape: ''              // fim da matéria
-    },
+    slots: { lista: '', artigo: '', rodape: '' },
     semConsentimento: 'nada', // ou 'nao-personalizado'
     semAnuncioEm: ['/p/fliperama.html']
   },
 
-  SITE: {
-    nome: 'CINE 1UP',
-    email: 'contato@exemplo.com'
-  },
-
+  SITE: { nome: 'CINE 1UP', email: 'contato@exemplo.com' },
   CATEGORIAS: ['Notícia', 'Crítica', 'Estreia', 'Série', 'Ensaio', 'Lista']
 };
 
@@ -4515,56 +4397,6 @@ window.CINE1UP = {
   }
 
   /* =========================================================
-     2. CURSOR CUSTOMIZADO com trilha de faíscas
-     ========================================================= */
-  function cursor() {
-    if (!fino || reduzido) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'cursor';
-    wrap.innerHTML = '<div class="cursor__ring"></div><div class="cursor__dot"></div>';
-    document.body.appendChild(wrap);
-    document.body.classList.add('has-cursor');
-
-    const dot = $('.cursor__dot', wrap);
-    const ring = $('.cursor__ring', wrap);
-    let mx = innerWidth / 2, my = innerHeight / 2;
-    let rx = mx, ry = my;
-
-    addEventListener('mousemove', e => {
-      mx = e.clientX; my = e.clientY;
-      dot.style.transform = `translate(${mx}px, ${my}px)`;
-      if (Math.random() < .12) faisca(mx, my);
-    }, { passive: true });
-
-    (function anim() {
-      rx = lerp(rx, mx, .16);
-      ry = lerp(ry, my, .16);
-      ring.style.transform = `translate(${rx}px, ${ry}px)`;
-      requestAnimationFrame(anim);
-    })();
-
-    function faisca(x, y) {
-      const s = document.createElement('i');
-      s.className = 'cursor__spark';
-      s.style.transform = `translate(${x + (Math.random() - .5) * 16}px, ${y + (Math.random() - .5) * 16}px)`;
-      wrap.appendChild(s);
-      s.animate(
-        [{ opacity: .9, transform: s.style.transform + ' scale(1)' },
-         { opacity: 0, transform: s.style.transform + ` translate(${(Math.random() - .5) * 30}px, ${20 + Math.random() * 26}px) scale(0)` }],
-        { duration: 520 + Math.random() * 420, easing: 'cubic-bezier(.16,1,.3,1)' }
-      ).onfinish = () => s.remove();
-    }
-
-    const alvos = 'a, button, .card, .pill, input, textarea, select, [data-hot]';
-    document.addEventListener('mouseover', e => {
-      if (e.target.closest(alvos)) wrap.classList.add('is-hot');
-    });
-    document.addEventListener('mouseout', e => {
-      if (e.target.closest(alvos)) wrap.classList.remove('is-hot');
-    });
-  }
-
-  /* =========================================================
      3. REVEAL NO SCROLL
      ========================================================= */
   function reveal() {
@@ -4928,7 +4760,6 @@ window.CINE1UP = {
      ========================================================= */
   function init() {
     preloader();
-    cursor();
     chrome();
     transicao();
     lightbox();
@@ -6109,23 +5940,143 @@ window.CINE1UP = {
 })();
 
 
+/* ============================================================
+   CINE 1UP — blogger.js
+   Só entra na versão do Blogger.
+
+   Por que este arquivo existe: o interpretador de temas do Blogger
+   recusa boa parte dos campos antigos (data:post.snippet,
+   firstImageUrl, dateHeader) e não aceita expressão complicada
+   dentro de expr:. Cada um desses já basta para o upload do tema
+   falhar com uma lista de erros.
+
+   A saída é não pedir quase nada a ele: o tema só usa título e
+   corpo na página da matéria, e a lista da capa é montada aqui,
+   lendo o feed JSON do próprio blog — que é público, estável e
+   está na mesma origem (sem CORS).
+
+   Feed usado: /feeds/posts/summary/default?alt=json
+   ============================================================ */
+
+(function () {
+  'use strict';
+
+  /* A miniatura do feed vem em 72px. Trocando o trecho do tamanho
+     na URL, o mesmo arquivo volta grande. */
+  function imagemGrande(url) {
+    if (!url) return null;
+    return url
+      .replace(/\/s\d+(-c)?\//, '/w700/')
+      .replace(/=s\d+(-c)?$/, '=w700');
+  }
+
+  function limpar(txt) {
+    return String(txt || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+  }
+
+  function dataBR(iso) {
+    if (!iso) return '';
+    const d = new Date(iso);
+    return isNaN(d) ? '' : d.toLocaleDateString('pt-BR',
+      { day: '2-digit', month: 'short', year: 'numeric' });
+  }
+
+  function normalizar(entrada) {
+    const link = (entrada.link || []).filter(l => l.rel === 'alternate')[0];
+    const texto = (entrada.summary && entrada.summary.$t) ||
+                  (entrada.content && entrada.content.$t) || '';
+    return {
+      titulo: (entrada.title && entrada.title.$t) || 'Sem título',
+      resumo: limpar(texto).slice(0, 130),
+      url: link ? link.href : '#',
+      categoria: (entrada.category && entrada.category[0] && entrada.category[0].term) || 'Cinema',
+      data: (entrada.published && entrada.published.$t) || '',
+      imagem: imagemGrande(entrada['media$thumbnail'] && entrada['media$thumbnail'].url)
+    };
+  }
+
+  async function buscar(quantos, rotulo) {
+    let url = '/feeds/posts/summary/default';
+    if (rotulo) url += '/-/' + encodeURIComponent(rotulo);
+    url += '?alt=json&max-results=' + (quantos || 12);
+
+    const r = await fetch(url, { headers: { accept: 'application/json' } });
+    if (!r.ok) throw new Error('feed-' + r.status);
+    const j = await r.json();
+    return ((j.feed && j.feed.entry) || []).map(normalizar);
+  }
+
+  function esc(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+  }
+
+  function card(post, i) {
+    const capa = post.imagem
+      ? `<img src="${esc(post.imagem)}" alt="" loading="lazy">`
+      : `<img src="${window.Art.posterURL(post.url || post.titulo, {
+            categoria: post.categoria, w: 700, ratio: '3/4' })}" alt="" loading="lazy">`;
+
+    return `
+      <article class="card" data-tilt="7" data-reveal="true" style="--d:${i * 70}ms">
+        <a class="card__link" href="${esc(post.url)}"><span class="sr-only">${esc(post.titulo)}</span></a>
+        <div class="card__media">${capa}</div>
+        <div class="card__body">
+          <div class="card__meta">
+            <span>${esc(post.categoria)}</span><span>${esc(dataBR(post.data))}</span>
+          </div>
+          <h3 class="card__title">${esc(post.titulo)}</h3>
+          <p class="card__excerpt">${esc(post.resumo)}</p>
+        </div>
+      </article>`;
+  }
+
+  async function montarLista(seletor, opcoes) {
+    const caixa = document.querySelector(seletor);
+    if (!caixa) return;
+    const o = opcoes || {};
+    try {
+      const posts = await buscar(o.quantos || 12, o.rotulo);
+      if (!posts.length) {
+        caixa.innerHTML = '<div class="empty" style="grid-column:1/-1">' +
+          'Nenhuma matéria publicada ainda</div>';
+        return;
+      }
+      caixa.innerHTML = posts.map(card).join('');
+      if (window.FX) { window.FX.reveal(); window.FX.tilt(); }
+    } catch (e) {
+      caixa.innerHTML = '<div class="empty" style="grid-column:1/-1">' +
+        'Não consegui carregar as matérias</div>';
+    }
+  }
+
+  window.BloggerFeed = { buscar, montarLista, card, imagemGrande, dataBR };
+})();
+
+
 
 /* ---- cola do tema ---- */
 (function () {
   'use strict';
 
-  // 1) Posts sem imagem ganham uma ilustração exclusiva
-  document.querySelectorAll('img.arte-gerada').forEach(function (img) {
-    img.src = window.Art.posterURL(img.dataset.seed || img.alt, {
-      categoria: img.dataset.cat, w: 700, ratio: '3/4'
-    });
-  });
+  // 1) Lista de matérias da capa, vinda do feed do blog
+  if (window.BloggerFeed && document.querySelector('[data-lista-blogger]')) {
+    window.BloggerFeed.montarLista('[data-lista-blogger]', { quantos: 9 })
+      .then(ligarHero);
+  } else {
+    ligarHero();
+  }
 
-  // 2) Lâmpadas da marquise
+  // 2) Na capa, a área reservada à matéria fica vazia: some com ela
+  var areaPost = document.querySelector('[data-area-post]');
+  if (areaPost && !areaPost.querySelector('article')) areaPost.parentNode.removeChild(areaPost);
+
+  // 3) Lâmpadas da marquise
   var faixa = document.querySelector('[data-lampadas]');
   if (faixa) faixa.innerHTML = new Array(Math.max(12, Math.floor(innerWidth / 34)) + 1).join('<i></i>');
 
-  // 3) Sprites da faixa de perseguição
+  // 4) Sprites da faixa de perseguição
   var trilha = document.querySelector('[data-perseguicao]');
   if (trilha) {
     var fant = function (cor) {
@@ -6139,32 +6090,37 @@ window.CINE1UP = {
       ['#ff2b4e', '#ff6ad5', '#22e7ff', '#ff9d2e'].map(fant).join('');
   }
 
-  // 4) Prateleiras do TMDB e manchetes
+  // 5) Prateleiras do TMDB (somem se a chave não estiver preenchida)
   if (window.TMDB && window.Vitrine && window.CINE1UP.TMDB_KEY) {
     window.Vitrine.montar('[data-vitrine-cartaz]', function () { return window.TMDB.emCartaz(); }, { quantos: 12 });
     window.Vitrine.montar('[data-vitrine-series]', function () { return window.TMDB.seriesEmAlta(); }, { quantos: 12 });
     window.Vitrine.ticker('[data-manchetes]');
   } else {
-    document.querySelectorAll('[data-secao-tmdb]').forEach(function (el) { el.remove(); });
+    var secoes = document.querySelectorAll('[data-secao-tmdb]');
+    for (var i = 0; i < secoes.length; i++) secoes[i].parentNode.removeChild(secoes[i]);
   }
 
-  // 5) O hero aponta para a matéria mais recente
-  var primeiro = document.querySelector('.card');
-  var alvoTitulo = document.querySelector('[data-hero-titulo]');
-  if (primeiro && alvoTitulo) {
+  // 6) O hero aponta para a matéria mais recente
+  function ligarHero() {
+    var primeiro = document.querySelector('.card');
+    var alvoTitulo = document.querySelector('[data-hero-titulo]');
+    if (!primeiro || !alvoTitulo) return;
+
     var titulo = primeiro.querySelector('.card__title').textContent.trim();
     var link = primeiro.querySelector('.card__link').getAttribute('href');
     var partes = titulo.split(' ');
     var corte = Math.ceil(partes.length / 2);
     alvoTitulo.innerHTML = partes.slice(0, corte).join(' ') + '<br><em>' + partes.slice(corte).join(' ') + '</em>';
+
     var sub = document.querySelector('[data-hero-sub]');
     var resumo = primeiro.querySelector('.card__excerpt');
-    if (sub && resumo) sub.textContent = resumo.textContent;
+    if (sub && resumo && resumo.textContent.trim()) sub.textContent = resumo.textContent;
+
     var cta = document.querySelector('[data-hero-cta]');
     if (cta && link) cta.setAttribute('href', link);
   }
 
-  // 6) O labirinto em modo atração
+  // 7) O labirinto em modo atração
   var cv = document.querySelector('.arcade-hero__maze--frente');
   if (!cv || !window.Labirinto || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 

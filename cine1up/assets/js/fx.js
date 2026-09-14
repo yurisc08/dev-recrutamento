@@ -41,56 +41,6 @@
   }
 
   /* =========================================================
-     2. CURSOR CUSTOMIZADO com trilha de faíscas
-     ========================================================= */
-  function cursor() {
-    if (!fino || reduzido) return;
-    const wrap = document.createElement('div');
-    wrap.className = 'cursor';
-    wrap.innerHTML = '<div class="cursor__ring"></div><div class="cursor__dot"></div>';
-    document.body.appendChild(wrap);
-    document.body.classList.add('has-cursor');
-
-    const dot = $('.cursor__dot', wrap);
-    const ring = $('.cursor__ring', wrap);
-    let mx = innerWidth / 2, my = innerHeight / 2;
-    let rx = mx, ry = my;
-
-    addEventListener('mousemove', e => {
-      mx = e.clientX; my = e.clientY;
-      dot.style.transform = `translate(${mx}px, ${my}px)`;
-      if (Math.random() < .12) faisca(mx, my);
-    }, { passive: true });
-
-    (function anim() {
-      rx = lerp(rx, mx, .16);
-      ry = lerp(ry, my, .16);
-      ring.style.transform = `translate(${rx}px, ${ry}px)`;
-      requestAnimationFrame(anim);
-    })();
-
-    function faisca(x, y) {
-      const s = document.createElement('i');
-      s.className = 'cursor__spark';
-      s.style.transform = `translate(${x + (Math.random() - .5) * 16}px, ${y + (Math.random() - .5) * 16}px)`;
-      wrap.appendChild(s);
-      s.animate(
-        [{ opacity: .9, transform: s.style.transform + ' scale(1)' },
-         { opacity: 0, transform: s.style.transform + ` translate(${(Math.random() - .5) * 30}px, ${20 + Math.random() * 26}px) scale(0)` }],
-        { duration: 520 + Math.random() * 420, easing: 'cubic-bezier(.16,1,.3,1)' }
-      ).onfinish = () => s.remove();
-    }
-
-    const alvos = 'a, button, .card, .pill, input, textarea, select, [data-hot]';
-    document.addEventListener('mouseover', e => {
-      if (e.target.closest(alvos)) wrap.classList.add('is-hot');
-    });
-    document.addEventListener('mouseout', e => {
-      if (e.target.closest(alvos)) wrap.classList.remove('is-hot');
-    });
-  }
-
-  /* =========================================================
      3. REVEAL NO SCROLL
      ========================================================= */
   function reveal() {
@@ -454,7 +404,6 @@
      ========================================================= */
   function init() {
     preloader();
-    cursor();
     chrome();
     transicao();
     lightbox();
