@@ -317,6 +317,40 @@ export async function salvar(
   return buscar(usuario, id, contexto);
 }
 
+/**
+ * Aplica a mesma decisão a vários colaboradores de uma vez (marcação em lote na lista).
+ * Cada linha passa pelas mesmas validações e auditoria da edição individual;
+ * quem não puder ser gravado volta na lista de erros, sem travar o restante.
+ */
+export async function avaliarLote(
+  req: Request,
+  usuario: UsuarioSessao,
+  ids: number[],
+  entrada: EntradaSalvar,
+): Promise<{ aplicados: number; erros: Array<{ id: number; chapa: string | null; erro: string }> }> {
+  const erros: Array<{ id: number; chapa: string | null; erro: string }> = [];
+  let aplicados = 0;
+
+  for (const id of ids) {
+    try {
+      // eslint-disable-next-line no-await-in-loop
+      await salvar(req, usuario, id, entrada);
+      aplicados += 1;
+    } catch (erro) {
+      const http = erro as ErroHttp;
+      let chapa: string | null = null;
+      try {
+        // eslint-disable-next-line no-await-in-loop
+        const linha = await consultarUm<{ chapa: string }>('SELECT chapa FROM colaboradores WHERE id = $1', [id]);
+        chapa = linha?.chapa ?? null;
+      } catch { /* apenas para a mensagem */ }
+      erros.push({ id, chapa, erro: http?.message ?? 'Falha ao gravar.' });
+    }
+  }
+
+  return { aplicados, erros };
+}
+
 /** Homologação (diretor/RH) — trava a avaliação para o gestor. */
 export async function homologar(
   req: Request,

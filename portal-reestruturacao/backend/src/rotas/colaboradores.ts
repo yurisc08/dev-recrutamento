@@ -61,6 +61,22 @@ rotasColaboradores.patch('/:id', rota(async (req, res) => {
   res.json(item);
 }));
 
+rotasColaboradores.post('/avaliar-lote', rota(async (req, res) => {
+  const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(Boolean) : [];
+  if (ids.length === 0) throw new ErroHttp(400, 'Selecione ao menos um colaborador.');
+  if (ids.length > 500) throw new ErroHttp(400, 'Aplique a ação em no máximo 500 colaboradores por vez.');
+  const { acao, justificativa, destino, nova_diretoria_id: novaDiretoria, nova_divisao_id: novaDivisao } = req.body ?? {};
+
+  const resultado = await servico.avaliarLote(req, req.usuario!, ids, {
+    acao: acao === undefined ? undefined : (acao || null),
+    justificativa,
+    destino,
+    nova_diretoria_id: novaDiretoria ?? null,
+    nova_divisao_id: novaDivisao ?? null,
+  });
+  res.json(resultado);
+}));
+
 rotasColaboradores.post('/homologar', exigirPerfil('admin', 'diretor'), rota(async (req, res) => {
   const ids: number[] = Array.isArray(req.body?.ids) ? req.body.ids.map(Number).filter(Boolean) : [];
   if (ids.length === 0) throw new ErroHttp(400, 'Selecione ao menos um colaborador.');

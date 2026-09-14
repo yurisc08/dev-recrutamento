@@ -320,6 +320,52 @@ test('parâmetros do processo são editáveis pelo RH e auditados', async () => 
   assert.ok(auditoria.corpo.itens.length >= 1);
 });
 
+test('aplica a mesma ação em lote, com as validações de cada linha', async () => {
+  const cookie = await entrar('rh');
+  const ids = [dados.colaboradores.carla, dados.colaboradores.davi];
+
+  const semDestino = await chamar('POST', '/api/colaboradores/avaliar-lote', {
+    cookie, corpo: { ids, acao: 'TRANSFERÊNCIA DE ÁREA', justificativa: 'Reorganização das áreas.' },
+  });
+  assert.equal(semDestino.status, 200);
+  assert.equal(semDestino.corpo.aplicados, 0, 'sem destino nada pode ser gravado');
+  assert.equal(semDestino.corpo.erros.length, 2);
+  assert.match(semDestino.corpo.erros[0].erro, /destino/i);
+
+  const completo = await chamar('POST', '/api/colaboradores/avaliar-lote', {
+    cookie,
+    corpo: {
+      ids, acao: 'TRANSFERÊNCIA DE ÁREA',
+      justificativa: 'Reorganização das áreas.',
+      destino: 'DIRETORIA CORPORATIVA / processo 4321',
+    },
+  });
+  assert.equal(completo.corpo.aplicados, 2);
+  assert.equal(completo.corpo.erros.length, 0);
+
+  const gravado = await consultarUm<{ acao: string; destino_livre: string; status: string }>(
+    `SELECT a.acao, a.destino_livre, a.status FROM avaliacoes a
+       JOIN colaboradores c ON c.id = a.colaborador_id WHERE c.chapa = '1003'`,
+  );
+  assert.equal(gravado!.acao, 'TRANSFERÊNCIA DE ÁREA');
+  assert.equal(gravado!.destino_livre, 'DIRETORIA CORPORATIVA / processo 4321');
+  assert.equal(gravado!.status, 'preenchida');
+
+  // a auditoria registra cada linha do lote, uma a uma
+  const auditoria = await chamar('GET', '/api/auditoria?chapa=1003&tipo=avaliacao', { cookie });
+  assert.ok(auditoria.corpo.itens.some((item: any) => item.campo === 'acao' && item.valor_novo === 'TRANSFERÊNCIA DE ÁREA'));
+});
+
+test('lote respeita o escopo: gestor não altera colaborador de outra Divisão', async () => {
+  const cookie = await entrar('gestor1');
+  const resposta = await chamar('POST', '/api/colaboradores/avaliar-lote', {
+    cookie, corpo: { ids: [dados.colaboradores.davi], acao: 'ATIVO' },
+  });
+  assert.equal(resposta.status, 200);
+  assert.equal(resposta.corpo.aplicados, 0);
+  assert.match(resposta.corpo.erros[0].erro, /fora da sua área/i);
+});
+
 test('bloqueia login após tentativas seguidas com senha errada', async () => {
   for (let tentativa = 0; tentativa < 5; tentativa += 1) {
     await chamar('POST', '/api/auth/login', { corpo: { usuario: 'gestor2', senha: 'x' } });

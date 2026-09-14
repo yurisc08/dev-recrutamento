@@ -180,6 +180,22 @@ tbody tr:hover { background: color-mix(in srgb, var(--acento) 5%, transparent); 
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 td.limite { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
 .vazio { padding: 28px; text-align: center; color: var(--texto-3); }
+.tabela-decisoes td { vertical-align: top; }
+.tabela-decisoes tbody tr.selecionada { background: var(--acento-suave); }
+.celula-decisao {
+  display: block; width: 100%; min-width: 210px; padding: 5px 8px; border-radius: 7px;
+  border: 1px solid var(--borda-forte); background: color-mix(in srgb, var(--manter) 7%, var(--superficie));
+}
+.celula-decisao.preenchida { border-color: color-mix(in srgb, var(--acento) 45%, transparent); font-weight: 600; }
+.celula-decisao.exigida { border-color: var(--atencao); background: var(--atencao-fundo); }
+.celula-decisao:disabled { opacity: .6; }
+.pendente-aviso { font-size: 11px; color: var(--atencao); font-weight: 600; margin-top: 3px; }
+.marca-alerta { color: var(--atencao); font-weight: 700; margin-left: 6px; cursor: help; }
+.barra-selecao {
+  display: flex; align-items: center; gap: 10px; flex-wrap: wrap;
+  background: var(--acento-suave); border: 1px solid color-mix(in srgb, var(--acento) 35%, transparent);
+  border-radius: var(--raio); padding: 8px 12px; margin-bottom: 12px; font-size: 13px;
+}
 .rodape-tabela { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 10px 2px; color: var(--texto-2); font-size: 13px; }
 
 /* ------------------------------ avisos ----------------------------- */

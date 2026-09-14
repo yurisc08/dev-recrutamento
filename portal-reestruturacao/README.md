@@ -119,7 +119,23 @@ Regras da carga:
 
 ## Avaliação do colaborador
 
-Fluxo principal: **Login → Minhas avaliações → Colaborador → Decisão → Justificativa → Salvar**.
+Fluxo principal: **Login → Minhas avaliações → marcar a decisão na própria linha → Salvar automático**.
+
+### Decisão direto na lista (sem abrir um por um)
+
+Na tela **Minhas avaliações** (e em **Colaboradores**) cada linha traz a ação em lista suspensa e a
+justificativa no próprio lugar:
+
+* escolher a ação grava na hora — o status da linha passa a *Preenchida*;
+* se a ação exigir justificativa ou destino, a linha fica destacada em amarelo com o aviso do que falta
+  e o cursor vai para o campo pendente; assim que ele é preenchido, a gravação acontece sozinha;
+* transferências abrem, na mesma linha, o campo de destino (Diretoria / setor / nº do processo);
+* colaboradores com alerta aparecem com ⚠ ao lado do status, com o texto do alerta no passar do mouse;
+* selecionando várias linhas, **Aplicar ação aos selecionados** grava a mesma decisão em lote — cada
+  linha passa pelas mesmas validações e as que exigirem tratamento individual voltam numa lista de pendências.
+
+O clique no nome (ou em **Detalhes**) abre a ficha completa quando for preciso ver todos os campos da
+base, a nova Diretoria/Divisão da transferência ou o histórico do colaborador.
 
 A tela mostra os dados vindos do Excel (agrupados por identificação, organização, cargo, situação,
 remuneração, desempenho, estabilidade) e, separadamente, o que é preenchido no portal:
@@ -128,7 +144,7 @@ remuneração, desempenho, estabilidade) e, separadamente, o que é preenchido n
   e `ESTABILIDADE` (as mesmas da planilha). Sem preenchimento, a situação é *Sem decisão*.
 * **Transferência**: abre **Nova Diretoria**, **Nova Divisão** (opcional) e o campo livre
   *setor / área / nº do processo*.
-* **Justificativa** — texto livre, obrigatória quando a ação ou uma regra exigir.
+* **Justificativa** — texto livre, obrigatória quando a ação ou uma regra exigir (preenchível na própria linha).
 * Registro automático de **quem alterou e quando**; o histórico do colaborador aparece na própria tela.
 
 A **homologação** (Diretor/RH) trava a avaliação para o gestor.
