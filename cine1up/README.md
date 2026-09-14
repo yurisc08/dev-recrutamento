@@ -194,10 +194,12 @@ dispara dezenas de chamadas. Para limpar: `TMDB.limparCache()` no console.
 
 ### 4.1 Quem enxerga o quê
 
-Existem exatamente dois perfis. Não há tela de cadastro no site — ninguém
-consegue criar conta sozinho.
+O site tem **um dono só: você**. Não existe tela de cadastro, não existe link
+para o painel em lugar nenhum das páginas públicas, e o `robots.txt` pede para
+os buscadores ignorarem `/admin.html`. Quem visita o site não descobre que
+existe uma área interna.
 
-| | Visitante (qualquer pessoa) | Redação (você e quem você liberar) |
+| | Visitante (qualquer pessoa) | Você |
 |---|---|---|
 | Ler matérias publicadas | sim | sim |
 | Ver rascunhos | **não** | sim |
@@ -206,23 +208,28 @@ consegue criar conta sozinho.
 | Ver a lista da newsletter | **não** | sim |
 | Jogar e mandar pontuação | sim | sim |
 
-Isso não é só a tela escondendo botão: é o banco recusando. As regras de
-*Row Level Security* do `schema.sql` avaliam cada consulta no servidor do
-Supabase. Mesmo que alguém abra o console do navegador e chame a API na mão
-com a chave pública do site, o banco responde "não" para tudo que não seja
-leitura de matéria publicada.
+Isso não é a tela escondendo botão: é o banco recusando. As regras de
+*Row Level Security* do `schema.sql` avaliam cada consulta dentro do Supabase.
+Mesmo que alguém descubra o endereço do painel e chame a API na mão com a chave
+pública do site, a resposta é "não" para tudo que não seja leitura de matéria
+já publicada.
 
-### 4.2 Liberar alguém para publicar
+**O endereço do painel é `seudominio.com.br/admin.html`** (ou
+`seudominio.com.br/publicar`). Guarde nos favoritos — ele não aparece em
+nenhum menu.
 
-São dois passos — e os **dois** são necessários. Ter login não dá permissão
-nenhuma; quem manda é a tabela `redacao`.
+### 4.2 Criar o seu acesso
+
+Uma vez só, na configuração inicial. São dois passos e os **dois** são
+necessários: ter login não dá permissão nenhuma; quem manda é a tabela
+`redacao`.
 
 **Passo 1 — criar o login.**
-Supabase → **Authentication → Users → Add user** → e-mail e senha →
-marque *Auto Confirm User*.
+Supabase → **Authentication → Users → Add user** → seu e-mail e uma senha forte
+→ marque *Auto Confirm User*.
 
-**Passo 2 — colocar na redação.**
-Supabase → **SQL Editor** → rode trocando o e-mail e o nome:
+**Passo 2 — liberar esse login para publicar.**
+Supabase → **SQL Editor** → rode trocando pelo seu e-mail:
 
 ```sql
 insert into public.redacao (user_id, nome, papel)
@@ -231,31 +238,25 @@ select id, 'Seu Nome', 'admin' from auth.users
 on conflict (user_id) do nothing;
 ```
 
-Pronto: entre em `/admin.html` com esse e-mail e senha.
+Pronto. Entre em `/admin.html` com esse e-mail e senha.
 
-Se pular o passo 2, o painel avisa na cara: *"Este login existe, mas ainda não
+Se pular o passo 2, o painel avisa na cara — *"este login existe, mas ainda não
 está liberado para publicar"* — e já mostra o comando que falta rodar.
 
-**Fechar o cadastro público.** Em *Authentication → Providers → Email*,
-desligue **Enable signup**. Assim nem contas inúteis são criadas.
+**Feche o cadastro público.** Em *Authentication → Providers → Email*, desligue
+**Enable signup**. Sem isso, alguém pode criar uma conta no seu Supabase — não
+conseguiria publicar nada (a tabela `redacao` barra), mas é sujeira à toa.
 
-**Ver quem tem acesso hoje:**
+**Esqueceu a senha?** Supabase → Authentication → Users → os três pontinhos ao
+lado do seu usuário → *Send password recovery*.
 
-```sql
-select r.papel, r.nome, u.email, r.criado_em
-  from public.redacao r join auth.users u on u.id = r.user_id
- order by r.criado_em;
-```
-
-**Tirar o acesso de alguém** (o login continua existindo, mas para de escrever):
+**Um dia quiser um segundo editor?** Repita os dois passos com o e-mail da
+pessoa. Para tirar o acesso depois, sem apagar o login:
 
 ```sql
 delete from public.redacao
  where user_id = (select id from auth.users where email = 'ex@exemplo.com');
 ```
-
-**Esqueceu a senha?** Supabase → Authentication → Users → os três pontinhos ao
-lado do usuário → *Send password recovery*.
 
 ### 4.3 O caminho de uma matéria
 
@@ -437,27 +438,51 @@ pílula, procure por `criarEntidades`, `cerebroFantasma` e `assustadoAte`.
 
 ---
 
-## 9. Blogger (alternativa)
+## 9. As duas versões
 
-Em `blogger/` tem o mesmo site empacotado como tema do Blogger — labirinto,
-CRT, ilustrações geradas e tudo mais — para quem prefere publicar pelo editor
-do Google. Leia `blogger/README.md`.
+O projeto entrega o mesmo site de duas formas. Escolha uma — ou suba as duas e
+decida depois.
+
+### Versão A — Cloudflare Pages + Supabase (a principal)
+
+É o que está na raiz deste repositório. Painel próprio de publicação, placar
+online, newsletter, chave do TMDB escondida no servidor e controle total do
+design. Seções 3 a 5 deste arquivo.
+
+### Versão B — Blogger
+
+A pasta `blogger/` tem o mesmo site empacotado como tema do Google:
+labirinto jogável na capa, prateleiras do TMDB, ilustrações geradas, tela de
+CRT, Cine Runner e AdSense. Você publica pelo editor do Blogger, sem servidor
+nenhum para cuidar.
+
+```bash
+node blogger/build.js    # monta blogger/cine1up-blogger.xml
+node blogger/previa.js   # monta blogger/previa.html para ver antes de subir
+```
+
+Depois: Blogger → **Tema → Restaurar → Fazer upload** do XML. O passo a passo
+completo (configuração, as duas páginas que precisa criar, ads.txt, domínio)
+está em `blogger/README.md`.
+
+O tema é gerado a partir dos **mesmos** CSS e JavaScript da versão A, então
+mexer no design de um lado e rodar o build atualiza o outro.
+
+### O que muda entre elas
 
 | | Cloudflare + Supabase | Blogger |
 |---|---|---|
-| Publicar | painel próprio (`/admin.html`) | editor do Google |
-| Design | controle total | limitado ao tema |
-| Labirinto no hero | sim | sim |
-| Cine Runner com placar online | sim | jogo sim, placar precisa do Supabase |
-| Custo | grátis | grátis |
-
-O tema é gerado a partir dos mesmos arquivos do site:
-
-```bash
-node blogger/build.js
-```
-
----
+| Escrever matéria | painel próprio em `/admin.html` | editor do Google |
+| Labirinto na capa | sim | sim |
+| Prateleiras do TMDB | sim | sim |
+| Cine Runner | sim | sim |
+| Placar online do jogo | sim | não (só o recorde no navegador) |
+| Ilustrações geradas | sim | sim |
+| AdSense | sim | sim |
+| Comentários | — | nativos do Blogger |
+| Chave do TMDB escondida | sim | não (fica visível no tema) |
+| Newsletter | sim | precisa de serviço externo |
+| Controle do design | total | o que o tema expõe |
 
 ## 10. Desenvolvimento local
 

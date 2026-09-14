@@ -1,5 +1,6 @@
 User-agent: *
 Allow: /
 Disallow: /admin.html
+Disallow: /publicar
 
 Sitemap: https://cine1up.com.br/sitemap.xml

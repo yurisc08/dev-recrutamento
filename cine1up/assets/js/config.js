@@ -19,6 +19,11 @@ window.CINE1UP = {
      para quem hospeda em outro lugar. */
   TMDB_KEY: '',
 
+  /* Deixe true na Cloudflare (usa a função /api/tmdb e esconde a chave).
+     Coloque false se hospedar em outro lugar, para o site ir direto na
+     API com a TMDB_KEY acima. */
+  TMDB_PROXY: true,
+
   /* Bucket público criado pelo schema.sql */
   BUCKET: 'midia',
 

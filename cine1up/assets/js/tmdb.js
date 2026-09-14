@@ -49,8 +49,9 @@
 
     const query = Object.assign({ language: 'pt-BR' }, params || {});
 
-    /* 1. proxy da Cloudflare */
-    if (proxyFuncionou !== false) {
+    /* 1. proxy da Cloudflare — pulado quando TMDB_PROXY é false
+          (no Blogger, por exemplo, essa rota não existe) */
+    if (CFG.TMDB_PROXY !== false && proxyFuncionou !== false) {
       try {
         const u = new URL('/api/tmdb', location.origin);
         u.searchParams.set('path', caminho);

@@ -1,17 +1,12 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE html>
-<html b:version='2' class='v2' expr:dir='data:blog.languageDirection'
-      xmlns='http://www.w3.org/1999/xhtml'
-      xmlns:b='http://www.google.com/2005/gml/b'
-      xmlns:data='http://www.google.com/2005/gml/data'
-      xmlns:expr='http://www.google.com/2005/gml/expr'>
+<!doctype html>
+<html lang="pt-BR">
 <head>
-  <meta content='width=device-width, initial-scale=1' name='viewport'/>
-  <b:include data='blog' name='all-head-content'/>
-  <title><data:blog.pageTitle/></title>
-  <link href='https://fonts.googleapis.com/css2?family=Bungee&amp;family=Press+Start+2P&amp;family=Space+Grotesk:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@300;400;500&amp;display=swap' rel='stylesheet'/>
-  <link href='https://image.tmdb.org' rel='preconnect'/>
-  <b:skin><![CDATA[
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Prévia do tema — CINE 1UP</title>
+<link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+
 /* ============================================================
    CINE 1UP — base.css
    Tokens, reset, tipografia, layout e componentes estruturais.
@@ -2705,223 +2700,204 @@ body.is-entering .page-wipe { transform: scaleY(1); transform-origin: top; }
 .post-body img { max-width: 100%; height: auto; border-radius: var(--r-md); }
 .comentarios { max-width: 72ch; margin: 60px auto 0; padding-top: 30px; border-top: 1px solid var(--line); }
 
-  ]]></b:skin>
+  
+</style>
 </head>
+<body class="is-loading">
 
-<body class='is-loading'>
-
-<div class='preloader'>
-  <div class='clapper'><div class='clapper__top'></div><div class='clapper__body'>CINE 1UP</div></div>
-  <div class='preloader__pct'>000%</div><div class='preloader__bar'></div>
+<div class="preloader">
+  <div class="clapper"><div class="clapper__top"></div><div class="clapper__body">CINE 1UP</div></div>
+  <div class="preloader__pct">000%</div><div class="preloader__bar"></div>
 </div>
 
-<div class='fx-layer fx-grain'></div>
-<div class='crt'></div>
-<div class='crt-vinheta'></div>
-<div class='fx-layer fx-flash'></div>
-<div class='progress'></div>
+<div class="fx-layer fx-grain"></div>
+<div class="crt"></div>
+<div class="crt-vinheta"></div>
+<div class="fx-layer fx-flash"></div>
+<div class="progress"></div>
 
-<header class='header'>
-  <div class='wrap header__inner'>
-    <a class='logo' expr:href='data:blog.homepageUrl'>
-      <svg class='logo__bolt' viewBox='0 0 24 32'><path d='M14 0 2 18h7l-3 14 14-19h-8l2-13Z' fill='#ffd60a'/></svg>
-      <span class='logo__text'>CINE<b>1UP</b></span>
+<header class="header">
+  <div class="wrap header__inner">
+    <a class="logo" href="#">
+      <svg class="logo__bolt" viewBox="0 0 24 32"><path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#ffd60a"/></svg>
+      <span class="logo__text">CINE<b>1UP</b></span>
     </a>
-    <nav class='nav'>
-      <a class='nav__link' expr:href='data:blog.homepageUrl + &quot;search/label/Notícia&quot;'>Notícias</a>
-      <a class='nav__link' expr:href='data:blog.homepageUrl + &quot;search/label/Série&quot;'>Séries</a>
-      <a class='nav__link' expr:href='data:blog.homepageUrl + &quot;search/label/Crítica&quot;'>Críticas</a>
-      <a class='nav__link' expr:href='data:blog.homepageUrl + &quot;p/fliperama.html&quot;'>Fliperama</a>
+    <nav class="nav">
+      <a class="nav__link" href="#">Notícias</a>
+      <a class="nav__link" href="#">Séries</a>
+      <a class="nav__link" href="#">Críticas</a>
+      <a class="nav__link" href="#">Fliperama</a>
     </nav>
-    <div class='row'>
-      <button class='btn btn--sm btn--ghost' data-som='true'><span>Som desligado</span></button>
-      <button class='burger' type='button'><span></span><span></span></button>
+    <div class="row">
+      <button class="btn btn--sm btn--ghost" data-som="true"><span>Som desligado</span></button>
+      <button class="burger" type="button"><span></span><span></span></button>
     </div>
   </div>
 </header>
 
-<div class='menu'>
-  <ul class='menu__list'>
-    <li><a expr:href='data:blog.homepageUrl + &quot;search/label/Notícia&quot;'>Notícias</a></li>
-    <li><a expr:href='data:blog.homepageUrl + &quot;search/label/Série&quot;'>Séries</a></li>
-    <li><a expr:href='data:blog.homepageUrl + &quot;search/label/Crítica&quot;'>Críticas</a></li>
-    <li><a expr:href='data:blog.homepageUrl + &quot;search/label/Ensaio&quot;'>Ensaios</a></li>
-    <li><a expr:href='data:blog.homepageUrl + &quot;p/fliperama.html&quot;'>Fliperama</a></li>
+<div class="menu">
+  <ul class="menu__list">
+    <li><a href="#">Notícias</a></li><li><a href="#">Séries</a></li>
+    <li><a href="#">Críticas</a></li><li><a href="#">Fliperama</a></li>
   </ul>
 </div>
 
-<!-- ================= HERO (só na home) ================= -->
-<b:if cond='data:blog.url == data:blog.homepageUrl'>
-<section class='arcade-hero' id='palco'>
-  <canvas class='arcade-hero__maze arcade-hero__maze--fundo'></canvas>
-  <canvas class='arcade-hero__maze arcade-hero__maze--frente'></canvas>
-  <div class='arcade-hero__veu'></div>
+<section class="arcade-hero" id="palco">
+  <canvas class="arcade-hero__maze arcade-hero__maze--fundo"></canvas>
+  <canvas class="arcade-hero__maze arcade-hero__maze--frente"></canvas>
+  <div class="arcade-hero__veu"></div>
 
-  <div class='hud'>
-    <div class='hud__linha'>Pontos <span class='hud__valor' data-placar='true'>000000</span></div>
-    <div class='hud__linha'>Recorde <span class='hud__valor' data-recorde='true'>000000</span></div>
-    <div class='hud__dica' data-dica='true'>← ↑ ↓ → para jogar</div>
+  <div class="hud">
+    <div class="hud__linha">Pontos <span class="hud__valor" data-placar="true">000000</span></div>
+    <div class="hud__linha">Recorde <span class="hud__valor" data-recorde="true">000000</span></div>
+    <div class="hud__dica" data-dica="true">← ↑ ↓ → para jogar</div>
   </div>
 
-  <div class='arcade-hero__conteudo'>
-    <span class='insert-coin pixel'><i></i> <span>Insira uma ficha</span></span>
-    <h1 class='titulo-arcade' data-hero-titulo='true'>Cinema<br/>em modo<br/><em>arcade</em></h1>
-    <p class='sub-arcade' data-hero-sub='true'><data:blog.title/></p>
-    <div class='acoes-arcade'>
-      <a class='btn-arcade' data-hero-cta='true' expr:href='data:blog.homepageUrl'>▶ Ler as matérias</a>
-      <a class='btn-arcade btn-arcade--ghost' expr:href='data:blog.homepageUrl + &quot;p/fliperama.html&quot;'>🕹 Jogar</a>
+  <div class="arcade-hero__conteudo">
+    <span class="insert-coin pixel"><i></i> <span>Insira uma ficha</span></span>
+    <h1 class="titulo-arcade" data-hero-titulo="true">Cinema<br>em modo<br><em>arcade</em></h1>
+    <p class="sub-arcade" data-hero-sub="true">Prévia do tema do Blogger</p>
+    <div class="acoes-arcade">
+      <a class="btn-arcade" data-hero-cta="true" href="#">▶ Ler as matérias</a>
+      <a class="btn-arcade btn-arcade--ghost" href="#">🕹 Jogar</a>
     </div>
   </div>
 </section>
 
-<div class='marquise'><div class='lampadas' data-lampadas='true'></div></div>
+<div class="marquise"><div class="lampadas" data-lampadas="true"></div></div>
 
-<div class='marquee' data-secao-tmdb='true'>
-  <div class='marquee__track' data-manchetes='true'>
-    <span class='marquee__item'><i></i> Carregando as estreias…</span>
+<div class="marquee" data-secao-tmdb="true">
+  <div class="marquee__track" data-manchetes="true">
+    <span class="marquee__item"><i></i> Carregando as estreias…</span>
   </div>
 </div>
 
-<div class='perseguicao'>
-  <div class='perseguicao__pontos'></div>
-  <div class='perseguicao__trilha' data-perseguicao='true'></div>
+<div class="perseguicao">
+  <div class="perseguicao__pontos"></div>
+  <div class="perseguicao__trilha" data-perseguicao="true"></div>
 </div>
 
-<!-- Prateleiras do TMDB: somem sozinhas se a chave não estiver preenchida -->
-<section class='section' data-secao-tmdb='true'>
-  <div class='wrap'>
-    <div class='vitrine-cabeca'>
-      <div>
-        <span class='eyebrow'>Sessão de hoje</span>
-        <h2>Nos cinemas agora</h2>
-      </div>
-      <div class='vitrine-setas'>
-        <button data-rolar='[data-vitrine-cartaz]' data-dir='tras' type='button'>←</button>
-        <button data-rolar='[data-vitrine-cartaz]' data-dir='frente' type='button'>→</button>
+<section class="section" data-secao-tmdb="true">
+  <div class="wrap">
+    <div class="vitrine-cabeca">
+      <div><span class="eyebrow">Sessão de hoje</span><h2>Nos cinemas agora</h2></div>
+      <div class="vitrine-setas">
+        <button data-rolar="[data-vitrine-cartaz]" data-dir="tras" type="button">←</button>
+        <button data-rolar="[data-vitrine-cartaz]" data-dir="frente" type="button">→</button>
       </div>
     </div>
-    <div class='vitrine' data-vitrine-cartaz='true'></div>
+    <div class="vitrine" data-vitrine-cartaz="true"></div>
   </div>
 </section>
 
-<section class='section section--tight' data-secao-tmdb='true'>
-  <div class='wrap'>
-    <div class='vitrine-cabeca'>
-      <div>
-        <span class='eyebrow'>Maratona da semana</span>
-        <h2>Séries em alta</h2>
-      </div>
-      <div class='vitrine-setas'>
-        <button data-rolar='[data-vitrine-series]' data-dir='tras' type='button'>←</button>
-        <button data-rolar='[data-vitrine-series]' data-dir='frente' type='button'>→</button>
+<section class="section section--tight" data-secao-tmdb="true">
+  <div class="wrap">
+    <div class="vitrine-cabeca">
+      <div><span class="eyebrow">Maratona da semana</span><h2>Séries em alta</h2></div>
+      <div class="vitrine-setas">
+        <button data-rolar="[data-vitrine-series]" data-dir="tras" type="button">←</button>
+        <button data-rolar="[data-vitrine-series]" data-dir="frente" type="button">→</button>
       </div>
     </div>
-    <div class='vitrine' data-vitrine-series='true'></div>
+    <div class="vitrine" data-vitrine-series="true"></div>
   </div>
 </section>
 
-<div class='wrap'><aside class='anuncio anuncio--faixa' data-anuncio='lista'></aside></div>
-</b:if>
+<div class="wrap"><aside class="anuncio anuncio--faixa" data-anuncio="lista"></aside></div>
 
-<!-- ================= CONTEÚDO ================= -->
-<main class='section'>
-  <div class='wrap'>
-    <b:section class='principal' id='principal' showaddelement='no'>
-      <b:widget id='Blog1' locked='true' title='Matérias' type='Blog'>
-        <b:includable id='main'>
-
-          <b:if cond='data:blog.pageType == &quot;item&quot;'>
-            <!-- MATÉRIA -->
-            <b:loop values='data:posts' var='post'>
-              <article>
-                <span class='eyebrow'>
-                  <b:if cond='data:post.labels'>
-                    <b:loop values='data:post.labels' var='label'><data:label.name/> </b:loop>
-                  <b:else/>Cinema</b:if>
-                </span>
-                <h1 style='font-size:clamp(2.2rem,6vw,4.6rem);margin-bottom:20px'><data:post.title/></h1>
-                <div class='post-meta'>
-                  <span>Por <b><data:post.author/></b></span>
-                  <span><data:post.dateHeader/></span>
-                </div>
-                <div class='artigo post-body' style='margin-top:44px'>
-                  <data:post.body/>
-                </div>
-
-                <aside class='anuncio' data-anuncio='rodape'></aside>
-
-                <div class='post-rodape'>
-                  <div class='tag-row'>
-                    <b:loop values='data:post.labels' var='label'>
-                      <a class='pill' expr:href='data:label.url'>#<data:label.name/></a>
-                    </b:loop>
-                  </div>
-                </div>
-                <b:if cond='data:post.allowComments'>
-                  <div class='comentarios'><b:include data='post' name='comments'/></div>
-                </b:if>
-              </article>
-            </b:loop>
-
-          <b:else/>
-            <!-- LISTA -->
-            <span class='eyebrow'>Escrito por gente</span>
-            <h2 style='margin-bottom:40px'>As últimas da redação</h2>
-            <div class='blogger-grid'>
-              <b:loop values='data:posts' var='post'>
-                <article class='card' data-tilt='7' data-reveal='true'>
-                  <a class='card__link' expr:href='data:post.url'><span class='sr-only'><data:post.title/></span></a>
-                  <div class='card__media'>
-                    <b:if cond='data:post.firstImageUrl'>
-                      <img expr:src='data:post.firstImageUrl' expr:alt='data:post.title' loading='lazy'/>
-                    <b:else/>
-                      <img class='arte-gerada' expr:data-seed='data:post.url'
-                           expr:data-cat='data:post.labels ? data:post.labels.first.name : &quot;Crítica&quot;'
-                           expr:alt='data:post.title' src='data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=='/>
-                    </b:if>
-                  </div>
-                  <div class='card__body'>
-                    <div class='card__meta'>
-                      <span><b:if cond='data:post.labels'><data:post.labels.first.name/><b:else/>Cinema</b:if></span>
-                      <span><data:post.dateHeader/></span>
-                    </div>
-                    <h3 class='card__title'><data:post.title/></h3>
-                    <p class='card__excerpt'><data:post.snippet/></p>
-                  </div>
-                </article>
-              </b:loop>
-            </div>
-            <div class='blog-pager' id='blog-pager'>
-              <b:if cond='data:olderPageUrl'>
-                <a expr:href='data:olderPageUrl'>Matérias anteriores →</a>
-              </b:if>
-              <b:if cond='data:newerPageUrl'>
-                <a expr:href='data:newerPageUrl'>← Mais recentes</a>
-              </b:if>
-            </div>
-          </b:if>
-
-        </b:includable>
-      </b:widget>
-    </b:section>
+<main class="section">
+  <div class="wrap">
+    <span class="eyebrow">Escrito por gente</span>
+    <h2 style="margin-bottom:40px">As últimas da redação</h2>
+    <div class="blogger-grid">
+  <article class="card" data-tilt="7" data-reveal="true">
+    <a class="card__link" href="#"><span class="sr-only">Estreias da semana nos cinemas</span></a>
+    <div class="card__media">
+      <img class="arte-gerada" data-seed="exemplo-0-Estreias da semana nos cinemas" data-cat="Notícia" alt="Estreias da semana nos cinemas"
+           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
+    </div>
+    <div class="card__body">
+      <div class="card__meta"><span>Notícia</span><span>14 de set. de 2026</span></div>
+      <h3 class="card__title">Estreias da semana nos cinemas</h3>
+      <p class="card__excerpt">O que chega às salas e o que vale o ingresso.</p>
+    </div>
+  </article>
+  <article class="card" data-tilt="7" data-reveal="true">
+    <a class="card__link" href="#"><span class="sr-only">O último analógico</span></a>
+    <div class="card__media">
+      <img class="arte-gerada" data-seed="exemplo-1-O último analógico" data-cat="Crítica" alt="O último analógico"
+           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
+    </div>
+    <div class="card__body">
+      <div class="card__meta"><span>Crítica</span><span>14 de set. de 2026</span></div>
+      <h3 class="card__title">O último analógico</h3>
+      <p class="card__excerpt">Filmado em película, o longa aposta no grão como personagem.</p>
+    </div>
+  </article>
+  <article class="card" data-tilt="7" data-reveal="true">
+    <a class="card__link" href="#"><span class="sr-only">A série que ninguém viu chegar</span></a>
+    <div class="card__media">
+      <img class="arte-gerada" data-seed="exemplo-2-A série que ninguém viu chegar" data-cat="Série" alt="A série que ninguém viu chegar"
+           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
+    </div>
+    <div class="card__body">
+      <div class="card__meta"><span>Série</span><span>14 de set. de 2026</span></div>
+      <h3 class="card__title">A série que ninguém viu chegar</h3>
+      <p class="card__excerpt">Oito episódios que reorganizam o gênero por dentro.</p>
+    </div>
+  </article>
+  <article class="card" data-tilt="7" data-reveal="true">
+    <a class="card__link" href="#"><span class="sr-only">Na sala de projeção</span></a>
+    <div class="card__media">
+      <img class="arte-gerada" data-seed="exemplo-3-Na sala de projeção" data-cat="Ensaio" alt="Na sala de projeção"
+           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
+    </div>
+    <div class="card__body">
+      <div class="card__meta"><span>Ensaio</span><span>14 de set. de 2026</span></div>
+      <h3 class="card__title">Na sala de projeção</h3>
+      <p class="card__excerpt">Uma conversa sobre restaurar filmes que quase se perderam.</p>
+    </div>
+  </article>
+  <article class="card" data-tilt="7" data-reveal="true">
+    <a class="card__link" href="#"><span class="sr-only">As 10 aberturas mais elétricas</span></a>
+    <div class="card__media">
+      <img class="arte-gerada" data-seed="exemplo-4-As 10 aberturas mais elétricas" data-cat="Lista" alt="As 10 aberturas mais elétricas"
+           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
+    </div>
+    <div class="card__body">
+      <div class="card__meta"><span>Lista</span><span>14 de set. de 2026</span></div>
+      <h3 class="card__title">As 10 aberturas mais elétricas</h3>
+      <p class="card__excerpt">Sequências iniciais que já chegam com a tensão no talo.</p>
+    </div>
+  </article>
+  <article class="card" data-tilt="7" data-reveal="true">
+    <a class="card__link" href="#"><span class="sr-only">O clássico que envelheceu ao contrário</span></a>
+    <div class="card__media">
+      <img class="arte-gerada" data-seed="exemplo-5-O clássico que envelheceu ao contrário" data-cat="Crítica" alt="O clássico que envelheceu ao contrário"
+           src="data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw=="/>
+    </div>
+    <div class="card__body">
+      <div class="card__meta"><span>Crítica</span><span>14 de set. de 2026</span></div>
+      <h3 class="card__title">O clássico que envelheceu ao contrário</h3>
+      <p class="card__excerpt">Um fracasso de bilheteria que virou gramática visual.</p>
+    </div>
+  </article></div>
   </div>
 </main>
 
-<!-- ================= RODAPÉ ================= -->
-<footer class='footer'>
-  <div class='wrap'>
-    <div class='footer__bottom' style='margin-top:0;border-top:0'>
-      <span>© <data:blog.title/> · dados de filmes e séries por
-        <a class='link-fx' href='https://www.themoviedb.org' rel='noopener' target='_blank'>TMDB</a></span>
-      <span><a class='link-fx' expr:href='data:blog.homepageUrl + &quot;p/privacidade.html&quot;'>Privacidade</a></span>
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__bottom" style="margin-top:0;border-top:0">
+      <span>© CINE 1UP · dados por TMDB</span>
+      <span><a class="link-fx" href="#">Privacidade</a></span>
     </div>
   </div>
 </footer>
 
-<button class='totop' type='button'>↑</button>
+<button class="totop" type="button">↑</button>
 
-<script type='text/javascript'>
-//<![CDATA[
+<script>
+
 
 /* ============================================================
    CONFIGURE AQUI — as duas únicas coisas que você precisa mexer
@@ -6220,8 +6196,7 @@ window.CINE1UP = {
   document.addEventListener('visibilitychange', function () { lab.pausado = document.hidden; });
 })();
 
-//]]>
-</script>
 
+</script>
 </body>
 </html>

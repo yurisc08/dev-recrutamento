@@ -1,0 +1,58 @@
+<!--
+  ============================================================
+  CINE 1UP — página do fliperama no Blogger
+
+  COMO USAR
+  1. No Blogger: Páginas → Nova página
+  2. Título: Fliperama
+  3. Mude o editor para "Visualização HTML" (menu do lápis, no topo)
+  4. Cole TUDO que está abaixo desta linha de comentário
+  5. Publique. Confira o endereço: precisa terminar em
+     /p/fliperama.html — é esse o link que o menu do tema usa.
+     Se o Blogger gerar outro endereço, edite o título até bater.
+
+  O jogo em si já está dentro do tema; esta página só coloca o
+  gabinete na tela. Não precisa de script nenhum aqui.
+  ============================================================
+-->
+
+<div class="wrap">
+  <span class="eyebrow">Intervalo</span>
+  <h1 style="font-size:clamp(2.4rem,7vw,5rem);margin-bottom:20px">Cine Runner</h1>
+  <p class="lead" style="margin-bottom:34px">
+    Você é um rolo de filme fugindo da tempestade. Pule a pipoca, o tripé e a
+    claquete, deslize por baixo do drone e pegue os raios dourados.
+  </p>
+
+  <div class="jogo-palco">
+    <canvas id="jogo" width="900" height="300"
+            aria-label="Cine Runner, jogo de corredor infinito"></canvas>
+    <div class="jogo-controles">
+      <span class="tecla">Espaço</span> pular
+      <span class="tecla">↓</span> deslizar
+      <span class="tecla">Enter</span> recomeçar
+      <span class="jogo-toque">No celular: toque em cima para pular, embaixo para deslizar</span>
+    </div>
+  </div>
+
+  <div class="grid" style="grid-template-columns:repeat(auto-fit,minmax(300px,1fr));margin-top:48px">
+    <div>
+      <span class="eyebrow">Como pontuar</span>
+      <h2 style="margin-bottom:22px">Regras</h2>
+      <ul class="regras">
+        <li><b>Distância</b> — os pontos sobem sozinhos e a velocidade aumenta junto.</li>
+        <li><b>Raio dourado</b> — vale 50 pontos e aparece no alto; exige pulo bem cronometrado.</li>
+        <li><b>Drone roxo</b> — voa baixo. Não dá para pular: tem que deslizar.</li>
+        <li><b>Obstáculo duplo</b> — só depois dos 180 pontos, quando a coisa fica séria.</li>
+      </ul>
+    </div>
+    <div>
+      <span class="eyebrow">E na capa</span>
+      <h2 style="margin-bottom:22px">Tem outro</h2>
+      <p class="lead" style="font-size:.95rem">
+        O labirinto da página inicial também é jogável: ele roda sozinho em modo
+        atração e passa o controle para você assim que apertar uma seta.
+      </p>
+    </div>
+  </div>
+</div>

@@ -24,7 +24,10 @@
   const CHAVE_CONSENT = 'cine1up:cookies';
   const MAX_POR_PAGINA = 3;
 
-  const PAGINAS_SEM_ANUNCIO = ['/admin.html', '/404.html', '/jogo.html'];
+  /* Páginas que nunca recebem anúncio. O Blogger usa outros endereços,
+     então dá para acrescentar os dele em ADSENSE.semAnuncioEm. */
+  const PAGINAS_SEM_ANUNCIO = ['/admin.html', '/404.html', '/jogo.html']
+    .concat(CFG.semAnuncioEm || []);
 
   let carregado = false;
   let quantos = 0;
