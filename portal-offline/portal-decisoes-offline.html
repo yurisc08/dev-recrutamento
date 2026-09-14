@@ -1,0 +1,1398 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Portal de Decisões — versão offline</title>
+<style>
+/* ===================================================================
+   Portal de Decisões — arquivo único, offline.
+   Não carrega nada da internet: fontes do sistema, sem CDN, sem rede.
+   A planilha é lida e gravada dentro do próprio navegador.
+=================================================================== */
+:root {
+  color-scheme: light;
+  --ground: #eef1f0; --surface: #fff; --surface-2: #e7ebea;
+  --line: #d5dad9; --line-strong: #b9c0bf;
+  --ink: #10151a; --ink-2: #4a545c; --ink-3: #78848c;
+  --accent: #2a78d6; --accent-soft: #e4eefb;
+  --desligamento: #e34948; --transferencia: #2a78d6; --ativo: #1baf7a; --estabilidade: #eb6834;
+  --pendente: #8a9298; --alerta: #c98000; --alerta-bg: #fdf3e0; --critico-bg: #fdeceb; --ok-bg: #e4f6ee;
+  --shadow: 0 1px 2px rgba(16,21,26,.05), 0 10px 26px rgba(16,21,26,.06);
+  --radius: 10px;
+  --ui: "Segoe UI", system-ui, -apple-system, Roboto, "Helvetica Neue", Arial, sans-serif;
+  --mono: "Cascadia Mono", Consolas, ui-monospace, SFMono-Regular, Menlo, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    color-scheme: dark;
+    --ground: #101315; --surface: #171b1e; --surface-2: #1f2427;
+    --line: #2e3538; --line-strong: #434c50;
+    --ink: #f4f7f7; --ink-2: #b5bfc3; --ink-3: #848f95;
+    --accent: #3987e5; --accent-soft: #1b2b3d;
+    --desligamento: #e66767; --transferencia: #3987e5; --ativo: #199e70; --estabilidade: #d95926;
+    --pendente: #848f95; --alerta: #d79a1e; --alerta-bg: #2e2513; --critico-bg: #351d1d; --ok-bg: #12291f;
+    --shadow: 0 1px 2px rgba(0,0,0,.5), 0 10px 26px rgba(0,0,0,.35);
+  }
+}
+:root[data-tema="escuro"] {
+  color-scheme: dark;
+  --ground: #101315; --surface: #171b1e; --surface-2: #1f2427;
+  --line: #2e3538; --line-strong: #434c50;
+  --ink: #f4f7f7; --ink-2: #b5bfc3; --ink-3: #848f95;
+  --accent: #3987e5; --accent-soft: #1b2b3d;
+  --desligamento: #e66767; --transferencia: #3987e5; --ativo: #199e70; --estabilidade: #d95926;
+  --pendente: #848f95; --alerta: #d79a1e; --alerta-bg: #2e2513; --critico-bg: #351d1d; --ok-bg: #12291f;
+  --shadow: 0 1px 2px rgba(0,0,0,.5), 0 10px 26px rgba(0,0,0,.35);
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--ground); color: var(--ink); font-family: var(--ui); font-size: 14px; line-height: 1.5; }
+h1, h2, h3 { margin: 0; text-wrap: balance; }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[hidden] { display: none !important; }
+
+header.topo {
+  display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  padding: 11px 20px; background: var(--surface); border-bottom: 1px solid var(--line);
+  position: sticky; top: 0; z-index: 30;
+}
+.produto { display: flex; align-items: center; gap: 9px; font-weight: 700; font-size: 15px; }
+.marca { width: 22px; height: 22px; border-radius: 6px; background: var(--accent); display: grid; place-items: center; color: #fff; font-size: 11px; font-weight: 700; }
+.espaco { flex: 1 1 auto; }
+nav.abas { display: flex; gap: 3px; flex-wrap: wrap; padding: 8px 16px; background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 53px; z-index: 29; }
+.aba { border: 0; background: none; padding: 7px 13px; border-radius: 8px; cursor: pointer; color: var(--ink-2); font-weight: 500; }
+.aba:hover { background: var(--surface-2); color: var(--ink); }
+.aba[aria-current="page"] { background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+main { padding: 20px; max-width: 1560px; margin: 0 auto; }
+
+.cartao { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.cartao-pad { padding: 16px; }
+.bloco { margin-bottom: 20px; }
+.bloco-cab { display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; margin-bottom: 10px; }
+.bloco-cab h2 { font-size: 15px; font-weight: 600; }
+.bloco-cab p { margin: 0; font-size: 12.5px; color: var(--ink-3); }
+.linha { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.campo { display: flex; flex-direction: column; gap: 4px; min-width: 160px; }
+.campo > label { font-size: 11px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; color: var(--ink-3); }
+input[type=text], input[type=search], input[type=file], select, textarea {
+  background: var(--surface); border: 1px solid var(--line-strong); border-radius: 8px; padding: 7px 9px; width: 100%;
+}
+.btn { border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: 8px; padding: 7px 13px; cursor: pointer; font-weight: 500; white-space: nowrap; }
+.btn:hover:not(:disabled) { background: var(--surface-2); }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.btn.primario { background: var(--accent); border-color: var(--accent); color: #fff; }
+.btn.primario:hover:not(:disabled) { filter: brightness(1.08); }
+.btn.pequeno { padding: 4px 9px; font-size: 12px; }
+.btn.texto { border-color: transparent; background: none; color: var(--accent); font-weight: 600; padding: 2px 4px; }
+.btn.texto:hover { text-decoration: underline; background: none; }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.kpi { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; box-shadow: var(--shadow); }
+.kpi .rot { font-size: 11.5px; color: var(--ink-2); font-weight: 500; }
+.kpi .val { font-size: 29px; font-weight: 650; line-height: 1.15; margin-top: 3px; font-variant-numeric: tabular-nums; }
+.kpi .nota { font-size: 11.5px; color: var(--ink-3); margin-top: 3px; }
+.kpi.destaque { border-color: color-mix(in srgb, var(--alerta) 55%, transparent); }
+.kpi .trilho { height: 6px; border-radius: 3px; background: var(--surface-2); margin-top: 9px; overflow: hidden; }
+.kpi .trilho > i { display: block; height: 100%; background: var(--accent); }
+
+.barras { display: flex; flex-direction: column; gap: 9px; }
+.barra { display: grid; grid-template-columns: minmax(130px, 210px) 1fr auto; gap: 12px; align-items: center; }
+.barra .rot { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); }
+.ponto { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.barra .trilho { background: var(--surface-2); height: 15px; border-radius: 4px; overflow: hidden; }
+.barra .trilho > i { display: block; height: 100%; border-radius: 0 4px 4px 0; }
+.barra .num { font-family: var(--mono); font-size: 12.5px; min-width: 92px; text-align: right; }
+.barra .num em { font-style: normal; color: var(--ink-3); }
+
+.tabela-caixa { border: 1px solid var(--line); border-radius: var(--radius); background: var(--surface); overflow: auto; max-height: 68vh; }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
+th, td { text-align: left; padding: 8px 11px; border-bottom: 1px solid var(--line); white-space: nowrap; vertical-align: top; }
+thead th { position: sticky; top: 0; z-index: 2; background: var(--surface-2); color: var(--ink-2); font-size: 10.5px; text-transform: uppercase; letter-spacing: .07em; font-weight: 600; border-bottom: 1px solid var(--line-strong); }
+tbody tr:hover { background: color-mix(in srgb, var(--accent) 5%, transparent); }
+tr.marcada { background: var(--accent-soft) !important; }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; font-family: var(--mono); }
+.chapa { font-family: var(--mono); font-size: 12px; color: var(--ink-2); }
+.limite { max-width: 230px; overflow: hidden; text-overflow: ellipsis; }
+.vazio { padding: 30px; text-align: center; color: var(--ink-3); }
+
+.pill { display: inline-flex; align-items: center; gap: 6px; padding: 2px 9px; border-radius: 999px; font-size: 11.5px; font-weight: 600; border: 1px solid var(--line-strong); color: var(--ink-2); background: var(--surface-2); }
+.pill::before { content: ""; width: 7px; height: 7px; border-radius: 2px; background: currentColor; }
+.pill.desligamento { color: var(--desligamento); border-color: color-mix(in srgb, var(--desligamento) 45%, transparent); background: color-mix(in srgb, var(--desligamento) 11%, transparent); }
+.pill.transferencia { color: var(--transferencia); border-color: color-mix(in srgb, var(--transferencia) 45%, transparent); background: color-mix(in srgb, var(--transferencia) 11%, transparent); }
+.pill.ativo { color: var(--ativo); border-color: color-mix(in srgb, var(--ativo) 48%, transparent); background: color-mix(in srgb, var(--ativo) 11%, transparent); }
+.pill.estabilidade { color: var(--estabilidade); border-color: color-mix(in srgb, var(--estabilidade) 45%, transparent); background: color-mix(in srgb, var(--estabilidade) 11%, transparent); }
+.pill.aviso { color: var(--alerta); border-color: color-mix(in srgb, var(--alerta) 50%, transparent); background: var(--alerta-bg); }
+
+.decisao { display: block; width: 100%; min-width: 205px; padding: 6px 8px; border-radius: 7px; border: 1px solid var(--line-strong); background: color-mix(in srgb, var(--ativo) 7%, var(--surface)); }
+.decisao.preenchida { border-color: color-mix(in srgb, var(--accent) 50%, transparent); font-weight: 600; }
+.decisao.exigida { border-color: var(--alerta); background: var(--alerta-bg); }
+.decisao + .decisao { margin-top: 5px; }
+.falta { font-size: 11px; color: var(--alerta); font-weight: 600; margin-top: 4px; }
+.marca-alerta { color: var(--alerta); font-weight: 700; margin-left: 6px; cursor: help; }
+.barra-selecao { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; font-size: 13px; background: var(--accent-soft); border: 1px solid color-mix(in srgb, var(--accent) 38%, transparent); border-radius: var(--radius); padding: 9px 13px; margin-bottom: 12px; }
+
+.aviso { padding: 10px 13px; border-radius: 8px; font-size: 13px; border: 1px solid var(--line); }
+.aviso.info { background: var(--accent-soft); border-color: color-mix(in srgb, var(--accent) 30%, transparent); }
+.aviso.atencao { background: var(--alerta-bg); border-color: color-mix(in srgb, var(--alerta) 45%, transparent); }
+.aviso.critico { background: var(--critico-bg); border-color: color-mix(in srgb, var(--desligamento) 42%, transparent); }
+.aviso.ok { background: var(--ok-bg); border-color: color-mix(in srgb, var(--ativo) 40%, transparent); }
+.avisos { display: flex; flex-direction: column; gap: 8px; }
+.toast { position: fixed; right: 18px; bottom: 18px; z-index: 80; max-width: 370px; background: var(--surface); border: 1px solid var(--line-strong); border-left: 4px solid var(--ativo); border-radius: 9px; box-shadow: var(--shadow); padding: 11px 14px; font-size: 13px; }
+.toast.erro { border-left-color: var(--desligamento); }
+
+dialog { border: 1px solid var(--line); border-radius: 13px; background: var(--surface); color: var(--ink); padding: 0; width: min(880px, 94vw); max-height: 90dvh; box-shadow: var(--shadow); }
+dialog::backdrop { background: rgba(8,11,13,.55); }
+.dlg-topo { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 15px 18px; border-bottom: 1px solid var(--line); }
+.dlg-corpo { padding: 18px; overflow: auto; max-height: 66dvh; }
+.dlg-rodape { display: flex; gap: 8px; justify-content: flex-end; padding: 13px 18px; border-top: 1px solid var(--line); }
+.ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px 18px; }
+.ficha .rot { font-size: 10.5px; text-transform: uppercase; letter-spacing: .06em; color: var(--ink-3); font-weight: 600; }
+.linha-tempo { list-style: none; margin: 0; padding: 0; }
+.linha-tempo li { padding: 8px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+.linha-tempo .quando { font-size: 11.5px; color: var(--ink-3); font-family: var(--mono); }
+
+.abertura { max-width: 900px; margin: 0 auto; }
+.passos { list-style: none; counter-reset: p; padding: 0; margin: 0; display: flex; flex-direction: column; gap: 14px; }
+.passos > li { counter-increment: p; position: relative; padding-left: 40px; }
+.passos > li::before { content: counter(p); position: absolute; left: 0; top: 0; width: 26px; height: 26px; border-radius: 8px; display: grid; place-items: center; background: var(--accent); color: #fff; font-weight: 600; font-size: 12px; }
+.passos h4 { margin: 2px 0 5px; font-size: 14px; }
+.passos p { margin: 0; color: var(--ink-2); font-size: 13px; }
+code { font-family: var(--mono); font-size: 12.5px; background: var(--surface-2); padding: 1px 5px; border-radius: 5px; }
+
+@media (max-width: 860px) {
+  main { padding: 14px; }
+  header.topo { padding: 10px 14px; }
+  nav.abas { top: 96px; }
+  .barra { grid-template-columns: 1fr; gap: 3px; }
+  .barra .num { text-align: left; }
+}
+</style>
+</head>
+<body>
+
+<header class="topo">
+  <div class="produto"><span class="marca">PD</span> Portal de Decisões <span style="font-weight:500;color:var(--ink-3);font-size:12px">· offline</span></div>
+  <span class="espaco"></span>
+  <div class="campo" style="min-width:190px">
+    <label for="usuario">Quem está preenchendo</label>
+    <input id="usuario" type="text" placeholder="Seu nome (vai para a auditoria)">
+  </div>
+  <div class="campo" style="min-width:150px">
+    <label for="tema">Tema</label>
+    <select id="tema"><option value="">Do sistema</option><option value="claro">Claro</option><option value="escuro">Escuro</option></select>
+  </div>
+</header>
+
+<nav class="abas" id="abas" aria-label="Seções"></nav>
+
+<main>
+  <div id="tela"></div>
+</main>
+
+<dialog id="dlg"></dialog>
+<div id="toast" class="toast" hidden></div>
+
+<script>
+(() => {
+'use strict';
+
+/* ==================================================================
+   1. LEITURA DE .XLSX — ZIP + XML, sem biblioteca externa
+================================================================== */
+const td = new TextDecoder('utf-8');
+
+function lerZip(buffer) {
+  const dados = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  let fim = -1;
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 66000); i -= 1) {
+    if (dados.getUint32(i, true) === 0x06054b50) { fim = i; break; }
+  }
+  if (fim < 0) throw new Error('Arquivo não parece um .xlsx válido (estrutura ZIP não encontrada).');
+  const quantidade = dados.getUint16(fim + 10, true);
+  let ponteiro = dados.getUint32(fim + 16, true);
+  const entradas = [];
+  for (let i = 0; i < quantidade; i += 1) {
+    if (dados.getUint32(ponteiro, true) !== 0x02014b50) break;
+    const metodo = dados.getUint16(ponteiro + 10, true);
+    const tamanhoComprimido = dados.getUint32(ponteiro + 20, true);
+    const tamanhoNome = dados.getUint16(ponteiro + 28, true);
+    const tamanhoExtra = dados.getUint16(ponteiro + 30, true);
+    const tamanhoComentario = dados.getUint16(ponteiro + 32, true);
+    const deslocamento = dados.getUint32(ponteiro + 42, true);
+    const nome = td.decode(bytes.subarray(ponteiro + 46, ponteiro + 46 + tamanhoNome));
+    entradas.push({ nome, metodo, tamanhoComprimido, deslocamento });
+    ponteiro += 46 + tamanhoNome + tamanhoExtra + tamanhoComentario;
+  }
+  return { bytes, dados, entradas };
+}
+
+async function extrair(zip, nome) {
+  const entrada = zip.entradas.find((e) => e.nome === nome);
+  if (!entrada) return null;
+  const inicio = entrada.deslocamento;
+  if (zip.dados.getUint32(inicio, true) !== 0x04034b50) throw new Error('Entrada corrompida: ' + nome);
+  const tamanhoNome = zip.dados.getUint16(inicio + 26, true);
+  const tamanhoExtra = zip.dados.getUint16(inicio + 28, true);
+  const dadoInicio = inicio + 30 + tamanhoNome + tamanhoExtra;
+  const bruto = zip.bytes.subarray(dadoInicio, dadoInicio + entrada.tamanhoComprimido);
+  if (entrada.metodo === 0) return td.decode(bruto);
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('Este navegador não consegue descompactar o arquivo. Use Chrome ou Edge atualizados.');
+  }
+  const fluxo = new Blob([bruto]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return td.decode(await new Response(fluxo).arrayBuffer());
+}
+
+const letrasParaIndice = (referencia) => {
+  const letras = (referencia.match(/^[A-Z]+/) || ['A'])[0];
+  let indice = 0;
+  for (let i = 0; i < letras.length; i += 1) indice = indice * 26 + (letras.charCodeAt(i) - 64);
+  return indice;
+};
+
+const serialParaISO = (numero) => {
+  const ms = Math.round((Number(numero) - 25569) * 86400 * 1000);
+  const data = new Date(ms);
+  return Number.isNaN(data.getTime()) ? String(numero) : data.toISOString().slice(0, 10);
+};
+
+/** Lê a planilha e devolve { abas: [{nome, linhas}] } com as células já em texto. */
+async function lerPlanilha(arquivo) {
+  const zip = lerZip(await arquivo.arrayBuffer());
+  const parser = new DOMParser();
+  const workbook = parser.parseFromString(await extrair(zip, 'xl/workbook.xml'), 'application/xml');
+  const rels = parser.parseFromString(await extrair(zip, 'xl/_rels/workbook.xml.rels'), 'application/xml');
+
+  const alvos = {};
+  rels.querySelectorAll('Relationship').forEach((r) => { alvos[r.getAttribute('Id')] = r.getAttribute('Target'); });
+
+  // textos compartilhados
+  const compartilhados = [];
+  const sstXml = await extrair(zip, 'xl/sharedStrings.xml');
+  if (sstXml) {
+    parser.parseFromString(sstXml, 'application/xml').querySelectorAll('si').forEach((si) => {
+      compartilhados.push([...si.querySelectorAll('t')].map((t) => t.textContent).join(''));
+    });
+  }
+
+  // estilos: descobre quais formatos são data
+  const estiloEhData = [];
+  const estilosXml = await extrair(zip, 'xl/styles.xml');
+  if (estilosXml) {
+    const doc = parser.parseFromString(estilosXml, 'application/xml');
+    const formatos = {};
+    doc.querySelectorAll('numFmt').forEach((f) => { formatos[f.getAttribute('numFmtId')] = f.getAttribute('formatCode') || ''; });
+    const embutidosData = ['14','15','16','17','18','19','20','21','22','45','46','47'];
+    const xfs = doc.querySelector('cellXfs');
+    if (xfs) {
+      [...xfs.querySelectorAll('xf')].forEach((xf, indice) => {
+        const id = xf.getAttribute('numFmtId') || '0';
+        const codigo = formatos[id] || '';
+        estiloEhData[indice] = embutidosData.includes(id) || /[dmy]/i.test(codigo.replace(/\[[^\]]*\]/g, '')) && /[dy]/i.test(codigo);
+      });
+    }
+  }
+
+  const abas = [];
+  const folhas = [...workbook.querySelectorAll('sheets > sheet')];
+  for (const folha of folhas) {
+    const id = folha.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id')
+      || folha.getAttribute('r:id');
+    let alvo = alvos[id] || '';
+    if (alvo.startsWith('/')) alvo = alvo.slice(1); else alvo = 'xl/' + alvo.replace(/^\.\//, '');
+    const xml = await extrair(zip, alvo);
+    if (!xml) continue;
+    const doc = parser.parseFromString(xml, 'application/xml');
+    const linhas = [];
+    doc.querySelectorAll('sheetData > row').forEach((row) => {
+      const numero = Number(row.getAttribute('r') || linhas.length + 1);
+      const celulas = [];
+      row.querySelectorAll('c').forEach((c) => {
+        const indice = letrasParaIndice(c.getAttribute('r') || 'A1') - 1;
+        const tipo = c.getAttribute('t');
+        let valor = '';
+        if (tipo === 's') {
+          valor = compartilhados[Number(c.querySelector('v') ? c.querySelector('v').textContent : -1)] || '';
+        } else if (tipo === 'inlineStr') {
+          valor = [...c.querySelectorAll('is t')].map((t) => t.textContent).join('');
+        } else {
+          const v = c.querySelector('v');
+          valor = v ? v.textContent : '';
+          const estilo = Number(c.getAttribute('s') || -1);
+          if (valor !== '' && estiloEhData[estilo] && !Number.isNaN(Number(valor))) valor = serialParaISO(valor);
+        }
+        celulas[indice] = valor == null ? '' : String(valor);
+      });
+      linhas[numero - 1] = celulas;
+    });
+    abas.push({ nome: folha.getAttribute('name'), linhas: linhas.filter(Boolean) });
+  }
+  return { abas };
+}
+
+/* ==================================================================
+   2. GRAVAÇÃO DE .XLSX — ZIP sem compressão (aceito pelo Excel)
+================================================================== */
+const te = new TextEncoder();
+const TABELA_CRC = (() => {
+  const tabela = new Uint32Array(256);
+  for (let i = 0; i < 256; i += 1) {
+    let c = i;
+    for (let k = 0; k < 8; k += 1) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    tabela[i] = c >>> 0;
+  }
+  return tabela;
+})();
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i += 1) c = TABELA_CRC[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function montarZip(arquivos) {
+  const partes = [];
+  const central = [];
+  let deslocamento = 0;
+  arquivos.forEach((arquivo) => {
+    const nome = te.encode(arquivo.nome);
+    const conteudo = te.encode(arquivo.conteudo);
+    const crc = crc32(conteudo);
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true); local.setUint16(4, 20, true); local.setUint16(6, 0, true);
+    local.setUint16(8, 0, true); local.setUint16(10, 0, true); local.setUint16(12, 0, true);
+    local.setUint32(14, crc, true); local.setUint32(18, conteudo.length, true); local.setUint32(22, conteudo.length, true);
+    local.setUint16(26, nome.length, true); local.setUint16(28, 0, true);
+    partes.push(new Uint8Array(local.buffer), nome, conteudo);
+
+    const cd = new DataView(new ArrayBuffer(46));
+    cd.setUint32(0, 0x02014b50, true); cd.setUint16(4, 20, true); cd.setUint16(6, 20, true);
+    cd.setUint16(8, 0, true); cd.setUint16(10, 0, true); cd.setUint16(12, 0, true); cd.setUint16(14, 0, true);
+    cd.setUint32(16, crc, true); cd.setUint32(20, conteudo.length, true); cd.setUint32(24, conteudo.length, true);
+    cd.setUint16(28, nome.length, true); cd.setUint16(30, 0, true); cd.setUint16(32, 0, true);
+    cd.setUint16(34, 0, true); cd.setUint16(36, 0, true); cd.setUint32(38, 0, true);
+    cd.setUint32(42, deslocamento, true);
+    central.push(new Uint8Array(cd.buffer), nome);
+    deslocamento += 30 + nome.length + conteudo.length;
+  });
+
+  const tamanhoCentral = central.reduce((soma, parte) => soma + parte.length, 0);
+  const fim = new DataView(new ArrayBuffer(22));
+  fim.setUint32(0, 0x06054b50, true); fim.setUint16(4, 0, true); fim.setUint16(6, 0, true);
+  fim.setUint16(8, arquivos.length, true); fim.setUint16(10, arquivos.length, true);
+  fim.setUint32(12, tamanhoCentral, true); fim.setUint32(16, deslocamento, true); fim.setUint16(20, 0, true);
+
+  return new Blob(partes.concat(central, [new Uint8Array(fim.buffer)]), {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+}
+
+const xmlEscapar = (texto) => String(texto == null ? '' : texto)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+
+function colunaLetra(indice) {
+  let letra = '';
+  let n = indice;
+  while (n > 0) { const resto = (n - 1) % 26; letra = String.fromCharCode(65 + resto) + letra; n = Math.floor((n - resto) / 26); }
+  return letra;
+}
+
+/** Monta uma aba: linhas de células (texto ou número) + validação opcional na coluna da ação. */
+function abaXml(linhas, opcoes) {
+  const corpo = linhas.map((celulas, indiceLinha) => {
+    const numero = indiceLinha + 1;
+    const conteudo = celulas.map((celula, indiceColuna) => {
+      if (celula == null || celula === '') return '';
+      const referencia = colunaLetra(indiceColuna + 1) + numero;
+      const estilo = numero === 1 ? ' s="1"' : '';
+      if (typeof celula === 'number') return '<c r="' + referencia + '"' + estilo + '><v>' + celula + '</v></c>';
+      return '<c r="' + referencia + '" t="inlineStr"' + estilo + '><is><t xml:space="preserve">' + xmlEscapar(celula) + '</t></is></c>';
+    }).join('');
+    return '<row r="' + numero + '">' + conteudo + '</row>';
+  }).join('');
+
+  let validacao = '';
+  if (opcoes && opcoes.colunaLista && opcoes.opcoesLista && opcoes.opcoesLista.length) {
+    const letra = colunaLetra(opcoes.colunaLista);
+    validacao = '<dataValidations count="1"><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1"'
+      + ' errorTitle="Opção inválida" error="Escolha uma das opções da lista." sqref="' + letra + '2:' + letra + Math.max(linhas.length, 2) + '">'
+      + '<formula1>"' + xmlEscapar(opcoes.opcoesLista.join(',')) + '"</formula1></dataValidation></dataValidations>';
+  }
+
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    + '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+    + '<sheetData>' + corpo + '</sheetData>' + validacao + '</worksheet>';
+}
+
+function montarXlsx(abas) {
+  const arquivos = [
+    { nome: '[Content_Types].xml', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+      + '<Default Extension="xml" ContentType="application/xml"/>'
+      + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+      + abas.map((_, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')
+      + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+      + '</Types>' },
+    { nome: '_rels/.rels', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+      + '</Relationships>' },
+    { nome: 'xl/workbook.xml', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+      + '<sheets>' + abas.map((aba, i) => '<sheet name="' + xmlEscapar(aba.nome) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets>'
+      + '</workbook>' },
+    { nome: 'xl/_rels/workbook.xml.rels', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      + abas.map((_, i) => '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('')
+      + '<Relationship Id="rId' + (abas.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+      + '</Relationships>' },
+    { nome: 'xl/styles.xml', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      + '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>'
+      + '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
+      + '<fill><patternFill patternType="solid"><fgColor rgb="FF1C5CAB"/><bgColor indexed="64"/></patternFill></fill></fills>'
+      + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+      + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+      + '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+      + '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>'
+      + '</styleSheet>' }
+  ];
+  abas.forEach((aba, i) => {
+    arquivos.push({ nome: 'xl/worksheets/sheet' + (i + 1) + '.xml', conteudo: abaXml(aba.linhas, aba.opcoes) });
+  });
+  return montarZip(arquivos);
+}
+
+function baixar(blob, nome) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = nome;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/* ==================================================================
+   3. ESTADO DO TRABALHO
+================================================================== */
+const CHAVE = 'portal-decisoes-offline-v1';
+
+const ACOES_PADRAO = [
+  { valor: 'ATIVO', cor: 'ativo', exigeJustificativa: false, exigeDestino: false, reducao: false },
+  { valor: 'DESLIGAMENTO', cor: 'desligamento', exigeJustificativa: true, exigeDestino: false, reducao: true },
+  { valor: 'TRANSFERÊNCIA DE ÁREA', cor: 'transferencia', exigeJustificativa: true, exigeDestino: true, reducao: false },
+  { valor: 'ESTABILIDADE', cor: 'estabilidade', exigeJustificativa: true, exigeDestino: false, reducao: false }
+];
+
+const APELIDOS = {
+  chapa: ['chapa', 'matricula', 'matrícula', 'registro'],
+  nome: ['nome', 'colaborador', 'nome completo'],
+  diretoria: ['diretoria'],
+  divisao: ['divisao', 'divisão'],
+  cargo: ['des cargo', 'des_cargo', 'cargo', 'funcao', 'função'],
+  situacao: ['situacao', 'situação', 'status'],
+  estabilidade: ['estabilidade'],
+  fimEstabilidade: ['data fim estabilidade', 'fim estabilidade', 'vigencia estabilidade'],
+  invalidez: ['tipo invalidez', 'tipo_invalidez', 'invalidez', 'afastamento'],
+  custo: ['salario anual', 'salário anual', 'salario total', 'salário total', 'custo anual', 'custo'],
+  acao: ['acao indicada', 'ação indicada', 'acao', 'ação', 'decisao', 'decisão'],
+  destino: ['em caso de transferencia', 'em caso de transferência', 'destino', 'para onde'],
+  justificativa: ['justificativa', 'motivo']
+};
+
+let dados = {
+  arquivo: '', aba: '', linhaCabecalho: 1, cabecalhos: [], base: [],
+  mapa: {}, decisoes: {}, rascunhos: {}, auditoria: [], acoes: ACOES_PADRAO,
+  processo: { nome: 'Reestruturação', dataBase: '2026-07-31', prazo: '2026-09-11' },
+  usuario: ''
+};
+let tela = 'inicio';
+let filtros = {};
+let selecao = [];
+let importacao = null;
+
+function salvar() {
+  try { localStorage.setItem(CHAVE, JSON.stringify(dados)); } catch (erro) { /* sem armazenamento */ }
+}
+function carregar() {
+  try {
+    const salvo = JSON.parse(localStorage.getItem(CHAVE) || 'null');
+    if (salvo && salvo.base) dados = Object.assign(dados, salvo);
+  } catch (erro) { /* ignora */ }
+}
+
+const normalizar = (texto) => String(texto == null ? '' : texto).normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/\s+/g, ' ').trim();
+const escapar = (texto) => String(texto == null ? '' : texto)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+const fmtNumero = (n) => Number(n || 0).toLocaleString('pt-BR');
+const fmtMoeda = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const fmtDataHora = (iso) => new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' });
+const fmtData = (valor) => {
+  const texto = String(valor || '');
+  const iso = texto.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return iso ? iso[3] + '/' + iso[2] + '/' + iso[1] : texto;
+};
+const numeroDe = (valor) => {
+  if (valor == null || valor === '') return 0;
+  let texto = String(valor).replace(/[R$\s ]/gi, '');
+  if (/,\d{1,2}$/.test(texto)) texto = texto.replace(/\./g, '').replace(',', '.');
+  else texto = texto.replace(/,/g, '');
+  const numero = Number(texto);
+  return Number.isFinite(numero) ? numero : 0;
+};
+
+const campo = (linha, chave) => {
+  const cabecalho = dados.mapa[chave];
+  return cabecalho ? (linha[cabecalho] || '') : '';
+};
+const acaoInfo = (valor) => dados.acoes.find((a) => a.valor === valor);
+const decisaoDe = (chapa) => dados.decisoes[chapa] || { acao: '', justificativa: '', destino: '', status: 'pendente' };
+// Rascunho: escolha ainda incompleta (falta justificativa ou destino). Aparece na linha,
+// mas nao conta como decisao tomada — por isso a auditoria so registra a acao quando ela grava.
+const rascunhoDe = (chapa) => dados.rascunhos[chapa] || null;
+const valorDe = (chapa) => rascunhoDe(chapa) || decisaoDe(chapa);
+const guardarRascunho = (chapa, valores) => { dados.rascunhos[chapa] = Object.assign({}, valores); salvar(); };
+
+function alertasDe(linha) {
+  const alertas = [];
+  const situacao = normalizar(campo(linha, 'situacao'));
+  if (situacao === 'desligado') {
+    alertas.push({ severidade: 'info', texto: 'Colaborador já desligado na posição-base. Confirme com o RH antes de registrar nova decisão.' });
+  }
+  if (String(campo(linha, 'estabilidade')).trim()) {
+    alertas.push({ severidade: 'atencao', exigeJustificativa: true, acao: 'DESLIGAMENTO',
+      texto: '⚠️ Atenção: este colaborador possui uma condição que requer validação do RH antes de eventual desligamento.' });
+  }
+  const fim = String(campo(linha, 'fimEstabilidade')).slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}$/.test(fim) && fim >= new Date().toISOString().slice(0, 10)) {
+    alertas.push({ severidade: 'critico', exigeJustificativa: true, acao: 'DESLIGAMENTO',
+      texto: 'Estabilidade vigente até ' + fmtData(fim) + ' — o desligamento não pode ocorrer antes do término da vigência.' });
+  }
+  if (String(campo(linha, 'invalidez')).trim()) {
+    alertas.push({ severidade: 'atencao', texto: 'Há registro de afastamento/invalidez. Validação do RH é obrigatória antes de qualquer ação.' });
+  }
+  return alertas;
+}
+
+function faltando(linha, valores) {
+  if (!valores.acao) return null;
+  const info = acaoInfo(valores.acao);
+  const alertaExige = alertasDe(linha).some((a) => a.exigeJustificativa && (!a.acao || a.acao === valores.acao));
+  if (((info && info.exigeJustificativa) || alertaExige) && !String(valores.justificativa || '').trim()) return 'justificativa';
+  if (info && info.exigeDestino && !String(valores.destino || '').trim()) return 'destino';
+  return null;
+}
+
+function auditar(evento) {
+  dados.auditoria.unshift(Object.assign({ quando: new Date().toISOString(), usuario: dados.usuario || 'não identificado' }, evento));
+  if (dados.auditoria.length > 5000) dados.auditoria.length = 5000;
+}
+
+function gravarDecisao(linha, valores, silencioso) {
+  const chapa = campo(linha, 'chapa');
+  const anterior = decisaoDe(chapa);
+  const nova = {
+    acao: valores.acao || '',
+    justificativa: valores.justificativa || '',
+    destino: valores.destino || '',
+    status: valores.acao ? 'preenchida' : 'pendente',
+    por: dados.usuario || 'não identificado',
+    em: new Date().toISOString()
+  };
+  dados.decisoes[chapa] = nova;
+  delete dados.rascunhos[chapa];
+  if ((anterior.acao || '') !== nova.acao) {
+    auditar({ tipo: 'Avaliação', chapa: chapa, colaborador: campo(linha, 'nome'), campo: 'ação',
+      de: anterior.acao || 'Sem decisão', para: nova.acao || 'Sem decisão' });
+  }
+  if ((anterior.justificativa || '') !== nova.justificativa) {
+    auditar({ tipo: 'Avaliação', chapa: chapa, colaborador: campo(linha, 'nome'), campo: 'justificativa',
+      de: anterior.justificativa || '—', para: nova.justificativa || '—' });
+  }
+  salvar();
+  if (!silencioso) toast('Decisão registrada.');
+}
+
+let tempoToast;
+function toast(texto, tipo) {
+  const caixa = document.getElementById('toast');
+  caixa.textContent = texto;
+  caixa.className = 'toast' + (tipo === 'erro' ? ' erro' : '');
+  caixa.hidden = false;
+  clearTimeout(tempoToast);
+  tempoToast = setTimeout(() => { caixa.hidden = true; }, tipo === 'erro' ? 7000 : 3200);
+}
+
+/* ==================================================================
+   4. TELAS
+================================================================== */
+const ABAS = { inicio: 'Início', decisoes: 'Decisões', resumo: 'Resumo', auditoria: 'Auditoria', ajuda: 'Como usar' };
+
+function desenharAbas() {
+  document.getElementById('abas').innerHTML = Object.keys(ABAS).map((chave) =>
+    '<button class="aba" data-aba="' + chave + '"' + (tela === chave ? ' aria-current="page"' : '') + '>' + ABAS[chave] + '</button>'
+  ).join('');
+  document.querySelectorAll('[data-aba]').forEach((botao) => {
+    botao.addEventListener('click', () => { tela = botao.dataset.aba; selecao = []; desenhar(); });
+  });
+}
+
+/* ------------------------------ início ------------------------------ */
+function telaInicio() {
+  const temBase = dados.base.length > 0;
+  let html = '<div class="abertura">';
+
+  if (!temBase) {
+    html += '<div class="bloco cartao cartao-pad">'
+      + '<h2 style="font-size:19px;margin-bottom:6px">Comece carregando a planilha</h2>'
+      + '<p style="color:var(--ink-2);margin:0 0 16px">Tudo acontece dentro deste navegador: o arquivo não é enviado para lugar nenhum, '
+      + 'não há internet envolvida e as decisões ficam salvas nesta máquina até você exportar.</p>'
+      + '<div class="linha">'
+      + '<div class="campo" style="flex:2"><label for="arquivo">Arquivo .xlsx da base</label><input id="arquivo" type="file" accept=".xlsx,.xlsm"></div>'
+      + '<div class="campo"><label for="trabalho">Ou retome um trabalho salvo (.json)</label><input id="trabalho" type="file" accept=".json"></div>'
+      + '</div></div>';
+  } else {
+    const pendentes = dados.base.filter((l) => !decisaoDe(campo(l, 'chapa')).acao).length;
+    html += '<div class="bloco cartao cartao-pad">'
+      + '<div class="linha" style="justify-content:space-between">'
+      + '<div><h2 style="font-size:17px">' + escapar(dados.processo.nome) + '</h2>'
+      + '<p style="color:var(--ink-2);margin:4px 0 0;font-size:13px">' + escapar(dados.arquivo) + ' · aba “' + escapar(dados.aba) + '” · '
+      + fmtNumero(dados.base.length) + ' colaboradores · ' + fmtNumero(pendentes) + ' sem decisão</p></div>'
+      + '<div class="linha">'
+      + '<button class="btn" id="btn-remapear" type="button">Revisar colunas</button>'
+      + '<button class="btn" id="btn-trocar" type="button">Carregar outra planilha</button>'
+      + '</div></div></div>'
+
+      + '<div class="bloco"><div class="bloco-cab"><h2>Processo</h2><p>usado no cabeçalho da exportação</p></div>'
+      + '<div class="cartao cartao-pad"><div class="linha">'
+      + '<div class="campo" style="flex:2"><label for="p-nome">Nome do processo</label><input id="p-nome" type="text" value="' + escapar(dados.processo.nome) + '"></div>'
+      + '<div class="campo"><label for="p-base">Data-base</label><input id="p-base" type="text" value="' + escapar(dados.processo.dataBase) + '" placeholder="AAAA-MM-DD"></div>'
+      + '<div class="campo"><label for="p-prazo">Prazo</label><input id="p-prazo" type="text" value="' + escapar(dados.processo.prazo) + '" placeholder="AAAA-MM-DD"></div>'
+      + '</div></div></div>'
+
+      + '<div class="bloco"><div class="bloco-cab"><h2>Salvar e devolver</h2><p>o trabalho fica neste navegador; exporte para guardar ou enviar</p></div>'
+      + '<div class="cartao cartao-pad"><div class="linha">'
+      + '<button class="btn primario" id="btn-xlsx" type="button">Exportar Excel (Resumo + Base Decisões)</button>'
+      + '<button class="btn" id="btn-json" type="button">Salvar trabalho (.json)</button>'
+      + '<div class="campo"><label for="trabalho2">Abrir trabalho salvo</label><input id="trabalho2" type="file" accept=".json"></div>'
+      + '<span class="espaco"></span>'
+      + '<button class="btn" id="btn-zerar" type="button">Apagar tudo deste navegador</button>'
+      + '</div>'
+      + '<p style="color:var(--ink-3);font-size:12.5px;margin:12px 0 0">O .json é o arquivo de trabalho: guarda a base, as decisões e a auditoria. '
+      + 'É ele que permite parar hoje e continuar amanhã, ou juntar o trabalho de outra pessoa.</p>'
+      + '</div></div>';
+  }
+
+  html += '<div class="bloco"><div class="aviso atencao">'
+    + '<b>Sobre segurança:</b> esta versão roda só no seu navegador, sem servidor e sem login. '
+    + 'Ela não controla quem vê o quê — quem abrir este arquivo com o trabalho salvo vê tudo o que estiver nele. '
+    + 'Para o controle de acesso por Diretoria/Divisão, com senha e auditoria que ninguém apaga, use a versão instalada no servidor.'
+    + '</div></div></div>';
+
+  return html;
+}
+
+function ligarInicio() {
+  const arquivo = document.getElementById('arquivo');
+  if (arquivo) arquivo.addEventListener('change', () => { if (arquivo.files[0]) abrirPlanilha(arquivo.files[0]); });
+
+  ['trabalho', 'trabalho2'].forEach((id) => {
+    const campoArquivo = document.getElementById(id);
+    if (campoArquivo) campoArquivo.addEventListener('change', async () => {
+      const escolhido = campoArquivo.files[0];
+      if (!escolhido) return;
+      try {
+        const conteudo = JSON.parse(await escolhido.text());
+        if (!conteudo.base) throw new Error('Arquivo de trabalho inválido.');
+        dados = Object.assign(dados, conteudo);
+        salvar();
+        tela = 'decisoes';
+        desenhar();
+        toast('Trabalho restaurado: ' + fmtNumero(dados.base.length) + ' colaboradores.');
+      } catch (erro) { toast(erro.message, 'erro'); }
+    });
+  });
+
+  const trocar = document.getElementById('btn-trocar');
+  if (trocar) trocar.addEventListener('click', () => {
+    const entrada = document.createElement('input');
+    entrada.type = 'file';
+    entrada.accept = '.xlsx,.xlsm';
+    entrada.addEventListener('change', () => { if (entrada.files[0]) abrirPlanilha(entrada.files[0]); });
+    entrada.click();
+  });
+
+  const remapear = document.getElementById('btn-remapear');
+  if (remapear) remapear.addEventListener('click', () => {
+    importacao = { cabecalhos: dados.cabecalhos, previa: dados.base.slice(0, 3), mapa: Object.assign({}, dados.mapa), reabrindo: true };
+    abrirMapeamento();
+  });
+
+  ['p-nome', 'p-base', 'p-prazo'].forEach((id) => {
+    const entrada = document.getElementById(id);
+    if (!entrada) return;
+    entrada.addEventListener('change', () => {
+      dados.processo[id === 'p-nome' ? 'nome' : id === 'p-base' ? 'dataBase' : 'prazo'] = entrada.value.trim();
+      salvar();
+      toast('Processo atualizado.');
+    });
+  });
+
+  const xlsx = document.getElementById('btn-xlsx');
+  if (xlsx) xlsx.addEventListener('click', exportarExcel);
+  const json = document.getElementById('btn-json');
+  if (json) json.addEventListener('click', () => {
+    baixar(new Blob([JSON.stringify(dados, null, 1)], { type: 'application/json' }),
+      'trabalho-decisoes-' + new Date().toISOString().slice(0, 10) + '.json');
+    toast('Arquivo de trabalho salvo na pasta de downloads.');
+  });
+  const zerar = document.getElementById('btn-zerar');
+  if (zerar) zerar.addEventListener('click', () => {
+    if (!confirm('Apagar a base e todas as decisões guardadas neste navegador? Exporte antes se quiser manter.')) return;
+    dados = { arquivo: '', aba: '', linhaCabecalho: 1, cabecalhos: [], base: [], mapa: {}, decisoes: {}, rascunhos: {}, auditoria: [],
+      acoes: ACOES_PADRAO, processo: { nome: 'Reestruturação', dataBase: '2026-07-31', prazo: '2026-09-11' }, usuario: dados.usuario };
+    salvar();
+    tela = 'inicio';
+    desenhar();
+    toast('Tudo apagado deste navegador.');
+  });
+}
+
+/* --------------------------- importar planilha --------------------------- */
+async function abrirPlanilha(arquivo) {
+  toast('Lendo a planilha...');
+  try {
+    const { abas } = await lerPlanilha(arquivo);
+    const candidatas = abas.filter((aba) => aba.linhas.length > 1);
+    if (!candidatas.length) throw new Error('Nenhuma aba com dados foi encontrada.');
+    const escolhida = candidatas.find((aba) => normalizar(aba.nome).includes('base')) || candidatas[0];
+    prepararImportacao(arquivo.name, abas, escolhida.nome);
+  } catch (erro) {
+    toast(erro.message, 'erro');
+  }
+}
+
+function detectarCabecalho(linhas) {
+  for (let i = 0; i < Math.min(linhas.length, 15); i += 1) {
+    const preenchidas = (linhas[i] || []).filter((c) => String(c || '').trim()).length;
+    if (preenchidas >= 3) return i + 1;
+  }
+  return 1;
+}
+
+function sugerirMapa(cabecalhos) {
+  const mapa = {};
+  Object.keys(APELIDOS).forEach((chave) => {
+    const achado = cabecalhos.find((cabecalho) => {
+      const normalizado = normalizar(cabecalho);
+      return APELIDOS[chave].some((apelido) => normalizado === apelido || normalizado.startsWith(apelido));
+    });
+    if (achado) mapa[chave] = achado;
+  });
+  return mapa;
+}
+
+function prepararImportacao(nomeArquivo, abas, nomeAba) {
+  const aba = abas.find((a) => a.nome === nomeAba) || abas[0];
+  const linhaCabecalho = detectarCabecalho(aba.linhas);
+  const cabecalhos = (aba.linhas[linhaCabecalho - 1] || []).map((c, i) => String(c || '').replace(/\s+/g, ' ').trim() || 'Coluna ' + (i + 1));
+  const registros = [];
+  for (let i = linhaCabecalho; i < aba.linhas.length; i += 1) {
+    const celulas = aba.linhas[i] || [];
+    if (!celulas.some((c) => String(c || '').trim())) continue;
+    const registro = {};
+    cabecalhos.forEach((cabecalho, indice) => { registro[cabecalho] = celulas[indice] == null ? '' : String(celulas[indice]); });
+    registros.push(registro);
+  }
+  importacao = { nomeArquivo, abas, aba: aba.nome, linhaCabecalho, cabecalhos, registros, mapa: sugerirMapa(cabecalhos) };
+  abrirMapeamento();
+}
+
+function abrirMapeamento() {
+  const dlg = document.getElementById('dlg');
+  const chaves = [
+    ['chapa', 'Matrícula (chave)', true], ['nome', 'Nome', true], ['diretoria', 'Diretoria', false],
+    ['divisao', 'Divisão', false], ['cargo', 'Cargo', false], ['situacao', 'Situação', false],
+    ['estabilidade', 'Estabilidade', false], ['fimEstabilidade', 'Data fim da estabilidade', false],
+    ['invalidez', 'Afastamento / invalidez', false], ['custo', 'Salário anual (para o resumo)', false],
+    ['acao', 'Ação indicada (se já existir na planilha)', false],
+    ['destino', 'Destino da transferência', false], ['justificativa', 'Justificativa', false]
+  ];
+  const cabecalhos = importacao.cabecalhos;
+
+  dlg.innerHTML = '<div class="dlg-topo"><h3>Conferir colunas — ' + escapar(importacao.nomeArquivo || dados.arquivo) + '</h3>'
+    + '<button class="btn pequeno" data-fechar type="button">Fechar</button></div>'
+    + '<div class="dlg-corpo">'
+    + (importacao.abas && importacao.abas.length > 1
+      ? '<div class="campo" style="max-width:340px;margin-bottom:14px"><label for="sel-aba">Aba da planilha</label><select id="sel-aba">'
+        + importacao.abas.map((a) => '<option value="' + escapar(a.nome) + '"' + (a.nome === importacao.aba ? ' selected' : '') + '>'
+          + escapar(a.nome) + ' (' + a.linhas.length + ' linhas)</option>').join('') + '</select></div>'
+      : '')
+    + '<p style="color:var(--ink-2);font-size:13px">Todas as colunas da planilha são preservadas. Aqui você só indica quais delas o portal '
+    + 'usa para identificar o colaborador, montar o resumo e disparar os alertas.</p>'
+    + '<div class="tabela-caixa" style="max-height:44vh"><table><thead><tr><th>Informação</th><th>Coluna da planilha</th><th>Exemplo</th></tr></thead><tbody>'
+    + chaves.map(([chave, rotulo, obrigatorio]) => {
+        const atual = importacao.mapa[chave] || '';
+        const exemplo = atual && importacao.registros ? (importacao.registros[0] || {})[atual] : (atual && dados.base[0] ? dados.base[0][atual] : '');
+        return '<tr><td>' + rotulo + (obrigatorio ? ' <span class="pill aviso">obrigatório</span>' : '') + '</td>'
+          + '<td><select data-mapa="' + chave + '"><option value="">— nenhuma —</option>'
+          + cabecalhos.map((c) => '<option value="' + escapar(c) + '"' + (c === atual ? ' selected' : '') + '>' + escapar(c) + '</option>').join('')
+          + '</select></td>'
+          + '<td class="limite" style="color:var(--ink-3)">' + escapar(String(exemplo || '').slice(0, 40)) + '</td></tr>';
+      }).join('')
+    + '</tbody></table></div></div>'
+    + '<div class="dlg-rodape"><button class="btn" data-fechar type="button">Cancelar</button>'
+    + '<button class="btn primario" id="confirmar-mapa" type="button">' + (importacao.reabrindo ? 'Salvar' : 'Carregar base') + '</button></div>';
+
+  dlg.querySelectorAll('[data-fechar]').forEach((b) => b.addEventListener('click', () => dlg.close()));
+  const seletorAba = dlg.querySelector('#sel-aba');
+  if (seletorAba) seletorAba.addEventListener('change', () => {
+    prepararImportacao(importacao.nomeArquivo, importacao.abas, seletorAba.value);
+  });
+
+  dlg.querySelector('#confirmar-mapa').addEventListener('click', () => {
+    const mapa = {};
+    dlg.querySelectorAll('[data-mapa]').forEach((campoSelect) => {
+      if (campoSelect.value) mapa[campoSelect.dataset.mapa] = campoSelect.value;
+    });
+    if (!mapa.chapa || !mapa.nome) { toast('Indique ao menos a matrícula e o nome.', 'erro'); return; }
+
+    if (importacao.reabrindo) {
+      dados.mapa = mapa;
+    } else {
+      dados.arquivo = importacao.nomeArquivo;
+      dados.aba = importacao.aba;
+      dados.linhaCabecalho = importacao.linhaCabecalho;
+      dados.cabecalhos = importacao.cabecalhos;
+      dados.base = importacao.registros;
+      dados.mapa = mapa;
+
+      // aproveita decisões que já venham preenchidas na planilha
+      let aproveitadas = 0;
+      dados.base.forEach((linha) => {
+        const chapa = linha[mapa.chapa];
+        const acaoPlanilha = mapa.acao ? String(linha[mapa.acao] || '').trim() : '';
+        if (!chapa || !acaoPlanilha) return;
+        const valida = dados.acoes.find((a) => normalizar(a.valor) === normalizar(acaoPlanilha));
+        if (!valida || dados.decisoes[chapa]) return;
+        dados.decisoes[chapa] = {
+          acao: valida.valor,
+          justificativa: mapa.justificativa ? String(linha[mapa.justificativa] || '') : '',
+          destino: mapa.destino ? String(linha[mapa.destino] || '') : '',
+          status: 'preenchida', por: 'importado da planilha', em: new Date().toISOString()
+        };
+        aproveitadas += 1;
+      });
+      auditar({ tipo: 'Importação', chapa: '', colaborador: '', campo: 'carga',
+        de: '—', para: fmtNumero(dados.base.length) + ' linhas de “' + importacao.aba + '” (' + importacao.nomeArquivo + ')' });
+      if (aproveitadas) toast(fmtNumero(aproveitadas) + ' decisões já vieram preenchidas na planilha.');
+    }
+
+    salvar();
+    dlg.close();
+    tela = 'decisoes';
+    desenhar();
+  });
+
+  dlg.showModal();
+}
+
+/* ------------------------------ decisões ------------------------------ */
+function listaFiltrada() {
+  let lista = dados.base;
+  if (filtros.busca) {
+    const termo = normalizar(filtros.busca);
+    lista = lista.filter((linha) => normalizar(campo(linha, 'nome') + ' ' + campo(linha, 'chapa') + ' ' + campo(linha, 'cargo')).includes(termo));
+  }
+  if (filtros.diretoria) lista = lista.filter((linha) => campo(linha, 'diretoria') === filtros.diretoria);
+  if (filtros.divisao) lista = lista.filter((linha) => campo(linha, 'divisao') === filtros.divisao);
+  if (filtros.acao) {
+    lista = filtros.acao === '__sem__'
+      ? lista.filter((linha) => !decisaoDe(campo(linha, 'chapa')).acao)
+      : lista.filter((linha) => decisaoDe(campo(linha, 'chapa')).acao === filtros.acao);
+  }
+  if (filtros.alerta) lista = lista.filter((linha) => alertasDe(linha).some((a) => a.severidade !== 'info'));
+  return lista;
+}
+
+function telaDecisoes() {
+  if (!dados.base.length) {
+    return '<div class="aviso info">Carregue a planilha na aba <b>Início</b> para começar.</div>';
+  }
+  const valores = (chave) => [...new Set(dados.base.map((l) => campo(l, chave)).filter(Boolean))].sort();
+  const opcao = (valor, rotulo, selecionado) => '<option value="' + escapar(valor) + '"' + (selecionado ? ' selected' : '') + '>' + escapar(rotulo) + '</option>';
+  const lista = listaFiltrada();
+  const colunasExtras = dados.cabecalhos.filter((c) => ![dados.mapa.chapa, dados.mapa.nome, dados.mapa.cargo, dados.mapa.divisao,
+    dados.mapa.acao, dados.mapa.justificativa, dados.mapa.destino].includes(c)).slice(0, 6);
+
+  let html = '<div class="bloco"><div class="cartao cartao-pad"><div class="linha">'
+    + '<div class="campo" style="flex:2"><label for="f-busca">Buscar</label>'
+    + '<input id="f-busca" type="search" placeholder="Nome, matrícula, cargo" value="' + escapar(filtros.busca || '') + '"></div>';
+
+  if (dados.mapa.diretoria) {
+    html += '<div class="campo"><label for="f-diretoria">Diretoria</label><select id="f-diretoria">'
+      + opcao('', 'Todas', !filtros.diretoria) + valores('diretoria').map((v) => opcao(v, v, filtros.diretoria === v)).join('') + '</select></div>';
+  }
+  if (dados.mapa.divisao) {
+    html += '<div class="campo"><label for="f-divisao">Divisão</label><select id="f-divisao">'
+      + opcao('', 'Todas', !filtros.divisao) + valores('divisao').map((v) => opcao(v, v, filtros.divisao === v)).join('') + '</select></div>';
+  }
+  html += '<div class="campo"><label for="f-acao">Ação</label><select id="f-acao">'
+    + opcao('', 'Todas', !filtros.acao) + opcao('__sem__', 'Sem decisão', filtros.acao === '__sem__')
+    + dados.acoes.map((a) => opcao(a.valor, a.valor, filtros.acao === a.valor)).join('') + '</select></div>'
+    + '<label style="display:flex;gap:7px;align-items:center;font-size:13px;color:var(--ink-2)">'
+    + '<input type="checkbox" id="f-alerta"' + (filtros.alerta ? ' checked' : '') + '> Só com alerta</label>'
+    + '<span class="espaco"></span>'
+    + '<button class="btn" id="btn-limpar" type="button">Limpar filtros</button>'
+    + '<button class="btn primario" id="btn-exportar" type="button">Exportar Excel</button>'
+    + '</div></div></div>';
+
+  if (selecao.length) {
+    html += '<div class="barra-selecao"><b>' + selecao.length + '</b> selecionado(s)<span class="espaco"></span>'
+      + '<button class="btn pequeno" id="btn-limpar-selecao" type="button">Limpar seleção</button>'
+      + '<button class="btn pequeno primario" id="btn-lote" type="button">Aplicar ação aos selecionados</button></div>';
+  }
+
+  html += '<div class="tabela-caixa"><table><thead><tr>'
+    + '<th style="width:32px"><input type="checkbox" id="marcar-todos"></th>'
+    + '<th>Matrícula</th><th>Nome</th>'
+    + (dados.mapa.cargo ? '<th>Cargo</th>' : '')
+    + (dados.mapa.divisao ? '<th>Divisão</th>' : '')
+    + '<th style="min-width:225px">Ação indicada</th><th style="min-width:250px">Justificativa</th><th>Status</th>'
+    + colunasExtras.map((c) => '<th>' + escapar(c) + '</th>').join('')
+    + '<th></th></tr></thead><tbody>';
+
+  if (!lista.length) html += '<tr><td class="vazio" colspan="12">Nenhum colaborador com os filtros atuais.</td></tr>';
+
+  lista.forEach((linha, indice) => {
+    const chapa = campo(linha, 'chapa');
+    const decisao = decisaoDe(chapa);
+    const atual = valorDe(chapa);
+    const info = acaoInfo(atual.acao);
+    const graves = alertasDe(linha).filter((a) => a.severidade !== 'info');
+    const falta = faltando(linha, atual);
+    const marcada = selecao.includes(chapa);
+    const posicao = dados.base.indexOf(linha);
+
+    html += '<tr' + (marcada ? ' class="marcada"' : '') + '>'
+      + '<td><input type="checkbox" data-marcar="' + escapar(chapa) + '"' + (marcada ? ' checked' : '') + '></td>'
+      + '<td class="chapa">' + escapar(chapa) + '</td>'
+      + '<td><button class="btn texto" data-ficha="' + posicao + '">' + escapar(campo(linha, 'nome') || '(sem nome)') + '</button></td>'
+      + (dados.mapa.cargo ? '<td style="color:var(--ink-2)" class="limite">' + escapar(campo(linha, 'cargo')) + '</td>' : '')
+      + (dados.mapa.divisao ? '<td style="color:var(--ink-2)" class="limite">' + escapar(campo(linha, 'divisao')) + '</td>' : '')
+      + '<td><select class="decisao' + (atual.acao ? ' preenchida' : '') + (falta === 'justificativa' ? ' exigida' : '') + '" data-acao="' + posicao + '">'
+      + '<option value="">— sem decisão —</option>'
+      + dados.acoes.map((a) => '<option value="' + escapar(a.valor) + '"' + (atual.acao === a.valor ? ' selected' : '') + '>' + escapar(a.valor) + '</option>').join('')
+      + '</select>'
+      + (falta ? '<div class="falta">' + (falta === 'destino' ? 'Informe o destino para gravar.' : 'Informe a justificativa para gravar.') + '</div>' : '')
+      + (info && info.exigeDestino ? '<input class="decisao' + (falta === 'destino' ? ' exigida' : '') + '" data-destino="' + posicao + '" value="' + escapar(atual.destino) + '" placeholder="Destino: Diretoria / setor / nº processo">' : '')
+      + '</td>'
+      + '<td><input class="decisao' + (falta === 'justificativa' ? ' exigida' : '') + '" data-justificativa="' + posicao + '" value="' + escapar(atual.justificativa) + '" placeholder="' + (info && info.exigeJustificativa ? 'Justificativa obrigatória para esta ação' : 'Justificativa (opcional)') + '"></td>'
+      + '<td><span class="pill' + (decisao.acao ? ' ativo' : '') + '">' + (decisao.acao ? 'Preenchida' : 'Pendente') + '</span>'
+      + (graves.length ? '<span class="marca-alerta" title="' + escapar(graves.map((a) => a.texto).join(' ')) + '">⚠</span>' : '') + '</td>'
+      + colunasExtras.map((c) => '<td class="limite" style="color:var(--ink-2)">' + escapar(linha[c]) + '</td>').join('')
+      + '<td><button class="btn pequeno" data-ficha="' + posicao + '">Detalhes</button></td>'
+      + '</tr>';
+    void indice;
+  });
+
+  html += '</tbody></table></div>'
+    + '<p style="font-size:12.5px;color:var(--ink-3);margin:10px 2px 0">' + fmtNumero(lista.length) + ' de ' + fmtNumero(dados.base.length)
+    + ' colaborador(es) · marque a decisão direto na linha — grava sozinho e entra na auditoria.</p>';
+  return html;
+}
+
+function ligarDecisoes() {
+  const raiz = document.getElementById('tela');
+
+  const filtro = (id, chave, tipo) => {
+    const alvo = document.getElementById(id);
+    if (!alvo) return;
+    alvo.addEventListener(tipo === 'texto' ? 'input' : 'change', () => {
+      filtros[chave] = tipo === 'marcar' ? alvo.checked : alvo.value;
+      const tinhaFoco = document.activeElement === alvo;
+      desenhar();
+      if (tinhaFoco) {
+        const novo = document.getElementById(id);
+        if (novo) { novo.focus(); if (tipo === 'texto' && novo.setSelectionRange) novo.setSelectionRange(novo.value.length, novo.value.length); }
+      }
+    });
+  };
+  filtro('f-busca', 'busca', 'texto');
+  filtro('f-diretoria', 'diretoria');
+  filtro('f-divisao', 'divisao');
+  filtro('f-acao', 'acao');
+  filtro('f-alerta', 'alerta', 'marcar');
+
+  const limpar = document.getElementById('btn-limpar');
+  if (limpar) limpar.addEventListener('click', () => { filtros = {}; desenhar(); });
+  const exportar = document.getElementById('btn-exportar');
+  if (exportar) exportar.addEventListener('click', exportarExcel);
+
+  raiz.querySelectorAll('[data-acao]').forEach((seletor) => {
+    seletor.addEventListener('change', () => {
+      const linha = dados.base[Number(seletor.dataset.acao)];
+      const atual = valorDe(campo(linha, 'chapa'));
+      const valores = { acao: seletor.value, justificativa: atual.justificativa, destino: atual.destino };
+      const falta = faltando(linha, valores);
+      if (falta) {
+        guardarRascunho(campo(linha, 'chapa'), valores);
+        desenhar();
+        const alvo = document.querySelector(falta === 'destino'
+          ? '[data-destino="' + seletor.dataset.acao + '"]' : '[data-justificativa="' + seletor.dataset.acao + '"]');
+        if (alvo) alvo.focus();
+        toast(falta === 'destino' ? 'Informe o destino para gravar esta transferência.' : 'Esta ação exige justificativa.', 'erro');
+        return;
+      }
+      gravarDecisao(linha, valores);
+      desenhar();
+    });
+  });
+
+  const texto = (seletor, chave) => {
+    raiz.querySelectorAll(seletor).forEach((entrada) => {
+      entrada.addEventListener('change', () => {
+        const posicao = Number(entrada.dataset.justificativa || entrada.dataset.destino);
+        const linha = dados.base[posicao];
+        const atual = valorDe(campo(linha, 'chapa'));
+        const valores = { acao: atual.acao, justificativa: atual.justificativa, destino: atual.destino };
+        valores[chave] = entrada.value;
+        const aindaFalta = faltando(linha, valores);
+        if (aindaFalta) {
+          guardarRascunho(campo(linha, 'chapa'), valores);
+          desenhar();
+          // leva o cursor para o campo que ainda falta, sem precisar procurar
+          const proximo = document.querySelector(aindaFalta === 'destino'
+            ? '[data-destino="' + posicao + '"]' : '[data-justificativa="' + posicao + '"]');
+          if (proximo) proximo.focus();
+          return;
+        }
+        gravarDecisao(linha, valores);
+        desenhar();
+      });
+    });
+  };
+  texto('[data-justificativa]', 'justificativa');
+  texto('[data-destino]', 'destino');
+
+  raiz.querySelectorAll('[data-marcar]').forEach((caixa) => {
+    caixa.addEventListener('change', () => {
+      const chapa = caixa.dataset.marcar;
+      selecao = caixa.checked ? selecao.concat([chapa]) : selecao.filter((c) => c !== chapa);
+      desenhar();
+    });
+  });
+  const todos = document.getElementById('marcar-todos');
+  if (todos) todos.addEventListener('change', () => {
+    selecao = todos.checked ? listaFiltrada().map((linha) => campo(linha, 'chapa')) : [];
+    desenhar();
+  });
+  const limparSelecao = document.getElementById('btn-limpar-selecao');
+  if (limparSelecao) limparSelecao.addEventListener('click', () => { selecao = []; desenhar(); });
+  const lote = document.getElementById('btn-lote');
+  if (lote) lote.addEventListener('click', abrirLote);
+
+  raiz.querySelectorAll('[data-ficha]').forEach((botao) => {
+    botao.addEventListener('click', () => abrirFicha(Number(botao.dataset.ficha)));
+  });
+}
+
+function abrirFicha(posicao) {
+  const linha = dados.base[posicao];
+  const chapa = campo(linha, 'chapa');
+  const decisao = decisaoDe(chapa);
+  const alertas = alertasDe(linha);
+  const historico = dados.auditoria.filter((e) => e.chapa === chapa);
+  const dlg = document.getElementById('dlg');
+
+  dlg.innerHTML = '<div class="dlg-topo"><h3>' + escapar(campo(linha, 'nome')) + ' · matrícula ' + escapar(chapa) + '</h3>'
+    + '<button class="btn pequeno" data-fechar type="button">Fechar</button></div><div class="dlg-corpo">'
+    + (alertas.length ? '<div class="avisos" style="margin-bottom:16px">' + alertas.map((a) =>
+        '<div class="aviso ' + (a.severidade === 'critico' ? 'critico' : a.severidade === 'atencao' ? 'atencao' : 'info') + '">' + escapar(a.texto) + '</div>').join('') + '</div>' : '')
+    + '<div class="cartao cartao-pad" style="margin-bottom:16px"><h3 style="font-size:14px;margin-bottom:10px">Decisão</h3><div class="ficha">'
+    + '<div><div class="rot">Ação indicada</div><div>' + (decisao.acao ? '<span class="pill ' + ((acaoInfo(decisao.acao) || {}).cor || '') + '">' + escapar(decisao.acao) + '</span>' : '<span class="pill">Sem decisão</span>') + '</div></div>'
+    + '<div><div class="rot">Destino</div><div>' + (escapar(decisao.destino) || '—') + '</div></div>'
+    + '<div><div class="rot">Responsável</div><div>' + (escapar(decisao.por) || '—') + (decisao.em ? ' · ' + fmtDataHora(decisao.em) : '') + '</div></div>'
+    + '</div><div style="margin-top:12px"><div class="rot">Justificativa</div><div>' + (escapar(decisao.justificativa) || '—') + '</div></div></div>'
+    + '<h3 style="font-size:14px;margin-bottom:10px">Dados da planilha</h3><div class="ficha">'
+    + dados.cabecalhos.map((cabecalho) => '<div><div class="rot">' + escapar(cabecalho) + '</div><div>' + (escapar(linha[cabecalho]) || '—') + '</div></div>').join('')
+    + '</div>'
+    + (historico.length ? '<h3 style="font-size:14px;margin:18px 0 8px">Histórico</h3><ul class="linha-tempo">'
+      + historico.slice(0, 15).map((e) => '<li><div>' + escapar(e.campo) + ': “' + escapar(e.de) + '” → “' + escapar(e.para) + '”</div>'
+        + '<div class="quando">' + escapar(e.usuario) + ' · ' + fmtDataHora(e.quando) + '</div></li>').join('') + '</ul>' : '')
+    + '</div><div class="dlg-rodape"><button class="btn primario" data-fechar type="button">Fechar</button></div>';
+  dlg.querySelectorAll('[data-fechar]').forEach((b) => b.addEventListener('click', () => dlg.close()));
+  dlg.showModal();
+}
+
+function abrirLote() {
+  const dlg = document.getElementById('dlg');
+  dlg.innerHTML = '<div class="dlg-topo"><h3>Aplicar ação a ' + selecao.length + ' colaborador(es)</h3>'
+    + '<button class="btn pequeno" data-fechar type="button">Fechar</button></div><div class="dlg-corpo">'
+    + '<p style="color:var(--ink-2);font-size:13px">A mesma ação e justificativa vão para os selecionados. Quem exigir destino específico '
+    + 'ou tiver alerta de estabilidade volta na lista de pendências para tratamento individual.</p>'
+    + '<div class="campo"><label for="lote-acao">Ação indicada</label><select id="lote-acao"><option value="">Sem decisão</option>'
+    + dados.acoes.map((a) => '<option value="' + escapar(a.valor) + '">' + escapar(a.valor) + '</option>').join('') + '</select></div>'
+    + '<div class="campo" style="margin-top:12px"><label for="lote-just">Justificativa</label>'
+    + '<textarea id="lote-just" rows="3" placeholder="Critérios considerados..."></textarea></div>'
+    + '<div id="lote-resultado" style="margin-top:14px"></div></div>'
+    + '<div class="dlg-rodape"><button class="btn" data-fechar type="button">Cancelar</button>'
+    + '<button class="btn primario" id="lote-aplicar" type="button">Aplicar a todos</button></div>';
+
+  dlg.querySelectorAll('[data-fechar]').forEach((b) => b.addEventListener('click', () => { dlg.close(); desenhar(); }));
+  dlg.querySelector('#lote-aplicar').addEventListener('click', () => {
+    const acao = dlg.querySelector('#lote-acao').value;
+    const justificativa = dlg.querySelector('#lote-just').value;
+    const pendencias = [];
+    let aplicadas = 0;
+    selecao.forEach((chapa) => {
+      const linha = dados.base.find((l) => campo(l, 'chapa') === chapa);
+      if (!linha) return;
+      const valores = { acao: acao, justificativa: justificativa, destino: valorDe(chapa).destino };
+      const falta = faltando(linha, valores);
+      if (falta) {
+        pendencias.push({ chapa: chapa, nome: campo(linha, 'nome'),
+          motivo: falta === 'destino' ? 'exige destino específico' : 'exige justificativa (alerta ou regra da ação)' });
+        return;
+      }
+      gravarDecisao(linha, valores, true);
+      aplicadas += 1;
+    });
+    salvar();
+    dlg.querySelector('#lote-resultado').innerHTML = '<div class="aviso ' + (pendencias.length ? 'atencao' : 'ok') + '">'
+      + aplicadas + ' gravada(s)' + (pendencias.length ? ' · ' + pendencias.length + ' exigem tratamento individual' : '') + '.</div>'
+      + (pendencias.length ? '<ul style="font-size:12.5px;color:var(--ink-2);margin-top:8px">'
+        + pendencias.map((p) => '<li><b>' + escapar(p.chapa) + '</b> ' + escapar(p.nome) + ' — ' + p.motivo + '</li>').join('') + '</ul>' : '');
+    if (!pendencias.length) { selecao = []; setTimeout(() => { dlg.close(); desenhar(); }, 800); }
+  });
+  dlg.showModal();
+}
+
+/* ------------------------------- resumo ------------------------------- */
+function calcularResumo() {
+  const total = dados.base.length;
+  const desligados = dados.base.filter((l) => normalizar(campo(l, 'situacao')) === 'desligado').length;
+  const avaliados = dados.base.filter((l) => decisaoDe(campo(l, 'chapa')).acao).length;
+  const comAlerta = dados.base.filter((l) => alertasDe(l).some((a) => a.severidade !== 'info')).length;
+  const custoTotal = dados.base.reduce((soma, l) => soma + numeroDe(campo(l, 'custo')), 0);
+  const reducao = dados.base.filter((l) => {
+    const info = acaoInfo(decisaoDe(campo(l, 'chapa')).acao);
+    return info && info.reducao;
+  }).reduce((soma, l) => soma + numeroDe(campo(l, 'custo')), 0);
+  const porAcao = dados.acoes.map((a) => ({
+    rotulo: a.valor, cor: a.cor,
+    total: dados.base.filter((l) => decisaoDe(campo(l, 'chapa')).acao === a.valor).length,
+    custo: dados.base.filter((l) => decisaoDe(campo(l, 'chapa')).acao === a.valor).reduce((s, l) => s + numeroDe(campo(l, 'custo')), 0)
+  })).concat([{ rotulo: 'Sem decisão', cor: 'pendente', total: total - avaliados,
+    custo: dados.base.filter((l) => !decisaoDe(campo(l, 'chapa')).acao).reduce((s, l) => s + numeroDe(campo(l, 'custo')), 0) }]);
+
+  const porGrupo = (chave) => {
+    if (!dados.mapa[chave]) return [];
+    const mapa = new Map();
+    dados.base.forEach((l) => {
+      const nome = campo(l, chave) || '(não informado)';
+      const item = mapa.get(nome) || { total: 0, avaliados: 0, desligamentos: 0, transferencias: 0 };
+      item.total += 1;
+      const decisao = decisaoDe(campo(l, 'chapa'));
+      if (decisao.acao) item.avaliados += 1;
+      const info = acaoInfo(decisao.acao);
+      if (info && info.reducao) item.desligamentos += 1;
+      if (info && info.exigeDestino) item.transferencias += 1;
+      mapa.set(nome, item);
+    });
+    return [...mapa.entries()].sort((a, b) => a[0].localeCompare(b[0]));
+  };
+
+  return { total, desligados, avaliados, pendentes: total - avaliados, comAlerta, custoTotal, reducao, porAcao,
+    porDiretoria: porGrupo('diretoria'), porDivisao: porGrupo('divisao') };
+}
+
+function telaResumo() {
+  if (!dados.base.length) return '<div class="aviso info">Carregue a planilha na aba <b>Início</b> para ver o resumo.</div>';
+  const r = calcularResumo();
+  const percentual = r.total ? Math.round((r.avaliados / r.total) * 100) : 0;
+  const maximo = Math.max.apply(null, r.porAcao.map((a) => a.total).concat([1]));
+
+  const kpis = [
+    { rot: 'Colaboradores na base', val: fmtNumero(r.total), nota: 'posição de ' + fmtData(dados.processo.dataBase) },
+    { rot: 'Avaliados', val: percentual + '%', nota: fmtNumero(r.avaliados) + ' de ' + fmtNumero(r.total), progresso: percentual },
+    { rot: 'Pendentes', val: fmtNumero(r.pendentes), nota: 'sem ação indicada', destaque: r.pendentes > 0 },
+    { rot: 'Desligados na posição-base', val: fmtNumero(r.desligados), nota: 'identificados na planilha' },
+    { rot: 'Com alerta', val: fmtNumero(r.comAlerta), nota: 'estabilidade, afastamento ou invalidez', destaque: r.comAlerta > 0 },
+    { rot: 'Redução anual estimada', val: fmtMoeda(r.reducao), nota: 'de ' + fmtMoeda(r.custoTotal) + ' na base' }
+  ];
+
+  const tabelaGrupo = (titulo, linhas) => !linhas.length ? '' :
+    '<div class="bloco"><div class="bloco-cab"><h2>' + titulo + '</h2></div><div class="tabela-caixa" style="max-height:none"><table><thead><tr>'
+    + '<th>' + titulo.replace('Andamento por ', '') + '</th><th class="num">Total</th><th class="num">Avaliados</th>'
+    + '<th class="num">Pendentes</th><th class="num">Desligamentos</th><th class="num">Transferências</th><th class="num">% concluído</th>'
+    + '</tr></thead><tbody>'
+    + linhas.map(([nome, l]) => '<tr><td>' + escapar(nome) + '</td><td class="num">' + l.total + '</td><td class="num">' + l.avaliados + '</td>'
+      + '<td class="num"' + (l.total - l.avaliados > 0 ? ' style="color:var(--alerta);font-weight:600"' : '') + '>' + (l.total - l.avaliados) + '</td>'
+      + '<td class="num">' + l.desligamentos + '</td><td class="num">' + l.transferencias + '</td>'
+      + '<td class="num">' + (l.total ? Math.round((l.avaliados / l.total) * 100) : 0) + '%</td></tr>').join('')
+    + '</tbody></table></div></div>';
+
+  return '<div class="bloco"><div class="kpis">'
+    + kpis.map((k) => '<div class="kpi' + (k.destaque ? ' destaque' : '') + '"><div class="rot">' + k.rot + '</div>'
+      + '<div class="val">' + k.val + '</div><div class="nota">' + k.nota + '</div>'
+      + (k.progresso != null ? '<div class="trilho"><i style="width:' + Math.min(k.progresso, 100) + '%"></i></div>' : '') + '</div>').join('')
+    + '</div></div>'
+    + '<div class="bloco"><div class="bloco-cab"><h2>Distribuição por ação indicada</h2></div><div class="cartao cartao-pad"><div class="barras">'
+    + r.porAcao.map((a) => '<div class="barra"><div class="rot"><span class="ponto" style="background:var(--' + (a.cor === 'pendente' ? 'pendente' : a.cor) + ')"></span>' + escapar(a.rotulo) + '</div>'
+      + '<div class="trilho"><i style="width:' + ((a.total / maximo) * 100) + '%;background:var(--' + (a.cor === 'pendente' ? 'pendente' : a.cor) + ')"></i></div>'
+      + '<div class="num">' + fmtNumero(a.total) + ' <em>(' + (r.total ? Math.round((a.total / r.total) * 100) : 0) + '%)</em></div></div>').join('')
+    + '</div></div></div>'
+    + tabelaGrupo('Andamento por Diretoria', r.porDiretoria)
+    + tabelaGrupo('Andamento por Divisão', r.porDivisao);
+}
+
+/* ------------------------------ auditoria ------------------------------ */
+function telaAuditoria() {
+  const eventos = dados.auditoria;
+  return '<div class="bloco"><div class="bloco-cab"><h2>Auditoria</h2>'
+    + '<p>tudo o que foi alterado neste arquivo de trabalho — vai junto no .json e na exportação</p></div>'
+    + (eventos.length ? '' : '<div class="aviso info" style="margin-bottom:12px">Ainda não há eventos. Marque decisões na aba <b>Decisões</b>.</div>')
+    + '<div class="tabela-caixa"><table><thead><tr><th>Quando</th><th>Usuário</th><th>Evento</th><th>Matrícula</th>'
+    + '<th>Colaborador</th><th>Campo</th><th>De</th><th>Para</th></tr></thead><tbody>'
+    + (eventos.length ? eventos.slice(0, 300).map((e) => '<tr><td class="chapa">' + fmtDataHora(e.quando) + '</td>'
+        + '<td>' + escapar(e.usuario) + '</td><td>' + escapar(e.tipo) + '</td><td class="chapa">' + escapar(e.chapa || '') + '</td>'
+        + '<td>' + escapar(e.colaborador || '') + '</td><td style="color:var(--ink-2)">' + escapar(e.campo || '') + '</td>'
+        + '<td class="limite" style="color:var(--ink-2)">' + escapar(e.de || '') + '</td>'
+        + '<td class="limite">' + escapar(e.para || '') + '</td></tr>').join('')
+      : '<tr><td class="vazio" colspan="8">Nenhum evento ainda.</td></tr>')
+    + '</tbody></table></div></div>';
+}
+
+/* -------------------------------- ajuda -------------------------------- */
+function telaAjuda() {
+  return '<div class="abertura">'
+    + '<div class="bloco cartao cartao-pad">'
+    + '<h2 style="font-size:18px;margin-bottom:10px">Como usar</h2>'
+    + '<ol class="passos">'
+    + '<li><h4>Escreva seu nome no topo</h4><p>É o que aparece na auditoria de cada decisão.</p></li>'
+    + '<li><h4>Carregue a planilha (.xlsx)</h4><p>Na aba <b>Início</b>. O arquivo é lido dentro do navegador — nada é enviado para fora.</p></li>'
+    + '<li><h4>Confira as colunas</h4><p>O portal sugere o que é matrícula, nome, divisão, estabilidade e salário. Ajuste se precisar; '
+    + 'todas as demais colunas continuam preservadas.</p></li>'
+    + '<li><h4>Marque as decisões</h4><p>Na aba <b>Decisões</b>, escolha a ação direto na linha. Ações que exigem justificativa ou destino '
+    + 'destacam a linha até o campo ser preenchido. Colaboradores com estabilidade aparecem com ⚠.</p></li>'
+    + '<li><h4>Salve o trabalho</h4><p>Use <b>Salvar trabalho (.json)</b> para poder continuar depois ou em outra máquina. '
+    + 'O navegador também guarda automaticamente, mas o .json é a sua cópia segura.</p></li>'
+    + '<li><h4>Exporte o Excel</h4><p><b>Exportar Excel</b> gera o arquivo com as abas “1. Resumo” e “2. Base Decisões”, '
+    + 'incluindo a lista suspensa na coluna de ação — no formato que o RH espera de volta.</p></li>'
+    + '</ol></div>'
+
+    + '<div class="bloco cartao cartao-pad">'
+    + '<h3 style="font-size:15px;margin-bottom:8px">Trabalhando com mais de uma pessoa</h3>'
+    + '<p style="color:var(--ink-2);margin:0 0 10px">Cada gestor pode receber uma cópia deste arquivo junto com um .json contendo só a Divisão dele '
+    + '(filtre por Divisão, exporte e envie). Ao devolver o .json, o RH abre e consolida. A auditoria de cada um vem junto.</p>'
+    + '<p style="color:var(--ink-2);margin:0"><b>Limite honesto:</b> sem servidor não existe controle de acesso de verdade — quem tiver o arquivo vê o que está nele. '
+    + 'Para gestores enxergarem apenas a própria Divisão, com login e auditoria central, é preciso a versão instalada no servidor.</p>'
+    + '</div>'
+
+    + '<div class="bloco cartao cartao-pad">'
+    + '<h3 style="font-size:15px;margin-bottom:8px">Requisitos e cuidados</h3>'
+    + '<p style="color:var(--ink-2);margin:0 0 8px">Funciona no Chrome ou Edge atualizados (também no Firefox e Safari recentes), sem instalação e sem internet. '
+    + 'Guarde este arquivo e os .json em pasta de rede com acesso restrito, como você faria com a planilha.</p>'
+    + '<p style="color:var(--ink-2);margin:0">Os dados ficam salvos no navegador desta máquina e neste perfil de usuário. '
+    + 'Limpar dados de navegação apaga o conteúdo — por isso exporte o .json ao terminar cada sessão.</p>'
+    + '</div></div>';
+}
+
+/* ------------------------------ exportação ----------------------------- */
+function exportarExcel() {
+  if (!dados.base.length) { toast('Carregue a planilha antes de exportar.', 'erro'); return; }
+  const r = calcularResumo();
+  const percentual = r.total ? Math.round((r.avaliados / r.total) * 100) : 0;
+
+  const resumo = [
+    [dados.processo.nome + ' — posição de ' + fmtData(dados.processo.dataBase)],
+    [],
+    ['Prazo', fmtData(dados.processo.prazo)],
+    ['Gerado em', new Date().toLocaleString('pt-BR')],
+    ['Gerado por', dados.usuario || 'não identificado'],
+    [],
+    ['Indicador', 'Quantidade'],
+    ['Total de colaboradores', r.total],
+    ['Desligados na posição-base', r.desligados],
+    ['Avaliações preenchidas', r.avaliados],
+    ['Pendentes', r.pendentes],
+    ['Com alerta do RH', r.comAlerta],
+    ['% concluído', percentual + '%'],
+    [],
+    ['Ação indicada', 'Pessoas', 'Custo anual (R$)']
+  ];
+  r.porAcao.forEach((a) => resumo.push([a.rotulo, a.total, a.custo]));
+  if (r.porDivisao.length) {
+    resumo.push([], ['Divisão', 'Total', 'Avaliados', 'Pendentes', 'Desligamentos', 'Transferências']);
+    r.porDivisao.forEach(([nome, l]) => resumo.push([nome, l.total, l.avaliados, l.total - l.avaliados, l.desligamentos, l.transferencias]));
+  }
+
+  const colunasDecisao = ['AÇÃO INDICADA (portal)', 'DESTINO DA TRANSFERÊNCIA', 'JUSTIFICATIVA', 'STATUS', 'ALERTAS', 'PREENCHIDO POR', 'PREENCHIDO EM'];
+  const base = [dados.cabecalhos.concat(colunasDecisao)];
+  dados.base.forEach((linha) => {
+    const decisao = decisaoDe(campo(linha, 'chapa'));
+    const alertas = alertasDe(linha).map((a) => a.texto).join(' | ');
+    base.push(dados.cabecalhos.map((c) => linha[c] == null ? '' : String(linha[c])).concat([
+      decisao.acao || '', decisao.destino || '', decisao.justificativa || '',
+      decisao.acao ? 'Preenchida' : 'Pendente', alertas, decisao.por || '',
+      decisao.em ? new Date(decisao.em).toLocaleString('pt-BR') : ''
+    ]));
+  });
+
+  const abas = [
+    { nome: '1. Resumo', linhas: resumo },
+    { nome: '2. Base Decisões', linhas: base, opcoes: { colunaLista: dados.cabecalhos.length + 1, opcoesLista: dados.acoes.map((a) => a.valor) } },
+    { nome: '3. Auditoria', linhas: [['Quando', 'Usuário', 'Evento', 'Matrícula', 'Colaborador', 'Campo', 'De', 'Para']]
+      .concat(dados.auditoria.slice(0, 2000).map((e) => [fmtDataHora(e.quando), e.usuario, e.tipo, e.chapa || '', e.colaborador || '', e.campo || '', e.de || '', e.para || ''])) }
+  ];
+
+  baixar(montarXlsx(abas), 'decisoes-' + normalizar(dados.processo.nome).replace(/[^a-z0-9]+/g, '-') + '-' + new Date().toISOString().slice(0, 10) + '.xlsx');
+  auditar({ tipo: 'Exportação', chapa: '', colaborador: '', campo: 'planilha', de: '—', para: fmtNumero(dados.base.length) + ' linhas' });
+  salvar();
+  toast('Excel gerado na pasta de downloads.');
+}
+
+/* ------------------------------- desenhar ------------------------------ */
+function desenhar() {
+  const alvo = document.getElementById('tela');
+  if (tela === 'inicio') alvo.innerHTML = telaInicio();
+  else if (tela === 'decisoes') alvo.innerHTML = telaDecisoes();
+  else if (tela === 'resumo') alvo.innerHTML = telaResumo();
+  else if (tela === 'auditoria') alvo.innerHTML = telaAuditoria();
+  else alvo.innerHTML = telaAjuda();
+
+  if (tela === 'inicio') ligarInicio();
+  if (tela === 'decisoes') ligarDecisoes();
+  desenharAbas();
+}
+
+/* -------------------------------- início ------------------------------- */
+carregar();
+const campoUsuario = document.getElementById('usuario');
+campoUsuario.value = dados.usuario || '';
+campoUsuario.addEventListener('change', () => { dados.usuario = campoUsuario.value.trim(); salvar(); });
+
+const seletorTema = document.getElementById('tema');
+try { seletorTema.value = localStorage.getItem('portal-tema') || ''; } catch (erro) { /* ignora */ }
+if (seletorTema.value) document.documentElement.dataset.tema = seletorTema.value;
+seletorTema.addEventListener('change', () => {
+  if (seletorTema.value) document.documentElement.dataset.tema = seletorTema.value;
+  else delete document.documentElement.dataset.tema;
+  try { localStorage.setItem('portal-tema', seletorTema.value); } catch (erro) { /* ignora */ }
+});
+
+if (dados.base.length) tela = 'decisoes';
+desenhar();
+})();
+</script>
+</body>
+</html>
