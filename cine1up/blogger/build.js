@@ -3,25 +3,29 @@
    Monta o tema do Blogger a partir dos MESMOS arquivos do site.
 
    Uso:  node blogger/build.js
-   Saída: blogger/cine1up-blogger.xml
+   Saída:
+     blogger/tema-cine1up.xml       (motor clássico — tente este)
+     blogger/tema-cine1up-v3.xml    (variante, se o Blogger pedir
+                                     o atributo version nos widgets)
 
    ------------------------------------------------------------
-   REGRA DE OURO DESTE ARQUIVO
-   O interpretador de temas do Blogger é rígido e recusa muita
-   coisa que parece inofensiva. Então o tema pede a ele o MÍNIMO:
+   DECISÕES QUE EVITAM ERRO NO UPLOAD
 
-     · só data:post.title e data:post.body, e só na página da
-       matéria — são os dois campos que existem em toda versão
-     · nenhum expr: com conta, ternário ou concatenação
-     · nada de data:post.snippet, firstImageUrl, dateHeader,
-       data:post.author nem acessos tipo .first.name
-     · links do menu são endereços comuns (/search/label/...),
-       que funcionam em qualquer blog
-     · b:widget com version='2', como o Blogger exige hoje
+   1. O tema pede ao Blogger só DOIS campos: data:post.title e
+      data:post.body. Nada de snippet, firstImageUrl, dateHeader,
+      author, .first.name — todos recusados pelo motor novo.
 
-   A lista de matérias da capa não vem do tema: é montada no
-   navegador a partir do feed JSON do próprio blog (blogger.js).
-   Menos coisa para o Blogger interpretar, menos erro no upload.
+   2. Nenhum expr: com conta, ternário ou concatenação. Os links
+      do menu são endereços comuns (/search/label/...), que
+      funcionam em qualquer blog.
+
+   3. O conteúdo é renderizado para pageType "item" E para
+      "static_page". Sem o segundo, as Páginas do Blogger (como a
+      do fliperama) saem vazias — foi o que quebrou o jogo.
+
+   4. Um único b:section e um único b:widget, fora de condicional.
+
+   5. Sem TMDB: as listas saem do feed JSON do próprio blog.
    ------------------------------------------------------------ */
 
 const fs = require('fs');
@@ -42,8 +46,6 @@ const js = [
   'assets/js/lightning.js',
   'assets/js/maze.js',
   'assets/js/fx.js',
-  'assets/js/tmdb.js',
-  'assets/js/vitrine.js',
   'assets/js/ads.js',
   'assets/js/game.js',
   'assets/js/blogger.js'
@@ -52,18 +54,13 @@ const js = [
 /* ---------- Bloco que o usuário edita ---------- */
 const config = `
 /* ============================================================
-   CONFIGURE AQUI — as duas únicas coisas que você precisa mexer
+   CONFIGURE AQUI — a única coisa que você precisa mexer
    ============================================================ */
 window.CINE1UP = {
 
-  /* 1. TMDB — alimenta "nos cinemas agora" e "séries em alta".
-        Chave grátis em themoviedb.org → Configurações → API.
-        Deixando vazio, essas seções somem e o resto funciona igual. */
-  TMDB_KEY: '',
-  TMDB_PROXY: false,          // no Blogger não existe /api/tmdb
-
-  /* 2. AdSense — preencha depois que a conta for aprovada.
-        Com 'cliente' vazio, nenhum script de anúncio carrega. */
+  /* AdSense: preencha depois que a conta for aprovada.
+     Com 'cliente' vazio, nenhum script de anúncio é carregado e os
+     espaços nem aparecem na página. */
   ADSENSE: {
     cliente: '',              // 'ca-pub-0000000000000000'
     slots: { lista: '', artigo: '', rodape: '' },
@@ -71,8 +68,14 @@ window.CINE1UP = {
     semAnuncioEm: ['/p/fliperama.html']
   },
 
-  SITE: { nome: 'CINE 1UP', email: 'contato@exemplo.com' },
-  CATEGORIAS: ['Notícia', 'Crítica', 'Estreia', 'Série', 'Ensaio', 'Lista']
+  /* Os marcadores que viram seções na capa. Precisam existir como
+     rótulos nas suas postagens, escritos igualzinho. */
+  SECOES: [
+    { rotulo: 'Notícia', titulo: 'Últimas notícias', olho: 'Acabou de sair' },
+    { rotulo: 'Série',   titulo: 'Séries',           olho: 'Maratona' }
+  ],
+
+  SITE: { nome: 'CINE 1UP', email: 'contato@exemplo.com' }
 };
 `;
 
@@ -86,25 +89,62 @@ const cssBlogger = `
 .comentarios { max-width: 72ch; margin: 60px auto 0; padding-top: 30px;
   border-top: 1px solid var(--line); }
 .mais-materias { display: flex; justify-content: center; margin-top: 48px; }
+.secao-feed { margin-bottom: clamp(40px,6vw,74px); }
+
+/* Páginas que pedem largura total, como a do fliperama: o corpo do
+   texto normalmente é estreito (boa leitura), mas o gabinete do jogo
+   fica espremido nessa medida. */
+.artigo:has(.pagina-larga) { max-width: none; }
+.pagina-larga { width: 100%; }
 `;
 
-/* ---------- Cola: liga as peças ---------- */
+/* ---------- Cola ---------- */
 const cola = `
 /* ---- cola do tema ---- */
 (function () {
   'use strict';
 
-  // 1) Lista de matérias da capa, vinda do feed do blog
-  if (window.BloggerFeed && document.querySelector('[data-lista-blogger]')) {
-    window.BloggerFeed.montarLista('[data-lista-blogger]', { quantos: 9 })
+  var ehCapa = !!document.querySelector('[data-capa]');
+
+  // 1) Na capa, monta as seções a partir do feed do próprio blog
+  if (ehCapa && window.BloggerFeed) {
+    var alvo = document.querySelector('[data-secoes]');
+    var cfg = (window.CINE1UP.SECOES || []);
+    var html = '';
+
+    cfg.forEach(function (s, i) {
+      html += '<section class="secao-feed">' +
+              '<span class="eyebrow">' + s.olho + '</span>' +
+              '<h2 style="margin-bottom:28px">' + s.titulo + '</h2>' +
+              '<div class="blogger-grid" data-feed="' + i + '">' +
+              '<div class="skeleton" style="aspect-ratio:3/4"></div>'.repeat(3) +
+              '</div></section>';
+    });
+
+    html += '<section class="secao-feed" id="materias">' +
+            '<span class="eyebrow">Tudo</span>' +
+            '<h2 style="margin-bottom:28px">As últimas da redação</h2>' +
+            '<div class="blogger-grid" data-feed="tudo">' +
+            '<div class="skeleton" style="aspect-ratio:3/4"></div>'.repeat(3) +
+            '</div></section>';
+
+    if (alvo) alvo.innerHTML = html;
+
+    cfg.forEach(function (s, i) {
+      window.BloggerFeed.montarLista('[data-feed="' + i + '"]', {
+        quantos: 6, rotulo: s.rotulo, sumirSeVazio: true
+      });
+    });
+
+    window.BloggerFeed.montarLista('[data-feed="tudo"]', { quantos: 9 })
       .then(ligarHero);
-  } else {
-    ligarHero();
   }
 
-  // 2) Na capa, a área reservada à matéria fica vazia: some com ela
+  // 2) Fora da capa, a área de conteúdo pode ficar vazia: some com ela
   var areaPost = document.querySelector('[data-area-post]');
-  if (areaPost && !areaPost.querySelector('article')) areaPost.parentNode.removeChild(areaPost);
+  if (areaPost && !areaPost.querySelector('article')) {
+    areaPost.parentNode.removeChild(areaPost);
+  }
 
   // 3) Lâmpadas da marquise
   var faixa = document.querySelector('[data-lampadas]');
@@ -124,17 +164,7 @@ const cola = `
       ['#ff2b4e', '#ff6ad5', '#22e7ff', '#ff9d2e'].map(fant).join('');
   }
 
-  // 5) Prateleiras do TMDB (somem se a chave não estiver preenchida)
-  if (window.TMDB && window.Vitrine && window.CINE1UP.TMDB_KEY) {
-    window.Vitrine.montar('[data-vitrine-cartaz]', function () { return window.TMDB.emCartaz(); }, { quantos: 12 });
-    window.Vitrine.montar('[data-vitrine-series]', function () { return window.TMDB.seriesEmAlta(); }, { quantos: 12 });
-    window.Vitrine.ticker('[data-manchetes]');
-  } else {
-    var secoes = document.querySelectorAll('[data-secao-tmdb]');
-    for (var i = 0; i < secoes.length; i++) secoes[i].parentNode.removeChild(secoes[i]);
-  }
-
-  // 6) O hero aponta para a matéria mais recente
+  // 5) O hero aponta para a matéria mais recente
   function ligarHero() {
     var primeiro = document.querySelector('.card');
     var alvoTitulo = document.querySelector('[data-hero-titulo]');
@@ -154,7 +184,7 @@ const cola = `
     if (cta && link) cta.setAttribute('href', link);
   }
 
-  // 7) O labirinto em modo atração
+  // 6) O labirinto em modo atração
   var cv = document.querySelector('.arcade-hero__maze--frente');
   if (!cv || !window.Labirinto || window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
 
@@ -187,7 +217,7 @@ const cola = `
 })();
 `;
 
-/* ---------- Markup ---------- */
+/* ---------- Markup reaproveitado ---------- */
 const cabecalho = `<header class='header'>
   <div class='wrap header__inner'>
     <a class='logo' href='/'>
@@ -217,11 +247,27 @@ const cabecalho = `<header class='header'>
   </ul>
 </div>`;
 
+/* O corpo da matéria/página. Repetido para os dois pageType porque
+   condição composta (or) não é confiável no motor antigo. */
+const corpoDoPost = `<b:loop values='data:posts' var='post'>
+              <article>
+                <h1 style='font-size:clamp(2.2rem,6vw,4.6rem);margin-bottom:26px'>
+                  <data:post.title/>
+                </h1>
+                <div class='artigo post-body'>
+                  <data:post.body/>
+                </div>
+                <aside class='anuncio' data-anuncio='rodape'></aside>
+                <div class='mais-materias'>
+                  <a class='btn-arcade' href='/'>▶ Ver todas as matérias</a>
+                </div>
+              </article>
+            </b:loop>`;
+
 const rodape = `<footer class='footer'>
   <div class='wrap'>
     <div class='footer__bottom' style='margin-top:0;border-top:0'>
-      <span>© <data:blog.title/> · dados de filmes e séries por
-        <a class='link-fx' href='https://www.themoviedb.org' rel='noopener' target='_blank'>TMDB</a></span>
+      <span>© <data:blog.title/></span>
       <span><a class='link-fx' href='/p/privacidade.html'>Privacidade</a></span>
     </div>
   </div>
@@ -230,9 +276,18 @@ const rodape = `<footer class='footer'>
 <button class='totop' type='button'>↑</button>`;
 
 /* ---------------------------------------------------------- */
-const xml = `<?xml version="1.0" encoding="UTF-8" ?>
+function montar(motor) {
+  const v3 = motor === 'v3';
+  const attrsHtml = v3
+    ? `b:version='2' b:layoutsVersion='3' class='v2' dir='ltr'`
+    : `b:version='2' class='v2' dir='ltr'`;
+  const attrsWidget = v3
+    ? `id='Blog1' locked='true' title='Matérias' type='Blog' version='2'`
+    : `id='Blog1' locked='true' title='Matérias' type='Blog'`;
+
+  return `<?xml version="1.0" encoding="UTF-8" ?>
 <!DOCTYPE html>
-<html b:version='2' b:layoutsVersion='3' class='v2' dir='ltr'
+<html ${attrsHtml}
       xmlns='http://www.w3.org/1999/xhtml'
       xmlns:b='http://www.google.com/2005/gml/b'
       xmlns:data='http://www.google.com/2005/gml/data'
@@ -242,7 +297,6 @@ const xml = `<?xml version="1.0" encoding="UTF-8" ?>
   <b:include data='blog' name='all-head-content'/>
   <title><data:blog.pageTitle/></title>
   <link href='https://fonts.googleapis.com/css2?family=Bungee&amp;family=Press+Start+2P&amp;family=Space+Grotesk:wght@300;400;500;700&amp;family=JetBrains+Mono:wght@300;400;500&amp;display=swap' rel='stylesheet'/>
-  <link href='https://image.tmdb.org' rel='preconnect'/>
   <b:skin><![CDATA[
 ${css}
 ${cssBlogger}
@@ -264,10 +318,10 @@ ${cssBlogger}
 
 ${cabecalho}
 
-<b:if cond='data:blog.pageType == &quot;item&quot;'>
-  <b:else/>
+<b:if cond='data:blog.pageType == &quot;index&quot;'>
 
   <!-- ===================== CAPA ===================== -->
+  <div data-capa='true'>
   <section class='arcade-hero' id='palco'>
     <canvas class='arcade-hero__maze arcade-hero__maze--fundo'></canvas>
     <canvas class='arcade-hero__maze arcade-hero__maze--frente'></canvas>
@@ -292,102 +346,36 @@ ${cabecalho}
 
   <div class='marquise'><div class='lampadas' data-lampadas='true'></div></div>
 
-  <div class='marquee' data-secao-tmdb='true'>
-    <div class='marquee__track' data-manchetes='true'>
-      <span class='marquee__item'><i></i> Carregando as estreias…</span>
-    </div>
-  </div>
-
   <div class='perseguicao'>
     <div class='perseguicao__pontos'></div>
     <div class='perseguicao__trilha' data-perseguicao='true'></div>
   </div>
 
-  <section class='section' data-secao-tmdb='true'>
-    <div class='wrap'>
-      <div class='vitrine-cabeca'>
-        <div>
-          <span class='eyebrow'>Sessão de hoje</span>
-          <h2>Nos cinemas agora</h2>
-        </div>
-        <div class='vitrine-setas'>
-          <button data-dir='tras' data-rolar='[data-vitrine-cartaz]' type='button'>←</button>
-          <button data-dir='frente' data-rolar='[data-vitrine-cartaz]' type='button'>→</button>
-        </div>
-      </div>
-      <div class='vitrine' data-vitrine-cartaz='true'></div>
-    </div>
-  </section>
-
-  <section class='section section--tight' data-secao-tmdb='true'>
-    <div class='wrap'>
-      <div class='vitrine-cabeca'>
-        <div>
-          <span class='eyebrow'>Maratona da semana</span>
-          <h2>Séries em alta</h2>
-        </div>
-        <div class='vitrine-setas'>
-          <button data-dir='tras' data-rolar='[data-vitrine-series]' type='button'>←</button>
-          <button data-dir='frente' data-rolar='[data-vitrine-series]' type='button'>→</button>
-        </div>
-      </div>
-      <div class='vitrine' data-vitrine-series='true'></div>
-    </div>
-  </section>
-
   <div class='wrap'><aside class='anuncio anuncio--faixa' data-anuncio='lista'></aside></div>
 
-  <section class='section' id='materias'>
-    <div class='wrap'>
-      <span class='eyebrow'>Escrito por gente</span>
-      <h2 style='margin-bottom:40px'>As últimas da redação</h2>
-
-      <!-- montado a partir do feed do próprio blog, em blogger.js -->
-      <div class='blogger-grid' data-lista-blogger='true'>
-        <div class='skeleton' style='aspect-ratio:3/4'></div>
-        <div class='skeleton' style='aspect-ratio:3/4'></div>
-        <div class='skeleton' style='aspect-ratio:3/4'></div>
-      </div>
-    </div>
+  <section class='section'>
+    <div class='wrap' data-secoes='true'></div>
   </section>
+  </div>
 
 </b:if>
 
-<!-- ===================== MATÉRIA =====================
-     Um único widget de Blog no tema inteiro, fora de qualquer
-     condicional — é assim que o Blogger espera. Na capa ele não
-     imprime nada, e o JS remove esta área vazia.
-     ===================================================== -->
+<!-- ===================== MATÉRIA E PÁGINAS =====================
+     Um único widget de Blog no tema, fora de condicional. Dentro
+     dele, o conteúdo aparece tanto na postagem (item) quanto nas
+     Páginas (static_page) — é o que faz a página do fliperama
+     existir e o jogo rodar.
+     ============================================================ -->
 <main class='section' data-area-post='true' style='padding-top:clamp(110px,14vw,170px)'>
   <div class='wrap'>
     <b:section class='principal' id='principal' showaddelement='no'>
-      <b:widget id='Blog1' locked='true' title='Matérias' type='Blog' version='2'>
+      <b:widget ${attrsWidget}>
         <b:includable id='main'>
           <b:if cond='data:blog.pageType == &quot;item&quot;'>
-            <b:loop values='data:posts' var='post'>
-              <article>
-                <h1 style='font-size:clamp(2.2rem,6vw,4.6rem);margin-bottom:26px'>
-                  <data:post.title/>
-                </h1>
-                <div class='artigo post-body'>
-                  <data:post.body/>
-                </div>
-
-                <aside class='anuncio' data-anuncio='rodape'></aside>
-
-                <div class='post-rodape'>
-                  <div class='tag-row'>
-                    <b:loop values='data:post.labels' var='label'>
-                      <a class='pill' expr:href='data:label.url'>#<data:label.name/></a>
-                    </b:loop>
-                  </div>
-                </div>
-
-                <div class='mais-materias'>
-                  <a class='btn-arcade' href='/'>▶ Ver todas as matérias</a>
-                </div>
-              </article>
-            </b:loop>
+            ${corpoDoPost}
+          </b:if>
+          <b:if cond='data:blog.pageType == &quot;static_page&quot;'>
+            ${corpoDoPost}
           </b:if>
         </b:includable>
       </b:widget>
@@ -410,8 +398,11 @@ ${cola}
 </body>
 </html>
 `;
+}
 
-const saida = path.join(__dirname, 'cine1up-blogger.xml');
-fs.writeFileSync(saida, xml, 'utf8');
-console.log('Tema gerado:', saida);
-console.log('Tamanho:', (xml.length / 1024).toFixed(1), 'KB');
+[['classico', 'tema-cine1up.xml'], ['v3', 'tema-cine1up-v3.xml']].forEach(([motor, nome]) => {
+  const saida = path.join(__dirname, nome);
+  const conteudo = montar(motor);
+  fs.writeFileSync(saida, conteudo, 'utf8');
+  console.log(`${nome.padEnd(24)} ${(conteudo.length / 1024).toFixed(1)} KB  (motor ${motor})`);
+});

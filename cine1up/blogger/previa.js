@@ -1,24 +1,25 @@
 /* ============================================================
    CINE 1UP — blogger/previa.js
-   Gera blogger/previa.html: uma página comum, com o MESMO CSS e o
-   MESMO JavaScript que vão dentro do tema, e posts de mentira no
-   lugar dos do Blogger.
+   Gera duas páginas locais com o MESMO CSS e o MESMO JavaScript
+   que vão dentro do tema:
 
-   Serve para ver o tema (e conferir que nada quebrou) antes de
-   subir para o Blogger.
+     blogger/previa-capa.html        → como fica a página inicial
+     blogger/previa-fliperama.html   → como fica a página do jogo
+
+   Serve para ver (e testar) antes de subir para o Blogger.
 
    Uso:  node blogger/build.js && node blogger/previa.js
-         e abra blogger/previa.html no navegador.
 
-   Atenção: as marcações próprias do Blogger (b:if, b:loop, data:...)
-   não aparecem aqui — quem valida aquilo é o próprio Blogger, no
-   momento do upload.
+   Atenção: as marcações próprias do Blogger (b:if, b:loop,
+   data:...) não aparecem aqui — quem valida aquilo é o Blogger,
+   no upload. O que a prévia testa é todo o resto: CSS, labirinto,
+   jogo, listas do feed, anúncios e aviso de cookies.
    ============================================================ */
 
 const fs = require('fs');
 const path = require('path');
 
-const tema = fs.readFileSync(path.join(__dirname, 'cine1up-blogger.xml'), 'utf8');
+const tema = fs.readFileSync(path.join(__dirname, 'tema-cine1up.xml'), 'utf8');
 
 const entre = (texto, ini, fim) => {
   const a = texto.indexOf(ini);
@@ -30,54 +31,67 @@ const entre = (texto, ini, fim) => {
 const css = entre(tema, '<b:skin><![CDATA[', ']]></b:skin>');
 const js = entre(tema, '//<![CDATA[', '//]]>');
 
-/* Posts de mentira, no mesmo formato que o tema produz */
+/* ---------- Feed de mentira, no formato do Blogger ---------- */
 const EXEMPLOS = [
   ['Estreias da semana nos cinemas', 'Notícia', 'O que chega às salas e o que vale o ingresso.'],
-  ['O último analógico', 'Crítica', 'Filmado em película, o longa aposta no grão como personagem.'],
+  ['O elenco da nova temporada', 'Notícia', 'Quem entra e quem sai na virada da série.'],
   ['A série que ninguém viu chegar', 'Série', 'Oito episódios que reorganizam o gênero por dentro.'],
+  ['Maratona de fim de semana', 'Série', 'Quatro temporadas que cabem em dois dias.'],
+  ['O último analógico', 'Crítica', 'Filmado em película, aposta no grão como personagem.'],
   ['Na sala de projeção', 'Ensaio', 'Uma conversa sobre restaurar filmes que quase se perderam.'],
-  ['As 10 aberturas mais elétricas', 'Lista', 'Sequências iniciais que já chegam com a tensão no talo.'],
-  ['O clássico que envelheceu ao contrário', 'Crítica', 'Um fracasso de bilheteria que virou gramática visual.']
+  ['As 10 aberturas mais elétricas', 'Lista', 'Sequências que já chegam com a tensão no talo.'],
+  ['O clássico que envelheceu ao contrário', 'Crítica', 'Um fracasso de bilheteria virou gramática visual.']
 ];
 
-/* O tema monta a lista da capa pelo feed JSON do Blogger. Aqui não
-   existe blog nenhum, então a prévia devolve um feed de mentira no
-   mesmo formato — assim o código exercitado é exatamente o mesmo. */
-const feedFalso = {
-  feed: {
-    entry: EXEMPLOS.map(([titulo, cat, resumo], i) => ({
-      title: { $t: titulo },
-      summary: { $t: resumo },
-      published: { $t: new Date(Date.now() - i * 864e5).toISOString() },
-      category: [{ term: cat }],
-      link: [{ rel: 'alternate', href: '#materia-' + i }]
-    }))
-  }
-};
+const entrada = ([titulo, cat, resumo], i) => ({
+  title: { $t: titulo },
+  summary: { $t: resumo },
+  published: { $t: new Date(Date.now() - i * 864e5).toISOString() },
+  category: [{ term: cat }],
+  link: [{ rel: 'alternate', href: '#materia-' + i }]
+});
 
-const intercepta = `
+const feedPara = rotulo => ({
+  feed: {
+    entry: EXEMPLOS
+      .filter(e => !rotulo || e[1] === rotulo)
+      .map(entrada)
+  }
+});
+
+const simulador = `
 <script>
-// só na prévia: finge ser o feed do Blogger
+// só na prévia: responde no lugar do feed do Blogger
 (function () {
-  var feed = ${JSON.stringify(feedFalso)};
-  var originalFetch = window.fetch;
-  window.fetch = function (url, opcoes) {
-    if (String(url).indexOf('/feeds/') === 0) {
-      return Promise.resolve(new Response(JSON.stringify(feed), {
+  var tudo = ${JSON.stringify(feedPara(null))};
+  var porRotulo = ${JSON.stringify(
+    [...new Set(EXEMPLOS.map(e => e[1]))]
+      .reduce((acc, r) => (acc[r] = feedPara(r), acc), {})
+  )};
+
+  var original = window.fetch;
+  window.fetch = function (url) {
+    var u = String(url);
+    if (u.indexOf('/feeds/') === 0) {
+      var corpo = tudo;
+      var m = u.match(/\\/feeds\\/posts\\/summary\\/default\\/-\\/([^?]+)/);
+      if (m) corpo = porRotulo[decodeURIComponent(m[1])] || { feed: { entry: [] } };
+      return Promise.resolve(new Response(JSON.stringify(corpo), {
         status: 200, headers: { 'content-type': 'application/json' }
       }));
     }
-    return originalFetch.apply(this, arguments);
+    return original.apply(this, arguments);
   };
 })();
-<\/script>`;
+</script>`;
 
-const html = `<!doctype html>
+/* ---------- Molde comum ---------- */
+const molde = (titulo, corpo) => `<!doctype html>
 <html lang="pt-BR">
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Prévia do tema — CINE 1UP</title>
+<title>${titulo} — prévia do tema CINE 1UP</title>
 <link href="https://fonts.googleapis.com/css2?family=Bungee&family=Press+Start+2P&family=Space+Grotesk:wght@300;400;500;700&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 ${css}
@@ -98,18 +112,18 @@ ${css}
 
 <header class="header">
   <div class="wrap header__inner">
-    <a class="logo" href="#">
+    <a class="logo" href="previa-capa.html">
       <svg class="logo__bolt" viewBox="0 0 24 32"><path d="M14 0 2 18h7l-3 14 14-19h-8l2-13Z" fill="#ffd60a"/></svg>
       <span class="logo__text">CINE<b>1UP</b></span>
     </a>
     <nav class="nav">
-      <a class="nav__link" href="#">Notícias</a>
-      <a class="nav__link" href="#">Séries</a>
-      <a class="nav__link" href="#">Críticas</a>
-      <a class="nav__link" href="#">Fliperama</a>
+      <a class="nav__link" href="previa-capa.html">Notícias</a>
+      <a class="nav__link" href="previa-capa.html">Séries</a>
+      <a class="nav__link" href="previa-capa.html">Críticas</a>
+      <a class="nav__link" href="previa-fliperama.html">Fliperama</a>
     </nav>
     <div class="row">
-      <button class="btn btn--sm btn--ghost" data-som="true"><span>Som desligado</span></button>
+      <button class="btn btn--sm btn--ghost" data-som="true" type="button"><span>Som desligado</span></button>
       <button class="burger" type="button"><span></span><span></span></button>
     </div>
   </div>
@@ -117,11 +131,37 @@ ${css}
 
 <div class="menu">
   <ul class="menu__list">
-    <li><a href="#">Notícias</a></li><li><a href="#">Séries</a></li>
-    <li><a href="#">Críticas</a></li><li><a href="#">Fliperama</a></li>
+    <li><a href="previa-capa.html">Notícias</a></li>
+    <li><a href="previa-capa.html">Séries</a></li>
+    <li><a href="previa-capa.html">Críticas</a></li>
+    <li><a href="previa-fliperama.html">Fliperama</a></li>
   </ul>
 </div>
 
+${corpo}
+
+<footer class="footer">
+  <div class="wrap">
+    <div class="footer__bottom" style="margin-top:0;border-top:0">
+      <span>© CINE 1UP · prévia local do tema</span>
+      <span><a class="link-fx" href="#">Privacidade</a></span>
+    </div>
+  </div>
+</footer>
+
+<button class="totop" type="button">↑</button>
+
+${simulador}
+
+<script>
+${js}
+</script>
+</body>
+</html>
+`;
+
+/* ---------- Capa ---------- */
+const capa = `<div data-capa="true">
 <section class="arcade-hero" id="palco">
   <canvas class="arcade-hero__maze arcade-hero__maze--fundo"></canvas>
   <canvas class="arcade-hero__maze arcade-hero__maze--frente"></canvas>
@@ -136,88 +176,45 @@ ${css}
   <div class="arcade-hero__conteudo">
     <span class="insert-coin pixel"><i></i> <span>Insira uma ficha</span></span>
     <h1 class="titulo-arcade" data-hero-titulo="true">Cinema<br>em modo<br><em>arcade</em></h1>
-    <p class="sub-arcade" data-hero-sub="true">Prévia do tema do Blogger</p>
+    <p class="sub-arcade" data-hero-sub="true">Prévia local do tema</p>
     <div class="acoes-arcade">
-      <a class="btn-arcade" data-hero-cta="true" href="#">▶ Ler as matérias</a>
-      <a class="btn-arcade btn-arcade--ghost" href="#">🕹 Jogar</a>
+      <a class="btn-arcade" data-hero-cta="true" href="#materias">▶ Ler as matérias</a>
+      <a class="btn-arcade btn-arcade--ghost" href="previa-fliperama.html">🕹 Jogar</a>
     </div>
   </div>
 </section>
 
 <div class="marquise"><div class="lampadas" data-lampadas="true"></div></div>
 
-<div class="marquee" data-secao-tmdb="true">
-  <div class="marquee__track" data-manchetes="true">
-    <span class="marquee__item"><i></i> Carregando as estreias…</span>
-  </div>
-</div>
-
 <div class="perseguicao">
   <div class="perseguicao__pontos"></div>
   <div class="perseguicao__trilha" data-perseguicao="true"></div>
 </div>
 
-<section class="section" data-secao-tmdb="true">
-  <div class="wrap">
-    <div class="vitrine-cabeca">
-      <div><span class="eyebrow">Sessão de hoje</span><h2>Nos cinemas agora</h2></div>
-      <div class="vitrine-setas">
-        <button data-rolar="[data-vitrine-cartaz]" data-dir="tras" type="button">←</button>
-        <button data-rolar="[data-vitrine-cartaz]" data-dir="frente" type="button">→</button>
-      </div>
-    </div>
-    <div class="vitrine" data-vitrine-cartaz="true"></div>
-  </div>
-</section>
-
-<section class="section section--tight" data-secao-tmdb="true">
-  <div class="wrap">
-    <div class="vitrine-cabeca">
-      <div><span class="eyebrow">Maratona da semana</span><h2>Séries em alta</h2></div>
-      <div class="vitrine-setas">
-        <button data-rolar="[data-vitrine-series]" data-dir="tras" type="button">←</button>
-        <button data-rolar="[data-vitrine-series]" data-dir="frente" type="button">→</button>
-      </div>
-    </div>
-    <div class="vitrine" data-vitrine-series="true"></div>
-  </div>
-</section>
-
 <div class="wrap"><aside class="anuncio anuncio--faixa" data-anuncio="lista"></aside></div>
 
-<main class="section">
+<section class="section">
+  <div class="wrap" data-secoes="true"></div>
+</section>
+</div>`;
+
+/* ---------- Página do fliperama (como o Blogger renderiza uma Página) ---------- */
+const conteudoJogo = fs.readFileSync(path.join(__dirname, 'fliperama.html'), 'utf8')
+  .replace(/<!--[\s\S]*?-->/, '')   // tira o comentário de instruções
+  .trim();
+
+const paginaJogo = `<main class="section" data-area-post="true" style="padding-top:clamp(110px,14vw,170px)">
   <div class="wrap">
-    <span class="eyebrow">Escrito por gente</span>
-    <h2 style="margin-bottom:40px">As últimas da redação</h2>
-    <div class="blogger-grid" data-lista-blogger="true">
-        <div class="skeleton" style="aspect-ratio:3/4"></div>
-        <div class="skeleton" style="aspect-ratio:3/4"></div>
-        <div class="skeleton" style="aspect-ratio:3/4"></div>
+    <article>
+      <h1 style="font-size:clamp(2.2rem,6vw,4.6rem);margin-bottom:26px">Fliperama</h1>
+      <div class="artigo post-body">
+        ${conteudoJogo}
       </div>
+    </article>
   </div>
-</main>
+</main>`;
 
-<footer class="footer">
-  <div class="wrap">
-    <div class="footer__bottom" style="margin-top:0;border-top:0">
-      <span>© CINE 1UP · dados por TMDB</span>
-      <span><a class="link-fx" href="#">Privacidade</a></span>
-    </div>
-  </div>
-</footer>
+fs.writeFileSync(path.join(__dirname, 'previa-capa.html'), molde('Capa', capa), 'utf8');
+fs.writeFileSync(path.join(__dirname, 'previa-fliperama.html'), molde('Fliperama', paginaJogo), 'utf8');
 
-<button class="totop" type="button">↑</button>
-
-${intercepta}
-
-<script>
-${js}
-</script>
-</body>
-</html>
-`;
-
-const saida = path.join(__dirname, 'previa.html');
-fs.writeFileSync(saida, html, 'utf8');
-console.log('Prévia gerada:', saida);
-console.log('Tamanho:', (html.length / 1024).toFixed(1), 'KB');
+console.log('previa-capa.html e previa-fliperama.html gerados');

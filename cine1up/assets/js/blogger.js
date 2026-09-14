@@ -96,16 +96,29 @@
     const o = opcoes || {};
     try {
       const posts = await buscar(o.quantos || 12, o.rotulo);
+
       if (!posts.length) {
-        caixa.innerHTML = '<div class="empty" style="grid-column:1/-1">' +
-          'Nenhuma matéria publicada ainda</div>';
+        /* Seção de marcador sem nenhum post ainda: em vez de mostrar
+           um vazio triste, a seção inteira sai da página. */
+        if (o.sumirSeVazio) {
+          const secao = caixa.closest('.secao-feed');
+          (secao || caixa).remove();
+        } else {
+          caixa.innerHTML = '<div class="empty" style="grid-column:1/-1">' +
+            'Nenhuma matéria publicada ainda</div>';
+        }
         return;
       }
       caixa.innerHTML = posts.map(card).join('');
       if (window.FX) { window.FX.reveal(); window.FX.tilt(); }
     } catch (e) {
-      caixa.innerHTML = '<div class="empty" style="grid-column:1/-1">' +
-        'Não consegui carregar as matérias</div>';
+      if (o.sumirSeVazio) {
+        const secao = caixa.closest('.secao-feed');
+        (secao || caixa).remove();
+      } else {
+        caixa.innerHTML = '<div class="empty" style="grid-column:1/-1">' +
+          'Não consegui carregar as matérias</div>';
+      }
     }
   }
 

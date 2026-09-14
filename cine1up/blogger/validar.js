@@ -10,7 +10,17 @@
 const fs = require('fs');
 const path = require('path');
 
-const arquivo = path.join(__dirname, 'cine1up-blogger.xml');
+const arquivos = process.argv.slice(2);
+if (!arquivos.length) {
+  arquivos.push(path.join(__dirname, 'tema-cine1up.xml'),
+                path.join(__dirname, 'tema-cine1up-v3.xml'));
+}
+
+let falhou = false;
+arquivos.forEach(a => { if (!checar(a)) falhou = true; });
+process.exit(falhou ? 1 : 0);
+
+function checar(arquivo) {
 const s = fs.readFileSync(arquivo, 'utf8');
 
 const erros = [];
@@ -47,7 +57,10 @@ if (aberturas !== fechamentos) {
 /* ---------- 4. Estrutura mínima exigida ---------- */
 if (!/<b:section[^>]*>/.test(markup)) erros.push('falta pelo menos uma <b:section>');
 if (!/type='Blog'/.test(markup)) erros.push("falta o widget type='Blog'");
-if (/<b:widget(?![^>]*version=)/.test(markup)) erros.push("b:widget sem version='2' (o Blogger recusa)");
+if (/<b:widget(?![^>]*version=)/.test(markup)) {
+  avisos.push("b:widget sem version='2' — normal no motor clássico; " +
+              "se o Blogger reclamar disso, use a variante -v3.xml");
+}
 if (!/name='all-head-content'/.test(markup)) avisos.push("sem <b:include name='all-head-content'/>: o blog perde meta tags");
 
 /* ---------- 5. IDs repetidos de section e widget ---------- */
@@ -80,26 +93,31 @@ proibidos.forEach(([termo, motivo]) => {
   if (/[?]|\+|\(/.test(v)) erros.push(`expr: com expressão complexa: ${v.slice(0, 60)}`);
 });
 
-/* ---------- 7. Tamanho ---------- */
+/* ---------- 7. As Páginas do Blogger precisam renderizar ---------- */
+if (/data:post.body/.test(markup) && !/static_page/.test(markup)) {
+  erros.push('o tema renderiza o conteúdo só em "item": as Páginas ' +
+             '(como a do fliperama) sairiam vazias');
+}
+
+/* ---------- 8. Tamanho ---------- */
 const kb = s.length / 1024;
 if (kb > 900) erros.push(`tema com ${kb.toFixed(0)} KB — o Blogger costuma recusar acima de ~1 MB`);
 else if (kb > 500) avisos.push(`tema com ${kb.toFixed(0)} KB: grande, mas dentro do limite`);
 
 /* ---------- Resultado ---------- */
-console.log(`\nValidando ${path.basename(arquivo)} (${kb.toFixed(1)} KB)\n`);
+console.log(`\nValidando ${path.basename(arquivo)} (${kb.toFixed(1)} KB)`);
 
 if (avisos.length) {
-  console.log('Avisos:');
-  avisos.forEach(a => console.log('  ·', a));
-  console.log('');
+  avisos.forEach(a => console.log('  · aviso:', a));
 }
 
 if (erros.length) {
-  console.log('ERROS que o Blogger vai recusar:');
-  erros.forEach(e => console.log('  ✗', e));
+  console.log('  ERROS que o Blogger vai recusar:');
+  erros.forEach(e => console.log('    ✗', e));
   console.log('');
-  process.exit(1);
+  return false;
 }
 
-console.log('✔ Nenhum problema conhecido. Pode subir no Blogger.');
-console.log('  (a validação final é do próprio Blogger, no upload)\n');
+console.log('  ✔ nenhum problema conhecido\n');
+return true;
+}

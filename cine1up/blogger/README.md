@@ -34,8 +34,16 @@ node blogger/build.js && node blogger/validar.js
 
 1. Abra [blogger.com](https://www.blogger.com) e crie o blog (ou use um existente).
 2. Menu lateral → **Tema** → seta ao lado de *Personalizar* → **Restaurar**.
-3. **Fazer upload** → escolha `cine1up-blogger.xml` → confirme.
+3. **Fazer upload** → escolha **`tema-cine1up.xml`** → confirme.
 4. Abra o blog. O labirinto já está rodando na capa.
+
+> **Se o upload der erro**, tente o outro arquivo: **`tema-cine1up-v3.xml`**.
+> Os dois têm exatamente o mesmo conteúdo; muda só o motor de template que o
+> Blogger usa para ler o arquivo (o segundo declara `layoutsVersion='3'` e
+> `version='2'` nos widgets). Um dos dois é o que a sua conta aceita.
+>
+> Se os dois derem erro, **copie a mensagem inteira** que o Blogger mostra: ela
+> aponta a linha e o motivo, e é o que permite corrigir.
 
 > Antes de trocar, guarde uma cópia do tema atual: mesmo menu → **Fazer backup**.
 
@@ -49,28 +57,40 @@ Tudo que você precisa mexer está no topo do arquivo, num bloco marcado
 
 ```js
 window.CINE1UP = {
-  TMDB_KEY: '',        // chave do TMDB — sem ela, as prateleiras somem
-  TMDB_PROXY: false,   // deixe false: no Blogger não existe /api/tmdb
-
   ADSENSE: {
     cliente: '',       // 'ca-pub-0000000000000000'
     slots: { lista: '', artigo: '', rodape: '' },
     semConsentimento: 'nada',
     semAnuncioEm: ['/p/fliperama.html']
   },
+
+  SECOES: [
+    { rotulo: 'Notícia', titulo: 'Últimas notícias', olho: 'Acabou de sair' },
+    { rotulo: 'Série',   titulo: 'Séries',           olho: 'Maratona' }
+  ],
   ...
 };
 ```
 
-### TMDB
+### Seções da capa
 
-Chave grátis em **themoviedb.org → Configurações → API** (tipo *Developer*).
-Cole em `TMDB_KEY`. Sem ela, as seções "Nos cinemas agora" e "Séries em alta"
-simplesmente não aparecem — o resto do site funciona igual.
+A capa monta as seções lendo os **marcadores** das suas postagens. Por padrão:
 
-> No Blogger a chave fica visível no código do tema. É uma chave só de leitura,
-> então o risco é baixo. Se isso incomodar, a versão Cloudflare do projeto
-> guarda a chave no servidor.
+```js
+SECOES: [
+  { rotulo: 'Notícia', titulo: 'Últimas notícias', olho: 'Acabou de sair' },
+  { rotulo: 'Série',   titulo: 'Séries',           olho: 'Maratona' }
+]
+```
+
+Troque, tire ou acrescente à vontade — só precisa que o `rotulo` seja igualzinho
+ao marcador que você usa nas postagens. Uma seção sem nenhuma postagem
+desaparece da página, em vez de mostrar um vazio.
+
+Abaixo delas vem sempre "As últimas da redação", com tudo que foi publicado.
+
+> Esta versão **não usa o TMDB**. Nada de chave de API, nada de serviço externo:
+> tudo que aparece na capa vem do seu próprio blog.
 
 ### AdSense
 
@@ -104,6 +124,9 @@ O Blogger monta o endereço a partir do título, então "Fliperama" vira
 `/p/fliperama.html` sozinho. Confira depois de publicar: se sair diferente, o
 link do menu quebra.
 
+> O jogo em si já está dentro do tema. A página só coloca o gabinete na tela —
+> por isso ela é obrigatória para o Cine Runner existir.
+
 Na página de privacidade, **troque o e-mail de contato** (aparece duas vezes).
 
 ---
@@ -133,12 +156,14 @@ Dá para abrir o tema no seu computador, com o mesmo CSS e o mesmo JavaScript
 que vão para o Blogger:
 
 ```bash
-node blogger/build.js    # monta o tema a partir dos arquivos do site
-node blogger/previa.js   # monta blogger/previa.html
+node blogger/build.js    # monta os dois temas
+node blogger/validar.js  # confere as regras conhecidas do Blogger
+node blogger/previa.js   # monta as duas prévias
 ```
 
-Abra `blogger/previa.html` no navegador. Os posts são de mentira, mas o
-labirinto, as prateleiras, o CRT e os cards são exatamente os do tema.
+Abra `blogger/previa-capa.html` e `blogger/previa-fliperama.html` no navegador
+(ou a pasta `previa/` do pacote). Os posts são de mentira, mas o labirinto, o
+jogo, o CRT e os cards são exatamente os do tema.
 
 > A prévia não valida as marcações próprias do Blogger (`b:if`, `b:loop`,
 > `data:...`) — quem confere aquilo é o próprio Blogger, no upload.
@@ -160,12 +185,11 @@ painel do seu domínio (registro.br ou Cloudflare) e volte para salvar.
 | Escrever matéria | painel próprio em `/admin.html` | editor do Google |
 | Rascunho, agendamento | sim | sim |
 | Labirinto na capa | sim | sim |
-| Prateleiras do TMDB | sim | sim |
+| Filmes e séries do TMDB | sim | não (só o seu conteúdo) |
 | Cine Runner | sim | sim |
 | Placar online do Cine Runner | sim | não (só o recorde no navegador) |
 | Ilustrações geradas | sim | sim |
 | Comentários | — | nativos do Blogger |
-| Chave do TMDB escondida | sim (função no servidor) | não (fica no tema) |
 | Newsletter | sim (Supabase) | precisa de serviço externo |
 | Controle do design | total | o que o tema expõe |
 
