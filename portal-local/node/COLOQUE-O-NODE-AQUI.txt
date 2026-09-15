@@ -1,0 +1,12 @@
+Coloque aqui o arquivo node.exe (Windows) ou node (Linux/Mac).
+
+Onde pegar: https://nodejs.org/en/download
+  - Sistema: Windows
+  - Arquitetura: x64
+  - Formato: ZIP  (o ZIP não instala nada e não pede administrador)
+
+Abra o ZIP baixado, procure o arquivo node.exe e copie para esta pasta.
+Depois volte uma pasta e dê dois cliques em iniciar.bat.
+
+Se a sua máquina já tem Node.js instalado, não precisa fazer nada:
+o iniciar.bat encontra sozinho.

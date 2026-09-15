@@ -1,0 +1,12 @@
+{
+  "_leia": "Copie este arquivo para portal.config.json e ajuste. Reinicie o portal depois.",
+
+  "porta": 8443,
+
+  "https": true,
+
+  "sessao_horas": 8,
+
+  "_redes_permitidas": "Vazio = qualquer máquina da rede alcança o portal (o login continua valendo). Preencha com as faixas da sua rede para fechar mais: veja o IP que aparece na janela do portal e use a faixa correspondente.",
+  "redes_permitidas": []
+}
