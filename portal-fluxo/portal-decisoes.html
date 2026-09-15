@@ -1,0 +1,1742 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<title>Portal de Decisões</title>
+<style>
+:root {
+  --fundo: #f4f5f7; --superficie: #ffffff; --superficie-2: #f7f8fa; --borda: #e2e5ea;
+  --texto: #14161a; --texto-2: #545b66; --texto-3: #838b96;
+  --acento: #2a78d6; --acento-suave: #eaf2fd;
+  --desligamento: #e34948; --transferencia: #2a78d6; --manter: #1baf7a;
+  --pendente: #8b93a0; --atencao: #e08c1a; --extra: #7a5bd6;
+  --raio: 10px; --sombra: 0 1px 2px rgba(20, 22, 26, .06), 0 4px 12px rgba(20, 22, 26, .04);
+}
+:root:not([data-tema="claro"]) { color-scheme: light; }
+@media (prefers-color-scheme: dark) {
+  :root:not([data-tema="claro"]) {
+    --fundo: #14161a; --superficie: #1c1f25; --superficie-2: #23272e; --borda: #2f343d;
+    --texto: #eef0f3; --texto-2: #b3bac4; --texto-3: #848d99;
+    --acento: #3987e5; --acento-suave: #17273c;
+    --desligamento: #e66767; --transferencia: #3987e5; --manter: #199e70;
+    --pendente: #7c848f; --atencao: #d69122; --extra: #8f75e0;
+    color-scheme: dark;
+  }
+}
+[data-tema="escuro"] {
+  --fundo: #14161a; --superficie: #1c1f25; --superficie-2: #23272e; --borda: #2f343d;
+  --texto: #eef0f3; --texto-2: #b3bac4; --texto-3: #848d99;
+  --acento: #3987e5; --acento-suave: #17273c;
+  --desligamento: #e66767; --transferencia: #3987e5; --manter: #199e70;
+  --pendente: #7c848f; --atencao: #d69122; --extra: #8f75e0;
+  color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0; background: var(--fundo); color: var(--texto);
+  font: 14px/1.5 "Segoe UI", system-ui, -apple-system, Roboto, Arial, sans-serif;
+}
+h1, h2, h3 { margin: 0; font-weight: 650; }
+h1 { font-size: 18px; }
+h2 { font-size: 15px; }
+h3 { font-size: 13px; }
+a { color: var(--acento); }
+
+/* ------------------------------ estrutura ------------------------------ */
+.app { display: grid; grid-template-columns: 232px 1fr; min-height: 100vh; }
+.lateral {
+  background: var(--superficie); border-right: 1px solid var(--borda);
+  padding: 16px 12px; display: flex; flex-direction: column; gap: 3px;
+}
+.marca { display: flex; align-items: center; gap: 8px; font-weight: 650; padding: 4px 8px 14px; }
+.marca-ponto { width: 10px; height: 10px; border-radius: 3px; background: var(--acento); flex: none; }
+.menu-item {
+  display: block; width: 100%; text-align: left; padding: 8px 10px; border-radius: 8px;
+  border: 0; background: none; color: var(--texto-2); font: inherit; cursor: pointer;
+}
+.menu-item:hover { background: var(--superficie-2); color: var(--texto); }
+.menu-item.ativo { background: var(--acento-suave); color: var(--acento); font-weight: 600; }
+.menu-sep { font-size: 11px; text-transform: uppercase; letter-spacing: .07em; color: var(--texto-3); padding: 14px 10px 4px; }
+.conteudo { display: flex; flex-direction: column; min-width: 0; }
+.topo {
+  display: flex; align-items: center; gap: 10px; padding: 12px 20px;
+  background: var(--superficie); border-bottom: 1px solid var(--borda); flex-wrap: wrap;
+}
+main { padding: 18px 20px 40px; display: flex; flex-direction: column; gap: 16px; }
+.espaco { flex: 1; }
+
+/* -------------------------------- peças -------------------------------- */
+.cartao {
+  background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio);
+  padding: 16px; box-shadow: var(--sombra);
+}
+.linha { display: flex; gap: 10px; align-items: flex-end; flex-wrap: wrap; }
+.campo { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.campo > label { font-size: 12px; color: var(--texto-2); }
+input, select, textarea {
+  font: inherit; color: var(--texto); background: var(--superficie);
+  border: 1px solid var(--borda); border-radius: 8px; padding: 7px 9px; width: 100%;
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible, button:focus-visible {
+  outline: 2px solid var(--acento); outline-offset: 1px;
+}
+textarea { min-height: 70px; resize: vertical; }
+.btn {
+  font: inherit; border: 1px solid var(--borda); background: var(--superficie); color: var(--texto);
+  border-radius: 8px; padding: 7px 13px; cursor: pointer;
+}
+.btn:hover { background: var(--superficie-2); }
+.btn-primario { background: var(--acento); border-color: var(--acento); color: #fff; font-weight: 600; }
+.btn-primario:hover { filter: brightness(1.06); }
+.btn-pequeno { padding: 4px 9px; font-size: 12px; }
+.btn-largo { width: 100%; }
+.btn:disabled { opacity: .55; cursor: default; }
+
+.dica { font-weight: 400; color: var(--texto-3); font-size: 12px; }
+.pequeno { font-size: 12px; }
+.texto-2 { color: var(--texto-2); }
+.texto-3 { color: var(--texto-3); }
+.mono { font-family: ui-monospace, "Cascadia Mono", Consolas, monospace; font-size: 12px; }
+.limite { max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(178px, 1fr)); gap: 10px; }
+.kpi { background: var(--superficie); border: 1px solid var(--borda); border-radius: var(--raio); padding: 12px 14px; }
+.kpi.destaque { border-color: var(--atencao); }
+.kpi .rotulo { font-size: 12px; color: var(--texto-2); }
+.kpi .valor { font-size: 24px; font-weight: 650; margin-top: 2px; font-variant-numeric: tabular-nums; }
+.kpi .nota { font-size: 11px; color: var(--texto-3); margin-top: 2px; }
+
+.selo { display: inline-flex; align-items: center; gap: 5px; padding: 2px 9px; border-radius: 999px; font-size: 12px; font-weight: 600; }
+.selo::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.selo-desligamento { background: color-mix(in srgb, var(--desligamento) 14%, transparent); color: var(--desligamento); }
+.selo-transferencia { background: color-mix(in srgb, var(--transferencia) 14%, transparent); color: var(--transferencia); }
+.selo-manter { background: color-mix(in srgb, var(--manter) 14%, transparent); color: var(--manter); }
+.selo-pendente { background: color-mix(in srgb, var(--pendente) 16%, transparent); color: var(--pendente); }
+.selo-atencao { background: color-mix(in srgb, var(--atencao) 16%, transparent); color: var(--atencao); }
+.selo-neutra { background: var(--superficie-2); color: var(--texto-2); }
+
+.barras { display: flex; flex-direction: column; gap: 9px; }
+.barra-linha { display: grid; grid-template-columns: minmax(130px, 200px) 1fr auto; gap: 12px; align-items: center; }
+.barra-rotulo { font-size: 13px; color: var(--texto-2); display: flex; align-items: center; gap: 7px; }
+.barra-chip { width: 10px; height: 10px; border-radius: 3px; flex: none; }
+.barra-trilho { background: var(--superficie-2); border-radius: 4px; height: 15px; overflow: hidden; }
+.barra-fill { height: 100%; border-radius: 0 4px 4px 0; }
+.barra-numero { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 90px; text-align: right; font-size: 13px; }
+.barra-numero span { color: var(--texto-3); font-weight: 400; }
+.barra-mini { background: var(--superficie-2); border-radius: 4px; height: 8px; overflow: hidden; min-width: 84px; }
+.barra-mini span { display: block; height: 100%; background: var(--manter); border-radius: 4px; }
+
+/* ------------------------------- tabelas ------------------------------- */
+.tabela-caixa { overflow: auto; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); }
+.tabela-rolagem { max-height: calc(100vh - 340px); }
+table { border-collapse: separate; border-spacing: 0; width: 100%; font-size: 13px; }
+th, td { padding: 8px 10px; text-align: left; border-bottom: 1px solid var(--borda); white-space: nowrap; vertical-align: top; }
+thead th {
+  position: sticky; top: 0; z-index: 2; background: var(--superficie-2); font-size: 12px;
+  text-transform: uppercase; letter-spacing: .04em; color: var(--texto-2); font-weight: 600;
+}
+tbody tr:hover td { background: var(--superficie-2); }
+td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+td.vazio { text-align: center; color: var(--texto-3); padding: 26px; }
+.celula-decisao { display: block; min-width: 190px; }
+.celula-decisao.preenchida { border-color: var(--acento); }
+.celula-decisao.exigida { border-color: var(--desligamento); background: color-mix(in srgb, var(--desligamento) 7%, transparent); }
+.pendente-aviso { color: var(--desligamento); font-size: 11px; margin-top: 3px; max-width: 200px; white-space: normal; }
+.link { background: none; border: 0; padding: 0; color: var(--acento); font: inherit; cursor: pointer; text-align: left; }
+
+.msg { padding: 10px 12px; border-radius: 8px; margin-bottom: 12px; font-size: 13px; }
+.msg-ok { background: color-mix(in srgb, var(--manter) 12%, transparent); color: var(--manter); }
+.msg-erro { background: color-mix(in srgb, var(--desligamento) 12%, transparent); color: var(--desligamento); }
+.msg-atencao { background: color-mix(in srgb, var(--atencao) 14%, transparent); color: var(--atencao); }
+.aviso-conf {
+  background: color-mix(in srgb, var(--atencao) 12%, transparent); color: var(--atencao);
+  border: 1px solid color-mix(in srgb, var(--atencao) 35%, transparent);
+  border-radius: 8px; padding: 8px 12px; font-size: 13px;
+}
+.toast {
+  position: fixed; right: 18px; bottom: 18px; z-index: 50; padding: 11px 15px; border-radius: 9px;
+  background: var(--superficie); border: 1px solid var(--borda); box-shadow: var(--sombra); font-size: 13px;
+}
+.toast.erro { border-color: var(--desligamento); color: var(--desligamento); }
+
+.abertura { min-height: 100vh; display: grid; place-items: center; padding: 22px; }
+.abertura-cartao { width: min(560px, 100%); background: var(--superficie); border: 1px solid var(--borda); border-radius: 14px; padding: 26px; box-shadow: var(--sombra); }
+.passo { display: flex; gap: 10px; padding: 9px 0; border-bottom: 1px solid var(--borda); }
+.passo:last-child { border-bottom: 0; }
+.passo-num {
+  width: 22px; height: 22px; border-radius: 50%; background: var(--acento-suave); color: var(--acento);
+  display: grid; place-items: center; font-size: 12px; font-weight: 700; flex: none;
+}
+.fila { display: inline-flex; align-items: center; gap: 6px; font-size: 12px; color: var(--texto-2); }
+.ponto { width: 8px; height: 8px; border-radius: 50%; background: var(--manter); }
+.ponto.espera { background: var(--atencao); }
+.ponto.erro { background: var(--desligamento); }
+.ponto.demo { background: var(--extra); }
+.grade-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 12px; }
+code { background: var(--superficie-2); border: 1px solid var(--borda); border-radius: 5px; padding: 1px 5px; font-size: 12px; }
+pre code { display: block; padding: 10px; overflow: auto; white-space: pre; }
+
+@media (max-width: 860px) {
+  .app { grid-template-columns: 1fr; }
+  .lateral { flex-direction: row; overflow-x: auto; border-right: 0; border-bottom: 1px solid var(--borda); }
+  .menu-sep, .marca { display: none; }
+  .tabela-rolagem { max-height: none; }
+}
+</style>
+</head>
+<body>
+<div id="raiz"></div>
+<div id="toast" class="toast" hidden></div>
+<script>
+(() => {
+"use strict";
+const td = new TextDecoder('utf-8');
+
+function lerZip(buffer) {
+  const dados = new DataView(buffer);
+  const bytes = new Uint8Array(buffer);
+  let fim = -1;
+  for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 66000); i -= 1) {
+    if (dados.getUint32(i, true) === 0x06054b50) { fim = i; break; }
+  }
+  if (fim < 0) throw new Error('Arquivo não parece um .xlsx válido (estrutura ZIP não encontrada).');
+  const quantidade = dados.getUint16(fim + 10, true);
+  let ponteiro = dados.getUint32(fim + 16, true);
+  const entradas = [];
+  for (let i = 0; i < quantidade; i += 1) {
+    if (dados.getUint32(ponteiro, true) !== 0x02014b50) break;
+    const metodo = dados.getUint16(ponteiro + 10, true);
+    const tamanhoComprimido = dados.getUint32(ponteiro + 20, true);
+    const tamanhoNome = dados.getUint16(ponteiro + 28, true);
+    const tamanhoExtra = dados.getUint16(ponteiro + 30, true);
+    const tamanhoComentario = dados.getUint16(ponteiro + 32, true);
+    const deslocamento = dados.getUint32(ponteiro + 42, true);
+    const nome = td.decode(bytes.subarray(ponteiro + 46, ponteiro + 46 + tamanhoNome));
+    entradas.push({ nome, metodo, tamanhoComprimido, deslocamento });
+    ponteiro += 46 + tamanhoNome + tamanhoExtra + tamanhoComentario;
+  }
+  return { bytes, dados, entradas };
+}
+
+async function extrair(zip, nome) {
+  const entrada = zip.entradas.find((e) => e.nome === nome);
+  if (!entrada) return null;
+  const inicio = entrada.deslocamento;
+  if (zip.dados.getUint32(inicio, true) !== 0x04034b50) throw new Error('Entrada corrompida: ' + nome);
+  const tamanhoNome = zip.dados.getUint16(inicio + 26, true);
+  const tamanhoExtra = zip.dados.getUint16(inicio + 28, true);
+  const dadoInicio = inicio + 30 + tamanhoNome + tamanhoExtra;
+  const bruto = zip.bytes.subarray(dadoInicio, dadoInicio + entrada.tamanhoComprimido);
+  if (entrada.metodo === 0) return td.decode(bruto);
+  if (typeof DecompressionStream !== 'function') {
+    throw new Error('Este navegador não consegue descompactar o arquivo. Use Chrome ou Edge atualizados.');
+  }
+  const fluxo = new Blob([bruto]).stream().pipeThrough(new DecompressionStream('deflate-raw'));
+  return td.decode(await new Response(fluxo).arrayBuffer());
+}
+
+const letrasParaIndice = (referencia) => {
+  const letras = (referencia.match(/^[A-Z]+/) || ['A'])[0];
+  let indice = 0;
+  for (let i = 0; i < letras.length; i += 1) indice = indice * 26 + (letras.charCodeAt(i) - 64);
+  return indice;
+};
+
+const serialParaISO = (numero) => {
+  const ms = Math.round((Number(numero) - 25569) * 86400 * 1000);
+  const data = new Date(ms);
+  return Number.isNaN(data.getTime()) ? String(numero) : data.toISOString().slice(0, 10);
+};
+
+/** Lê a planilha e devolve { abas: [{nome, linhas}] } com as células já em texto. */
+async function lerPlanilha(arquivo) {
+  const zip = lerZip(await arquivo.arrayBuffer());
+  const parser = new DOMParser();
+  const workbook = parser.parseFromString(await extrair(zip, 'xl/workbook.xml'), 'application/xml');
+  const rels = parser.parseFromString(await extrair(zip, 'xl/_rels/workbook.xml.rels'), 'application/xml');
+
+  const alvos = {};
+  rels.querySelectorAll('Relationship').forEach((r) => { alvos[r.getAttribute('Id')] = r.getAttribute('Target'); });
+
+  // textos compartilhados
+  const compartilhados = [];
+  const sstXml = await extrair(zip, 'xl/sharedStrings.xml');
+  if (sstXml) {
+    parser.parseFromString(sstXml, 'application/xml').querySelectorAll('si').forEach((si) => {
+      compartilhados.push([...si.querySelectorAll('t')].map((t) => t.textContent).join(''));
+    });
+  }
+
+  // estilos: descobre quais formatos são data
+  const estiloEhData = [];
+  const estilosXml = await extrair(zip, 'xl/styles.xml');
+  if (estilosXml) {
+    const doc = parser.parseFromString(estilosXml, 'application/xml');
+    const formatos = {};
+    doc.querySelectorAll('numFmt').forEach((f) => { formatos[f.getAttribute('numFmtId')] = f.getAttribute('formatCode') || ''; });
+    const embutidosData = ['14','15','16','17','18','19','20','21','22','45','46','47'];
+    const xfs = doc.querySelector('cellXfs');
+    if (xfs) {
+      [...xfs.querySelectorAll('xf')].forEach((xf, indice) => {
+        const id = xf.getAttribute('numFmtId') || '0';
+        const codigo = formatos[id] || '';
+        estiloEhData[indice] = embutidosData.includes(id) || /[dmy]/i.test(codigo.replace(/\[[^\]]*\]/g, '')) && /[dy]/i.test(codigo);
+      });
+    }
+  }
+
+  const abas = [];
+  const folhas = [...workbook.querySelectorAll('sheets > sheet')];
+  for (const folha of folhas) {
+    const id = folha.getAttributeNS('http://schemas.openxmlformats.org/officeDocument/2006/relationships', 'id')
+      || folha.getAttribute('r:id');
+    let alvo = alvos[id] || '';
+    if (alvo.startsWith('/')) alvo = alvo.slice(1); else alvo = 'xl/' + alvo.replace(/^\.\//, '');
+    const xml = await extrair(zip, alvo);
+    if (!xml) continue;
+    const doc = parser.parseFromString(xml, 'application/xml');
+    const linhas = [];
+    doc.querySelectorAll('sheetData > row').forEach((row) => {
+      const numero = Number(row.getAttribute('r') || linhas.length + 1);
+      const celulas = [];
+      row.querySelectorAll('c').forEach((c) => {
+        const indice = letrasParaIndice(c.getAttribute('r') || 'A1') - 1;
+        const tipo = c.getAttribute('t');
+        let valor = '';
+        if (tipo === 's') {
+          valor = compartilhados[Number(c.querySelector('v') ? c.querySelector('v').textContent : -1)] || '';
+        } else if (tipo === 'inlineStr') {
+          valor = [...c.querySelectorAll('is t')].map((t) => t.textContent).join('');
+        } else {
+          const v = c.querySelector('v');
+          valor = v ? v.textContent : '';
+          const estilo = Number(c.getAttribute('s') || -1);
+          if (valor !== '' && estiloEhData[estilo] && !Number.isNaN(Number(valor))) valor = serialParaISO(valor);
+        }
+        celulas[indice] = valor == null ? '' : String(valor);
+      });
+      linhas[numero - 1] = celulas;
+    });
+    abas.push({ nome: folha.getAttribute('name'), linhas: linhas.filter(Boolean) });
+  }
+  return { abas };
+}
+
+/* ==================================================================
+   2. GRAVAÇÃO DE .XLSX — ZIP sem compressão (aceito pelo Excel)
+================================================================== */
+const te = new TextEncoder();
+const TABELA_CRC = (() => {
+  const tabela = new Uint32Array(256);
+  for (let i = 0; i < 256; i += 1) {
+    let c = i;
+    for (let k = 0; k < 8; k += 1) c = (c & 1) ? (0xEDB88320 ^ (c >>> 1)) : (c >>> 1);
+    tabela[i] = c >>> 0;
+  }
+  return tabela;
+})();
+function crc32(bytes) {
+  let c = 0xFFFFFFFF;
+  for (let i = 0; i < bytes.length; i += 1) c = TABELA_CRC[(c ^ bytes[i]) & 0xFF] ^ (c >>> 8);
+  return (c ^ 0xFFFFFFFF) >>> 0;
+}
+
+function montarZip(arquivos) {
+  const partes = [];
+  const central = [];
+  let deslocamento = 0;
+  arquivos.forEach((arquivo) => {
+    const nome = te.encode(arquivo.nome);
+    const conteudo = te.encode(arquivo.conteudo);
+    const crc = crc32(conteudo);
+    const local = new DataView(new ArrayBuffer(30));
+    local.setUint32(0, 0x04034b50, true); local.setUint16(4, 20, true); local.setUint16(6, 0, true);
+    local.setUint16(8, 0, true); local.setUint16(10, 0, true); local.setUint16(12, 0, true);
+    local.setUint32(14, crc, true); local.setUint32(18, conteudo.length, true); local.setUint32(22, conteudo.length, true);
+    local.setUint16(26, nome.length, true); local.setUint16(28, 0, true);
+    partes.push(new Uint8Array(local.buffer), nome, conteudo);
+
+    const cd = new DataView(new ArrayBuffer(46));
+    cd.setUint32(0, 0x02014b50, true); cd.setUint16(4, 20, true); cd.setUint16(6, 20, true);
+    cd.setUint16(8, 0, true); cd.setUint16(10, 0, true); cd.setUint16(12, 0, true); cd.setUint16(14, 0, true);
+    cd.setUint32(16, crc, true); cd.setUint32(20, conteudo.length, true); cd.setUint32(24, conteudo.length, true);
+    cd.setUint16(28, nome.length, true); cd.setUint16(30, 0, true); cd.setUint16(32, 0, true);
+    cd.setUint16(34, 0, true); cd.setUint16(36, 0, true); cd.setUint32(38, 0, true);
+    cd.setUint32(42, deslocamento, true);
+    central.push(new Uint8Array(cd.buffer), nome);
+    deslocamento += 30 + nome.length + conteudo.length;
+  });
+
+  const tamanhoCentral = central.reduce((soma, parte) => soma + parte.length, 0);
+  const fim = new DataView(new ArrayBuffer(22));
+  fim.setUint32(0, 0x06054b50, true); fim.setUint16(4, 0, true); fim.setUint16(6, 0, true);
+  fim.setUint16(8, arquivos.length, true); fim.setUint16(10, arquivos.length, true);
+  fim.setUint32(12, tamanhoCentral, true); fim.setUint32(16, deslocamento, true); fim.setUint16(20, 0, true);
+
+  return new Blob(partes.concat(central, [new Uint8Array(fim.buffer)]), {
+    type: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+  });
+}
+
+const xmlEscapar = (texto) => String(texto == null ? '' : texto)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+  .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/g, '');
+
+function colunaLetra(indice) {
+  let letra = '';
+  let n = indice;
+  while (n > 0) { const resto = (n - 1) % 26; letra = String.fromCharCode(65 + resto) + letra; n = Math.floor((n - resto) / 26); }
+  return letra;
+}
+
+/** Monta uma aba: linhas de células (texto ou número) + validação opcional na coluna da ação. */
+function abaXml(linhas, opcoes) {
+  const corpo = linhas.map((celulas, indiceLinha) => {
+    const numero = indiceLinha + 1;
+    const conteudo = celulas.map((celula, indiceColuna) => {
+      if (celula == null || celula === '') return '';
+      const referencia = colunaLetra(indiceColuna + 1) + numero;
+      const estilo = numero === 1 ? ' s="1"' : '';
+      if (typeof celula === 'number') return '<c r="' + referencia + '"' + estilo + '><v>' + celula + '</v></c>';
+      return '<c r="' + referencia + '" t="inlineStr"' + estilo + '><is><t xml:space="preserve">' + xmlEscapar(celula) + '</t></is></c>';
+    }).join('');
+    return '<row r="' + numero + '">' + conteudo + '</row>';
+  }).join('');
+
+  let validacao = '';
+  if (opcoes && opcoes.colunaLista && opcoes.opcoesLista && opcoes.opcoesLista.length) {
+    const letra = colunaLetra(opcoes.colunaLista);
+    validacao = '<dataValidations count="1"><dataValidation type="list" allowBlank="1" showInputMessage="1" showErrorMessage="1"'
+      + ' errorTitle="Opção inválida" error="Escolha uma das opções da lista." sqref="' + letra + '2:' + letra + Math.max(linhas.length, 2) + '">'
+      + '<formula1>"' + xmlEscapar(opcoes.opcoesLista.join(',')) + '"</formula1></dataValidation></dataValidations>';
+  }
+
+  return '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+    + '<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+    + '<sheetViews><sheetView workbookViewId="0"><pane ySplit="1" topLeftCell="A2" activePane="bottomLeft" state="frozen"/></sheetView></sheetViews>'
+    + '<sheetData>' + corpo + '</sheetData>' + validacao + '</worksheet>';
+}
+
+function montarXlsx(abas) {
+  const arquivos = [
+    { nome: '[Content_Types].xml', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+      + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+      + '<Default Extension="xml" ContentType="application/xml"/>'
+      + '<Override PartName="/xl/workbook.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+      + abas.map((_, i) => '<Override PartName="/xl/worksheets/sheet' + (i + 1) + '.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>').join('')
+      + '<Override PartName="/xl/styles.xml" ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+      + '</Types>' },
+    { nome: '_rels/.rels', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      + '<Relationship Id="rId1" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/officeDocument" Target="xl/workbook.xml"/>'
+      + '</Relationships>' },
+    { nome: 'xl/workbook.xml', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+      + '<sheets>' + abas.map((aba, i) => '<sheet name="' + xmlEscapar(aba.nome) + '" sheetId="' + (i + 1) + '" r:id="rId' + (i + 1) + '"/>').join('') + '</sheets>'
+      + '</workbook>' },
+    { nome: 'xl/_rels/workbook.xml.rels', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+      + abas.map((_, i) => '<Relationship Id="rId' + (i + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/worksheet" Target="worksheets/sheet' + (i + 1) + '.xml"/>').join('')
+      + '<Relationship Id="rId' + (abas.length + 1) + '" Type="http://schemas.openxmlformats.org/officeDocument/2006/relationships/styles" Target="styles.xml"/>'
+      + '</Relationships>' },
+    { nome: 'xl/styles.xml', conteudo: '<?xml version="1.0" encoding="UTF-8" standalone="yes"?>'
+      + '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">'
+      + '<fonts count="2"><font><sz val="11"/><name val="Calibri"/></font><font><b/><sz val="11"/><color rgb="FFFFFFFF"/><name val="Calibri"/></font></fonts>'
+      + '<fills count="3"><fill><patternFill patternType="none"/></fill><fill><patternFill patternType="gray125"/></fill>'
+      + '<fill><patternFill patternType="solid"><fgColor rgb="FF1C5CAB"/><bgColor indexed="64"/></patternFill></fill></fills>'
+      + '<borders count="1"><border><left/><right/><top/><bottom/><diagonal/></border></borders>'
+      + '<cellStyleXfs count="1"><xf numFmtId="0" fontId="0" fillId="0" borderId="0"/></cellStyleXfs>'
+      + '<cellXfs count="2"><xf numFmtId="0" fontId="0" fillId="0" borderId="0" xfId="0"/>'
+      + '<xf numFmtId="0" fontId="1" fillId="2" borderId="0" xfId="0" applyFont="1" applyFill="1"/></cellXfs>'
+      + '</styleSheet>' }
+  ];
+  abas.forEach((aba, i) => {
+    arquivos.push({ nome: 'xl/worksheets/sheet' + (i + 1) + '.xml', conteudo: abaXml(aba.linhas, aba.opcoes) });
+  });
+  return montarZip(arquivos);
+}
+
+function baixar(blob, nome) {
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = nome;
+  document.body.appendChild(link);
+  link.click();
+  link.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 4000);
+}
+
+/* ==================================================================
+   2. CONEXÃO COM O POWER AUTOMATE
+
+   A tela não guarda a base nem decide quem vê o quê: ela pergunta ao
+   fluxo. Quem confere a chave, filtra as linhas daquela pessoa e grava
+   é o fluxo — por isso a segurança mora lá, não aqui.
+
+   Formato do pedido (sempre POST, corpo em JSON):
+     { acao: "abrir" | "gravar" | "importar", chave: "<chave da pessoa>", ... }
+
+   O content-type é text/plain de propósito: evita o "preflight" do
+   navegador, que o Power Automate não responde. O fluxo lê o corpo com
+   um "Analisar JSON" normalmente.
+================================================================== */
+const CHAVE_CONEXAO = 'portal-decisoes-conexao';
+const CHAVE_FILA = 'portal-decisoes-fila';
+const TEMPO_LIMITE = 45000;
+
+const guardar = (chave, valor) => {
+  try { localStorage.setItem(chave, JSON.stringify(valor)); } catch (erro) { /* navegador sem storage */ }
+};
+const recuperar = (chave, padrao) => {
+  try { const bruto = localStorage.getItem(chave); return bruto ? JSON.parse(bruto) : padrao; }
+  catch (erro) { return padrao; }
+};
+
+const conexao = recuperar(CHAVE_CONEXAO, { url: '', chave: '', lembrar: true });
+
+async function chamarFluxo(acao, dados) {
+  if (!conexao.url) throw new Error('Configure o endereço do fluxo em "Conexão".');
+  const controle = new AbortController();
+  const relogio = setTimeout(() => controle.abort(), TEMPO_LIMITE);
+  let resposta;
+  try {
+    resposta = await fetch(conexao.url, {
+      method: 'POST',
+      // sem cabeçalho personalizado e com text/plain: o navegador não faz preflight
+      headers: { 'content-type': 'text/plain;charset=UTF-8' },
+      body: JSON.stringify({ acao, chave: conexao.chave, ...dados }),
+      signal: controle.signal,
+    });
+  } catch (erro) {
+    clearTimeout(relogio);
+    if (erro.name === 'AbortError') throw new Error('O fluxo demorou demais para responder. Tente de novo.');
+    throw new Error('Não consegui falar com o fluxo. Confira o endereço, a rede e se o fluxo está ligado.');
+  }
+  clearTimeout(relogio);
+
+  const texto = await resposta.text();
+  let corpo = null;
+  try { corpo = texto ? JSON.parse(texto) : null; } catch (erro) { corpo = null; }
+
+  if (!resposta.ok) {
+    throw new Error((corpo && corpo.erro) || `O fluxo respondeu com erro ${resposta.status}.`);
+  }
+  if (!corpo) throw new Error('O fluxo respondeu algo que não é JSON. Confira a ação "Resposta" do fluxo.');
+  if (corpo.ok === false) throw new Error(corpo.erro || 'O fluxo recusou o pedido.');
+  return corpo;
+}
+
+/* ==================================================================
+   3. DADOS DE DEMONSTRAÇÃO — fictícios, para ver a tela funcionando
+================================================================== */
+const ACOES_PADRAO = [
+  { valor: 'ATIVO', cor: 'manter', exige_justificativa: false, exige_destino: false, considera_desligamento: false },
+  { valor: 'DESLIGAMENTO', cor: 'desligamento', exige_justificativa: true, exige_destino: false, considera_desligamento: true },
+  { valor: 'TRANSFERÊNCIA DE ÁREA', cor: 'transferencia', exige_justificativa: true, exige_destino: true, considera_desligamento: false },
+  { valor: 'ESTABILIDADE', cor: 'atencao', exige_justificativa: true, exige_destino: false, considera_desligamento: false },
+];
+
+const REGRAS_PADRAO = [
+  { nome: 'Desligado na posição-base', campo: 'situacao', operador: 'igual', valor: 'DESLIGADO',
+    mensagem: 'Colaborador já desligado na posição-base. Confirme com o RH antes de registrar nova decisão.',
+    severidade: 'info', aplica_acao: null, exige_justificativa: false },
+  { nome: 'Estabilidade declarada', campo: 'estabilidade', operador: 'preenchido', valor: null,
+    mensagem: 'Atenção: condição que exige validação do RH antes de eventual desligamento.',
+    severidade: 'atencao', aplica_acao: 'DESLIGAMENTO', exige_justificativa: true },
+  { nome: 'Estabilidade vigente', campo: 'data_fim_estabilidade', operador: 'data_futura', valor: null,
+    mensagem: 'Estabilidade vigente na data informada — o desligamento não pode ocorrer antes do término.',
+    severidade: 'critico', aplica_acao: 'DESLIGAMENTO', exige_justificativa: true },
+  { nome: 'Afastamento / invalidez', campo: 'tipo_invalidez', operador: 'preenchido', valor: null,
+    mensagem: 'Há registro de afastamento/invalidez. Validação do RH é obrigatória antes de qualquer ação.',
+    severidade: 'atencao', aplica_acao: null, exige_justificativa: false },
+];
+
+function baseDeDemonstracao() {
+  const nomes = ['Ana Beatriz Moraes', 'Bruno Carvalho Lima', 'Carla Simões Prado', 'Diego Nunes Ferraz',
+    'Eduarda Campos Rocha', 'Felipe Andrade Melo', 'Gabriela Tavares Pinto', 'Henrique Barros Cunha',
+    'Isabela Fontes Ramos', 'João Vitor Almeida', 'Karina Duarte Neves', 'Leonardo Pires Matos',
+    'Mariana Esteves Cruz', 'Nelson Aguiar Braga', 'Olívia Marques Teles', 'Paulo Renato Vieira'];
+  const estrutura = [
+    ['DIRETORIA INDUSTRIAL', 'DIVISAO PRODUCAO', 'Marcos Vilela Antunes'],
+    ['DIRETORIA INDUSTRIAL', 'DIVISAO MANUTENCAO', 'Marcos Vilela Antunes'],
+    ['DIRETORIA COMERCIAL', 'DIVISAO VENDAS', 'Patrícia Lemos Farias'],
+    ['DIRETORIA ADMINISTRATIVA', 'DIVISAO FINANCEIRO', 'Rogério Sales Pontes'],
+  ];
+  const cargos = ['ANALISTA I', 'ANALISTA II', 'COORDENADOR', 'ESPECIALISTA', 'OPERADOR II', 'SUPERVISOR'];
+  return nomes.map((nome, indice) => {
+    const [diretoria, divisao, gestor] = estrutura[indice % estrutura.length];
+    const salario = 42000 + ((indice * 7717) % 78000);
+    return {
+      chapa: 'DEMO' + (1000 + indice),
+      nome,
+      diretoria,
+      divisao,
+      gestor_imediato: gestor,
+      cargo: cargos[indice % cargos.length],
+      situacao: indice % 7 === 3 ? 'AFASTADO' : 'ATIVO',
+      salario_anual: salario,
+      estabilidade: indice % 6 === 0 ? 'CIPA' : '',
+      data_fim_estabilidade: indice % 6 === 0 ? '2027-04-30' : '',
+      tipo_invalidez: '',
+      acao: '', justificativa: '', destino: '', status: 'pendente',
+      atualizado_por: '', atualizado_em: '',
+    };
+  });
+}
+
+/* ==================================================================
+   4. ESTADO
+================================================================== */
+const estado = {
+  modo: 'inicio',            // inicio | demo | fluxo
+  carregando: false,
+  usuario: null,             // { nome, perfil }
+  processo: { nome: 'Reestruturação', data_base: '', prazo: '', aviso: '' },
+  acoes: ACOES_PADRAO,
+  regras: REGRAS_PADRAO,
+  colaboradores: [],
+  rascunhos: {},             // decisões digitadas mas ainda não válidas para gravar
+  pendentes: {},             // chapa -> true: marcado como "falta algo"
+  fila: recuperar(CHAVE_FILA, []),  // decisões esperando o fluxo aceitar
+  enviando: false,
+  envios: [],                // o que esta máquina mandou nesta sessão
+  tela: 'colaboradores',
+  filtros: { busca: '', diretoria: '', divisao: '', gestor: '', status: '', acao: '', alerta: false },
+  ultimoErro: '',
+};
+
+const perfil = () => (estado.usuario && estado.usuario.perfil) || 'gestor';
+const ehRh = () => perfil() === 'admin';
+const ehChefia = () => perfil() === 'admin' || perfil() === 'diretor';
+
+/* ------------------------------ utilidades ----------------------------- */
+const semAcento = (t) => String(t == null ? '' : t).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim();
+const escapar = (t) => String(t == null ? '' : t)
+  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#39;');
+const fmtNumero = (n) => Number(n || 0).toLocaleString('pt-BR');
+const fmtMoeda = (n) => Number(n || 0).toLocaleString('pt-BR', { style: 'currency', currency: 'BRL', maximumFractionDigits: 0 });
+const fmtDataHora = (iso) => (iso ? new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' }) : '');
+const fmtData = (valor) => {
+  if (!valor) return '';
+  const iso = String(valor).match(/^(\d{4})-(\d{2})-(\d{2})/);
+  return iso ? `${iso[3]}/${iso[2]}/${iso[1]}` : String(valor);
+};
+const numeroDe = (valor) => {
+  if (valor === null || valor === undefined || valor === '') return 0;
+  if (typeof valor === 'number') return valor;
+  let texto = String(valor).replace(/[R$\s]/gi, '');
+  if (/,\d{1,2}$/.test(texto)) texto = texto.replace(/\./g, '').replace(',', '.');
+  else texto = texto.replace(/,/g, '');
+  const numero = Number(texto);
+  return Number.isFinite(numero) ? numero : 0;
+};
+
+let relogioToast = null;
+function toast(texto, tipo) {
+  const caixa = document.getElementById('toast');
+  caixa.textContent = texto;
+  caixa.className = 'toast' + (tipo === 'erro' ? ' erro' : '');
+  caixa.hidden = false;
+  clearTimeout(relogioToast);
+  relogioToast = setTimeout(() => { caixa.hidden = true; }, tipo === 'erro' ? 7000 : 3200);
+}
+
+const acaoInfo = (valor) => estado.acoes.find((a) => a.valor === valor) || null;
+const classeSelo = (cor) => (['desligamento', 'transferencia', 'manter', 'pendente', 'atencao'].includes(cor)
+  ? 'selo-' + cor : 'selo-neutra');
+
+/** Alertas das regras: avisam, nunca decidem. */
+function alertasDe(pessoa) {
+  const hoje = new Date().toISOString().slice(0, 10);
+  return (estado.regras || []).filter((regra) => {
+    const valor = pessoa[regra.campo];
+    const vazio = valor === null || valor === undefined || String(valor).trim() === '';
+    switch (regra.operador) {
+      case 'preenchido': return !vazio;
+      case 'vazio': return vazio;
+      case 'igual': return semAcento(valor) === semAcento(regra.valor);
+      case 'diferente': return !vazio && semAcento(valor) !== semAcento(regra.valor);
+      case 'contem': return !vazio && semAcento(valor).includes(semAcento(regra.valor));
+      case 'data_futura': return !vazio && String(valor).slice(0, 10) >= hoje;
+      case 'data_passada': return !vazio && String(valor).slice(0, 10) < hoje;
+      default: return false;
+    }
+  });
+}
+
+/** O que falta para a decisão poder ser gravada. */
+function faltando(pessoa, valores) {
+  if (!valores.acao) return null;
+  const info = acaoInfo(valores.acao);
+  if (!info) return 'acao';
+  const alertaExige = alertasDe(pessoa).some((a) => a.exige_justificativa
+    && (!a.aplica_acao || a.aplica_acao === valores.acao));
+  if ((info.exige_justificativa || alertaExige) && !String(valores.justificativa || '').trim()) return 'justificativa';
+  if (info.exige_destino && !String(valores.destino || '').trim()) return 'destino';
+  return null;
+}
+
+const valorDe = (pessoa) => estado.rascunhos[pessoa.chapa] || {
+  acao: pessoa.acao || '', justificativa: pessoa.justificativa || '', destino: pessoa.destino || '',
+};
+
+/* ==================================================================
+   5. FILA DE ENVIO
+
+   A decisão é aplicada na tela na hora e entra numa fila. A fila vai
+   para o fluxo em seguida; se a rede cair ou o fluxo falhar, ela fica
+   guardada no navegador e é reenviada depois. Nada se perde no caminho.
+================================================================== */
+function enfileirar(pessoa, valores) {
+  const registro = {
+    chapa: pessoa.chapa,
+    nome: pessoa.nome,
+    acao: valores.acao || '',
+    justificativa: valores.justificativa || '',
+    destino: valores.destino || '',
+    marcado_em: new Date().toISOString(),
+  };
+  estado.fila = estado.fila.filter((item) => item.chapa !== pessoa.chapa).concat([registro]);
+  guardar(CHAVE_FILA, estado.fila);
+}
+
+async function enviarFila(silencioso) {
+  if (estado.enviando || !estado.fila.length) return;
+  if (estado.modo === 'demo') {
+    // Demonstração: o "envio" é só local, para dar para experimentar a tela.
+    estado.envios = estado.fila.map((i) => ({ ...i, enviado_em: new Date().toISOString() })).concat(estado.envios);
+    estado.fila = [];
+    guardar(CHAVE_FILA, estado.fila);
+    desenhar();
+    return;
+  }
+  estado.enviando = true;
+  desenhar();
+  const lote = estado.fila.slice(0, 200);
+  try {
+    const resposta = await chamarFluxo('gravar', { decisoes: lote });
+    const gravados = new Set((resposta.gravados_chapas || lote.map((i) => i.chapa)).map(String));
+    estado.fila = estado.fila.filter((item) => !gravados.has(String(item.chapa)));
+    guardar(CHAVE_FILA, estado.fila);
+    estado.envios = lote.map((i) => ({ ...i, enviado_em: new Date().toISOString() })).concat(estado.envios).slice(0, 300);
+    estado.ultimoErro = '';
+    for (const item of lote) {
+      const pessoa = estado.colaboradores.find((p) => String(p.chapa) === String(item.chapa));
+      if (pessoa) {
+        pessoa.acao = item.acao;
+        pessoa.justificativa = item.justificativa;
+        pessoa.destino = item.destino;
+        pessoa.status = item.acao ? 'preenchida' : 'pendente';
+        pessoa.atualizado_por = (estado.usuario && estado.usuario.nome) || '';
+        pessoa.atualizado_em = item.marcado_em;
+      }
+    }
+    if (!silencioso) toast(lote.length === 1 ? 'Decisão enviada.' : `${lote.length} decisões enviadas.`);
+  } catch (erro) {
+    estado.ultimoErro = erro.message;
+    if (!silencioso) toast(erro.message, 'erro');
+  } finally {
+    estado.enviando = false;
+    desenhar();
+  }
+}
+
+/* ==================================================================
+   6. ABRIR: pede ao fluxo a base daquela pessoa
+================================================================== */
+function normalizarPessoa(linha) {
+  const pegar = (...nomes) => {
+    for (const nome of nomes) {
+      if (linha[nome] !== undefined && linha[nome] !== null && linha[nome] !== '') return linha[nome];
+    }
+    return '';
+  };
+  return {
+    chapa: String(pegar('chapa', 'CHAPA', 'Chapa', 'matricula', 'Matricula')),
+    nome: String(pegar('nome', 'NOME', 'Nome')),
+    diretoria: String(pegar('diretoria', 'DIRETORIA', 'Diretoria')),
+    divisao: String(pegar('divisao', 'DIVISAO', 'Divisao', 'Divisão')),
+    gestor_imediato: String(pegar('gestor_imediato', 'GESTOR IMEDIATO', 'GestorImediato', 'gestor')),
+    cargo: String(pegar('cargo', 'des_cargo', 'DES_CARGO', 'Cargo')),
+    situacao: String(pegar('situacao', 'SITUACAO', 'Situacao', 'Situação')),
+    salario_anual: numeroDe(pegar('salario_anual', 'SALARIO ANUAL', 'SALÁRIO ANUAL', 'SalarioAnual')),
+    estabilidade: String(pegar('estabilidade', 'ESTABILIDADE', 'Estabilidade')),
+    data_fim_estabilidade: String(pegar('data_fim_estabilidade', 'DATA FIM ESTABILIDADE', 'DataFimEstabilidade')),
+    tipo_invalidez: String(pegar('tipo_invalidez', 'TIPO_INVALIDEZ')),
+    acao: String(pegar('acao', 'AÇÃO INDICADA', 'Acao', 'decisao')),
+    justificativa: String(pegar('justificativa', 'JUSTIFICATIVA', 'Justificativa')),
+    destino: String(pegar('destino', 'Destino')),
+    status: String(pegar('status', 'Status')) || 'pendente',
+    atualizado_por: String(pegar('atualizado_por', 'AtualizadoPor')),
+    atualizado_em: String(pegar('atualizado_em', 'AtualizadoEm')),
+  };
+}
+
+async function abrirPeloFluxo() {
+  estado.carregando = true;
+  estado.ultimoErro = '';
+  desenhar();
+  try {
+    const resposta = await chamarFluxo('abrir', {});
+    estado.usuario = resposta.usuario || { nome: 'Usuário', perfil: 'gestor' };
+    estado.processo = Object.assign({ nome: 'Reestruturação', data_base: '', prazo: '', aviso: '' }, resposta.processo || {});
+    if (Array.isArray(resposta.acoes) && resposta.acoes.length) estado.acoes = resposta.acoes;
+    if (Array.isArray(resposta.regras)) estado.regras = resposta.regras;
+    estado.colaboradores = (resposta.colaboradores || []).map(normalizarPessoa);
+    estado.modo = 'fluxo';
+    estado.tela = 'colaboradores';
+    if (conexao.lembrar) guardar(CHAVE_CONEXAO, conexao);
+    toast(`Base carregada: ${fmtNumero(estado.colaboradores.length)} colaborador(es).`);
+    if (estado.fila.length) void enviarFila(true);
+  } catch (erro) {
+    estado.ultimoErro = erro.message;
+    toast(erro.message, 'erro');
+  } finally {
+    estado.carregando = false;
+    desenhar();
+  }
+}
+
+function abrirDemonstracao() {
+  estado.modo = 'demo';
+  estado.usuario = { nome: 'Demonstração (RH)', perfil: 'admin' };
+  estado.processo = {
+    nome: 'Reestruturação (demonstração)',
+    data_base: new Date().toISOString().slice(0, 10),
+    prazo: new Date(Date.now() + 45 * 86400000).toISOString().slice(0, 10),
+    aviso: 'Dados fictícios. Nada aqui sai do seu navegador.',
+  };
+  estado.acoes = ACOES_PADRAO;
+  estado.regras = REGRAS_PADRAO;
+  estado.colaboradores = baseDeDemonstracao();
+  estado.fila = [];
+  estado.envios = [];
+  estado.tela = 'colaboradores';
+  desenhar();
+}
+
+function sair() {
+  estado.modo = 'inicio';
+  estado.usuario = null;
+  estado.colaboradores = [];
+  estado.rascunhos = {};
+  estado.pendentes = {};
+  estado.envios = [];
+  desenhar();
+}
+
+/* ==================================================================
+   7. TELAS
+================================================================== */
+const raiz = document.getElementById('raiz');
+
+/* ------------------------------- abertura ------------------------------ */
+function telaAbertura() {
+  return `
+  <div class="abertura">
+    <div class="abertura-cartao">
+      <div class="marca" style="padding-bottom:10px"><span class="marca-ponto"></span> Portal de Decisões</div>
+      <h1>Conectar ao fluxo</h1>
+      <p class="texto-2" style="margin:6px 0 18px">
+        Esta tela não guarda a base: ela pede ao seu fluxo do Power Automate, que confere a sua chave e
+        devolve só o que é seu.
+      </p>
+
+      ${estado.ultimoErro ? `<div class="msg msg-erro">${escapar(estado.ultimoErro)}</div>` : ''}
+
+      <div class="campo">
+        <label for="url-fluxo">Endereço do fluxo (URL do gatilho "Quando uma solicitação HTTP é recebida")</label>
+        <input id="url-fluxo" data-campo="url" value="${escapar(conexao.url)}"
+               placeholder="https://prod-00.brazilsouth.logic.azure.com:443/workflows/..." autocomplete="off">
+      </div>
+      <div class="campo" style="margin-top:10px">
+        <label for="chave-fluxo">Sua chave de acesso (o RH envia para você)</label>
+        <input id="chave-fluxo" data-campo="chave" type="password" value="${escapar(conexao.chave)}"
+               placeholder="cole aqui a sua chave" autocomplete="off">
+      </div>
+      <label class="pequeno texto-2" style="display:flex;gap:7px;align-items:center;margin-top:10px">
+        <input type="checkbox" data-campo="lembrar" ${conexao.lembrar ? 'checked' : ''} style="width:auto">
+        Lembrar neste computador
+      </label>
+
+      <button class="btn btn-primario btn-largo" style="margin-top:16px" data-acao="conectar"
+              ${estado.carregando ? 'disabled' : ''}>
+        ${estado.carregando ? 'Conectando...' : 'Entrar'}
+      </button>
+
+      <div style="margin-top:18px;border-top:1px solid var(--borda);padding-top:14px">
+        <p class="pequeno texto-2" style="margin:0 0 8px">
+          Ainda não montou o fluxo? Veja a tela como ela fica, com dados fictícios:
+        </p>
+        <button class="btn btn-largo" data-acao="demonstracao">Abrir demonstração</button>
+      </div>
+
+      <p class="pequeno texto-3" style="margin-top:16px">
+        Conteúdo confidencial. Quem confere a sua chave, decide o que você vê e registra o histórico é o
+        fluxo — esta tela é só a janela.
+      </p>
+    </div>
+  </div>`;
+}
+
+/* -------------------------------- moldura ------------------------------ */
+function moldura(conteudo) {
+  const menu = [
+    ['painel', 'Painel'],
+    ['colaboradores', 'Colaboradores'],
+  ];
+  if (ehChefia()) menu.push(['gestores', 'Gestores']);
+  if (ehRh()) menu.push(['importar', 'Importar Excel']);
+
+  const pendentes = estado.fila.length;
+  const pontoClasse = estado.modo === 'demo' ? 'demo'
+    : estado.ultimoErro ? 'erro' : pendentes ? 'espera' : '';
+  const pontoTexto = estado.modo === 'demo' ? 'Demonstração'
+    : estado.enviando ? 'Enviando...'
+      : pendentes ? `${pendentes} para enviar`
+        : estado.ultimoErro ? 'Falha no envio' : 'Tudo enviado';
+
+  const dias = estado.processo.prazo
+    ? Math.ceil((new Date(estado.processo.prazo + 'T23:59:59').getTime() - Date.now()) / 86400000) : null;
+
+  return `
+  <div class="app">
+    <nav class="lateral">
+      <div class="marca"><span class="marca-ponto"></span> Portal de Decisões</div>
+      ${menu.map(([id, rotulo]) =>
+        `<button class="menu-item${estado.tela === id ? ' ativo' : ''}" data-tela="${id}">${rotulo}</button>`).join('')}
+      <button class="menu-item" data-acao="exportar">Exportar Excel</button>
+      <div class="menu-sep">Sistema</div>
+      <button class="menu-item${estado.tela === 'envios' ? ' ativo' : ''}" data-tela="envios">
+        Envios${pendentes ? ` (${pendentes})` : ''}
+      </button>
+      <button class="menu-item${estado.tela === 'conexao' ? ' ativo' : ''}" data-tela="conexao">Conexão</button>
+      <button class="menu-item${estado.tela === 'ajuda' ? ' ativo' : ''}" data-tela="ajuda">Como funciona</button>
+      <span class="espaco"></span>
+      <div class="pequeno texto-3" style="padding:0 8px">
+        ${escapar(estado.processo.nome || 'Processo')}<br>
+        ${estado.processo.data_base ? 'Data-base ' + fmtData(estado.processo.data_base) : ''}
+      </div>
+    </nav>
+
+    <div class="conteudo">
+      <header class="topo">
+        <h1>${escapar(({
+          painel: 'Painel', colaboradores: 'Colaboradores', gestores: 'Gestores imediatos',
+          importar: 'Importar Excel', envios: 'Envios', conexao: 'Conexão', ajuda: 'Como funciona',
+        })[estado.tela] || 'Portal de Decisões')}</h1>
+        <span class="espaco"></span>
+        <span class="fila"><span class="ponto ${pontoClasse}"></span>${pontoTexto}</span>
+        ${estado.processo.prazo ? `<span class="selo ${dias !== null && dias < 0 ? 'selo-desligamento' : 'selo-atencao'}">
+          Prazo ${fmtData(estado.processo.prazo)}${dias !== null ? (dias >= 0 ? ` · ${dias} dia(s)` : ' · vencido') : ''}
+        </span>` : ''}
+        <span class="pequeno texto-2">${escapar(estado.usuario ? estado.usuario.nome : '')}
+          · ${escapar({ admin: 'RH / Administrador', diretor: 'Diretor', gestor: 'Gestor' }[perfil()] || perfil())}</span>
+        <button class="btn btn-pequeno" data-acao="tema">Tema</button>
+        <button class="btn btn-pequeno" data-acao="sair">Sair</button>
+      </header>
+      <main>
+        ${estado.processo.aviso ? `<div class="aviso-conf">⚠ ${escapar(estado.processo.aviso)}</div>` : ''}
+        ${estado.ultimoErro && estado.tela !== 'conexao'
+          ? `<div class="msg msg-erro">${escapar(estado.ultimoErro)}
+               <button class="btn btn-pequeno" style="margin-left:8px" data-acao="reenviar">Tentar de novo</button>
+             </div>` : ''}
+        ${conteudo}
+      </main>
+    </div>
+  </div>`;
+}
+
+/* ----------------------------- colaboradores --------------------------- */
+function listaFiltrada() {
+  const f = estado.filtros;
+  const busca = semAcento(f.busca);
+  return estado.colaboradores.filter((pessoa) => {
+    if (busca && !semAcento(pessoa.nome + ' ' + pessoa.chapa + ' ' + pessoa.cargo).includes(busca)) return false;
+    if (f.diretoria && pessoa.diretoria !== f.diretoria) return false;
+    if (f.divisao && pessoa.divisao !== f.divisao) return false;
+    if (f.gestor && (pessoa.gestor_imediato || '(sem gestor informado)') !== f.gestor) return false;
+    if (f.acao === '__sem__' && valorDe(pessoa).acao) return false;
+    if (f.acao && f.acao !== '__sem__' && valorDe(pessoa).acao !== f.acao) return false;
+    if (f.status === 'pendente' && valorDe(pessoa).acao) return false;
+    if (f.status === 'preenchida' && !valorDe(pessoa).acao) return false;
+    if (f.alerta && !alertasDe(pessoa).length) return false;
+    return true;
+  });
+}
+
+const valoresUnicos = (chave) => [...new Set(estado.colaboradores.map((p) => p[chave]).filter(Boolean))]
+  .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
+
+function telaColaboradores() {
+  const lista = listaFiltrada();
+  const opcoes = (valores, atual) => valores.map((v) =>
+    `<option value="${escapar(v)}"${atual === v ? ' selected' : ''}>${escapar(v)}</option>`).join('');
+
+  const linhas = lista.map((pessoa) => {
+    const valores = valorDe(pessoa);
+    const info = acaoInfo(valores.acao);
+    const alertas = alertasDe(pessoa);
+    const falta = estado.pendentes[pessoa.chapa] ? faltando(pessoa, valores) : null;
+    const naFila = estado.fila.some((i) => String(i.chapa) === String(pessoa.chapa));
+    const status = valores.acao ? (naFila ? 'aguardando envio' : (pessoa.status === 'homologada' ? 'homologada' : 'registrada')) : 'sem decisão';
+    const corStatus = valores.acao ? (naFila ? 'selo-atencao' : 'selo-manter') : 'selo-pendente';
+
+    return `
+    <tr>
+      <td class="mono">${escapar(pessoa.chapa)}</td>
+      <td class="limite">${escapar(pessoa.nome)}
+        ${alertas.length ? `<div class="pequeno" style="color:var(--atencao);white-space:normal;max-width:240px">
+          ⚠ ${escapar(alertas[0].mensagem)}</div>` : ''}
+      </td>
+      <td class="limite texto-2">${escapar(pessoa.cargo)}</td>
+      <td class="limite texto-2">${escapar(pessoa.diretoria)}
+        <div class="pequeno texto-3">${escapar(pessoa.divisao)}</div>
+        ${pessoa.gestor_imediato ? `<div class="pequeno texto-3">Gestor: ${escapar(pessoa.gestor_imediato)}</div>` : ''}
+      </td>
+      <td>
+        <select class="celula-decisao${valores.acao ? ' preenchida' : ''}${falta === 'acao' || falta ? ' exigida' : ''}"
+                data-decisao="acao" data-chapa="${escapar(pessoa.chapa)}">
+          <option value="">— sem decisão —</option>
+          ${estado.acoes.map((a) => `<option value="${escapar(a.valor)}"${valores.acao === a.valor ? ' selected' : ''}>
+            ${escapar(a.valor)}</option>`).join('')}
+        </select>
+        ${falta ? `<div class="pendente-aviso">${falta === 'destino'
+          ? 'Informe o destino para gravar.' : 'Informe a justificativa para gravar.'}</div>` : ''}
+        ${info && info.exige_destino ? `<input class="celula-decisao${falta === 'destino' ? ' exigida' : ''}"
+            style="margin-top:4px" data-decisao="destino" data-chapa="${escapar(pessoa.chapa)}"
+            value="${escapar(valores.destino)}" placeholder="Destino: Diretoria / setor">` : ''}
+      </td>
+      <td>
+        <input class="celula-decisao${falta === 'justificativa' ? ' exigida' : ''}"
+               data-decisao="justificativa" data-chapa="${escapar(pessoa.chapa)}"
+               value="${escapar(valores.justificativa)}"
+               placeholder="${info && info.exige_justificativa ? 'Justificativa obrigatória' : 'Justificativa (opcional)'}">
+      </td>
+      <td><span class="selo ${corStatus}">${status}</span>
+        ${pessoa.atualizado_em ? `<div class="pequeno texto-3">${escapar(pessoa.atualizado_por || '')} ·
+          ${fmtDataHora(pessoa.atualizado_em)}</div>` : ''}
+      </td>
+    </tr>`;
+  }).join('');
+
+  return `
+  <section class="cartao">
+    <div class="linha">
+      <div class="campo" style="flex:2;min-width:180px">
+        <label for="f-busca">Buscar</label>
+        <input id="f-busca" data-filtro="busca" value="${escapar(estado.filtros.busca)}" placeholder="Nome, matrícula, cargo...">
+      </div>
+      <div class="campo"><label for="f-dir">Diretoria</label>
+        <select id="f-dir" data-filtro="diretoria"><option value="">Todas</option>${opcoes(valoresUnicos('diretoria'), estado.filtros.diretoria)}</select>
+      </div>
+      <div class="campo"><label for="f-div">Divisão</label>
+        <select id="f-div" data-filtro="divisao"><option value="">Todas</option>${opcoes(valoresUnicos('divisao'), estado.filtros.divisao)}</select>
+      </div>
+      <div class="campo"><label for="f-ges">Gestor imediato</label>
+        <select id="f-ges" data-filtro="gestor"><option value="">Todos</option>${opcoes(valoresUnicos('gestor_imediato'), estado.filtros.gestor)}</select>
+      </div>
+      <div class="campo"><label for="f-sta">Status</label>
+        <select id="f-sta" data-filtro="status">
+          <option value="">Todos</option>
+          <option value="pendente"${estado.filtros.status === 'pendente' ? ' selected' : ''}>Sem decisão</option>
+          <option value="preenchida"${estado.filtros.status === 'preenchida' ? ' selected' : ''}>Com decisão</option>
+        </select>
+      </div>
+      <div class="campo"><label for="f-aca">Ação</label>
+        <select id="f-aca" data-filtro="acao">
+          <option value="">Todas</option>
+          <option value="__sem__"${estado.filtros.acao === '__sem__' ? ' selected' : ''}>Sem decisão</option>
+          ${estado.acoes.map((a) => `<option value="${escapar(a.valor)}"${estado.filtros.acao === a.valor ? ' selected' : ''}>${escapar(a.valor)}</option>`).join('')}
+        </select>
+      </div>
+      <label class="btn" style="display:flex;gap:6px;align-items:center">
+        <input type="checkbox" data-filtro="alerta" ${estado.filtros.alerta ? 'checked' : ''} style="width:auto"> Só com alerta
+      </label>
+      <span class="espaco"></span>
+      <button class="btn" data-acao="exportar">Exportar Excel</button>
+    </div>
+  </section>
+
+  <div class="tabela-caixa tabela-rolagem">
+    <table>
+      <thead><tr>
+        <th>Matrícula</th><th>Nome</th><th>Cargo</th><th>Diretoria / Divisão</th>
+        <th style="min-width:220px">Ação indicada</th><th style="min-width:240px">Justificativa</th><th>Situação</th>
+      </tr></thead>
+      <tbody>${linhas || '<tr><td class="vazio" colspan="7">Nenhum colaborador com os filtros atuais.</td></tr>'}</tbody>
+    </table>
+  </div>
+  <p class="pequeno texto-3">
+    ${fmtNumero(lista.length)} de ${fmtNumero(estado.colaboradores.length)} colaborador(es) ·
+    marque a decisão direto na linha; o portal envia sozinho para o fluxo.
+  </p>`;
+}
+
+/* -------------------------------- painel ------------------------------- */
+function telaPainel() {
+  const lista = estado.colaboradores;
+  const comDecisao = lista.filter((p) => valorDe(p).acao);
+  const custoTotal = lista.reduce((soma, p) => soma + numeroDe(p.salario_anual), 0);
+  const custoReducao = comDecisao.reduce((soma, p) => {
+    const info = acaoInfo(valorDe(p).acao);
+    return soma + (info && info.considera_desligamento ? numeroDe(p.salario_anual) : 0);
+  }, 0);
+  const percentual = lista.length ? Math.round((comDecisao.length / lista.length) * 100) : 0;
+
+  const porAcao = estado.acoes.map((a) => ({
+    valor: a.valor, cor: a.cor,
+    total: lista.filter((p) => valorDe(p).acao === a.valor).length,
+  })).concat([{ valor: 'Sem decisão', cor: 'pendente', total: lista.length - comDecisao.length }]);
+  const maior = Math.max(1, ...porAcao.map((a) => a.total));
+
+  const agrupar = (chave) => {
+    const mapa = new Map();
+    for (const pessoa of lista) {
+      const nome = pessoa[chave] || '(não informado)';
+      const atual = mapa.get(nome) || { nome, total: 0, avaliados: 0, desligamentos: 0 };
+      atual.total += 1;
+      const acao = valorDe(pessoa).acao;
+      if (acao) atual.avaliados += 1;
+      const info = acaoInfo(acao);
+      if (info && info.considera_desligamento) atual.desligamentos += 1;
+      mapa.set(nome, atual);
+    }
+    return [...mapa.values()].sort((a, b) => b.total - a.total);
+  };
+
+  const tabela = (titulo, linhas, rotulo) => `
+    <section class="cartao">
+      <h2>${titulo}</h2>
+      <div class="tabela-caixa" style="margin-top:10px">
+        <table>
+          <thead><tr><th>${rotulo}</th><th class="num">Total</th><th class="num">Avaliados</th>
+            <th class="num">Pendentes</th><th class="num">Desligamentos</th><th>Andamento</th></tr></thead>
+          <tbody>${linhas.map((l) => `<tr>
+            <td>${escapar(l.nome)}</td>
+            <td class="num">${fmtNumero(l.total)}</td>
+            <td class="num">${fmtNumero(l.avaliados)}</td>
+            <td class="num">${l.total - l.avaliados ? '<strong>' + fmtNumero(l.total - l.avaliados) + '</strong>' : '0'}</td>
+            <td class="num">${fmtNumero(l.desligamentos)}</td>
+            <td><div class="barra-mini"><span style="width:${l.total ? Math.round((l.avaliados / l.total) * 100) : 0}%"></span></div></td>
+          </tr>`).join('') || '<tr><td class="vazio" colspan="6">Sem dados.</td></tr>'}</tbody>
+        </table>
+      </div>
+    </section>`;
+
+  return `
+  <div class="kpis">
+    <div class="kpi"><div class="rotulo">Colaboradores</div><div class="valor">${fmtNumero(lista.length)}</div>
+      <div class="nota">${estado.processo.data_base ? 'Posição de ' + fmtData(estado.processo.data_base) : 'no seu recorte'}</div></div>
+    <div class="kpi"><div class="rotulo">Avaliados</div><div class="valor">${percentual}%</div>
+      <div class="nota">${fmtNumero(comDecisao.length)} de ${fmtNumero(lista.length)}</div></div>
+    <div class="kpi${lista.length - comDecisao.length ? ' destaque' : ''}"><div class="rotulo">Pendentes</div>
+      <div class="valor">${fmtNumero(lista.length - comDecisao.length)}</div><div class="nota">sem ação indicada</div></div>
+    <div class="kpi"><div class="rotulo">Custo anual no recorte</div><div class="valor">${fmtMoeda(custoTotal)}</div></div>
+    <div class="kpi"><div class="rotulo">Redução estimada</div><div class="valor">${fmtMoeda(custoReducao)}</div>
+      <div class="nota">ações marcadas como desligamento</div></div>
+  </div>
+
+  <section class="cartao">
+    <h2>Distribuição por ação indicada</h2>
+    <div class="barras" style="margin-top:12px">
+      ${porAcao.map((a) => `
+        <div class="barra-linha">
+          <div class="barra-rotulo"><span class="barra-chip" style="background:var(--${a.cor === 'pendente' ? 'pendente' : a.cor})"></span>${escapar(a.valor)}</div>
+          <div class="barra-trilho"><div class="barra-fill" style="width:${Math.round((a.total / maior) * 100)}%;background:var(--${a.cor === 'pendente' ? 'pendente' : a.cor})"></div></div>
+          <div class="barra-numero">${fmtNumero(a.total)} <span>(${lista.length ? Math.round((a.total / lista.length) * 100) : 0}%)</span></div>
+        </div>`).join('')}
+    </div>
+  </section>
+
+  ${ehChefia() ? tabela('Andamento por Diretoria', agrupar('diretoria'), 'Diretoria') : ''}
+  ${tabela('Andamento por gestor imediato', agrupar('gestor_imediato'), 'Gestor imediato')}`;
+}
+
+/* ------------------------------- gestores ------------------------------ */
+function telaGestores() {
+  const mapa = new Map();
+  for (const pessoa of estado.colaboradores) {
+    const nome = pessoa.gestor_imediato || '(sem gestor informado)';
+    const atual = mapa.get(nome) || { nome, total: 0, avaliados: 0, divisoes: new Set() };
+    atual.total += 1;
+    if (valorDe(pessoa).acao) atual.avaliados += 1;
+    if (pessoa.divisao) atual.divisoes.add(pessoa.divisao);
+    mapa.set(nome, atual);
+  }
+  const itens = [...mapa.values()].sort((a, b) => (b.total - b.avaliados) - (a.total - a.avaliados));
+
+  return `
+  <section class="cartao">
+    <h2>Quem responde por quem <span class="dica">— agrupado pela coluna GESTOR IMEDIATO</span></h2>
+    <p class="texto-2 pequeno" style="margin-top:6px">
+      A base é uma só. Cada gestor recebe do RH a chave dele e enxerga apenas a própria equipe —
+      quem faz esse recorte é o fluxo, ao conferir a chave.
+    </p>
+    <div class="tabela-caixa" style="margin-top:12px">
+      <table>
+        <thead><tr><th>Gestor imediato</th><th>Divisões</th><th class="num">Equipe</th>
+          <th class="num">Avaliados</th><th class="num">Pendentes</th><th>Andamento</th><th></th></tr></thead>
+        <tbody>${itens.map((g) => `<tr>
+          <td><strong>${escapar(g.nome)}</strong></td>
+          <td class="limite texto-2">${escapar([...g.divisoes].join(', '))}</td>
+          <td class="num">${fmtNumero(g.total)}</td>
+          <td class="num">${fmtNumero(g.avaliados)}</td>
+          <td class="num">${g.total - g.avaliados ? '<strong>' + fmtNumero(g.total - g.avaliados) + '</strong>' : '0'}</td>
+          <td><div class="barra-mini"><span style="width:${g.total ? Math.round((g.avaliados / g.total) * 100) : 0}%"></span></div></td>
+          <td><button class="btn btn-pequeno" data-acao="filtrar-gestor" data-gestor="${escapar(g.nome)}">Ver equipe</button></td>
+        </tr>`).join('') || '<tr><td class="vazio" colspan="7">Sem dados.</td></tr>'}</tbody>
+      </table>
+    </div>
+  </section>`;
+}
+
+/* ------------------------------- importar ------------------------------ */
+const importacao = { arquivo: null, abas: [], aba: '', cabecalho: 1, colunas: [], mapa: {}, previa: [] };
+
+const CAMPOS_DESTINO = [
+  ['chapa', 'Matrícula (CHAPA)'], ['nome', 'Nome'], ['diretoria', 'Diretoria'], ['divisao', 'Divisão'],
+  ['gestor_imediato', 'Gestor imediato'], ['cargo', 'Cargo'], ['situacao', 'Situação'],
+  ['salario_anual', 'Salário anual'], ['estabilidade', 'Estabilidade'],
+  ['data_fim_estabilidade', 'Data fim estabilidade'], ['tipo_invalidez', 'Tipo invalidez'],
+  ['acao', 'Ação indicada (decisão já existente)'], ['justificativa', 'Justificativa'], ['destino', 'Destino'],
+];
+
+function telaImportar() {
+  if (!importacao.abas.length) {
+    return `
+    <section class="cartao">
+      <h2>Importar Excel <span class="dica">— o arquivo é lido aqui no seu computador</span></h2>
+      <p class="texto-2 pequeno" style="margin-top:6px">
+        A planilha não sobe inteira: o portal lê aqui, você confere o de-para das colunas e só então as linhas
+        seguem para o fluxo, que grava na lista do SharePoint. A chave de atualização é a matrícula.
+      </p>
+      <div class="campo" style="margin-top:12px;max-width:420px">
+        <label for="arquivo">Arquivo .xlsx</label>
+        <input id="arquivo" type="file" accept=".xlsx,.xlsm" data-acao="arquivo">
+      </div>
+    </section>`;
+  }
+
+  const amostra = importacao.previa[0] || [];
+  return `
+  <section class="cartao">
+    <h2>Conferência <span class="dica">— ${escapar(importacao.arquivo || '')}</span></h2>
+    <div class="linha" style="margin-top:10px">
+      ${importacao.abas.length > 1 ? `<div class="campo"><label for="aba">Aba</label>
+        <select id="aba" data-acao="trocar-aba">${importacao.abas.map((a) =>
+          `<option value="${escapar(a.nome)}"${a.nome === importacao.aba ? ' selected' : ''}>${escapar(a.nome)} (${a.linhas.length} linhas)</option>`).join('')}</select></div>` : ''}
+      <div class="campo" style="max-width:170px"><label for="cab">Linha do cabeçalho</label>
+        <input id="cab" type="number" min="1" value="${importacao.cabecalho}" data-acao="trocar-cabecalho"></div>
+      <span class="espaco"></span>
+      <button class="btn" data-acao="cancelar-import">Cancelar</button>
+      <button class="btn btn-primario" data-acao="enviar-import">Enviar ao fluxo</button>
+    </div>
+    <div class="tabela-caixa" style="margin-top:12px;max-height:420px;overflow:auto">
+      <table>
+        <thead><tr><th>Coluna da planilha</th><th>Exemplo</th><th>Destino no portal</th></tr></thead>
+        <tbody>${importacao.colunas.map((coluna, indice) => `<tr>
+          <td>${escapar(coluna)}</td>
+          <td class="texto-3 limite">${escapar(amostra[indice] == null ? '' : amostra[indice])}</td>
+          <td><select data-mapa="${escapar(coluna)}">
+            <option value="">— ignorar —</option>
+            ${CAMPOS_DESTINO.map(([chave, rotulo]) =>
+              `<option value="${chave}"${importacao.mapa[coluna] === chave ? ' selected' : ''}>${escapar(rotulo)}</option>`).join('')}
+          </select></td>
+        </tr>`).join('')}</tbody>
+      </table>
+    </div>
+    <p class="pequeno texto-3" style="margin-top:8px">
+      ${fmtNumero(Math.max((importacao.abas.find((a) => a.nome === importacao.aba) || { linhas: [] }).linhas.length - importacao.cabecalho, 0))}
+      linha(s) de dados serão enviadas.
+    </p>
+  </section>`;
+}
+
+/* -------------------------------- envios ------------------------------- */
+function telaEnvios() {
+  return `
+  <section class="cartao">
+    <h2>Fila de envio</h2>
+    <p class="texto-2 pequeno" style="margin-top:6px">
+      A decisão vale na tela assim que você marca e entra nesta fila. Se a rede cair ou o fluxo falhar, ela fica
+      guardada aqui no navegador e vai junto na próxima tentativa — nada se perde.
+    </p>
+    <div class="linha" style="margin-top:10px">
+      <span class="fila"><span class="ponto ${estado.fila.length ? 'espera' : ''}"></span>
+        ${estado.fila.length ? fmtNumero(estado.fila.length) + ' aguardando' : 'nada pendente'}</span>
+      <span class="espaco"></span>
+      <button class="btn btn-primario" data-acao="reenviar" ${estado.fila.length && !estado.enviando ? '' : 'disabled'}>
+        ${estado.enviando ? 'Enviando...' : 'Enviar agora'}</button>
+    </div>
+    ${estado.fila.length ? `<div class="tabela-caixa" style="margin-top:12px">
+      <table><thead><tr><th>Matrícula</th><th>Nome</th><th>Ação</th><th>Marcado em</th></tr></thead>
+      <tbody>${estado.fila.map((i) => `<tr><td class="mono">${escapar(i.chapa)}</td><td>${escapar(i.nome)}</td>
+        <td>${escapar(i.acao || 'sem decisão')}</td><td class="texto-3">${fmtDataHora(i.marcado_em)}</td></tr>`).join('')}
+      </tbody></table></div>` : ''}
+  </section>
+
+  <section class="cartao">
+    <h2>Enviado nesta sessão <span class="dica">— o histórico oficial fica no fluxo</span></h2>
+    <div class="tabela-caixa" style="margin-top:10px">
+      <table><thead><tr><th>Enviado em</th><th>Matrícula</th><th>Nome</th><th>Ação</th><th>Justificativa</th></tr></thead>
+      <tbody>${estado.envios.map((i) => `<tr>
+        <td class="texto-3">${fmtDataHora(i.enviado_em)}</td>
+        <td class="mono">${escapar(i.chapa)}</td><td>${escapar(i.nome)}</td>
+        <td>${escapar(i.acao || 'sem decisão')}</td><td class="limite texto-2">${escapar(i.justificativa)}</td>
+      </tr>`).join('') || '<tr><td class="vazio" colspan="5">Nada enviado ainda nesta sessão.</td></tr>'}
+      </tbody></table>
+    </div>
+  </section>`;
+}
+
+/* -------------------------------- conexão ------------------------------ */
+function telaConexao() {
+  return `
+  <section class="cartao">
+    <h2>Conexão com o fluxo</h2>
+    ${estado.ultimoErro ? `<div class="msg msg-erro" style="margin-top:10px">${escapar(estado.ultimoErro)}</div>` : ''}
+    <div class="campo" style="margin-top:12px">
+      <label for="url2">Endereço do fluxo</label>
+      <input id="url2" data-campo="url" value="${escapar(conexao.url)}" autocomplete="off">
+    </div>
+    <div class="campo" style="margin-top:10px;max-width:420px">
+      <label for="chave2">Sua chave de acesso</label>
+      <input id="chave2" data-campo="chave" type="password" value="${escapar(conexao.chave)}" autocomplete="off">
+    </div>
+    <label class="pequeno texto-2" style="display:flex;gap:7px;align-items:center;margin-top:10px">
+      <input type="checkbox" data-campo="lembrar" ${conexao.lembrar ? 'checked' : ''} style="width:auto">
+      Lembrar neste computador
+    </label>
+    <div class="linha" style="margin-top:14px">
+      <button class="btn btn-primario" data-acao="conectar">Recarregar a base</button>
+      <button class="btn" data-acao="esquecer">Esquecer neste computador</button>
+    </div>
+    <p class="pequeno texto-3" style="margin-top:12px">
+      ${estado.modo === 'demo'
+        ? 'Você está na demonstração: nada sai deste navegador.'
+        : 'A base não fica salva neste computador — só a sua chave (se você marcar) e a fila de envio.'}
+    </p>
+  </section>`;
+}
+
+/* --------------------------------- ajuda ------------------------------- */
+function telaAjuda() {
+  return `
+  <section class="cartao">
+    <h2>Como este portal funciona</h2>
+    <div style="margin-top:10px">
+      <div class="passo"><span class="passo-num">1</span><div>
+        <strong>A tela é só a janela.</strong> Este arquivo HTML não guarda a base nem sabe quem pode ver o quê.
+        Ele pergunta ao fluxo do Power Automate, mandando a sua chave.</div></div>
+      <div class="passo"><span class="passo-num">2</span><div>
+        <strong>O fluxo é o guardião.</strong> Ele confere a chave numa lista do SharePoint, descobre quem é você
+        e devolve só as linhas da sua equipe. É lá que a segurança acontece.</div></div>
+      <div class="passo"><span class="passo-num">3</span><div>
+        <strong>A decisão volta pelo mesmo caminho.</strong> Você marca na linha, o portal envia, o fluxo grava na
+        lista e registra quem decidiu e quando.</div></div>
+      <div class="passo"><span class="passo-num">4</span><div>
+        <strong>Excel continua funcionando.</strong> Importar e exportar acontecem aqui no navegador; para a rede
+        vai só o que foi mapeado.</div></div>
+    </div>
+  </section>
+
+  <section class="cartao">
+    <h2>O que o fluxo precisa responder</h2>
+    <p class="texto-2 pequeno" style="margin-top:6px">
+      O portal manda <code>POST</code> com <code>content-type: text/plain</code> (de propósito: evita o preflight
+      que o Power Automate não responde) e um JSON no corpo. A resposta precisa do cabeçalho
+      <code>Access-Control-Allow-Origin: *</code> na ação "Resposta".
+    </p>
+    <div class="grade-2" style="margin-top:12px">
+      <div>
+        <h3>Pedido</h3>
+        <pre><code>{
+  "acao": "abrir",
+  "chave": "chave-da-pessoa"
+}</code></pre>
+      </div>
+      <div>
+        <h3>Resposta</h3>
+        <pre><code>{
+  "ok": true,
+  "usuario": { "nome": "...", "perfil": "gestor" },
+  "processo": { "nome": "...", "data_base": "2026-07-31",
+                "prazo": "2026-09-11", "aviso": "..." },
+  "colaboradores": [ { "chapa": "123", "nome": "...",
+    "diretoria": "...", "divisao": "...",
+    "gestor_imediato": "...", "cargo": "...",
+    "situacao": "ATIVO", "salario_anual": 60000,
+    "acao": "", "justificativa": "" } ]
+}</code></pre>
+      </div>
+      <div>
+        <h3>Gravar decisões</h3>
+        <pre><code>{
+  "acao": "gravar",
+  "chave": "chave-da-pessoa",
+  "decisoes": [ { "chapa": "123", "acao": "DESLIGAMENTO",
+                  "justificativa": "...", "destino": "" } ]
+}</code></pre>
+      </div>
+      <div>
+        <h3>Importar (só RH)</h3>
+        <pre><code>{
+  "acao": "importar",
+  "chave": "chave-do-rh",
+  "arquivo": "base.xlsx",
+  "linhas": [ { "chapa": "123", "nome": "..." } ]
+}</code></pre>
+      </div>
+    </div>
+    <p class="pequeno texto-3" style="margin-top:12px">
+      Em qualquer erro, responda <code>{ "ok": false, "erro": "mensagem para a pessoa" }</code> — a tela mostra a
+      mensagem como está.
+    </p>
+  </section>
+
+  <section class="cartao">
+    <h2>O que protege — e o que não protege</h2>
+    <div class="msg msg-atencao" style="margin-top:10px">
+      Um arquivo HTML aberto no computador não consegue esconder nada de quem o abre. Se este arquivo trouxesse a
+      base dentro, todo gestor veria todo mundo. Por isso ele vem vazio: quem separa é o fluxo.
+    </div>
+    <ul class="texto-2 pequeno" style="margin:10px 0 0;padding-left:18px;line-height:1.8">
+      <li><strong>A chave é uma senha.</strong> Cada pessoa recebe a dela; quem tiver a chave de alguém consegue
+        ver o que aquela pessoa vê. Trate como senha: uma por pessoa, trocada quando alguém sai.</li>
+      <li><strong>O endereço do fluxo também é segredo</strong> — ele já vem com uma assinatura dentro. Não
+        publique o arquivo com o endereço preenchido em lugar aberto.</li>
+      <li><strong>Guarde o arquivo num lugar da empresa</strong> (SharePoint ou Teams), não num site público:
+        assim só quem está no Microsoft 365 da empresa consegue abrir a tela.</li>
+      <li><strong>O histórico oficial é do fluxo.</strong> Registre no fluxo quem decidiu, o que e quando — esta
+        tela mostra só o que ela mesma enviou nesta sessão.</li>
+      <li><strong>Campos sensíveis:</strong> não devolva CPF, nascimento ou salário individual para quem não
+        precisa. O que o fluxo não manda, a tela não tem como mostrar.</li>
+    </ul>
+  </section>`;
+}
+
+/* ==================================================================
+   8. DESENHO E EVENTOS
+================================================================== */
+function desenhar() {
+  const focado = document.activeElement;
+  const marca = focado && focado.dataset
+    ? { decisao: focado.dataset.decisao, chapa: focado.dataset.chapa, filtro: focado.dataset.filtro,
+        campo: focado.dataset.campo, inicio: focado.selectionStart, fim: focado.selectionEnd }
+    : null;
+
+  raiz.innerHTML = estado.modo === 'inicio' ? telaAbertura() : moldura(({
+    painel: telaPainel,
+    colaboradores: telaColaboradores,
+    gestores: telaGestores,
+    importar: telaImportar,
+    envios: telaEnvios,
+    conexao: telaConexao,
+    ajuda: telaAjuda,
+  })[estado.tela]());
+
+  if (marca) {
+    let seletor = null;
+    if (marca.decisao) seletor = `[data-decisao="${marca.decisao}"][data-chapa="${CSS.escape(marca.chapa)}"]`;
+    else if (marca.filtro) seletor = `[data-filtro="${marca.filtro}"]`;
+    else if (marca.campo) seletor = `[data-campo="${marca.campo}"]`;
+    const alvo = seletor && raiz.querySelector(seletor);
+    if (alvo) {
+      alvo.focus();
+      if (marca.inicio != null && alvo.setSelectionRange && alvo.type !== 'checkbox') {
+        try { alvo.setSelectionRange(marca.inicio, marca.fim); } catch (erro) { /* tipo sem seleção */ }
+      }
+    }
+  }
+}
+
+/** Guarda a decisão da linha: valida, aplica na tela e manda para a fila. */
+function registrarDecisao(chapa) {
+  const pessoa = estado.colaboradores.find((p) => String(p.chapa) === String(chapa));
+  if (!pessoa) return;
+  const valores = valorDe(pessoa);
+  const falta = faltando(pessoa, valores);
+  if (falta) {
+    estado.pendentes[chapa] = true;
+    desenhar();
+    const alvo = raiz.querySelector(`[data-decisao="${falta === 'destino' ? 'destino' : 'justificativa'}"][data-chapa="${CSS.escape(String(chapa))}"]`);
+    if (alvo) alvo.focus();
+    return;
+  }
+  delete estado.pendentes[chapa];
+  enfileirar(pessoa, valores);
+  desenhar();
+  void enviarFila(false);
+}
+
+function atualizarRascunho(chapa, campo, valor) {
+  const pessoa = estado.colaboradores.find((p) => String(p.chapa) === String(chapa));
+  if (!pessoa) return;
+  const atual = valorDe(pessoa);
+  estado.rascunhos[chapa] = { ...atual, [campo]: valor };
+}
+
+/* ------------------------------ exportação ----------------------------- */
+function exportar() {
+  const lista = listaFiltrada();
+  const cabecalho = ['Matrícula', 'Nome', 'Cargo', 'Diretoria', 'Divisão', 'Gestor imediato', 'Situação',
+    'Salário anual', 'Estabilidade', 'Ação Indicada', 'Destino', 'Justificativa', 'Situação da decisão',
+    'Preenchido por', 'Preenchido em', 'Alertas'];
+  const linhas = [cabecalho];
+  for (const pessoa of lista) {
+    const valores = valorDe(pessoa);
+    const naFila = estado.fila.some((i) => String(i.chapa) === String(pessoa.chapa));
+    linhas.push([
+      pessoa.chapa, pessoa.nome, pessoa.cargo, pessoa.diretoria, pessoa.divisao, pessoa.gestor_imediato,
+      pessoa.situacao, numeroDe(pessoa.salario_anual) || null, pessoa.estabilidade,
+      valores.acao, valores.destino, valores.justificativa,
+      valores.acao ? (naFila ? 'aguardando envio' : 'registrada') : 'sem decisão',
+      pessoa.atualizado_por, fmtDataHora(pessoa.atualizado_em),
+      alertasDe(pessoa).map((a) => a.mensagem).join(' | '),
+    ]);
+  }
+
+  const comDecisao = lista.filter((p) => valorDe(p).acao).length;
+  const resumo = [
+    ['Indicador', 'Valor'],
+    ['Processo', estado.processo.nome || ''],
+    ['Data-base', fmtData(estado.processo.data_base)],
+    ['Prazo', fmtData(estado.processo.prazo)],
+    ['Gerado em', new Date().toLocaleString('pt-BR')],
+    ['Gerado por', (estado.usuario && estado.usuario.nome) || ''],
+    ['Colaboradores no recorte', lista.length],
+    ['Com decisão', comDecisao],
+    ['Sem decisão', lista.length - comDecisao],
+    [null, null],
+    ['Ação Indicada', 'Quantidade'],
+    ...estado.acoes.map((a) => [a.valor, lista.filter((p) => valorDe(p).acao === a.valor).length]),
+  ];
+
+  const abas = [
+    { nome: 'Resumo', linhas: resumo },
+    { nome: 'Base Decisões', linhas, opcoes: { colunaLista: 10, opcoesLista: estado.acoes.map((a) => a.valor) } },
+  ];
+  if (estado.envios.length) {
+    abas.push({
+      nome: 'Enviado nesta sessão',
+      linhas: [['Enviado em', 'Matrícula', 'Nome', 'Ação', 'Justificativa', 'Destino']]
+        .concat(estado.envios.map((i) => [fmtDataHora(i.enviado_em), i.chapa, i.nome, i.acao, i.justificativa, i.destino])),
+    });
+  }
+  baixar(montarXlsx(abas), `decisoes-${new Date().toISOString().slice(0, 10)}.xlsx`);
+  toast('Planilha gerada.');
+}
+
+/* ------------------------------ importação ----------------------------- */
+function nomearColunas(linha) {
+  const usados = new Map();
+  return (linha || []).map((bruto, indice) => {
+    const rotulo = String(bruto == null ? '' : bruto).trim() || `Coluna ${indice + 1}`;
+    const vezes = (usados.get(rotulo) || 0) + 1;
+    usados.set(rotulo, vezes);
+    return vezes === 1 ? rotulo : `${rotulo} (${vezes})`;
+  });
+}
+
+function sugerirMapa(colunas) {
+  const mapa = {};
+  const tomados = new Set();
+  for (const coluna of colunas) {
+    const alvo = semAcento(coluna).replace(/[^a-z0-9]+/g, '');
+    const achado = CAMPOS_DESTINO.find(([chave, rotulo]) => !tomados.has(chave)
+      && (semAcento(rotulo).replace(/[^a-z0-9]+/g, '') === alvo || chave.replace(/_/g, '') === alvo
+        || (chave === 'chapa' && alvo === 'chapa') || (chave === 'salario_anual' && alvo === 'salarioanual')
+        || (chave === 'gestor_imediato' && alvo === 'gestorimediato')
+        || (chave === 'cargo' && alvo === 'descargo')
+        || (chave === 'acao' && alvo === 'acaoindicada')));
+    if (achado) { mapa[coluna] = achado[0]; tomados.add(achado[0]); }
+  }
+  return mapa;
+}
+
+function prepararAba(nome) {
+  const aba = importacao.abas.find((a) => a.nome === nome) || importacao.abas[0];
+  importacao.aba = aba.nome;
+  let melhor = 0;
+  let contagem = 0;
+  for (let i = 0; i < Math.min(aba.linhas.length, 15); i += 1) {
+    const total = (aba.linhas[i] || []).filter((c) => String(c == null ? '' : c).trim()).length;
+    if (total > contagem) { contagem = total; melhor = i; }
+  }
+  importacao.cabecalho = melhor + 1;
+  importacao.colunas = nomearColunas(aba.linhas[melhor]);
+  importacao.mapa = sugerirMapa(importacao.colunas);
+  importacao.previa = aba.linhas.slice(melhor + 1, melhor + 4);
+}
+
+async function abrirArquivo(arquivo) {
+  try {
+    const { abas } = await lerPlanilha(arquivo);
+    importacao.arquivo = arquivo.name;
+    importacao.abas = abas;
+    prepararAba(abas[0].nome);
+    desenhar();
+  } catch (erro) {
+    toast(erro.message, 'erro');
+  }
+}
+
+async function enviarImportacao() {
+  const aba = importacao.abas.find((a) => a.nome === importacao.aba);
+  if (!aba) return;
+  const usadas = Object.entries(importacao.mapa).filter(([, destino]) => destino);
+  if (!usadas.some(([, destino]) => destino === 'chapa')) {
+    toast('Indique qual coluna tem a matrícula (CHAPA).', 'erro');
+    return;
+  }
+  const linhas = aba.linhas.slice(importacao.cabecalho).map((celulas) => {
+    const registro = {};
+    for (const [coluna, destino] of usadas) {
+      const indice = importacao.colunas.indexOf(coluna);
+      registro[destino] = indice >= 0 ? String(celulas[indice] == null ? '' : celulas[indice]).trim() : '';
+    }
+    return registro;
+  }).filter((registro) => String(registro.chapa || '').trim());
+
+  if (!linhas.length) { toast('Nenhuma linha com matrícula foi encontrada.', 'erro'); return; }
+
+  if (estado.modo === 'demo') {
+    estado.colaboradores = linhas.map((linha) => normalizarPessoa(linha));
+    importacao.abas = [];
+    estado.tela = 'colaboradores';
+    toast(`Demonstração: ${fmtNumero(linhas.length)} linha(s) carregadas só neste navegador.`);
+    desenhar();
+    return;
+  }
+
+  estado.carregando = true;
+  desenhar();
+  try {
+    const resposta = await chamarFluxo('importar', { arquivo: importacao.arquivo, linhas });
+    importacao.abas = [];
+    toast(`Enviado: ${fmtNumero(resposta.novos || 0)} novo(s), ${fmtNumero(resposta.alterados || 0)} atualizado(s).`);
+    estado.tela = 'colaboradores';
+    await abrirPeloFluxo();
+  } catch (erro) {
+    toast(erro.message, 'erro');
+  } finally {
+    estado.carregando = false;
+    desenhar();
+  }
+}
+
+/* -------------------------------- eventos ------------------------------ */
+raiz.addEventListener('click', (evento) => {
+  const alvoTela = evento.target.closest('[data-tela]');
+  if (alvoTela) { estado.tela = alvoTela.dataset.tela; desenhar(); return; }
+
+  const alvo = evento.target.closest('[data-acao]');
+  if (!alvo) return;
+  const acao = alvo.dataset.acao;
+
+  if (acao === 'conectar') { void abrirPeloFluxo(); }
+  else if (acao === 'demonstracao') { abrirDemonstracao(); }
+  else if (acao === 'sair') { sair(); }
+  else if (acao === 'tema') {
+    const atual = document.documentElement.dataset.tema;
+    const novo = atual === 'escuro' ? 'claro' : 'escuro';
+    document.documentElement.dataset.tema = novo;
+    guardar('portal-decisoes-tema', novo);
+  } else if (acao === 'exportar') { exportar(); }
+  else if (acao === 'reenviar') { estado.ultimoErro = ''; void enviarFila(false); }
+  else if (acao === 'esquecer') {
+    try { localStorage.removeItem(CHAVE_CONEXAO); } catch (erro) { /* sem storage */ }
+    conexao.url = ''; conexao.chave = '';
+    toast('Endereço e chave apagados deste computador.');
+    sair();
+  } else if (acao === 'filtrar-gestor') {
+    estado.filtros.gestor = alvo.dataset.gestor;
+    estado.tela = 'colaboradores';
+    desenhar();
+  } else if (acao === 'cancelar-import') { importacao.abas = []; desenhar(); }
+  else if (acao === 'enviar-import') { void enviarImportacao(); }
+});
+
+raiz.addEventListener('change', (evento) => {
+  const alvo = evento.target;
+
+  if (alvo.dataset.acao === 'arquivo' && alvo.files && alvo.files[0]) { void abrirArquivo(alvo.files[0]); return; }
+  if (alvo.dataset.acao === 'trocar-aba') { prepararAba(alvo.value); desenhar(); return; }
+  if (alvo.dataset.acao === 'trocar-cabecalho') {
+    const aba = importacao.abas.find((a) => a.nome === importacao.aba);
+    const numero = Math.max(1, Number(alvo.value) || 1);
+    importacao.cabecalho = numero;
+    importacao.colunas = nomearColunas(aba.linhas[numero - 1]);
+    importacao.mapa = sugerirMapa(importacao.colunas);
+    importacao.previa = aba.linhas.slice(numero, numero + 3);
+    desenhar();
+    return;
+  }
+  if (alvo.dataset.mapa) {
+    importacao.mapa = { ...importacao.mapa, [alvo.dataset.mapa]: alvo.value };
+    return;
+  }
+  if (alvo.dataset.decisao) {
+    atualizarRascunho(alvo.dataset.chapa, alvo.dataset.decisao, alvo.value);
+    registrarDecisao(alvo.dataset.chapa);
+    return;
+  }
+  if (alvo.dataset.filtro) {
+    estado.filtros[alvo.dataset.filtro] = alvo.type === 'checkbox' ? alvo.checked : alvo.value;
+    if (alvo.dataset.filtro === 'diretoria') estado.filtros.divisao = '';
+    desenhar();
+    return;
+  }
+  if (alvo.dataset.campo) {
+    conexao[alvo.dataset.campo] = alvo.type === 'checkbox' ? alvo.checked : alvo.value.trim();
+    if (conexao.lembrar) guardar(CHAVE_CONEXAO, conexao);
+  }
+});
+
+let relogioBusca = null;
+raiz.addEventListener('input', (evento) => {
+  const alvo = evento.target;
+  if (alvo.dataset.decisao) { atualizarRascunho(alvo.dataset.chapa, alvo.dataset.decisao, alvo.value); return; }
+  if (alvo.dataset.campo) { conexao[alvo.dataset.campo] = alvo.value.trim(); return; }
+  if (alvo.dataset.filtro === 'busca') {
+    estado.filtros.busca = alvo.value;
+    clearTimeout(relogioBusca);
+    relogioBusca = setTimeout(desenhar, 280);
+  }
+});
+
+// Enter dentro da justificativa/destino grava sem precisar sair do campo
+raiz.addEventListener('keydown', (evento) => {
+  if (evento.key === 'Enter' && evento.target.dataset && evento.target.dataset.decisao) {
+    evento.preventDefault();
+    atualizarRascunho(evento.target.dataset.chapa, evento.target.dataset.decisao, evento.target.value);
+    registrarDecisao(evento.target.dataset.chapa);
+  }
+});
+
+// A fila tenta sair de novo quando a rede volta
+window.addEventListener('online', () => { if (estado.modo === 'fluxo' && estado.fila.length) void enviarFila(true); });
+
+window.addEventListener('beforeunload', (evento) => {
+  if (estado.fila.length && estado.modo === 'fluxo') {
+    evento.preventDefault();
+    evento.returnValue = '';
+  }
+});
+
+/* --------------------------------- início ------------------------------ */
+const temaSalvo = recuperar('portal-decisoes-tema', '');
+if (temaSalvo) document.documentElement.dataset.tema = temaSalvo;
+
+desenhar();
+if (conexao.url && conexao.chave) void abrirPeloFluxo();
+})();
+</script>
+</body>
+</html>
