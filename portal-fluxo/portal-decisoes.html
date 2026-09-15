@@ -141,6 +141,28 @@ thead th {
 tbody tr:hover td { background: var(--superficie-2); }
 td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
 td.vazio { text-align: center; color: var(--texto-3); padding: 26px; }
+/* com o modelo inteiro à vista, matrícula e nome ficam presos na rolagem lateral */
+th.fixa, td.fixa { position: sticky; z-index: 3; background: var(--superficie); }
+thead th.fixa { z-index: 4; background: var(--superficie-2); }
+.fixa-1 { left: 0; }
+.fixa-2 { left: 96px; box-shadow: 1px 0 0 var(--borda); }
+tbody tr:hover td.fixa { background: var(--superficie-2); }
+
+.ficha-fundo {
+  position: fixed; inset: 0; background: rgba(12, 14, 18, .45); z-index: 60;
+  display: flex; justify-content: flex-end;
+}
+.ficha {
+  width: min(560px, 100%); background: var(--fundo); height: 100%; overflow: auto;
+  border-left: 1px solid var(--borda); display: flex; flex-direction: column;
+}
+.ficha-topo {
+  display: flex; gap: 12px; align-items: flex-start; justify-content: space-between;
+  padding: 16px; background: var(--superficie); border-bottom: 1px solid var(--borda);
+  position: sticky; top: 0; z-index: 2;
+}
+.ficha-corpo { padding: 16px; }
+
 .celula-decisao { display: block; min-width: 190px; }
 .celula-decisao.preenchida { border-color: var(--acento); }
 .celula-decisao.exigida { border-color: var(--desligamento); background: color-mix(in srgb, var(--desligamento) 7%, transparent); }
@@ -532,6 +554,76 @@ async function chamarFluxo(acao, dados) {
 }
 
 /* ==================================================================
+   3-A. O MODELO DA PLANILHA
+
+   Estas são as colunas da base do processo, na ordem em que aparecem no
+   arquivo. O portal carrega TODAS — e o que vier além disso também é
+   mantido, com o nome que veio.
+================================================================== */
+const CATALOGO = [
+  { chave: "concatenar", rotulo: "CONCATENAR", tipo: "texto", grupo: "Controle" },
+  { chave: "competencia", rotulo: "COMPETENCIA", tipo: "texto", grupo: "Controle" },
+  { chave: "area_ajustada", rotulo: "ÁREA AJUSTADA", tipo: "texto", grupo: "Organização" },
+  { chave: "filial", rotulo: "FILIAL", tipo: "texto", grupo: "Organização" },
+  { chave: "emp_cod", rotulo: "EMP_COD", tipo: "texto", grupo: "Controle" },
+  { chave: "fil_cod", rotulo: "FIL_COD", tipo: "texto", grupo: "Controle" },
+  { chave: "diretoria", rotulo: "DIRETORIA", tipo: "texto", grupo: "Organização", lista: 1 },
+  { chave: "divisao", rotulo: "DIVISAO", tipo: "texto", grupo: "Organização", lista: 1 },
+  { chave: "gestor_imediato", rotulo: "GESTOR IMEDIATO", tipo: "texto", grupo: "Organização", lista: 1 },
+  { chave: "departamento", rotulo: "DEPARTAMENTO", tipo: "texto", grupo: "Organização" },
+  { chave: "uorg_cod", rotulo: "UORG_COD", tipo: "texto", grupo: "Controle" },
+  { chave: "des_uo", rotulo: "DES_UO", tipo: "texto", grupo: "Organização" },
+  { chave: "nome", rotulo: "NOME", tipo: "texto", grupo: "Identificação", lista: 1 },
+  { chave: "chapa", rotulo: "CHAPA", tipo: "texto", grupo: "Identificação", lista: 1 },
+  { chave: "pessoa_fisica", rotulo: "PESSOA_FISICA", tipo: "texto", grupo: "Identificação", sensivel: 1 },
+  { chave: "cpf", rotulo: "CPF", tipo: "texto", grupo: "Identificação", sensivel: 1 },
+  { chave: "cjca_cod", rotulo: "CJCA_COD", tipo: "texto", grupo: "Cargo" },
+  { chave: "des_conjunto_cargo", rotulo: "DES_CONJUNTO_CARGO", tipo: "texto", grupo: "Cargo" },
+  { chave: "car_cod", rotulo: "CAR_COD", tipo: "texto", grupo: "Cargo" },
+  { chave: "des_cargo", rotulo: "DES_CARGO", tipo: "texto", grupo: "Cargo", lista: 1 },
+  { chave: "segmento", rotulo: "SEGMENTO", tipo: "texto", grupo: "Organização" },
+  { chave: "tur_cod", rotulo: "TUR_COD", tipo: "texto", grupo: "Cargo" },
+  { chave: "mo", rotulo: "MO", tipo: "texto", grupo: "Cargo" },
+  { chave: "natureza", rotulo: "NATUREZA", tipo: "texto", grupo: "Cargo" },
+  { chave: "situacao", rotulo: "SITUACAO", tipo: "texto", grupo: "Situação", lista: 1 },
+  { chave: "dt_admissao", rotulo: "DT_ADMISSAO", tipo: "data", grupo: "Situação" },
+  { chave: "tempo_casa", rotulo: "TEMPO_CASA", tipo: "numero", grupo: "Situação" },
+  { chave: "idade", rotulo: "IDADE", tipo: "numero", grupo: "Situação" },
+  { chave: "dt_nasc", rotulo: "DT_NASC", tipo: "data", grupo: "Situação", sensivel: 1 },
+  { chave: "dt_aposentadoria", rotulo: "DT_APOSENTADORIA", tipo: "data", grupo: "Situação" },
+  { chave: "tipo_invalidez", rotulo: "TIPO_INVALIDEZ", tipo: "texto", grupo: "Situação" },
+  { chave: "horario", rotulo: "HORARIO", tipo: "texto", grupo: "Cargo" },
+  { chave: "hrs_teor_mes", rotulo: "HRS_TEOR_MES", tipo: "numero", grupo: "Cargo" },
+  { chave: "tsal_cod", rotulo: "TSAL_COD", tipo: "texto", grupo: "Remuneração" },
+  { chave: "fxsl_cod", rotulo: "FXSL_COD", tipo: "texto", grupo: "Remuneração" },
+  { chave: "salario", rotulo: "SALARIO", tipo: "moeda", grupo: "Remuneração" },
+  { chave: "evento_grat", rotulo: "EVENTO_GRAT", tipo: "moeda", grupo: "Remuneração" },
+  { chave: "perc_grat", rotulo: "PERC_GRAT", tipo: "numero", grupo: "Remuneração" },
+  { chave: "salario_total", rotulo: "SALARIO_TOTAL", tipo: "moeda", grupo: "Remuneração", lista: 1 },
+  { chave: "vlr_mediana", rotulo: "VLR_MEDIANA", tipo: "moeda", grupo: "Remuneração" },
+  { chave: "prm", rotulo: "PRM", tipo: "moeda", grupo: "Remuneração" },
+  { chave: "avaliacao_performar", rotulo: "DATA E NOTA ÚLTIMA AVALIAÇÃO PERFORMAR REGISTRADA", tipo: "texto", grupo: "Desempenho", lista: 1 },
+  { chave: "centro_custo_sap", rotulo: "CENTRO DE CUSTO_SAP", tipo: "texto", grupo: "Remuneração" },
+  { chave: "estabilidade", rotulo: "ESTABILIDADE", tipo: "texto", grupo: "Estabilidade", lista: 1 },
+  { chave: "data_fim_estabilidade", rotulo: "DATA FIM ESTABILIDADE", tipo: "data", grupo: "Estabilidade", lista: 1 },
+  { chave: "salario_anual", rotulo: "SALÁRIO ANUAL", tipo: "moeda", grupo: "Remuneração", soma: 1 },
+  { chave: "acao", rotulo: "AÇÃO INDICADA", tipo: "lista", grupo: "Decisão", lista: 1, decisao: 1 },
+  { chave: "destino", rotulo: "EM CASO DE TRANSFERÊNCIA, INDICAR PARA ONDE (SETOR/ÁREA/Nº PROCESSO)", tipo: "texto", grupo: "Decisão", decisao: 1 },
+  { chave: "justificativa", rotulo: "JUSTIFICATIVA", tipo: "texto", grupo: "Decisão", lista: 1, decisao: 1 },
+];
+
+const POR_CHAVE = new Map(CATALOGO.map((c) => [c.chave, c]));
+const chaveNormalizada = (texto) => String(texto == null ? '' : texto)
+  .normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase().replace(/[^a-z0-9]+/g, '');
+const POR_ROTULO = new Map(CATALOGO.map((c) => [chaveNormalizada(c.rotulo), c.chave]));
+for (const campo of CATALOGO) POR_ROTULO.set(chaveNormalizada(campo.chave), campo.chave);
+
+/** Rótulo de uma coluna: o do modelo quando existe, senão o nome que veio. */
+const rotuloDe = (chave) => (POR_CHAVE.get(chave) ? POR_CHAVE.get(chave).rotulo : chave);
+const tipoDe = (chave) => (POR_CHAVE.get(chave) ? POR_CHAVE.get(chave).tipo : 'texto');
+const COLUNAS_PADRAO = CATALOGO.filter((c) => c.lista && !c.decisao).map((c) => c.chave);
+
+/* ==================================================================
    3. DADOS DE DEMONSTRAÇÃO — fictícios, para ver a tela funcionando
 ================================================================== */
 const ACOES_PADRAO = [
@@ -562,27 +654,59 @@ function baseDeDemonstracao() {
     'Isabela Fontes Ramos', 'João Vitor Almeida', 'Karina Duarte Neves', 'Leonardo Pires Matos',
     'Mariana Esteves Cruz', 'Nelson Aguiar Braga', 'Olívia Marques Teles', 'Paulo Renato Vieira'];
   const estrutura = [
-    ['DIRETORIA INDUSTRIAL', 'DIVISAO PRODUCAO', 'Marcos Vilela Antunes'],
-    ['DIRETORIA INDUSTRIAL', 'DIVISAO MANUTENCAO', 'Marcos Vilela Antunes'],
-    ['DIRETORIA COMERCIAL', 'DIVISAO VENDAS', 'Patrícia Lemos Farias'],
-    ['DIRETORIA ADMINISTRATIVA', 'DIVISAO FINANCEIRO', 'Rogério Sales Pontes'],
+    ['DIRETORIA INDUSTRIAL', 'DIVISAO PRODUCAO', 'PRODUCAO', 'Marcos Vilela Antunes'],
+    ['DIRETORIA INDUSTRIAL', 'DIVISAO MANUTENCAO', 'MANUTENCAO', 'Marcos Vilela Antunes'],
+    ['DIRETORIA COMERCIAL', 'DIVISAO VENDAS', 'COMERCIAL', 'Patrícia Lemos Farias'],
+    ['DIRETORIA ADMINISTRATIVA', 'DIVISAO FINANCEIRO', 'FINANCEIRO', 'Rogério Sales Pontes'],
   ];
   const cargos = ['ANALISTA I', 'ANALISTA II', 'COORDENADOR', 'ESPECIALISTA', 'OPERADOR II', 'SUPERVISOR'];
+  const naturezas = ['ADMINISTRATIVO', 'OPERACIONAL', 'GERENCIA', 'TECNICO'];
+
   return nomes.map((nome, indice) => {
-    const [diretoria, divisao, gestor] = estrutura[indice % estrutura.length];
-    const salario = 42000 + ((indice * 7717) % 78000);
+    const [diretoria, divisao, departamento, gestor] = estrutura[indice % estrutura.length];
+    const salario = 3500 + ((indice * 977) % 9000);
+    const total = Math.round(salario * 1.1);
+    const admissao = `20${13 + (indice % 12)}-0${1 + (indice % 9)}-1${indice % 9}`;
     return {
-      chapa: 'DEMO' + (1000 + indice),
+      concatenar: `${diretoria}-${divisao}`,
+      competencia: '07/2026',
+      area_ajustada: departamento,
+      filial: indice % 3 === 0 ? 'FILIAL 02' : 'MATRIZ',
+      emp_cod: '001',
+      fil_cod: indice % 3 === 0 ? '02' : '01',
+      diretoria, divisao, gestor_imediato: gestor, departamento,
+      uorg_cod: String(4000 + indice),
+      des_uo: `${departamento} ${1 + (indice % 3)}`,
       nome,
-      diretoria,
-      divisao,
-      gestor_imediato: gestor,
-      cargo: cargos[indice % cargos.length],
+      chapa: 'DEMO' + (1000 + indice),
+      pessoa_fisica: '', cpf: '',
+      cjca_cod: 'CJ' + (10 + (indice % 7)),
+      des_conjunto_cargo: 'CONJUNTO ' + (1 + (indice % 4)),
+      car_cod: 'C' + (100 + indice),
+      des_cargo: cargos[indice % cargos.length],
+      segmento: indice % 2 ? 'INDUSTRIA' : 'SERVICOS',
+      tur_cod: 'T' + (1 + (indice % 3)),
+      mo: indice % 2 ? 'DIRETA' : 'INDIRETA',
+      natureza: naturezas[indice % naturezas.length],
       situacao: indice % 7 === 3 ? 'AFASTADO' : 'ATIVO',
-      salario_anual: salario,
+      dt_admissao: admissao,
+      tempo_casa: 2026 - Number(admissao.slice(0, 4)),
+      idade: 26 + ((indice * 3) % 30),
+      dt_nasc: '', dt_aposentadoria: indice % 9 === 4 ? '2028-05-20' : '',
+      tipo_invalidez: '',
+      horario: 'ADM 08-18', hrs_teor_mes: 220,
+      tsal_cod: 'M', fxsl_cod: 'F' + (1 + (indice % 5)),
+      salario,
+      evento_grat: indice % 5 === 0 ? 800 : 0,
+      perc_grat: indice % 5 === 0 ? 20 : 0,
+      salario_total: total,
+      vlr_mediana: Math.round(total * 0.96),
+      prm: Math.round(total * 0.08),
+      avaliacao_performar: `2025 - ${(3 + (indice % 20) / 10).toFixed(1).replace('.', ',')}`,
+      centro_custo_sap: 'CC' + (500 + (indice % 12)),
       estabilidade: indice % 6 === 0 ? 'CIPA' : '',
       data_fim_estabilidade: indice % 6 === 0 ? '2027-04-30' : '',
-      tipo_invalidez: '',
+      salario_anual: total * 13,
       acao: '', justificativa: '', destino: '', status: 'pendente',
       atualizado_por: '', atualizado_em: '',
     };
@@ -606,6 +730,9 @@ const estado = {
   enviando: false,
   envios: [],                // o que esta máquina mandou nesta sessão
   tela: 'colaboradores',
+  colunas: recuperar('portal-decisoes-colunas', null),  // null = usa o padrão do modelo
+  ficha: null,                                          // matrícula da ficha completa aberta
+  escolherColunas: false,
   filtros: { busca: '', diretoria: '', divisao: '', gestor: '', status: '', acao: '', alerta: false },
   ultimoErro: '',
 };
@@ -749,32 +876,36 @@ async function enviarFila(silencioso) {
 /* ==================================================================
    6. ABRIR: pede ao fluxo a base daquela pessoa
 ================================================================== */
+/**
+ * Traz a linha inteira: as colunas do modelo ganham o nome padrão e qualquer
+ * coluna a mais é mantida como veio. Nada da planilha é descartado.
+ */
 function normalizarPessoa(linha) {
-  const pegar = (...nomes) => {
-    for (const nome of nomes) {
-      if (linha[nome] !== undefined && linha[nome] !== null && linha[nome] !== '') return linha[nome];
-    }
-    return '';
-  };
-  return {
-    chapa: String(pegar('chapa', 'CHAPA', 'Chapa', 'matricula', 'Matricula')),
-    nome: String(pegar('nome', 'NOME', 'Nome')),
-    diretoria: String(pegar('diretoria', 'DIRETORIA', 'Diretoria')),
-    divisao: String(pegar('divisao', 'DIVISAO', 'Divisao', 'Divisão')),
-    gestor_imediato: String(pegar('gestor_imediato', 'GESTOR IMEDIATO', 'GestorImediato', 'gestor')),
-    cargo: String(pegar('cargo', 'des_cargo', 'DES_CARGO', 'Cargo')),
-    situacao: String(pegar('situacao', 'SITUACAO', 'Situacao', 'Situação')),
-    salario_anual: numeroDe(pegar('salario_anual', 'SALARIO ANUAL', 'SALÁRIO ANUAL', 'SalarioAnual')),
-    estabilidade: String(pegar('estabilidade', 'ESTABILIDADE', 'Estabilidade')),
-    data_fim_estabilidade: String(pegar('data_fim_estabilidade', 'DATA FIM ESTABILIDADE', 'DataFimEstabilidade')),
-    tipo_invalidez: String(pegar('tipo_invalidez', 'TIPO_INVALIDEZ')),
-    acao: String(pegar('acao', 'AÇÃO INDICADA', 'Acao', 'decisao')),
-    justificativa: String(pegar('justificativa', 'JUSTIFICATIVA', 'Justificativa')),
-    destino: String(pegar('destino', 'Destino')),
-    status: String(pegar('status', 'Status')) || 'pendente',
-    atualizado_por: String(pegar('atualizado_por', 'AtualizadoPor')),
-    atualizado_em: String(pegar('atualizado_em', 'AtualizadoEm')),
-  };
+  const pessoa = {};
+  for (const [nome, valor] of Object.entries(linha || {})) {
+    const chave = POR_ROTULO.get(chaveNormalizada(nome)) || nome;
+    if (pessoa[chave] === undefined || pessoa[chave] === '' || pessoa[chave] === null) pessoa[chave] = valor;
+  }
+  // os campos de que a tela precisa existem sempre, nem que vazios
+  for (const chave of ['chapa', 'nome', 'acao', 'justificativa', 'destino', 'status',
+    'atualizado_por', 'atualizado_em']) {
+    if (pessoa[chave] === undefined || pessoa[chave] === null) pessoa[chave] = '';
+  }
+  pessoa.chapa = String(pessoa.chapa).trim();
+  pessoa.status = pessoa.status || 'pendente';
+  return pessoa;
+}
+
+/** Todas as colunas presentes na base carregada, na ordem do modelo. */
+function colunasDaBase() {
+  const presentes = new Set();
+  for (const pessoa of estado.colaboradores) {
+    for (const chave of Object.keys(pessoa)) presentes.add(chave);
+  }
+  const internas = new Set(['status', 'atualizado_por', 'atualizado_em']);
+  const doModelo = CATALOGO.filter((c) => presentes.has(c.chave) && !c.decisao).map((c) => c.chave);
+  const extras = [...presentes].filter((c) => !POR_CHAVE.has(c) && !internas.has(c)).sort();
+  return { doModelo, extras, todas: doModelo.concat(extras) };
 }
 
 async function abrirPeloFluxo() {
@@ -973,58 +1104,133 @@ function listaFiltrada() {
 const valoresUnicos = (chave) => [...new Set(estado.colaboradores.map((p) => p[chave]).filter(Boolean))]
   .sort((a, b) => String(a).localeCompare(String(b), 'pt-BR'));
 
+const colunasVisiveis = () => {
+  const { todas } = colunasDaBase();
+  const escolhidas = estado.colunas;
+  if (!escolhidas) return todas.filter((c) => COLUNAS_PADRAO.includes(c));
+  return todas.filter((c) => escolhidas.includes(c));
+};
+
+/** Painel para escolher quais colunas da base aparecem na lista. */
+function painelColunas() {
+  const { doModelo, extras } = colunasDaBase();
+  const visiveis = colunasVisiveis();
+  const grupos = new Map();
+  for (const chave of doModelo) {
+    const grupo = (POR_CHAVE.get(chave) || {}).grupo || 'Outros';
+    if (!grupos.has(grupo)) grupos.set(grupo, []);
+    grupos.get(grupo).push(chave);
+  }
+  if (extras.length) grupos.set('Colunas a mais da sua planilha', extras);
+
+  const caixa = (chave) => `
+    <label class="pequeno" style="display:flex;gap:6px;align-items:flex-start;padding:2px 0">
+      <input type="checkbox" data-coluna="${escapar(chave)}" ${visiveis.includes(chave) ? 'checked' : ''} style="width:auto;margin-top:3px">
+      <span>${escapar(rotuloDe(chave))}</span>
+    </label>`;
+
+  return `
+  <section class="cartao">
+    <div class="linha" style="margin-bottom:10px">
+      <h2>Colunas da lista <span class="dica">— ${visiveis.length} de ${doModelo.length + extras.length} visíveis</span></h2>
+      <span class="espaco"></span>
+      <button class="btn btn-pequeno" data-acao="colunas-padrao">Voltar ao padrão</button>
+      <button class="btn btn-pequeno" data-acao="colunas-todas">Marcar todas</button>
+      <button class="btn btn-pequeno" data-acao="colunas-nenhuma">Desmarcar todas</button>
+      <button class="btn btn-pequeno btn-primario" data-acao="fechar-colunas">Pronto</button>
+    </div>
+    <div class="grade-2">
+      ${[...grupos.entries()].map(([grupo, chaves]) => `
+        <div>
+          <h3 style="margin-bottom:4px">${escapar(grupo)}</h3>
+          ${chaves.map(caixa).join('')}
+        </div>`).join('')}
+    </div>
+  </section>`;
+}
+
+/** Ficha completa: a linha inteira da planilha, agrupada como no arquivo. */
+function fichaCompleta() {
+  const pessoa = estado.colaboradores.find((p) => String(p.chapa) === String(estado.ficha));
+  if (!pessoa) return '';
+  const { doModelo, extras } = colunasDaBase();
+  const grupos = new Map();
+  for (const chave of doModelo) {
+    const grupo = (POR_CHAVE.get(chave) || {}).grupo || 'Outros';
+    if (!grupos.has(grupo)) grupos.set(grupo, []);
+    grupos.get(grupo).push(chave);
+  }
+  if (extras.length) grupos.set('Colunas a mais da sua planilha', extras);
+
+  const valores = valorDe(pessoa);
+  const alertas = alertasDe(pessoa);
+
+  const celula = (chave) => {
+    const valor = pessoa[chave];
+    const tipo = tipoDe(chave);
+    const texto = valor === '' || valor === null || valor === undefined ? '—'
+      : tipo === 'moeda' ? fmtMoeda(numeroDe(valor))
+      : tipo === 'data' ? fmtData(valor)
+      : tipo === 'numero' ? fmtNumero(numeroDe(valor))
+      : String(valor);
+    return `
+      <div style="display:grid;grid-template-columns:minmax(120px,42%) 1fr;gap:10px;padding:4px 0;border-bottom:1px solid var(--borda)">
+        <span class="pequeno texto-3">${escapar(rotuloDe(chave))}</span>
+        <span class="pequeno">${escapar(texto)}</span>
+      </div>`;
+  };
+
+  return `
+  <div class="ficha-fundo" data-acao="fechar-ficha">
+    <div class="ficha" role="dialog" aria-modal="true">
+      <div class="ficha-topo">
+        <div>
+          <h2>${escapar(pessoa.nome || '(sem nome)')}</h2>
+          <div class="pequeno texto-3">matrícula ${escapar(pessoa.chapa)} · ${escapar(pessoa.des_cargo || pessoa.cargo || '')}</div>
+        </div>
+        <button class="btn btn-pequeno" data-acao="fechar-ficha">Fechar</button>
+      </div>
+      <div class="ficha-corpo">
+        ${alertas.length ? `<div class="msg msg-atencao">${alertas.map((a) => escapar(a.mensagem)).join('<br>')}</div>` : ''}
+        <div class="cartao" style="margin-bottom:12px">
+          <h3>Decisão</h3>
+          <div class="linha" style="margin-top:8px">
+            <div class="campo" style="flex:1;min-width:200px">
+              <label>Ação indicada</label>
+              <select data-decisao="acao" data-chapa="${escapar(pessoa.chapa)}">
+                <option value="">— sem decisão —</option>
+                ${estado.acoes.map((a) => `<option value="${escapar(a.valor)}"${valores.acao === a.valor ? ' selected' : ''}>${escapar(a.valor)}</option>`).join('')}
+              </select>
+            </div>
+            ${(acaoInfo(valores.acao) || {}).exige_destino ? `<div class="campo" style="flex:1;min-width:200px">
+              <label>Destino</label>
+              <input data-decisao="destino" data-chapa="${escapar(pessoa.chapa)}" value="${escapar(valores.destino)}">
+            </div>` : ''}
+          </div>
+          <div class="campo" style="margin-top:10px">
+            <label>Justificativa</label>
+            <textarea data-decisao="justificativa" data-chapa="${escapar(pessoa.chapa)}">${escapar(valores.justificativa)}</textarea>
+          </div>
+        </div>
+        ${[...grupos.entries()].map(([grupo, chaves]) => `
+          <div class="cartao" style="margin-bottom:12px">
+            <h3>${escapar(grupo)}</h3>
+            <div style="margin-top:6px">${chaves.map(celula).join('')}</div>
+          </div>`).join('')}
+      </div>
+    </div>
+  </div>`;
+}
+
 function telaColaboradores() {
-  const lista = listaFiltrada();
+  if (estado.escolherColunas) return painelColunas() + listaTabela();
+  return filtrosLista() + listaTabela();
+}
+
+function filtrosLista() {
   const opcoes = (valores, atual) => valores.map((v) =>
     `<option value="${escapar(v)}"${atual === v ? ' selected' : ''}>${escapar(v)}</option>`).join('');
-
-  const linhas = lista.map((pessoa) => {
-    const valores = valorDe(pessoa);
-    const info = acaoInfo(valores.acao);
-    const alertas = alertasDe(pessoa);
-    const falta = estado.pendentes[pessoa.chapa] ? faltando(pessoa, valores) : null;
-    const naFila = estado.fila.some((i) => String(i.chapa) === String(pessoa.chapa));
-    const status = valores.acao ? (naFila ? 'aguardando envio' : (pessoa.status === 'homologada' ? 'homologada' : 'registrada')) : 'sem decisão';
-    const corStatus = valores.acao ? (naFila ? 'selo-atencao' : 'selo-manter') : 'selo-pendente';
-
-    return `
-    <tr>
-      <td class="mono">${escapar(pessoa.chapa)}</td>
-      <td class="limite">${escapar(pessoa.nome)}
-        ${alertas.length ? `<div class="pequeno" style="color:var(--atencao);white-space:normal;max-width:240px">
-          ⚠ ${escapar(alertas[0].mensagem)}</div>` : ''}
-      </td>
-      <td class="limite texto-2">${escapar(pessoa.cargo)}</td>
-      <td class="limite texto-2">${escapar(pessoa.diretoria)}
-        <div class="pequeno texto-3">${escapar(pessoa.divisao)}</div>
-        ${pessoa.gestor_imediato ? `<div class="pequeno texto-3">Gestor: ${escapar(pessoa.gestor_imediato)}</div>` : ''}
-      </td>
-      <td>
-        <select class="celula-decisao${valores.acao ? ' preenchida' : ''}${falta === 'acao' || falta ? ' exigida' : ''}"
-                data-decisao="acao" data-chapa="${escapar(pessoa.chapa)}">
-          <option value="">— sem decisão —</option>
-          ${estado.acoes.map((a) => `<option value="${escapar(a.valor)}"${valores.acao === a.valor ? ' selected' : ''}>
-            ${escapar(a.valor)}</option>`).join('')}
-        </select>
-        ${falta ? `<div class="pendente-aviso">${falta === 'destino'
-          ? 'Informe o destino para gravar.' : 'Informe a justificativa para gravar.'}</div>` : ''}
-        ${info && info.exige_destino ? `<input class="celula-decisao${falta === 'destino' ? ' exigida' : ''}"
-            style="margin-top:4px" data-decisao="destino" data-chapa="${escapar(pessoa.chapa)}"
-            value="${escapar(valores.destino)}" placeholder="Destino: Diretoria / setor">` : ''}
-      </td>
-      <td>
-        <input class="celula-decisao${falta === 'justificativa' ? ' exigida' : ''}"
-               data-decisao="justificativa" data-chapa="${escapar(pessoa.chapa)}"
-               value="${escapar(valores.justificativa)}"
-               placeholder="${info && info.exige_justificativa ? 'Justificativa obrigatória' : 'Justificativa (opcional)'}">
-      </td>
-      <td><span class="selo ${corStatus}">${status}</span>
-        ${pessoa.atualizado_em ? `<div class="pequeno texto-3">${escapar(pessoa.atualizado_por || '')} ·
-          ${fmtDataHora(pessoa.atualizado_em)}</div>` : ''}
-      </td>
-    </tr>`;
-  }).join('');
-
+  const { doModelo, extras } = colunasDaBase();
   return `
   <section class="cartao">
     <div class="linha">
@@ -1059,22 +1265,83 @@ function telaColaboradores() {
         <input type="checkbox" data-filtro="alerta" ${estado.filtros.alerta ? 'checked' : ''} style="width:auto"> Só com alerta
       </label>
       <span class="espaco"></span>
+      <button class="btn" data-acao="abrir-colunas">Colunas (${colunasVisiveis().length}/${doModelo.length + extras.length})</button>
       <button class="btn" data-acao="exportar">Exportar Excel</button>
     </div>
-  </section>
+  </section>`;
+}
 
+function listaTabela() {
+  const lista = listaFiltrada();
+  const colunas = colunasVisiveis().filter((c) => c !== 'chapa' && c !== 'nome');
+
+  const conteudo = (pessoa, chave) => {
+    const valor = pessoa[chave];
+    if (valor === '' || valor === null || valor === undefined) return '';
+    const tipo = tipoDe(chave);
+    if (tipo === 'moeda') return fmtMoeda(numeroDe(valor));
+    if (tipo === 'data') return fmtData(valor);
+    if (tipo === 'numero') return fmtNumero(numeroDe(valor));
+    return String(valor);
+  };
+
+  const linhas = lista.map((pessoa) => {
+    const valores = valorDe(pessoa);
+    const info = acaoInfo(valores.acao);
+    const alertas = alertasDe(pessoa);
+    const falta = estado.pendentes[pessoa.chapa] ? faltando(pessoa, valores) : null;
+    const naFila = estado.fila.some((i) => String(i.chapa) === String(pessoa.chapa));
+    const status = valores.acao ? (naFila ? 'aguardando envio' : 'registrada') : 'sem decisão';
+    const corStatus = valores.acao ? (naFila ? 'selo-atencao' : 'selo-manter') : 'selo-pendente';
+
+    return `
+    <tr>
+      <td class="mono fixa fixa-1">${escapar(pessoa.chapa)}</td>
+      <td class="limite fixa fixa-2">
+        <button class="link" data-acao="ficha" data-chapa="${escapar(pessoa.chapa)}">${escapar(pessoa.nome || '(sem nome)')}</button>
+        ${alertas.length ? `<div class="pequeno" style="color:var(--atencao);white-space:normal;max-width:230px">⚠ ${escapar(alertas[0].mensagem)}</div>` : ''}
+      </td>
+      <td>
+        <select class="celula-decisao${valores.acao ? ' preenchida' : ''}${falta ? ' exigida' : ''}"
+                data-decisao="acao" data-chapa="${escapar(pessoa.chapa)}">
+          <option value="">— sem decisão —</option>
+          ${estado.acoes.map((a) => `<option value="${escapar(a.valor)}"${valores.acao === a.valor ? ' selected' : ''}>${escapar(a.valor)}</option>`).join('')}
+        </select>
+        ${falta ? `<div class="pendente-aviso">${falta === 'destino' ? 'Informe o destino para gravar.' : 'Informe a justificativa para gravar.'}</div>` : ''}
+        ${info && info.exige_destino ? `<input class="celula-decisao${falta === 'destino' ? ' exigida' : ''}"
+            style="margin-top:4px" data-decisao="destino" data-chapa="${escapar(pessoa.chapa)}"
+            value="${escapar(valores.destino)}" placeholder="Destino: Diretoria / setor">` : ''}
+      </td>
+      <td>
+        <input class="celula-decisao${falta === 'justificativa' ? ' exigida' : ''}"
+               data-decisao="justificativa" data-chapa="${escapar(pessoa.chapa)}"
+               value="${escapar(valores.justificativa)}"
+               placeholder="${info && info.exige_justificativa ? 'Justificativa obrigatória' : 'Justificativa (opcional)'}">
+      </td>
+      <td><span class="selo ${corStatus}">${status}</span>
+        ${pessoa.atualizado_em ? `<div class="pequeno texto-3">${escapar(pessoa.atualizado_por || '')} · ${fmtDataHora(pessoa.atualizado_em)}</div>` : ''}
+      </td>
+      ${colunas.map((chave) => `<td class="limite texto-2">${escapar(conteudo(pessoa, chave))}</td>`).join('')}
+    </tr>`;
+  }).join('');
+
+  return `
   <div class="tabela-caixa tabela-rolagem">
     <table>
       <thead><tr>
-        <th>Matrícula</th><th>Nome</th><th>Cargo</th><th>Diretoria / Divisão</th>
-        <th style="min-width:220px">Ação indicada</th><th style="min-width:240px">Justificativa</th><th>Situação</th>
+        <th class="fixa fixa-1">Matrícula</th>
+        <th class="fixa fixa-2">Nome</th>
+        <th style="min-width:210px">Ação indicada</th>
+        <th style="min-width:230px">Justificativa</th>
+        <th>Situação</th>
+        ${colunas.map((chave) => `<th>${escapar(rotuloDe(chave))}</th>`).join('')}
       </tr></thead>
-      <tbody>${linhas || '<tr><td class="vazio" colspan="7">Nenhum colaborador com os filtros atuais.</td></tr>'}</tbody>
+      <tbody>${linhas || `<tr><td class="vazio" colspan="${5 + colunas.length}">Nenhum colaborador com os filtros atuais.</td></tr>`}</tbody>
     </table>
   </div>
   <p class="pequeno texto-3">
     ${fmtNumero(lista.length)} de ${fmtNumero(estado.colaboradores.length)} colaborador(es) ·
-    marque a decisão direto na linha; o portal envia sozinho para o fluxo.
+    ${fmtNumero(colunas.length + 2)} coluna(s) à vista · clique no nome para ver a ficha completa.
   </p>`;
 }
 
@@ -1199,13 +1466,6 @@ function telaGestores() {
 /* ------------------------------- importar ------------------------------ */
 const importacao = { arquivo: null, abas: [], aba: '', cabecalho: 1, colunas: [], mapa: {}, previa: [] };
 
-const CAMPOS_DESTINO = [
-  ['chapa', 'Matrícula (CHAPA)'], ['nome', 'Nome'], ['diretoria', 'Diretoria'], ['divisao', 'Divisão'],
-  ['gestor_imediato', 'Gestor imediato'], ['cargo', 'Cargo'], ['situacao', 'Situação'],
-  ['salario_anual', 'Salário anual'], ['estabilidade', 'Estabilidade'],
-  ['data_fim_estabilidade', 'Data fim estabilidade'], ['tipo_invalidez', 'Tipo invalidez'],
-  ['acao', 'Ação indicada (decisão já existente)'], ['justificativa', 'Justificativa'], ['destino', 'Destino'],
-];
 
 function telaImportar() {
   if (!importacao.abas.length) {
@@ -1213,8 +1473,12 @@ function telaImportar() {
     <section class="cartao">
       <h2>Importar Excel <span class="dica">— o arquivo é lido aqui no seu computador</span></h2>
       <p class="texto-2 pequeno" style="margin-top:6px">
-        A planilha não sobe inteira: o portal lê aqui, você confere o de-para das colunas e só então as linhas
-        seguem para o fluxo, que grava na lista do SharePoint. A chave de atualização é a matrícula.
+        O portal lê o arquivo aqui no seu computador e reconhece sozinho as colunas do modelo
+        (são ${CATALOGO.length}). As colunas que a sua planilha tiver a mais são mantidas com o nome
+        que vieram — nada se perde. A chave de atualização é a matrícula (CHAPA).
+      </p>
+      <p class="texto-2 pequeno">
+        Não tem a base no formato? Use o <strong>modelo-base.xlsx</strong> que veio junto com este arquivo.
       </p>
       <div class="campo" style="margin-top:12px;max-width:420px">
         <label for="arquivo">Arquivo .xlsx</label>
@@ -1244,16 +1508,19 @@ function telaImportar() {
           <td>${escapar(coluna)}</td>
           <td class="texto-3 limite">${escapar(amostra[indice] == null ? '' : amostra[indice])}</td>
           <td><select data-mapa="${escapar(coluna)}">
-            <option value="">— ignorar —</option>
-            ${CAMPOS_DESTINO.map(([chave, rotulo]) =>
-              `<option value="${chave}"${importacao.mapa[coluna] === chave ? ' selected' : ''}>${escapar(rotulo)}</option>`).join('')}
+            <option value="">— ignorar esta coluna —</option>
+            <option value="__manter__"${importacao.mapa[coluna] === '__manter__' ? ' selected' : ''}>Manter como veio (coluna a mais)</option>
+            ${CATALOGO.map((campo) =>
+              `<option value="${escapar(campo.chave)}"${importacao.mapa[coluna] === campo.chave ? ' selected' : ''}>${escapar(campo.rotulo)}${campo.decisao ? ' (decisão)' : ''}</option>`).join('')}
           </select></td>
         </tr>`).join('')}</tbody>
       </table>
     </div>
     <p class="pequeno texto-3" style="margin-top:8px">
       ${fmtNumero(Math.max((importacao.abas.find((a) => a.nome === importacao.aba) || { linhas: [] }).linhas.length - importacao.cabecalho, 0))}
-      linha(s) de dados serão enviadas.
+      linha(s) e
+      ${fmtNumero(Object.values(importacao.mapa).filter(Boolean).length)} coluna(s) serão enviadas
+      (${fmtNumero(Object.values(importacao.mapa).filter((d) => d && d !== '__manter__').length)} reconhecidas do modelo).
     </p>
   </section>`;
 }
@@ -1431,7 +1698,8 @@ function desenhar() {
         campo: focado.dataset.campo, inicio: focado.selectionStart, fim: focado.selectionEnd }
     : null;
 
-  raiz.innerHTML = estado.modo === 'inicio' ? telaAbertura() : moldura(({
+  const ficha = estado.modo !== 'inicio' && estado.ficha ? fichaCompleta() : '';
+  raiz.innerHTML = (estado.modo === 'inicio' ? telaAbertura() : moldura(({
     painel: telaPainel,
     colaboradores: telaColaboradores,
     gestores: telaGestores,
@@ -1439,7 +1707,7 @@ function desenhar() {
     envios: telaEnvios,
     conexao: telaConexao,
     ajuda: telaAjuda,
-  })[estado.tela]());
+  })[estado.tela]())) + ficha;
 
   if (marca) {
     let seletor = null;
@@ -1485,16 +1753,27 @@ function atualizarRascunho(chapa, campo, valor) {
 /* ------------------------------ exportação ----------------------------- */
 function exportar() {
   const lista = listaFiltrada();
-  const cabecalho = ['Matrícula', 'Nome', 'Cargo', 'Diretoria', 'Divisão', 'Gestor imediato', 'Situação',
-    'Salário anual', 'Estabilidade', 'Ação Indicada', 'Destino', 'Justificativa', 'Situação da decisão',
-    'Preenchido por', 'Preenchido em', 'Alertas'];
+  const { todas } = colunasDaBase();
+  const colunas = todas.filter((c) => c !== 'chapa' && c !== 'nome');
+
+  const cabecalho = ['CHAPA', 'NOME', ...colunas.map(rotuloDe),
+    'AÇÃO INDICADA', 'DESTINO', 'JUSTIFICATIVA', 'SITUAÇÃO DA DECISÃO',
+    'PREENCHIDO POR', 'PREENCHIDO EM', 'ALERTAS'];
+
   const linhas = [cabecalho];
   for (const pessoa of lista) {
     const valores = valorDe(pessoa);
     const naFila = estado.fila.some((i) => String(i.chapa) === String(pessoa.chapa));
     linhas.push([
-      pessoa.chapa, pessoa.nome, pessoa.cargo, pessoa.diretoria, pessoa.divisao, pessoa.gestor_imediato,
-      pessoa.situacao, numeroDe(pessoa.salario_anual) || null, pessoa.estabilidade,
+      pessoa.chapa, pessoa.nome,
+      ...colunas.map((chave) => {
+        const valor = pessoa[chave];
+        if (valor === '' || valor === null || valor === undefined) return null;
+        const tipo = tipoDe(chave);
+        if (tipo === 'moeda' || tipo === 'numero') return numeroDe(valor);
+        if (tipo === 'data') return fmtData(valor);
+        return String(valor);
+      }),
       valores.acao, valores.destino, valores.justificativa,
       valores.acao ? (naFila ? 'aguardando envio' : 'registrada') : 'sem decisão',
       pessoa.atualizado_por, fmtDataHora(pessoa.atualizado_em),
@@ -1511,6 +1790,7 @@ function exportar() {
     ['Gerado em', new Date().toLocaleString('pt-BR')],
     ['Gerado por', (estado.usuario && estado.usuario.nome) || ''],
     ['Colaboradores no recorte', lista.length],
+    ['Colunas exportadas', cabecalho.length],
     ['Com decisão', comDecisao],
     ['Sem decisão', lista.length - comDecisao],
     [null, null],
@@ -1520,7 +1800,7 @@ function exportar() {
 
   const abas = [
     { nome: 'Resumo', linhas: resumo },
-    { nome: 'Base Decisões', linhas, opcoes: { colunaLista: 10, opcoesLista: estado.acoes.map((a) => a.valor) } },
+    { nome: 'Base Decisões', linhas, opcoes: { colunaLista: colunas.length + 3, opcoesLista: estado.acoes.map((a) => a.valor) } },
   ];
   if (estado.envios.length) {
     abas.push({
@@ -1530,7 +1810,7 @@ function exportar() {
     });
   }
   baixar(montarXlsx(abas), `decisoes-${new Date().toISOString().slice(0, 10)}.xlsx`);
-  toast('Planilha gerada.');
+  toast(`Planilha gerada com ${cabecalho.length} colunas.`);
 }
 
 /* ------------------------------ importação ----------------------------- */
@@ -1544,18 +1824,18 @@ function nomearColunas(linha) {
   });
 }
 
+/**
+ * De-para automático: casa cada coluna da planilha com a do modelo. O que não
+ * estiver no modelo vem marcado para ser mantido com o nome original — assim
+ * nenhuma coluna da sua base se perde.
+ */
 function sugerirMapa(colunas) {
   const mapa = {};
   const tomados = new Set();
   for (const coluna of colunas) {
-    const alvo = semAcento(coluna).replace(/[^a-z0-9]+/g, '');
-    const achado = CAMPOS_DESTINO.find(([chave, rotulo]) => !tomados.has(chave)
-      && (semAcento(rotulo).replace(/[^a-z0-9]+/g, '') === alvo || chave.replace(/_/g, '') === alvo
-        || (chave === 'chapa' && alvo === 'chapa') || (chave === 'salario_anual' && alvo === 'salarioanual')
-        || (chave === 'gestor_imediato' && alvo === 'gestorimediato')
-        || (chave === 'cargo' && alvo === 'descargo')
-        || (chave === 'acao' && alvo === 'acaoindicada')));
-    if (achado) { mapa[coluna] = achado[0]; tomados.add(achado[0]); }
+    const achado = POR_ROTULO.get(chaveNormalizada(coluna));
+    if (achado && !tomados.has(achado)) { mapa[coluna] = achado; tomados.add(achado); }
+    else mapa[coluna] = '__manter__';
   }
   return mapa;
 }
@@ -1580,7 +1860,13 @@ async function abrirArquivo(arquivo) {
     const { abas } = await lerPlanilha(arquivo);
     importacao.arquivo = arquivo.name;
     importacao.abas = abas;
-    prepararAba(abas[0].nome);
+    // escolhe a aba com mais dados (planilhas costumam ter "Instruções" na frente)
+    const melhorAba = abas.slice().sort((a, b) => {
+      const peso = (aba) => Math.max(...aba.linhas.map((l) => (l || []).filter((c) => String(c ?? '').trim()).length), 0)
+        * Math.min(aba.linhas.length, 1000);
+      return peso(b) - peso(a);
+    })[0];
+    prepararAba(melhorAba.nome);
     desenhar();
   } catch (erro) {
     toast(erro.message, 'erro');
@@ -1599,7 +1885,9 @@ async function enviarImportacao() {
     const registro = {};
     for (const [coluna, destino] of usadas) {
       const indice = importacao.colunas.indexOf(coluna);
-      registro[destino] = indice >= 0 ? String(celulas[indice] == null ? '' : celulas[indice]).trim() : '';
+      const valor = indice >= 0 ? String(celulas[indice] == null ? '' : celulas[indice]).trim() : '';
+      // "__manter__" = coluna fora do modelo, guardada com o nome que veio
+      registro[destino === '__manter__' ? coluna : destino] = valor;
     }
     return registro;
   }).filter((registro) => String(registro.chapa || '').trim());
@@ -1659,6 +1947,26 @@ raiz.addEventListener('click', (evento) => {
     estado.filtros.gestor = alvo.dataset.gestor;
     estado.tela = 'colaboradores';
     desenhar();
+  } else if (acao === 'abrir-colunas') { estado.escolherColunas = true; desenhar(); }
+  else if (acao === 'fechar-colunas') { estado.escolherColunas = false; desenhar(); }
+  else if (acao === 'colunas-padrao') {
+    estado.colunas = null;
+    guardar('portal-decisoes-colunas', null);
+    desenhar();
+  } else if (acao === 'colunas-todas') {
+    estado.colunas = colunasDaBase().todas;
+    guardar('portal-decisoes-colunas', estado.colunas);
+    desenhar();
+  } else if (acao === 'colunas-nenhuma') {
+    estado.colunas = [];
+    guardar('portal-decisoes-colunas', estado.colunas);
+    desenhar();
+  } else if (acao === 'ficha') { estado.ficha = alvo.dataset.chapa; desenhar(); }
+  else if (acao === 'fechar-ficha') {
+    // clicar dentro da ficha não fecha; só no fundo ou no botão
+    if (evento.target.closest('.ficha') && !evento.target.closest('button[data-acao="fechar-ficha"]')) return;
+    estado.ficha = null;
+    desenhar();
   } else if (acao === 'cancelar-import') { importacao.abas = []; desenhar(); }
   else if (acao === 'enviar-import') { void enviarImportacao(); }
 });
@@ -1675,6 +1983,26 @@ raiz.addEventListener('change', (evento) => {
     importacao.colunas = nomearColunas(aba.linhas[numero - 1]);
     importacao.mapa = sugerirMapa(importacao.colunas);
     importacao.previa = aba.linhas.slice(numero, numero + 3);
+    desenhar();
+    return;
+  }
+  if (alvo.dataset.coluna) {
+    const atuais = colunasVisiveis();
+    const novas = alvo.checked
+      ? [...new Set(atuais.concat([alvo.dataset.coluna]))]
+      : atuais.filter((c) => c !== alvo.dataset.coluna);
+    estado.colunas = colunasDaBase().todas.filter((c) => novas.includes(c));
+    guardar('portal-decisoes-colunas', estado.colunas);
+    desenhar();
+    return;
+  }
+  if (alvo.dataset.coluna) {
+    const atuais = colunasVisiveis();
+    const novas = alvo.checked
+      ? [...new Set(atuais.concat([alvo.dataset.coluna]))]
+      : atuais.filter((c) => c !== alvo.dataset.coluna);
+    estado.colunas = colunasDaBase().todas.filter((c) => novas.includes(c));
+    guardar('portal-decisoes-colunas', estado.colunas);
     desenhar();
     return;
   }
@@ -1718,6 +2046,14 @@ raiz.addEventListener('keydown', (evento) => {
     atualizarRascunho(evento.target.dataset.chapa, evento.target.dataset.decisao, evento.target.value);
     registrarDecisao(evento.target.dataset.chapa);
   }
+});
+
+document.addEventListener('keydown', (evento) => {
+  if (evento.key === 'Escape' && estado.ficha) { estado.ficha = null; desenhar(); }
+});
+
+document.addEventListener('keydown', (evento) => {
+  if (evento.key === 'Escape' && estado.ficha) { estado.ficha = null; desenhar(); }
 });
 
 // A fila tenta sair de novo quando a rede volta

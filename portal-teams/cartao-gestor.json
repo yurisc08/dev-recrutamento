@@ -1,5 +1,5 @@
 {
-  "_comentario": "Cartão que o gestor recebe no Teams. O bloco de cada colaborador é montado pelo fluxo (ver TEAMS-POWER-AUTOMATE.md, passo 4). Aqui está o formato final, com dois colaboradores de exemplo.",
+  "_comentario": "Cartão que o gestor recebe no Teams. Mostra SÓ as pendências (no máximo 10 por cartão) — a lista completa, com todas as pessoas e as 49 colunas da planilha, fica na tela (aba do Teams ou portal), aberta pelo botão 'Abrir a lista completa'. O bloco de cada colaborador é montado pelo fluxo (ver TEAMS-POWER-AUTOMATE.md, passo 4). Aqui está o formato final, com dois colaboradores de exemplo.",
   "type": "AdaptiveCard",
   "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
   "version": "1.4",
@@ -11,28 +11,52 @@
           "type": "Column",
           "width": "stretch",
           "items": [
-            { "type": "TextBlock", "text": "Reestruturação 2026", "weight": "Bolder", "size": "Medium", "wrap": true },
-            { "type": "TextBlock", "text": "Sua equipe — 8 pessoas para avaliar", "spacing": "None", "isSubtle": true, "wrap": true }
+            {
+              "type": "TextBlock",
+              "text": "Reestruturação 2026",
+              "weight": "Bolder",
+              "size": "Medium",
+              "wrap": true
+            },
+            {
+              "type": "TextBlock",
+              "text": "Sua equipe — 3 de 8 pendentes neste cartão",
+              "spacing": "None",
+              "isSubtle": true,
+              "wrap": true
+            }
           ]
         },
         {
           "type": "Column",
           "width": "auto",
           "items": [
-            { "type": "TextBlock", "text": "Prazo 11/09", "weight": "Bolder", "color": "Attention", "horizontalAlignment": "Right" },
-            { "type": "TextBlock", "text": "posição de 31/07/2026", "spacing": "None", "isSubtle": true, "size": "Small", "horizontalAlignment": "Right" }
+            {
+              "type": "TextBlock",
+              "text": "Prazo 11/09",
+              "weight": "Bolder",
+              "color": "Attention",
+              "horizontalAlignment": "Right"
+            },
+            {
+              "type": "TextBlock",
+              "text": "posição de 31/07/2026",
+              "spacing": "None",
+              "isSubtle": true,
+              "size": "Small",
+              "horizontalAlignment": "Right"
+            }
           ]
         }
       ]
     },
     {
       "type": "TextBlock",
-      "text": "Marque a ação de cada pessoa e envie. Você pode responder aos poucos — o que não for enviado fica para a próxima vez.",
+      "text": "Marque a ação de cada pessoa e envie. Você pode responder aos poucos — o que não for enviado fica para a próxima vez. Para ver a equipe inteira, com todas as colunas da base, use \"Abrir a lista completa\".",
       "wrap": true,
       "spacing": "Small",
       "isSubtle": true
     },
-
     {
       "type": "Container",
       "separator": true,
@@ -45,8 +69,20 @@
               "type": "Column",
               "width": "stretch",
               "items": [
-                { "type": "TextBlock", "text": "Ana Beatriz Moraes", "weight": "Bolder", "wrap": true },
-                { "type": "TextBlock", "text": "ANALISTA II · DIVISAO PRODUCAO · matrícula A1001", "isSubtle": true, "size": "Small", "spacing": "None", "wrap": true }
+                {
+                  "type": "TextBlock",
+                  "text": "Ana Beatriz Moraes",
+                  "weight": "Bolder",
+                  "wrap": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "ANALISTA II · DIVISAO PRODUCAO · matrícula A1001",
+                  "isSubtle": true,
+                  "size": "Small",
+                  "spacing": "None",
+                  "wrap": true
+                }
               ]
             }
           ]
@@ -58,11 +94,26 @@
           "style": "compact",
           "value": "",
           "choices": [
-            { "title": "— sem decisão —", "value": "" },
-            { "title": "ATIVO (manter)", "value": "ATIVO" },
-            { "title": "DESLIGAMENTO", "value": "DESLIGAMENTO" },
-            { "title": "TRANSFERÊNCIA DE ÁREA", "value": "TRANSFERENCIA" },
-            { "title": "ESTABILIDADE", "value": "ESTABILIDADE" }
+            {
+              "title": "— sem decisão —",
+              "value": ""
+            },
+            {
+              "title": "ATIVO (manter)",
+              "value": "ATIVO"
+            },
+            {
+              "title": "DESLIGAMENTO",
+              "value": "DESLIGAMENTO"
+            },
+            {
+              "title": "TRANSFERÊNCIA DE ÁREA",
+              "value": "TRANSFERENCIA"
+            },
+            {
+              "title": "ESTABILIDADE",
+              "value": "ESTABILIDADE"
+            }
           ]
         },
         {
@@ -74,7 +125,6 @@
         }
       ]
     },
-
     {
       "type": "Container",
       "separator": true,
@@ -87,8 +137,20 @@
               "type": "Column",
               "width": "stretch",
               "items": [
-                { "type": "TextBlock", "text": "Bruno Carvalho Lima", "weight": "Bolder", "wrap": true },
-                { "type": "TextBlock", "text": "OPERADOR I · DIVISAO PRODUCAO · matrícula A1002", "isSubtle": true, "size": "Small", "spacing": "None", "wrap": true }
+                {
+                  "type": "TextBlock",
+                  "text": "Bruno Carvalho Lima",
+                  "weight": "Bolder",
+                  "wrap": true
+                },
+                {
+                  "type": "TextBlock",
+                  "text": "OPERADOR I · DIVISAO PRODUCAO · matrícula A1002",
+                  "isSubtle": true,
+                  "size": "Small",
+                  "spacing": "None",
+                  "wrap": true
+                }
               ]
             }
           ]
@@ -108,11 +170,26 @@
           "style": "compact",
           "value": "",
           "choices": [
-            { "title": "— sem decisão —", "value": "" },
-            { "title": "ATIVO (manter)", "value": "ATIVO" },
-            { "title": "DESLIGAMENTO", "value": "DESLIGAMENTO" },
-            { "title": "TRANSFERÊNCIA DE ÁREA", "value": "TRANSFERENCIA" },
-            { "title": "ESTABILIDADE", "value": "ESTABILIDADE" }
+            {
+              "title": "— sem decisão —",
+              "value": ""
+            },
+            {
+              "title": "ATIVO (manter)",
+              "value": "ATIVO"
+            },
+            {
+              "title": "DESLIGAMENTO",
+              "value": "DESLIGAMENTO"
+            },
+            {
+              "title": "TRANSFERÊNCIA DE ÁREA",
+              "value": "TRANSFERENCIA"
+            },
+            {
+              "title": "ESTABILIDADE",
+              "value": "ESTABILIDADE"
+            }
           ]
         },
         {
@@ -124,7 +201,6 @@
         }
       ]
     },
-
     {
       "type": "TextBlock",
       "text": "Conteúdo confidencial. Sua resposta fica registrada com o seu nome e a data.",
@@ -140,7 +216,17 @@
       "type": "Action.Submit",
       "title": "Enviar decisões",
       "style": "positive",
-      "data": { "tipo": "decisoes", "gestor": "Marcos Vilela", "pagina": 1 }
+      "data": {
+        "tipo": "decisoes",
+        "gestor": "Marcos Vilela",
+        "pagina": 1
+      }
+    },
+    {
+      "type": "Action.OpenUrl",
+      "title": "Abrir a lista completa",
+      "_comentario": "Troque pela URL da sua tela: a aba da lista do SharePoint, o portal-local na rede da empresa ou o portal-cloudflare. O parâmetro gestor apenas já abre filtrado — não é controle de acesso.",
+      "url": "https://SUA-EMPRESA.exemplo/portal-decisoes?gestor=marcos.vilela@empresa.com"
     }
   ]
 }

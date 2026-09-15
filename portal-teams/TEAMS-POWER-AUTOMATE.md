@@ -21,11 +21,17 @@ tem senha para criar, não tem link para guardar.
 
 ## Como fica para cada pessoa
 
-**Para o gestor.** Chega uma mensagem do fluxo no chat do Teams (ou no canal),
-com a equipe dele listada: cada pessoa com uma lista suspensa de ação e um campo
-de justificativa, e um botão **Enviar decisões**. Ele responde ali mesmo, no
-celular ou no computador, sem abrir nada, sem senha, sem link. Veja
+**Para o gestor.** Chega uma mensagem do fluxo no chat do Teams (ou no canal).
+O cartão traz **o que falta decidir agora** — cada pessoa com uma lista suspensa
+de ação e um campo de justificativa — e um botão **Enviar decisões**. Ele
+responde ali mesmo, no celular ou no computador, sem senha e sem link. Veja
 `previa-cartao.png` e o JSON pronto em `cartao-gestor.json`.
+
+O cartão **não é onde a lista inteira é lida**. Ele é o aviso, a cobrança e a
+decisão rápida. Quando o gestor quiser ver tudo — todas as pessoas, todas as
+colunas da planilha, filtrar, ordenar, mudar de ideia — ele usa o botão **Abrir a
+lista completa**, que leva à tela do portal (a mesma base, sem corte). Ver
+[Onde fica a lista inteira](#onde-fica-a-lista-inteira).
 
 Se ele marcar DESLIGAMENTO sem justificar, o fluxo responde na hora pedindo a
 justificativa e manda o cartão de novo — a mesma regra do portal, só que aqui ela
@@ -46,10 +52,48 @@ andamento por gestor.
 | Celular | funciona, mas é um arquivo | nativo |
 | Lembrete de quem não respondeu | você persegue por e-mail | o fluxo cobra sozinho |
 | Rever e mudar depois | tabela completa, à vontade | o cartão é mais para responder uma vez |
-| Base grande por pessoa | 500 linhas numa tela | cartão fica pesado acima de ~15 por vez |
+| Ler a lista inteira | 500 linhas numa tela | **não é no cartão** — o cartão leva para a tela |
 
-Os dois se completam: **Teams para coletar dos gestores, HTML para o RH
-consolidar** — mesma lista do SharePoint por baixo.
+Os dois se completam: **Teams para avisar, cobrar e decidir o que está pendente;
+tela para ler e revisar a lista inteira** — mesma lista do SharePoint por baixo.
+
+## Onde fica a lista inteira
+
+Um cartão do Teams não serve para ler uma base. O Teams corta cartão grande (na
+prática, a partir de ~25 KB de JSON), o Adaptive Card não tem tabela rolável nem
+filtro, e a planilha tem 49 colunas — num cartão cabem 3 ou 4. Então a regra é:
+
+> **O cartão mostra as pendências. A lista completa mora na tela.**
+
+Três jeitos de dar a lista completa dentro do Teams, do mais simples ao mais
+completo:
+
+**a) A lista do SharePoint como aba do Teams.** No canal, **+ → Listas → Adicionar
+uma lista existente** e aponte para a `Base`. Sai de graça: todas as linhas,
+todas as colunas, filtro, ordenação, busca, agrupamento, exportar para Excel,
+funciona no celular. Crie uma **visão** filtrada por `GestorEmail` **é igual a
+[Eu]** e cada gestor abre a mesma aba vendo só a equipe dele.
+*Cuidado:* essa visão é **conveniência, não segurança** — quem souber trocar a
+visão vê o resto. O recorte de verdade continua vindo do fluxo (que manda a cada
+um só o seu cartão) ou do login do portal. Se a base tem salário e CPF, não
+publique a lista crua num canal aberto: use um canal privado por diretoria, ou a
+opção (c).
+
+**b) A tela HTML aberta pelo cartão.** Se o `portal-decisoes.html` estiver num
+endereço `https` que a empresa alcança (uma biblioteca do SharePoint que renderize
+HTML, ou o `portal-cloudflare`), basta um botão `Action.OpenUrl` no cartão com
+`...?gestor=<e-mail>`. Já está no `cartao-gestor.json` como **Abrir a lista
+completa** — troque a URL. *Atenção:* muitos tenants entregam `.html` do
+SharePoint como download em vez de abrir; se for o seu caso, é (a) ou (c).
+
+**c) O portal com login, como aba de site.** O `portal-local` (na rede da empresa)
+e o `portal-cloudflare` (com Cloudflare Access) servem uma URL de verdade — e essa
+URL entra como aba no Teams (**+ → Site**). Aí a lista inteira aparece com o
+recorte validado no servidor: gestor vê a divisão dele, diretor vê a diretoria,
+RH vê tudo — que é o que a planilha por e-mail nunca deu.
+
+Em qualquer um dos três, o Teams continua fazendo o que faz bem: avisar, cobrar
+quem não respondeu e receber a decisão com o nome de quem decidiu.
 
 ## Montando (4 fluxos, todos com conector padrão do M365)
 
@@ -71,6 +115,12 @@ Use as mesmas listas `Base` e (agora opcional) `Acessos` descritas em
      e troque o trecho dos colaboradores por uma expressão que monte um bloco por
      pessoa. O caminho mais simples é uma ação **Selecionar** gerando o objeto de
      cada pessoa e depois `join()` dentro do JSON.
+   - **Mande no máximo 10 por cartão** — use `take(body('Filtrar_matriz'), 10)`.
+     O cartão é para as pendências, não para a base: o texto já diz quantas
+     ficaram de fora, e o botão **Abrir a lista completa** leva à tela onde estão
+     todas (veja [Onde fica a lista inteira](#onde-fica-a-lista-inteira)). Quando
+     essas 10 forem respondidas, o Fluxo 3 manda as próximas — sem paginação
+     manual.
    - **Postar cartão adaptável e aguardar uma resposta** (conector Teams):
      destinatário = o e-mail do gestor, cartão = o que você compôs.
    - Quando ele responder, a saída traz os campos (`acao_A1001`, `just_A1001`...)
@@ -107,12 +157,13 @@ pendentes. Se quiser um botão "cobrar todos", ele chama o Fluxo 3.
 ## Limites que valem saber antes de escolher
 
 - **Tamanho do cartão.** O Teams corta cartão muito grande (na prática, a partir
-  de ~25 KB). Com 3 campos por pessoa, **até ~15 pessoas por cartão** fica
-  confortável. Acima disso, mande em páginas ("pessoas 1 a 15", depois as
-  próximas) — o `Action.Submit` já leva um campo `pagina` para isso.
-- **Responder é pontual, revisar é ruim.** Cartão é ótimo para "decidir agora".
-  Para "abrir a lista inteira, filtrar, mudar de ideia três vezes", a tela HTML é
-  melhor. Por isso a combinação dos dois.
+  de ~25 KB de JSON). Com 3 campos por pessoa cabem umas 15, mas **use 10** e
+  deixe a lista inteira na tela — cartão com 15 pessoas já rola demais no
+  celular, e a base tem 49 colunas que não cabem ali de jeito nenhum.
+- **Responder é pontual, revisar é na tela.** Cartão é ótimo para "decidir
+  agora". Para "abrir a lista inteira, filtrar, comparar salário e tempo de casa,
+  mudar de ideia três vezes", é a tela — aba do Teams ou portal. Por isso a
+  combinação dos dois, e nunca só o cartão.
 - **"Postar cartão e aguardar" prende a execução do fluxo** até a pessoa
   responder (o limite de uma execução é 30 dias). Com muitos gestores, use a
   simultaneidade do "Aplicar a cada" ou um fluxo filho por gestor.
@@ -150,11 +201,11 @@ tela, não o miolo.
 
 ## Recomendação, em uma linha
 
-Se a maioria dos gestores tem **poucas pessoas** e você quer resposta rápida com
-identidade garantida: **Teams + cartão**, com a tela HTML para o RH consolidar.
-Se os gestores têm **equipes grandes** e vão querer revisar bastante antes de
-fechar: a tela (HTML, local ou nuvem) como principal, e o Teams só para avisar e
-cobrar.
+**Tela para ler a base inteira, Teams para avisar, cobrar e decidir o que está
+pendente.** Os dois, sempre — não é escolher um. O que muda com o tamanho das
+equipes é só o peso de cada um: com equipes pequenas o gestor resolve quase tudo
+pelo cartão e quase não abre a tela; com equipes grandes ele vive na tela e o
+cartão vira o lembrete. Em nenhum dos casos a lista completa passa pelo cartão.
 
 > O que não testei: nada deste arquivo rodou contra um Teams/Power Automate real
 > — não tenho acesso ao ambiente da sua empresa. O `cartao-gestor.json` é
