@@ -1,0 +1,146 @@
+{
+  "_comentario": "Cartão que o gestor recebe no Teams. O bloco de cada colaborador é montado pelo fluxo (ver TEAMS-POWER-AUTOMATE.md, passo 4). Aqui está o formato final, com dois colaboradores de exemplo.",
+  "type": "AdaptiveCard",
+  "$schema": "http://adaptivecards.io/schemas/adaptive-card.json",
+  "version": "1.4",
+  "body": [
+    {
+      "type": "ColumnSet",
+      "columns": [
+        {
+          "type": "Column",
+          "width": "stretch",
+          "items": [
+            { "type": "TextBlock", "text": "Reestruturação 2026", "weight": "Bolder", "size": "Medium", "wrap": true },
+            { "type": "TextBlock", "text": "Sua equipe — 8 pessoas para avaliar", "spacing": "None", "isSubtle": true, "wrap": true }
+          ]
+        },
+        {
+          "type": "Column",
+          "width": "auto",
+          "items": [
+            { "type": "TextBlock", "text": "Prazo 11/09", "weight": "Bolder", "color": "Attention", "horizontalAlignment": "Right" },
+            { "type": "TextBlock", "text": "posição de 31/07/2026", "spacing": "None", "isSubtle": true, "size": "Small", "horizontalAlignment": "Right" }
+          ]
+        }
+      ]
+    },
+    {
+      "type": "TextBlock",
+      "text": "Marque a ação de cada pessoa e envie. Você pode responder aos poucos — o que não for enviado fica para a próxima vez.",
+      "wrap": true,
+      "spacing": "Small",
+      "isSubtle": true
+    },
+
+    {
+      "type": "Container",
+      "separator": true,
+      "spacing": "Medium",
+      "items": [
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                { "type": "TextBlock", "text": "Ana Beatriz Moraes", "weight": "Bolder", "wrap": true },
+                { "type": "TextBlock", "text": "ANALISTA II · DIVISAO PRODUCAO · matrícula A1001", "isSubtle": true, "size": "Small", "spacing": "None", "wrap": true }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "Input.ChoiceSet",
+          "id": "acao_A1001",
+          "label": "Ação indicada",
+          "style": "compact",
+          "value": "",
+          "choices": [
+            { "title": "— sem decisão —", "value": "" },
+            { "title": "ATIVO (manter)", "value": "ATIVO" },
+            { "title": "DESLIGAMENTO", "value": "DESLIGAMENTO" },
+            { "title": "TRANSFERÊNCIA DE ÁREA", "value": "TRANSFERENCIA" },
+            { "title": "ESTABILIDADE", "value": "ESTABILIDADE" }
+          ]
+        },
+        {
+          "type": "Input.Text",
+          "id": "just_A1001",
+          "label": "Justificativa",
+          "placeholder": "Obrigatória para desligamento, transferência e estabilidade",
+          "isMultiline": true
+        }
+      ]
+    },
+
+    {
+      "type": "Container",
+      "separator": true,
+      "spacing": "Medium",
+      "items": [
+        {
+          "type": "ColumnSet",
+          "columns": [
+            {
+              "type": "Column",
+              "width": "stretch",
+              "items": [
+                { "type": "TextBlock", "text": "Bruno Carvalho Lima", "weight": "Bolder", "wrap": true },
+                { "type": "TextBlock", "text": "OPERADOR I · DIVISAO PRODUCAO · matrícula A1002", "isSubtle": true, "size": "Small", "spacing": "None", "wrap": true }
+              ]
+            }
+          ]
+        },
+        {
+          "type": "TextBlock",
+          "text": "⚠️ Estabilidade declarada (CIPA) — validação do RH é obrigatória antes de eventual desligamento.",
+          "color": "Warning",
+          "size": "Small",
+          "wrap": true,
+          "spacing": "Small"
+        },
+        {
+          "type": "Input.ChoiceSet",
+          "id": "acao_A1002",
+          "label": "Ação indicada",
+          "style": "compact",
+          "value": "",
+          "choices": [
+            { "title": "— sem decisão —", "value": "" },
+            { "title": "ATIVO (manter)", "value": "ATIVO" },
+            { "title": "DESLIGAMENTO", "value": "DESLIGAMENTO" },
+            { "title": "TRANSFERÊNCIA DE ÁREA", "value": "TRANSFERENCIA" },
+            { "title": "ESTABILIDADE", "value": "ESTABILIDADE" }
+          ]
+        },
+        {
+          "type": "Input.Text",
+          "id": "just_A1002",
+          "label": "Justificativa",
+          "placeholder": "Obrigatória para desligamento, transferência e estabilidade",
+          "isMultiline": true
+        }
+      ]
+    },
+
+    {
+      "type": "TextBlock",
+      "text": "Conteúdo confidencial. Sua resposta fica registrada com o seu nome e a data.",
+      "size": "Small",
+      "isSubtle": true,
+      "wrap": true,
+      "separator": true,
+      "spacing": "Medium"
+    }
+  ],
+  "actions": [
+    {
+      "type": "Action.Submit",
+      "title": "Enviar decisões",
+      "style": "positive",
+      "data": { "tipo": "decisoes", "gestor": "Marcos Vilela", "pagina": 1 }
+    }
+  ]
+}
