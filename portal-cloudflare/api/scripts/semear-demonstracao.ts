@@ -36,6 +36,16 @@ const NOMES = [
 ];
 
 const CARGOS = ['Analista', 'Assistente', 'Coordenador', 'Especialista', 'Operador', 'Supervisor'];
+
+/** Gestor imediato de cada Divisão — é a coluna que vem na planilha. */
+const GESTORES: Record<string, string> = {
+  'Divisão Produção': 'Gestor de Demonstração',
+  'Divisão Manutenção': 'Marcos Vilela Antunes',
+  'Divisão Vendas': 'Patrícia Lemos Farias',
+  'Divisão Pós-Venda': 'Patrícia Lemos Farias',
+  'Divisão Financeiro': 'Rogério Sales Pontes',
+  'Divisão Pessoas': 'Rogério Sales Pontes',
+};
 const SITUACOES = ['ATIVO', 'ATIVO', 'ATIVO', 'ATIVO', 'AFASTADO', 'FÉRIAS'];
 
 try {
@@ -76,8 +86,10 @@ try {
     ON CONFLICT (usuario) DO UPDATE SET senha_hash = EXCLUDED.senha_hash, ativo = true RETURNING id`;
 
   await sql`DELETE FROM portal.usuario_diretorias WHERE usuario_id = ${diretor.id}`;
-  await sql`INSERT INTO portal.usuario_diretorias (usuario_id, diretoria_id)
-            VALUES (${diretor.id}, ${diretorias.get('Diretoria Industrial')!})`;
+  for (const nomeDiretoria of ['Diretoria Industrial', 'Diretoria Comercial']) {
+    await sql`INSERT INTO portal.usuario_diretorias (usuario_id, diretoria_id)
+              VALUES (${diretor.id}, ${diretorias.get(nomeDiretoria)!})`;
+  }
   await sql`DELETE FROM portal.usuario_divisoes WHERE usuario_id = ${gestor.id}`;
   await sql`INSERT INTO portal.usuario_divisoes (usuario_id, divisao_id)
             VALUES (${gestor.id}, ${divisoes.get('Divisão Produção')!})`;
@@ -95,6 +107,7 @@ try {
       diretoria: nomeDiretoria,
       divisao: nomeDivisao,
       cargo: `${CARGOS[i % CARGOS.length]} ${['I', 'II', 'III'][i % 3]}`,
+      gestor_imediato: GESTORES[nomeDivisao] ?? '',
       situacao: SITUACOES[i % SITUACOES.length],
       salario,
       // mesma chave que o catálogo de campos soma no painel
@@ -103,13 +116,18 @@ try {
       dt_admissao: `20${13 + (i % 12)}-0${1 + (i % 9)}-1${i % 9}`,
       estabilidade: i % 7 === 0 ? 'SIM' : 'NÃO',
     };
+    // só o gestor de demonstração já tem acesso; os outros ficam "sem acesso",
+    // que é justamente o caso de o diretor criar e enviar o link
+    const responsavel = dados.gestor_imediato === 'Gestor de Demonstração' ? gestor.id : null;
     await sql`
-      INSERT INTO portal.colaboradores (processo_id, chapa, nome, situacao, dados, diretoria_id, divisao_id)
+      INSERT INTO portal.colaboradores (processo_id, chapa, nome, situacao, dados, diretoria_id, divisao_id,
+                                        gestor_nome, responsavel_id)
       VALUES (${processo.id}, ${chapa}, ${dados.nome}, ${dados.situacao}, ${sql.json(dados as never)},
-              ${diretorias.get(nomeDiretoria)!}, ${divisaoId})
+              ${diretorias.get(nomeDiretoria)!}, ${divisaoId}, ${dados.gestor_imediato || null}, ${responsavel})
       ON CONFLICT (processo_id, chapa) DO UPDATE
         SET nome = EXCLUDED.nome, situacao = EXCLUDED.situacao, dados = EXCLUDED.dados,
-            diretoria_id = EXCLUDED.diretoria_id, divisao_id = EXCLUDED.divisao_id, ativo = true`;
+            diretoria_id = EXCLUDED.diretoria_id, divisao_id = EXCLUDED.divisao_id,
+            gestor_nome = EXCLUDED.gestor_nome, responsavel_id = EXCLUDED.responsavel_id, ativo = true`;
     criados += 1;
   }
 

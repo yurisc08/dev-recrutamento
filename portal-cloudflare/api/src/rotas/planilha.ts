@@ -142,6 +142,37 @@ rotasPlanilha.post('/importacao/confirmar', async (ctx) => {
 
   const cacheDiretorias = new Map<string, number>();
   const cacheDivisoes = new Map<string, number>();
+  const cacheGestores = new Map<string, number | null>();
+  let gestoresCadastrados: Array<{ id: number; nome: string }> | null = null;
+
+  /**
+   * Gestor imediato: o nome vem da planilha e, quando esse gestor já responde
+   * por alguém no portal (ou tem acesso com o mesmo nome), o vínculo é refeito
+   * sozinho. Recarga nenhuma desfaz uma atribuição já existente.
+   */
+  const acharResponsavel = async (nomeGestor: string): Promise<number | null> => {
+    const chave = normalizar(nomeGestor);
+    if (!chave) return null;
+    if (cacheGestores.has(chave)) return cacheGestores.get(chave)!;
+
+    const [jaAtribuido] = await sql<{ responsavel_id: number }[]>`
+      SELECT responsavel_id FROM portal.colaboradores
+       WHERE processo_id = ${contexto.processo.id} AND responsavel_id IS NOT NULL
+         AND lower(coalesce(gestor_nome, '')) = ${nomeGestor.trim().toLowerCase()}
+       LIMIT 1`;
+    let id: number | null = jaAtribuido?.responsavel_id ?? null;
+
+    if (!id) {
+      // comparação por nome sem acento/caixa é feita aqui, não no SQL
+      if (!gestoresCadastrados) {
+        gestoresCadastrados = await sql<{ id: number; nome: string }[]>`
+          SELECT id, nome FROM portal.usuarios WHERE perfil = 'gestor' AND ativo`;
+      }
+      id = gestoresCadastrados.find((g) => normalizar(g.nome) === chave)?.id ?? null;
+    }
+    cacheGestores.set(chave, id);
+    return id;
+  };
 
   const acharDiretoria = async (nome: string): Promise<number | null> => {
     const chave = nome.trim();
@@ -183,6 +214,8 @@ rotasPlanilha.post('/importacao/confirmar', async (ctx) => {
     const divisaoId = await acharDivisao(String(dados.divisao ?? ''), diretoriaId);
     const nome = (dados.nome as string) ?? existente?.nome ?? null;
     const situacao = (dados.situacao as string) ?? null;
+    const gestorNome = String(dados.gestor_imediato ?? '').trim() || null;
+    const responsavelId = gestorNome ? await acharResponsavel(gestorNome) : null;
 
     let colaboradorId: number;
     if (existente) {
@@ -191,14 +224,17 @@ rotasPlanilha.post('/importacao/confirmar', async (ctx) => {
            SET nome = ${nome}, situacao = ${situacao}, dados = ${sql.json(dados as never)},
                diretoria_id = coalesce(${diretoriaId}, diretoria_id),
                divisao_id = coalesce(${divisaoId}, divisao_id),
+               gestor_nome = coalesce(${gestorNome}, gestor_nome),
+               responsavel_id = coalesce(${responsavelId}, responsavel_id),
                ativo = true, importacao_id = ${importacao.id}, atualizado_em = now()
          WHERE id = ${existente.id}`;
       colaboradorId = existente.id;
     } else {
       const [criado] = await sql<{ id: number }[]>`
-        INSERT INTO portal.colaboradores (processo_id, chapa, nome, situacao, dados, diretoria_id, divisao_id, importacao_id)
+        INSERT INTO portal.colaboradores (processo_id, chapa, nome, situacao, dados, diretoria_id, divisao_id,
+                                          gestor_nome, responsavel_id, importacao_id)
         VALUES (${contexto.processo.id}, ${linha.chapa}, ${nome}, ${situacao}, ${sql.json(dados as never)},
-                ${diretoriaId}, ${divisaoId}, ${importacao.id})
+                ${diretoriaId}, ${divisaoId}, ${gestorNome}, ${responsavelId}, ${importacao.id})
         RETURNING id`;
       colaboradorId = criado.id;
     }
@@ -271,7 +307,7 @@ rotasPlanilha.get('/exportacao/dados', async (ctx) => {
 
   const linhas = await sql<Array<Record<string, unknown>>>`
     SELECT c.chapa, c.nome, c.situacao, c.dados,
-           dir.nome AS diretoria, dvs.nome AS divisao,
+           dir.nome AS diretoria, dvs.nome AS divisao, c.gestor_nome AS gestor_imediato,
            a.acao, a.justificativa, a.destino_livre, a.status, a.atualizado_em,
            ua.nome AS atualizado_por, uh.nome AS homologado_por, a.homologado_em
       FROM portal.colaboradores c

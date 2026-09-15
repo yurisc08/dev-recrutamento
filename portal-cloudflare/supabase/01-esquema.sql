@@ -35,18 +35,26 @@ CREATE TABLE IF NOT EXISTS portal.divisoes (
   UNIQUE (diretoria_id, nome)
 );
 
+-- senha_hash nasce NULO de propósito: o acesso é criado sem senha e quem define
+-- a dela é a própria pessoa, no link de primeiro acesso (ativacao_hash).
 CREATE TABLE IF NOT EXISTS portal.usuarios (
-  id            serial PRIMARY KEY,
-  usuario       text        NOT NULL UNIQUE,
-  nome          text        NOT NULL,
-  email         text,
-  senha_hash    text        NOT NULL,
-  perfil        text        NOT NULL CHECK (perfil IN ('admin', 'diretor', 'gestor')),
-  ativo         boolean     NOT NULL DEFAULT true,
-  trocar_senha  boolean     NOT NULL DEFAULT true,
-  criado_em     timestamptz NOT NULL DEFAULT now(),
-  ultimo_acesso timestamptz
+  id                 serial PRIMARY KEY,
+  usuario            text        NOT NULL UNIQUE,
+  nome               text        NOT NULL,
+  email              text,
+  senha_hash         text,
+  perfil             text        NOT NULL CHECK (perfil IN ('admin', 'diretor', 'gestor')),
+  ativo              boolean     NOT NULL DEFAULT true,
+  trocar_senha       boolean     NOT NULL DEFAULT false,
+  ativacao_hash      text,
+  ativacao_expira_em timestamptz,
+  senha_definida_em  timestamptz,
+  criado_por         integer,
+  criado_em          timestamptz NOT NULL DEFAULT now(),
+  ultimo_acesso      timestamptz
 );
+CREATE INDEX IF NOT EXISTS idx_usuarios_ativacao ON portal.usuarios (ativacao_hash)
+  WHERE ativacao_hash IS NOT NULL;
 
 CREATE TABLE IF NOT EXISTS portal.usuario_diretorias (
   usuario_id   integer NOT NULL REFERENCES portal.usuarios(id) ON DELETE CASCADE,
@@ -159,6 +167,10 @@ CREATE TABLE IF NOT EXISTS portal.colaboradores (
   diretoria_id  integer REFERENCES portal.diretorias(id),
   divisao_id    integer REFERENCES portal.divisoes(id),
   situacao      text,
+  -- gestor imediato: o nome como veio da planilha e, quando ele tem acesso ao
+  -- portal, o vínculo com o usuário que responde por essas pessoas
+  gestor_nome    text,
+  responsavel_id integer REFERENCES portal.usuarios(id) ON DELETE SET NULL,
   dados         jsonb   NOT NULL DEFAULT '{}'::jsonb,
   ativo         boolean NOT NULL DEFAULT true,
   importacao_id integer REFERENCES portal.importacoes(id),
@@ -168,6 +180,8 @@ CREATE TABLE IF NOT EXISTS portal.colaboradores (
 );
 CREATE INDEX IF NOT EXISTS idx_colab_divisao ON portal.colaboradores (processo_id, divisao_id);
 CREATE INDEX IF NOT EXISTS idx_colab_diretoria ON portal.colaboradores (processo_id, diretoria_id);
+CREATE INDEX IF NOT EXISTS idx_colab_responsavel ON portal.colaboradores (processo_id, responsavel_id);
+CREATE INDEX IF NOT EXISTS idx_colab_gestor_nome ON portal.colaboradores (processo_id, lower(gestor_nome));
 
 CREATE TABLE IF NOT EXISTS portal.avaliacoes (
   id                serial PRIMARY KEY,

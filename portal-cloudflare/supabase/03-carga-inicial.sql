@@ -18,6 +18,7 @@ campos(chave, rotulo, tipo, grupo, origem, visivel_lista, agrupar, somar, sensiv
   ('filial','FILIAL','texto','Organização','base',false,true,false,false,'admin',40),
   ('diretoria','DIRETORIA','texto','Organização','base',true,true,false,false,'admin',50),
   ('divisao','DIVISAO','texto','Organização','base',true,true,false,false,'admin',60),
+  ('gestor_imediato','GESTOR IMEDIATO','texto','Organização','base',true,true,false,false,'admin',65),
   ('departamento','DEPARTAMENTO','texto','Organização','base',false,true,false,false,'admin',70),
   ('des_uo','DES_UO','texto','Organização','base',false,false,false,false,'admin',80),
   ('nome','NOME','texto','Identificação','base',true,false,false,false,'admin',90),

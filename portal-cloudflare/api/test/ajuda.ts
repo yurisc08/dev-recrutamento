@@ -85,20 +85,28 @@ export async function prepararBase() {
   await sql`INSERT INTO portal.usuario_divisoes (usuario_id, divisao_id) VALUES (${gestor1}, ${producao.id})`;
   await sql`INSERT INTO portal.usuario_divisoes (usuario_id, divisao_id) VALUES (${gestor2}, ${ti.id})`;
 
-  const criarColaborador = async (chapa: string, nome: string, divisao: number, diretoria: number, extras: Record<string, unknown> = {}) => {
-    const dados = { chapa, nome, situacao: 'ATIVO', salario_anual: 60000, cpf: '000.000.000-00', ...extras };
+  const criarColaborador = async (
+    chapa: string, nome: string, divisao: number, diretoria: number,
+    extras: Record<string, unknown> = {}, responsavel: number | null = null,
+  ) => {
+    const dados: Record<string, unknown> = {
+      chapa, nome, situacao: 'ATIVO', salario_anual: 60000, cpf: '000.000.000-00', ...extras,
+    };
     const [linha] = await sql<{ id: number }[]>`
-      INSERT INTO portal.colaboradores (processo_id, chapa, nome, situacao, dados, diretoria_id, divisao_id)
-      VALUES (${processo.id}, ${chapa}, ${nome}, ${String(dados.situacao)}, ${sql.json(dados as never)}, ${diretoria}, ${divisao})
+      INSERT INTO portal.colaboradores (processo_id, chapa, nome, situacao, dados, diretoria_id, divisao_id,
+                                        gestor_nome, responsavel_id)
+      VALUES (${processo.id}, ${chapa}, ${nome}, ${String(dados.situacao)}, ${sql.json(dados as never)},
+              ${diretoria}, ${divisao}, ${(dados.gestor_imediato as string) ?? null}, ${responsavel})
       RETURNING id`;
     return linha.id;
   };
 
-  const alice = await criarColaborador('1001', 'Alice', producao.id, industrial.id);
+  const alice = await criarColaborador('1001', 'Alice', producao.id, industrial.id, { gestor_imediato: 'Gestor Produção' }, gestor1);
   const bruno = await criarColaborador('1002', 'Bruno', producao.id, industrial.id, {
     estabilidade: 'CIPA', data_fim_estabilidade: '2027-01-31',
   });
-  const carla = await criarColaborador('1003', 'Carla', qualidade.id, industrial.id);
+  // Carla está na Qualidade, mas responde a "Elisa Prado" — gestora ainda sem acesso
+  const carla = await criarColaborador('1003', 'Carla', qualidade.id, industrial.id, { gestor_imediato: 'Elisa Prado' });
   const davi = await criarColaborador('1004', 'Davi', ti.id, corporativa.id, { situacao: 'DESLIGADO' });
 
   await sql.end();
@@ -106,6 +114,7 @@ export async function prepararBase() {
     processoId: processo.id,
     diretorias: { industrial: industrial.id, corporativa: corporativa.id },
     divisoes: { producao: producao.id, qualidade: qualidade.id, ti: ti.id },
+    usuarios: { rh, diretor, gestor1, gestor2 },
     colaboradores: { alice, bruno, carla, davi },
   };
 }

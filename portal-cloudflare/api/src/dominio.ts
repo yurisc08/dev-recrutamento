@@ -171,12 +171,15 @@ export function validarAvaliacao(
 /* -------------------------------- escopo ------------------------------ */
 export function dentroDoEscopo(
   usuario: UsuarioSessao,
-  colaborador: { diretoria_id: number | null; divisao_id: number | null },
+  colaborador: { diretoria_id: number | null; divisao_id: number | null; responsavel_id?: number | null },
 ): boolean {
   if (usuario.perfil === 'admin') return true;
   if (usuario.perfil === 'diretor') {
     return colaborador.diretoria_id !== null && usuario.diretorias.includes(colaborador.diretoria_id);
   }
+  // Gestor responde por quem está sob ele: por vínculo direto (gestor imediato)
+  // ou pela Divisão que lhe foi atribuída.
+  if (colaborador.responsavel_id && colaborador.responsavel_id === usuario.id) return true;
   return colaborador.divisao_id !== null && usuario.divisoes.includes(colaborador.divisao_id);
 }
 

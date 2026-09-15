@@ -50,6 +50,25 @@ export function validarSenha(senha: string): string | null {
   return null;
 }
 
+/**
+ * Convite de primeiro acesso.
+ *
+ * O portal nunca cria senha por ninguém: gera um convite de uso único, que vale
+ * por alguns dias, e a pessoa define a própria senha ao abrir o link. No banco
+ * fica só o resumo (SHA-256) do convite — quem tiver acesso ao banco não
+ * consegue usá-lo para entrar.
+ */
+export function novoConvite(): string {
+  return [...crypto.getRandomValues(new Uint8Array(32))]
+    .map((b) => b.toString(16).padStart(2, '0'))
+    .join('');
+}
+
+export async function resumoConvite(convite: string): Promise<string> {
+  const digerido = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(String(convite)));
+  return paraHex(digerido);
+}
+
 export function senhaProvisoria(): string {
   const letras = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz';
   const numeros = '23456789';

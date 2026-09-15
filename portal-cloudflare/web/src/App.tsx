@@ -2,6 +2,8 @@ import { useEffect, useState } from 'react';
 import { NavLink, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { ProvedorSessao, useSessao } from './sessao';
 import { Login, TrocarSenha } from './paginas/Login';
+import { Ativar } from './paginas/Ativar';
+import { Gestores } from './paginas/Gestores';
 import { Dashboard } from './paginas/Dashboard';
 import { Colaboradores } from './paginas/Colaboradores';
 import { Importar } from './paginas/Importar';
@@ -20,6 +22,11 @@ export default function App() {
 
 function Portal() {
   const { contexto, carregando, trocarSenha } = useSessao();
+  // /ativar?t=... é a única tela que abre sem sessão: é onde a pessoa define a senha dela.
+  const local = useLocation();
+  const convite = local.pathname === '/ativar' ? new URLSearchParams(local.search).get('t') : null;
+  if (convite && !contexto) return <Ativar convite={convite} />;
+
   if (carregando) return <div className="carregando">Carregando portal...</div>;
   if (trocarSenha) return <TrocarSenha />;
   if (!contexto) return <Login />;
@@ -52,6 +59,7 @@ function Estrutura() {
     '/': 'Dashboard',
     '/colaboradores': 'Colaboradores',
     '/minhas-avaliacoes': 'Minhas avaliações',
+    '/gestores': 'Gestores imediatos',
     '/importar': 'Importar Excel',
     '/configuracoes': 'Configurações',
     '/auditoria': 'Auditoria',
@@ -65,6 +73,12 @@ function Estrutura() {
         <NavLink to="/colaboradores" className={({ isActive }) => `menu-item${isActive ? ' ativo' : ''}`}>Colaboradores</NavLink>
         <NavLink to="/minhas-avaliacoes" className={({ isActive }) => `menu-item${isActive ? ' ativo' : ''}`}>Minhas avaliações</NavLink>
         <button className="menu-item" type="button" onClick={() => void exportar()}>Exportar Excel</button>
+        {permissoes.gerir_gestores && (
+          <>
+            <div className="menu-sep">Coordenação</div>
+            <NavLink to="/gestores" className={({ isActive }) => `menu-item${isActive ? ' ativo' : ''}`}>Gestores</NavLink>
+          </>
+        )}
         {permissoes.importar && (
           <>
             <div className="menu-sep">Administração</div>
@@ -105,6 +119,7 @@ function Estrutura() {
             <Route path="/" element={<Dashboard />} />
             <Route path="/colaboradores" element={<Colaboradores />} />
             <Route path="/minhas-avaliacoes" element={<Colaboradores apenasMinhas />} />
+            {permissoes.gerir_gestores && <Route path="/gestores" element={<Gestores />} />}
             {permissoes.importar && <Route path="/importar" element={<Importar />} />}
             {permissoes.administrar && <Route path="/configuracoes" element={<Configuracoes />} />}
             {permissoes.ver_auditoria && <Route path="/auditoria" element={<Auditoria />} />}

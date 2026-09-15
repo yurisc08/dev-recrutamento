@@ -27,6 +27,7 @@ export function Colaboradores({ apenasMinhas = false }: { apenasMinhas?: boolean
   const [divisaoId, setDivisaoId] = useState('');
   const [status, setStatus] = useState(apenasMinhas ? 'pendente' : '');
   const [acao, setAcao] = useState('');
+  const [gestor, setGestor] = useState('');
   const [comAlerta, setComAlerta] = useState(false);
   const [pagina, setPagina] = useState(1);
   const [selecao, setSelecao] = useState<Set<number>>(new Set());
@@ -42,11 +43,12 @@ export function Colaboradores({ apenasMinhas = false }: { apenasMinhas?: boolean
     if (divisaoId) query.set('divisao_id', divisaoId);
     if (status) query.set('status', status);
     if (acao) query.set('acao', acao);
+    if (gestor) query.set('gestor', gestor);
     if (comAlerta) query.set('com_alerta', '1');
     query.set('pagina', String(pagina));
     query.set('por_pagina', '50');
     return query;
-  }, [busca, diretoriaId, divisaoId, status, acao, comAlerta, pagina]);
+  }, [busca, diretoriaId, divisaoId, status, acao, gestor, comAlerta, pagina]);
 
   const carregar = useCallback(async () => {
     setCarregando(true);
@@ -108,6 +110,15 @@ export function Colaboradores({ apenasMinhas = false }: { apenasMinhas?: boolean
     }
   }
 
+  // os gestores que aparecem na página atual alimentam o filtro (a lista completa
+  // fica na tela "Gestores", que é onde se distribui a base)
+  const gestoresDaLista = useMemo(() => {
+    const nomes = new Set<string>();
+    for (const item of dados?.itens ?? []) if (item.gestor?.nome) nomes.add(item.gestor.nome);
+    if (gestor && gestor !== '__sem__') nomes.add(gestor);
+    return [...nomes].sort((a, b) => a.localeCompare(b, 'pt-BR'));
+  }, [dados, gestor]);
+
   const divisoesFiltro = diretoriaId
     ? contexto.todas_divisoes.filter((divisao) => String(divisao.diretoria_id) === diretoriaId)
     : contexto.todas_divisoes;
@@ -139,6 +150,16 @@ export function Colaboradores({ apenasMinhas = false }: { apenasMinhas?: boolean
               {divisoesFiltro.map((d) => <option key={d.id} value={d.id}>{d.nome}</option>)}
             </select>
           </div>
+          {contexto.usuario.perfil !== 'gestor' && (
+            <div className="campo">
+              <label>Gestor imediato</label>
+              <select value={gestor} onChange={(e) => { setGestor(e.target.value); setPagina(1); }}>
+                <option value="">Todos</option>
+                <option value="__sem__">Sem gestor informado</option>
+                {gestoresDaLista.map((nome) => <option key={nome} value={nome}>{nome}</option>)}
+              </select>
+            </div>
+          )}
           <div className="campo">
             <label>Status</label>
             <select value={status} onChange={(e) => { setStatus(e.target.value); setPagina(1); }}>
@@ -379,6 +400,11 @@ function LinhaColaborador({ item, acoes, colunasExtras, editavel, selecionado, s
       <td className="limite texto-2">
         {item.diretoria?.nome ?? '—'}
         <div className="pequeno texto-3">{item.divisao?.nome ?? '—'}</div>
+        {item.gestor?.nome && (
+          <div className="pequeno texto-3" title={item.gestor.usuario_nome ? 'Gestor com acesso ao portal' : 'Gestor ainda sem acesso'}>
+            Gestor: {item.gestor.nome}{item.gestor.usuario_id ? '' : ' (sem acesso)'}
+          </div>
+        )}
       </td>
 
       <td>
@@ -471,6 +497,7 @@ function ModalLote({ quantidade, aoFechar, aoAplicar }: {
 }) {
   const contexto = useContextoApp();
   const [acao, setAcao] = useState('');
+  const [gestor, setGestor] = useState('');
   const [justificativa, setJustificativa] = useState('');
   const [destino, setDestino] = useState('');
   const [novaDiretoria, setNovaDiretoria] = useState('');
@@ -563,6 +590,7 @@ function ModalAvaliacao({ colaboradorId, aoFechar, aoSalvar }: {
   const [item, setItem] = useState<Colaborador | null>(null);
   const [historico, setHistorico] = useState<any[]>([]);
   const [acao, setAcao] = useState('');
+  const [gestor, setGestor] = useState('');
   const [justificativa, setJustificativa] = useState('');
   const [destino, setDestino] = useState('');
   const [novaDiretoria, setNovaDiretoria] = useState('');

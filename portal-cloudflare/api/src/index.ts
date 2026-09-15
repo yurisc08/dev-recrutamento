@@ -8,6 +8,7 @@ import { NOME_COOKIE, carregarUsuario, lerCookie, rotasSessao } from './rotas/se
 import { rotasDados } from './rotas/dados.js';
 import { rotasAdmin } from './rotas/admin.js';
 import { rotasPlanilha } from './rotas/planilha.js';
+import { rotasEquipe } from './rotas/equipe.js';
 
 export const app = new Hono<{ Bindings: Ambiente; Variables: Variaveis }>();
 
@@ -99,7 +100,7 @@ app.use('/api/*', async (ctx, proximo) => {
   const usuario = ctx.get('usuario');
   if (!usuario) return ctx.json({ erro: 'Sessão expirada. Faça login novamente.' }, 401);
   if (usuario.trocar_senha) {
-    return ctx.json({ erro: 'Troque a senha provisória antes de continuar.', detalhes: { trocar_senha: true } }, 403);
+    return ctx.json({ erro: 'Defina uma nova senha antes de continuar.', detalhes: { trocar_senha: true } }, 403);
   }
   await proximo();
 });
@@ -109,6 +110,7 @@ app.route('/api/auth', rotasSessao);
 app.route('/api', rotasDados);
 app.route('/api', rotasAdmin);
 app.route('/api', rotasPlanilha);
+app.route('/api', rotasEquipe);
 
 app.all('/api/*', (ctx) => ctx.json({ erro: 'Recurso não encontrado.' }, 404));
 

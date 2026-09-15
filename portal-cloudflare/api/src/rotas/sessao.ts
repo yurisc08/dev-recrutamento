@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import type { Ambiente, UsuarioSessao, Variaveis } from '../tipos.js';
 import { ErroApi, carregarContexto } from '../dominio.js';
-import { conferirSenha, gerarHash, novoIdSessao, validarSenha } from '../senha.js';
+import { conferirSenha, gerarHash, novoIdSessao, resumoConvite, validarSenha } from '../senha.js';
 import { auditar } from '../auditoria.js';
 
 const COOKIE = 'portal_sessao';
@@ -75,6 +75,7 @@ export async function contextoDoUsuario(sql: Variaveis['sql'], usuario: UsuarioS
     },
     permissoes: {
       administrar: usuario.perfil === 'admin',
+      gerir_gestores: usuario.perfil !== 'gestor',
       homologar: usuario.perfil !== 'gestor',
       avaliar: true,
       importar: usuario.perfil === 'admin',
@@ -109,9 +110,16 @@ rotasSessao.post('/login', async (contexto) => {
     throw new ErroApi(429, 'Muitas tentativas. Aguarde alguns minutos ou procure o administrador.');
   }
 
-  const [linha] = await sql<{ id: number; senha_hash: string; ativo: boolean; trocar_senha: boolean }[]>`
+  const [linha] = await sql<{ id: number; senha_hash: string | null; ativo: boolean; trocar_senha: boolean }[]>`
     SELECT id, senha_hash, ativo, trocar_senha FROM portal.usuarios WHERE lower(usuario) = ${login}`;
-  const valido = Boolean(linha?.ativo) && !!linha && (await conferirSenha(senha, linha.senha_hash));
+
+  // Acesso criado e ainda não ativado: ninguém tem senha para ele, nem o RH.
+  if (linha?.ativo && !linha.senha_hash) {
+    await sql`INSERT INTO portal.tentativas_login (usuario, ip, sucesso) VALUES (${login}, ${contexto.get('ip')}, false)`;
+    throw new ErroApi(409, 'Este acesso ainda não foi ativado. Abra o link de primeiro acesso que o RH ou a Diretoria enviou para definir a sua senha.');
+  }
+
+  const valido = Boolean(linha?.ativo) && !!linha && !!linha.senha_hash && (await conferirSenha(senha, linha.senha_hash));
   await sql`INSERT INTO portal.tentativas_login (usuario, ip, sucesso) VALUES (${login}, ${contexto.get('ip')}, ${valido})`;
 
   if (!valido || !linha) {
@@ -156,6 +164,59 @@ rotasSessao.get('/eu', async (contexto) => {
     return contexto.json({ trocar_senha: true, usuario: { nome: usuario.nome, usuario: usuario.usuario } });
   }
   return contexto.json(await contextoDoUsuario(contexto.get('sql'), usuario));
+});
+
+/**
+ * Primeiro acesso: a pessoa abre o convite e define a própria senha.
+ *
+ * Duas rotas abertas (quem chega aqui ainda não tem sessão), mas só abrem algo
+ * com um convite válido, de uso único e com prazo.
+ */
+async function buscarConvite(sql: Variaveis['sql'], convite: string) {
+  if (!convite || convite.length < 32) throw new ErroApi(404, 'Link de primeiro acesso inválido.');
+  const [linha] = await sql<{ id: number; nome: string; usuario: string; perfil: string; ativo: boolean; expirado: boolean }[]>`
+    SELECT id, nome, usuario, perfil, ativo, (ativacao_expira_em < now()) AS expirado
+      FROM portal.usuarios WHERE ativacao_hash = ${await resumoConvite(convite)}`;
+  if (!linha || !linha.ativo) throw new ErroApi(404, 'Link de primeiro acesso inválido ou já utilizado. Peça um novo ao RH ou à sua Diretoria.');
+  if (linha.expirado) throw new ErroApi(410, 'Este link de primeiro acesso venceu. Peça um novo ao RH ou à sua Diretoria.');
+  return linha;
+}
+
+rotasSessao.get('/ativacao/:convite', async (contexto) => {
+  const linha = await buscarConvite(contexto.get('sql'), contexto.req.param('convite'));
+  return contexto.json({ nome: linha.nome, usuario: linha.usuario, perfil: linha.perfil });
+});
+
+rotasSessao.post('/ativacao/:convite', async (contexto) => {
+  const sql = contexto.get('sql');
+  const convite = contexto.req.param('convite');
+  const linha = await buscarConvite(sql, convite);
+  const corpo = await contexto.req.json().catch(() => ({}));
+  const senha = String(corpo.senha ?? '');
+  const problema = validarSenha(senha);
+  if (problema) throw new ErroApi(422, problema);
+  if (String(corpo.confirmacao ?? senha) !== senha) throw new ErroApi(422, 'A confirmação não confere com a senha digitada.');
+
+  await sql`
+    UPDATE portal.usuarios
+       SET senha_hash = ${await gerarHash(senha)}, trocar_senha = false,
+           ativacao_hash = NULL, ativacao_expira_em = NULL, senha_definida_em = now()
+     WHERE id = ${linha.id}`;
+
+  const usuario = await carregarUsuario(sql, linha.id);
+  if (!usuario) throw new ErroApi(500, 'Falha ao carregar o usuário.');
+
+  const horas = Number(contexto.env.SESSAO_HORAS ?? 8);
+  const expira = new Date(Date.now() + horas * 3600 * 1000);
+  const id = novoIdSessao();
+  await sql`
+    INSERT INTO portal.sessoes (id, usuario_id, expira_em, ip, navegador)
+    VALUES (${id}, ${usuario.id}, ${expira}, ${contexto.get('ip')}, ${contexto.req.header('user-agent')?.slice(0, 200) ?? ''})`;
+  await sql`UPDATE portal.usuarios SET ultimo_acesso = now() WHERE id = ${usuario.id}`;
+  await auditar(sql, { usuario, tipo: 'ativacao', entidade: 'usuario', entidadeId: usuario.id, ip: contexto.get('ip') });
+
+  contexto.header('Set-Cookie', montarCookie(id, expira, contexto.env.COOKIE_SEGURO !== 'false'));
+  return contexto.json(await contextoDoUsuario(sql, usuario));
 });
 
 rotasSessao.post('/senha', async (contexto) => {

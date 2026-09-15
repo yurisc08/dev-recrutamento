@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import type { Ambiente, Variaveis } from '../tipos.js';
 import { ErroApi, carregarContexto, exigirPerfil } from '../dominio.js';
 import { auditar } from '../auditoria.js';
-import { gerarHash, senhaProvisoria, validarSenha } from '../senha.js';
+import { novoConvite, resumoConvite } from '../senha.js';
 
 export const rotasAdmin = new Hono<{ Bindings: Ambiente; Variables: Variaveis }>();
 
@@ -218,6 +218,7 @@ rotasAdmin.post('/config/divisoes', async (ctx) => {
 /* ------------------------------ usuários ------------------------------ */
 const SELECT_USUARIO = (sql: Variaveis['sql']) => sql`
   SELECT u.id, u.usuario, u.nome, u.email, u.perfil, u.ativo, u.trocar_senha, u.criado_em, u.ultimo_acesso,
+         (u.senha_hash IS NOT NULL) AS senha_definida, u.ativacao_expira_em,
          coalesce(array_remove(array_agg(DISTINCT ud.diretoria_id), NULL), '{}') AS diretorias,
          coalesce(array_remove(array_agg(DISTINCT uv.divisao_id), NULL), '{}') AS divisoes
     FROM portal.usuarios u
@@ -245,14 +246,17 @@ rotasAdmin.post('/usuarios', async (ctx) => {
     throw new ErroApi(409, 'Já existe um usuário com este login.');
   }
 
-  const senha = corpo.senha ? String(corpo.senha) : senhaProvisoria();
-  const problema = validarSenha(senha);
-  if (problema) throw new ErroApi(422, problema);
-
+  // Ninguém cria senha por ninguém: o acesso nasce sem senha e a pessoa define
+  // a dela no link de primeiro acesso.
   const [criado] = await sql<{ id: number }[]>`
-    INSERT INTO portal.usuarios (usuario, nome, email, senha_hash, perfil)
-    VALUES (${login}, ${nome}, ${String(corpo.email ?? '').trim() || null}, ${await gerarHash(senha)}, ${perfil})
+    INSERT INTO portal.usuarios (usuario, nome, email, senha_hash, perfil, trocar_senha, criado_por)
+    VALUES (${login}, ${nome}, ${String(corpo.email ?? '').trim() || null}, NULL, ${perfil}, false, ${usuario.id})
     RETURNING id`;
+  const convite = novoConvite();
+  const expiraConvite = new Date(Date.now() + 7 * 86400 * 1000);
+  await sql`
+    UPDATE portal.usuarios SET ativacao_hash = ${await resumoConvite(convite)}, ativacao_expira_em = ${expiraConvite}
+     WHERE id = ${criado.id}`;
 
   for (const id of (corpo.diretorias ?? []) as number[]) {
     await sql`INSERT INTO portal.usuario_diretorias (usuario_id, diretoria_id) VALUES (${criado.id}, ${id}) ON CONFLICT DO NOTHING`;
@@ -263,7 +267,7 @@ rotasAdmin.post('/usuarios', async (ctx) => {
   await auditar(sql, { usuario, tipo: 'usuario', entidade: 'usuario', entidadeId: criado.id, valorNovo: { login, perfil }, ip: ctx.get('ip') });
 
   const [completo] = await sql`${SELECT_USUARIO(sql)} WHERE u.id = ${criado.id} GROUP BY u.id`;
-  return ctx.json({ ...completo, senha_provisoria: senha }, 201);
+  return ctx.json({ ...completo, convite, expira_em: expiraConvite.toISOString() }, 201);
 });
 
 rotasAdmin.patch('/usuarios/:id{[0-9]+}', async (ctx) => {
@@ -323,11 +327,18 @@ rotasAdmin.post('/usuarios/:id{[0-9]+}/senha', async (ctx) => {
   const id = Number(ctx.req.param('id'));
   const [alvo] = await sql<{ nome: string }[]>`SELECT nome FROM portal.usuarios WHERE id = ${id}`;
   if (!alvo) throw new ErroApi(404, 'Usuário não encontrado.');
-  const senha = senhaProvisoria();
-  await sql`UPDATE portal.usuarios SET senha_hash = ${await gerarHash(senha)}, trocar_senha = true WHERE id = ${id}`;
+  // Redefinir = tirar a senha atual e mandar um novo link; a nova senha é
+  // escolhida pela própria pessoa, nunca por quem administra.
+  const convite = novoConvite();
+  const expiraConvite = new Date(Date.now() + 7 * 86400 * 1000);
+  await sql`
+    UPDATE portal.usuarios
+       SET senha_hash = NULL, trocar_senha = false,
+           ativacao_hash = ${await resumoConvite(convite)}, ativacao_expira_em = ${expiraConvite}
+     WHERE id = ${id}`;
   await sql`DELETE FROM portal.sessoes WHERE usuario_id = ${id}`;
-  await auditar(sql, { usuario, tipo: 'usuario', entidade: 'usuario', entidadeId: id, valorNovo: 'senha redefinida', ip: ctx.get('ip') });
-  return ctx.json({ ok: true, senha_provisoria: senha, nome: alvo.nome });
+  await auditar(sql, { usuario, tipo: 'usuario', entidade: 'usuario', entidadeId: id, valorNovo: 'novo link de primeiro acesso', ip: ctx.get('ip') });
+  return ctx.json({ ok: true, convite, expira_em: expiraConvite.toISOString(), nome: alvo.nome });
 });
 
 /* ------------------------------ auditoria ----------------------------- */

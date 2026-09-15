@@ -21,6 +21,23 @@ export interface UsuarioSessao {
   divisoes: number[];
 }
 
+/** Gestor imediato da base: nome vindo da planilha + acesso, quando existe. */
+export interface GestorImediato {
+  gestor_nome: string;
+  usuario_id: number | null;
+  usuario: string | null;
+  usuario_nome: string | null;
+  email: string | null;
+  ativo: boolean | null;
+  acesso: 'sem_acesso' | 'convite_pendente' | 'convite_expirado' | 'ativo' | 'desativado';
+  convite_expira_em: string | null;
+  ultimo_acesso: string | null;
+  total: number;
+  avaliados: number;
+  pendentes: number;
+  homologadas: number;
+}
+
 export interface Campo {
   id: number;
   chave: string;

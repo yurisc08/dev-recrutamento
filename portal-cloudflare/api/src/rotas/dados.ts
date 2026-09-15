@@ -21,6 +21,9 @@ interface LinhaColaborador {
   divisao_id: number | null;
   diretoria_nome: string | null;
   divisao_nome: string | null;
+  gestor_nome: string | null;
+  responsavel_id: number | null;
+  responsavel_nome: string | null;
   acao: string | null;
   justificativa: string | null;
   destino_livre: string | null;
@@ -45,6 +48,11 @@ function montarItem(linha: LinhaColaborador, regras: Parameters<typeof avaliarAl
     situacao: linha.situacao,
     diretoria: linha.diretoria_id ? { id: linha.diretoria_id, nome: linha.diretoria_nome } : null,
     divisao: linha.divisao_id ? { id: linha.divisao_id, nome: linha.divisao_nome } : null,
+    gestor: {
+      nome: linha.gestor_nome ?? (linha.dados.gestor_imediato as string) ?? null,
+      usuario_id: linha.responsavel_id,
+      usuario_nome: linha.responsavel_nome,
+    },
     dados,
     avaliacao: {
       acao: linha.acao,
@@ -63,18 +71,23 @@ function montarItem(linha: LinhaColaborador, regras: Parameters<typeof avaliarAl
 }
 
 /** Condição de visibilidade, montada como fragmento SQL (nunca só na tela). */
-function condicaoEscopo(sql: Variaveis['sql'], usuario: NonNullable<Variaveis['usuario']>) {
+export function condicaoEscopo(sql: Variaveis['sql'], usuario: NonNullable<Variaveis['usuario']>) {
   if (usuario.perfil === 'admin') return sql`true`;
   if (usuario.perfil === 'diretor') {
     return usuario.diretorias.length
       ? sql`c.diretoria_id = ANY(${usuario.diretorias}::int[])`
       : sql`false`;
   }
-  return usuario.divisoes.length ? sql`c.divisao_id = ANY(${usuario.divisoes}::int[])` : sql`false`;
+  // Gestor: quem está diretamente sob ele (gestor imediato) mais a Divisão
+  // atribuída, quando houver. Fora disso, não enxerga.
+  return usuario.divisoes.length
+    ? sql`(c.responsavel_id = ${usuario.id} OR c.divisao_id = ANY(${usuario.divisoes}::int[]))`
+    : sql`c.responsavel_id = ${usuario.id}`;
 }
 
 const SELECT_BASE = (sql: Variaveis['sql']) => sql`
   SELECT c.id, c.chapa, c.nome, c.situacao, c.dados, c.diretoria_id, c.divisao_id,
+         c.gestor_nome, c.responsavel_id, ur.nome AS responsavel_nome,
          dir.nome AS diretoria_nome, dvs.nome AS divisao_nome,
          a.acao, a.justificativa, a.destino_livre, a.nova_diretoria_id, a.nova_divisao_id,
          ndir.nome AS nova_diretoria_nome, ndvs.nome AS nova_divisao_nome,
@@ -87,7 +100,8 @@ const SELECT_BASE = (sql: Variaveis['sql']) => sql`
     LEFT JOIN portal.diretorias ndir ON ndir.id = a.nova_diretoria_id
     LEFT JOIN portal.divisoes  ndvs ON ndvs.id = a.nova_divisao_id
     LEFT JOIN portal.usuarios  ua   ON ua.id = a.atualizado_por
-    LEFT JOIN portal.usuarios  uh   ON uh.id = a.homologado_por`;
+    LEFT JOIN portal.usuarios  uh   ON uh.id = a.homologado_por
+    LEFT JOIN portal.usuarios  ur   ON ur.id = c.responsavel_id`;
 
 rotasDados.get('/colaboradores', async (ctx) => {
   const sql = ctx.get('sql');
@@ -107,6 +121,9 @@ rotasDados.get('/colaboradores', async (ctx) => {
   }
   if (query.diretoria_id) condicoes.push(sql`c.diretoria_id = ${Number(query.diretoria_id)}`);
   if (query.divisao_id) condicoes.push(sql`c.divisao_id = ${Number(query.divisao_id)}`);
+  if (query.gestor === '__sem__') condicoes.push(sql`coalesce(c.gestor_nome, '') = ''`);
+  else if (query.gestor) condicoes.push(sql`lower(c.gestor_nome) = ${query.gestor.trim().toLowerCase()}`);
+  if (query.responsavel_id) condicoes.push(sql`c.responsavel_id = ${Number(query.responsavel_id)}`);
   if (query.acao === '__sem__') condicoes.push(sql`a.acao IS NULL`);
   else if (query.acao) condicoes.push(sql`a.acao = ${query.acao}`);
   if (query.status === 'pendente') condicoes.push(sql`coalesce(a.status,'pendente') = 'pendente'`);
@@ -323,6 +340,9 @@ rotasDados.get('/dashboard', async (ctx) => {
   const query = ctx.req.query();
   if (query.diretoria_id) condicoes.push(sql`c.diretoria_id = ${Number(query.diretoria_id)}`);
   if (query.divisao_id) condicoes.push(sql`c.divisao_id = ${Number(query.divisao_id)}`);
+  if (query.gestor === '__sem__') condicoes.push(sql`coalesce(c.gestor_nome, '') = ''`);
+  else if (query.gestor) condicoes.push(sql`lower(c.gestor_nome) = ${query.gestor.trim().toLowerCase()}`);
+  if (query.responsavel_id) condicoes.push(sql`c.responsavel_id = ${Number(query.responsavel_id)}`);
   const where = condicoes.reduce((a, b) => sql`${a} AND ${b}`);
   const soma = campoSoma
     ? sql`coalesce((c.dados->>${campoSoma.chave})::numeric, 0)`
@@ -365,17 +385,19 @@ rotasDados.get('/dashboard', async (ctx) => {
   const porDiretoria = await agrupamento('diretoria');
   const porDivisao = await agrupamento('divisao');
 
+  // Andamento por gestor imediato (a coluna da planilha), com o acesso dele ao lado.
   const porGestor = usuario.perfil === 'gestor' ? [] : await sql`
-    SELECT u.id, u.nome,
+    SELECT coalesce(nullif(c.gestor_nome, ''), ur.nome, '(sem gestor informado)') AS nome,
+           ur.id AS usuario_id,
+           (ur.id IS NOT NULL AND ur.senha_hash IS NOT NULL) AS acesso_ativo,
            COUNT(c.id)::text AS total,
            COUNT(c.id) FILTER (WHERE a.acao IS NULL)::text AS pendentes,
            COUNT(c.id) FILTER (WHERE a.acao IS NOT NULL)::text AS avaliados
-      FROM portal.usuarios u
-      JOIN portal.usuario_divisoes ud ON ud.usuario_id = u.id
-      JOIN portal.colaboradores c ON c.divisao_id = ud.divisao_id
+      FROM portal.colaboradores c
       LEFT JOIN portal.avaliacoes a ON a.colaborador_id = c.id
-     WHERE u.perfil = 'gestor' AND u.ativo AND ${where}
-     GROUP BY u.id, u.nome ORDER BY pendentes DESC, u.nome`;
+      LEFT JOIN portal.usuarios ur ON ur.id = c.responsavel_id
+     WHERE ${where}
+     GROUP BY 1, 2, 3 ORDER BY pendentes DESC, 1`;
 
   const total = Number(totais?.total ?? 0);
   const avaliados = Number(totais?.avaliados ?? 0);

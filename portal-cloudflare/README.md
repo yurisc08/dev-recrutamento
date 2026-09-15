@@ -23,11 +23,13 @@ sensível (CPF, nascimento) que nem sai da API para quem não é RH.
 
 1. Crie um projeto em <https://supabase.com> (região **South America (São Paulo)**
    deixa o banco no Brasil).
-2. No painel, abra **SQL Editor** e rode os três arquivos, nesta ordem:
+2. No painel, abra **SQL Editor** e rode os arquivos, nesta ordem:
    - `supabase/01-esquema.sql` — tabelas (schema `portal`).
    - `supabase/02-seguranca.sql` — papel `portal_app`, auditoria imutável,
      fechamento das APIs automáticas do Supabase.
-   - `supabase/03-carga-inicial.sql` — processo, 34 campos, 4 ações e 5 regras.
+   - `supabase/03-carga-inicial.sql` — processo, 35 campos, 4 ações e 5 regras.
+   - `supabase/04-gestores.sql` — gestor imediato e primeiro acesso com senha
+     própria (em banco novo é inofensivo; em banco já em uso, é a migração).
 3. **Troque a senha do papel do portal** (o arquivo vem com um valor de exemplo):
    ```sql
    ALTER ROLE portal_app WITH PASSWORD 'uma-senha-longa-e-aleatoria';
@@ -58,7 +60,7 @@ npx wrangler login
 # a string de conexão vai como segredo, nunca no arquivo de configuração
 npx wrangler secret put DATABASE_URL
 
-npm test          # 26 testes (precisam de um PostgreSQL local; veja a seção 6)
+npm test          # 39 testes (precisam de um PostgreSQL local; veja a seção 6)
 npm run deploy
 ```
 
@@ -113,7 +115,7 @@ porque é ele que separa RH, diretor e gestor.
 cd api
 export DATABASE_URL="postgres://portal_app:SENHA@aws-0-sa-east-1.pooler.supabase.com:6543/postgres"
 
-# administrador do RH (sem ADMIN_SENHA, o script sorteia uma provisória)
+# administrador do RH — sem ADMIN_SENHA, sai um link para você definir a sua
 ADMIN_USUARIO=rh.admin ADMIN_NOME="Nome do RH" npm run admin
 
 # opcional: 24 colaboradores fictícios, um diretor e um gestor, só para ver funcionando
@@ -122,14 +124,43 @@ npm run demonstracao
 npx tsx scripts/semear-demonstracao.ts --remover
 ```
 
-Entre no portal, troque a senha e siga: **Configurações** (data-base, prazo,
-campos, ações, regras, usuários) → **Importar Excel** → avise os gestores.
+Entre no portal e siga: **Configurações** (data-base, prazo, campos, ações,
+regras) → **Importar Excel** → **Gestores** (seção 5.1) para distribuir a base.
 
 Na importação, a planilha é lida **no seu navegador**; para a API vão só as
 colunas que você mapeou, já em texto. Nada de subir o arquivo inteiro. A carga
 casa pela matrícula (CHAPA), mostra o que vai mudar antes de gravar e **não
 apaga as decisões** já registradas no portal — a não ser que você marque
 explicitamente a opção de importar decisões da planilha.
+
+### 5.1 Gestor imediato: uma base só, sem recortar arquivo
+
+A planilha traz a coluna **GESTOR IMEDIATO**. Na carga, ela vira o vínculo de
+quem responde por quem — e é isso que substitui o vaivém de arquivos por e-mail:
+
+1. O RH importa a base inteira, uma vez.
+2. Em **Gestores**, o diretor vê a lista agrupada por gestor imediato, com a
+   equipe de cada um, quanto já foi avaliado e quem ainda não tem acesso.
+3. Em **Criar acesso**, o diretor (ou o RH) cria o acesso do gerente e recebe um
+   **link de primeiro acesso** para mandar pelo canal interno.
+4. O gerente abre o link, **define a própria senha** e passa a ver só a equipe
+   dele — a mesma base, com as flags de decisão na linha.
+5. O diretor acompanha o andamento na mesma tela, sem pedir arquivo de volta.
+
+Detalhes que valem saber:
+
+- **Ninguém cria senha por ninguém.** O acesso nasce sem senha: até a pessoa
+  abrir o link, não existe senha para ele — nem o RH nem a Diretoria conseguem
+  entrar em nome dela. O link é de uso único, vale 7 dias, e no banco fica só o
+  resumo (SHA-256) dele.
+- Esqueceu a senha? **Novo link** na tela de Gestores: a senha antiga deixa de
+  valer na hora, as sessões abertas caem, e a nova senha é escolhida pela
+  própria pessoa.
+- Se o nome do gestor na planilha for igual ao nome de um acesso que já existe,
+  a carga religa sozinha. **Vincular** resolve os casos em que não bate.
+- Recarregar a planilha **não desfaz** atribuição feita à mão no portal.
+- Gestor enxerga quem está sob ele (pelo gestor imediato) mais a Divisão que lhe
+  foi atribuída, se houver. Fora disso, nada — e isso é conferido no SQL.
 
 ## 6. Rodando na sua máquina antes de publicar
 
@@ -139,6 +170,7 @@ createdb portal_local
 psql -d portal_local -f supabase/01-esquema.sql
 psql -d portal_local -f supabase/02-seguranca.sql
 psql -d portal_local -f supabase/03-carga-inicial.sql
+psql -d portal_local -f supabase/04-gestores.sql
 
 cd api && npm install
 export DATABASE_URL="postgres://usuario@127.0.0.1:5432/portal_local" DB_SSL=false
@@ -159,15 +191,18 @@ Para desenvolver a tela com recarga automática: `npm run dev` dentro de `web/`
 
 Feito aqui:
 
-- Senha guardada só como hash **PBKDF2-SHA256** (210 mil iterações), nunca em texto.
+- Senha guardada só como hash **PBKDF2-SHA256** (210 mil iterações), nunca em
+  texto — e definida pela própria pessoa no primeiro acesso, nunca por quem
+  administra.
 - Sessão em cookie `HttpOnly; SameSite=Strict; Secure`, guardada no banco e com
   prazo; 5 tentativas erradas em 15 minutos bloqueiam o usuário.
-- **Permissão conferida no servidor, dentro do SQL**: gestor enxerga a Divisão
-  dele, diretor a Diretoria dele, RH tudo — inclusive na exportação.
+- **Permissão conferida no servidor, dentro do SQL**: gestor enxerga a equipe
+  dele (gestor imediato) e a Divisão atribuída, diretor a Diretoria dele, RH
+  tudo — inclusive na exportação.
 - Campos marcados como sensíveis (CPF, nascimento) **não saem da API** para
   quem não é RH, nem na tela nem no Excel.
-- Auditoria de login, logout, decisão, homologação, importação, exportação e
-  mudança de usuário/permissão — com gatilho no banco e privilégio revogado,
+- Auditoria de login, logout, primeiro acesso, decisão, homologação, importação,
+  exportação, criação de acesso e mudança de responsável/permissão — com gatilho no banco e privilégio revogado,
   ninguém altera nem apaga.
 - Papel `portal_app` com permissão só no schema `portal`; APIs automáticas do
   Supabase (anon/authenticated) revogadas.

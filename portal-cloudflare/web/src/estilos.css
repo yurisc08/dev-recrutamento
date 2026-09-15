@@ -165,6 +165,10 @@ textarea { resize: vertical; min-height: 70px; }
 .barra-numero { font-variant-numeric: tabular-nums; font-weight: 600; min-width: 96px; text-align: right; font-size: 13px; }
 .barra-numero span { color: var(--texto-3); font-weight: 400; }
 
+/* progresso enxuto, dentro da linha da tabela de gestores */
+.barra-mini { background: var(--superficie-2); border-radius: 4px; height: 8px; overflow: hidden; min-width: 90px; }
+.barra-mini span { display: block; height: 100%; background: var(--manter); border-radius: 4px; }
+
 /* ----------------------------- tabelas ----------------------------- */
 .tabela-caixa { overflow: auto; border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie); }
 .tabela-rolagem { max-height: calc(100dvh - 330px); }

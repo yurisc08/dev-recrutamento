@@ -59,6 +59,8 @@ export interface Colaborador {
   situacao: string | null;
   diretoria: Referencia | null;
   divisao: Referencia | null;
+  /** Gestor imediato vindo da planilha e, quando tem acesso, o usuário dele. */
+  gestor: { nome: string | null; usuario_id: number | null; usuario_nome: string | null };
   dados: Record<string, any>;
   avaliacao: {
     acao: string | null;
@@ -80,6 +82,7 @@ export interface Contexto {
   permissoes: {
     administrar: boolean; homologar: boolean; avaliar: boolean;
     importar: boolean; exportar: boolean; ver_auditoria: boolean;
+    gerir_gestores: boolean;
   };
   processo: { id: number; nome: string; data_base: string; prazo: string | null; aviso_confidencialidade: string | null };
   campos: Campo[];

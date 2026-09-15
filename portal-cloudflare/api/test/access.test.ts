@@ -15,18 +15,16 @@ const paraBase64url = (bytes: Uint8Array) =>
 
 const textoParaBase64url = (texto: string) => paraBase64url(new TextEncoder().encode(texto));
 
-const par = await crypto.subtle.generateKey(
+const gerarPar = async () => await crypto.subtle.generateKey(
   { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
   true,
   ['sign', 'verify'],
-);
-const jwk = { ...(await crypto.subtle.exportKey('jwk', par.publicKey)), kid: 'chave-1' };
+) as CryptoKeyPair;
 
-const intruso = await crypto.subtle.generateKey(
-  { name: 'RSASSA-PKCS1-v1_5', modulusLength: 2048, publicExponent: new Uint8Array([1, 0, 1]), hash: 'SHA-256' },
-  true,
-  ['sign', 'verify'],
-);
+const par = await gerarPar();
+const jwk = { ...(await crypto.subtle.exportKey('jwk', par.publicKey)), kid: 'chave-1' } as JsonWebKey & { kid: string };
+
+const intruso = await gerarPar();
 
 async function montarToken(opcoes: {
   kid?: string;
@@ -68,7 +66,7 @@ test('aceita crachá assinado pela chave publicada', async () => {
   const { dominio, buscar } = ambienteDeTeste();
   const token = await montarToken({ iss: `https://${dominio}` });
   const resultado = await validarAccess(token, dominio, AUDIENCIA, buscar);
-  assert.equal(resultado.valido, true, resultado.motivo);
+  assert.equal(resultado.valido, true, resultado.motivo ?? '');
   assert.equal(resultado.email, 'pessoa@empresa.com.br');
 });
 
