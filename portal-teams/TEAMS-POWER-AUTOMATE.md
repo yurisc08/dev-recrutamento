@@ -95,6 +95,10 @@ RH vê tudo — que é o que a planilha por e-mail nunca deu.
 Em qualquer um dos três, o Teams continua fazendo o que faz bem: avisar, cobrar
 quem não respondeu e receber a decisão com o nome de quem decidiu.
 
+> **Para montar de verdade, siga o [MONTAGEM-PASSO-A-PASSO.md](MONTAGEM-PASSO-A-PASSO.md)**
+> — é a ordem de execução, com tempo por fase e o teste que fecha cada uma. O que
+> vem abaixo é a referência dos fluxos; lá está a sequência.
+
 ## Montando (4 fluxos, todos com conector padrão do M365)
 
 Use as mesmas listas `Base` e (agora opcional) `Acessos` descritas em
