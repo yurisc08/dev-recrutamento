@@ -1,0 +1,10 @@
+# Dados do processo: banco, certificado e link de primeiro acesso.
+# Nunca versione — é a base real da empresa.
+dados/
+
+# Configuração desta instalação (porta, faixas de rede).
+portal.config.json
+
+# O Node.js que a pessoa copia para cá na instalação.
+node/*
+!node/COLOQUE-O-NODE-AQUI.txt

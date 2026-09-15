@@ -233,6 +233,12 @@ td.limite { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
 .ficha { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 10px 16px; }
 .ficha .rotulo { font-size: 11px; text-transform: uppercase; letter-spacing: .3px; color: var(--texto-3); }
 .ficha .valor { font-size: 13px; }
+
+/* Seletor de colunas da lista */
+.grade-colunas { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 8px 20px; }
+.grade-colunas h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--texto-3); margin: 0 0 4px; }
+.escolha-coluna { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.35; padding: 2px 0; cursor: pointer; }
+.escolha-coluna input { width: auto; margin-top: 2px; flex: none; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { border: 1px solid var(--borda-forte); border-radius: 999px; padding: 3px 10px; font-size: 12px; background: var(--superficie-2); }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }
@@ -253,6 +259,7 @@ td.limite { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
   .menu-item { width: auto; }
   main { padding: 14px; }
   .grade-2, .grade-3 { grid-template-columns: 1fr; }
+  .grade-colunas { grid-template-columns: 1fr 1fr; }
   .barra-linha { grid-template-columns: 1fr; gap: 4px; }
   .barra-numero { text-align: left; }
 }

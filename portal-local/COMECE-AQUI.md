@@ -60,6 +60,12 @@ Certificação Raiz Confiáveis*.
    confirme. A coluna **GESTOR IMEDIATO** é a que separa a base por gestor.
    A planilha é lida **no seu computador**; só as colunas que você mapeou entram
    no portal.
+
+   > O arquivo **`modelo-base.xlsx`**, aqui nesta pasta, tem exatamente as **49
+   > colunas** que o portal já entende, com a lista suspensa na AÇÃO INDICADA e
+   > uma aba explicando cada coluna. Cole a sua base nele (ou renomeie as colunas
+   > da sua planilha para estes nomes) e a importação reconhece tudo sozinha.
+   > Coluna que não estiver no modelo você mapeia na mão, ou deixa de fora.
 4. **Gestores** — para cada gestor, **Criar acesso**. O portal devolve um **link
    de primeiro acesso**: mande para ele pelo canal interno (Teams, e-mail
    corporativo, o que a empresa usa).
@@ -67,6 +73,20 @@ Certificação Raiz Confiáveis*.
    dele**, marcando as decisões direto na linha.
 6. Você acompanha tudo em **Dashboard** e **Gestores**, sem pedir arquivo de
    volta. No fim, **Exportar Excel**.
+
+### Ver a lista do seu jeito
+
+A lista abre com as colunas principais. O botão **Colunas** abre o seletor: marque
+as que você quer ver, agrupadas como na planilha (Identificação, Organização,
+Cargo, Situação, Remuneração...). *Marcar todas* traz a base inteira na tela, com
+rolagem lateral.
+
+A escolha é **de cada pessoa** e fica salva no navegador dela — o gestor arruma a
+tela dele sem mexer na sua. Clicar no nome abre a **ficha completa**: todas as
+colunas daquela pessoa, mais o histórico do que já foi alterado nela.
+
+A **exportação não depende dessa escolha**: o Excel sai sempre com todas as
+colunas que a pessoa tem direito de ver.
 
 ## 3. Se os gestores não conseguirem abrir o endereço
 
@@ -153,6 +173,24 @@ Tem o mesmo portal pronto para Cloudflare + Supabase, na pasta
 - `servidor/` — tudo em JavaScript puro, sem nenhuma biblioteca externa: banco
   (SQLite embutido no Node), certificado, regras, rotas.
 - `publico/` — a interface já compilada.
-- `testes/portal.test.mjs` — 15 testes que sobem o portal de verdade e conferem
-  login, escopo por perfil, importação, decisão, homologação, exportação e a
-  auditoria imutável. Rode com `node --test testes/portal.test.mjs`.
+- `testes/portal.test.mjs` — 16 testes que sobem o portal de verdade e conferem
+  login, escopo por perfil, importação, decisão, homologação, exportação, campo
+  sensível fora do alcance de quem não é RH e a auditoria imutável. Rode com
+  `node --test testes/portal.test.mjs`.
+- `modelo-base.xlsx` — a planilha-modelo com as 49 colunas do processo.
+
+### Mexer na interface
+
+A tela é um aplicativo React compilado. O código-fonte dela é compartilhado com a
+versão em nuvem e está em **`../portal-cloudflare/web/src`**. Para mudar alguma
+coisa:
+
+```
+cd ../portal-cloudflare/web
+npm install
+npx vite build
+cp -r dist/* ../../portal-local/publico/
+```
+
+Se você não vai mexer na tela, nada disso é necessário: `publico/` já vem pronto
+e o portal não precisa de `npm` para rodar.

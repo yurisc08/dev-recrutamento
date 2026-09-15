@@ -18,6 +18,42 @@ const ROTULO_STATUS: Record<string, string> = {
   pendente: 'Pendente', preenchida: 'Preenchida', homologada: 'Homologada',
 };
 
+/** Colunas que a tabela já mostra em célula própria — não entram no seletor. */
+const COLUNAS_FIXAS = ['chapa', 'nome', 'diretoria', 'divisao', 'des_cargo', 'gestor_imediato'];
+
+const ORDEM_GRUPOS = ['Identificação', 'Organização', 'Cargo', 'Situação', 'Desempenho',
+  'Estabilidade', 'Remuneração', 'Personalizados', 'Controle'];
+
+function ordenarGrupos(grupos: string[]): string[] {
+  return [...grupos].sort((a, b) => {
+    const pa = ORDEM_GRUPOS.indexOf(a);
+    const pb = ORDEM_GRUPOS.indexOf(b);
+    return (pa < 0 ? 50 : pa) - (pb < 0 ? 50 : pb);
+  });
+}
+
+/** A escolha de colunas é de cada pessoa e fica só no navegador dela. */
+function lerColunasSalvas(usuarioId: number): string[] | null {
+  try {
+    const bruto = window.localStorage.getItem(`portal.colunas.${usuarioId}`);
+    if (!bruto) return null;
+    const lista = JSON.parse(bruto);
+    return Array.isArray(lista) ? lista.map(String) : null;
+  } catch {
+    return null;
+  }
+}
+
+function salvarColunas(usuarioId: number, colunas: string[] | null): void {
+  try {
+    const chave = `portal.colunas.${usuarioId}`;
+    if (colunas === null) window.localStorage.removeItem(chave);
+    else window.localStorage.setItem(chave, JSON.stringify(colunas));
+  } catch {
+    // Navegador sem armazenamento: a escolha vale só nesta sessão.
+  }
+}
+
 export function Colaboradores({ apenasMinhas = false }: { apenasMinhas?: boolean }) {
   const contexto = useContextoApp();
   const { avisar } = useSessao();
@@ -35,6 +71,8 @@ export function Colaboradores({ apenasMinhas = false }: { apenasMinhas?: boolean
   const [lote, setLote] = useState(false);
   const [carregando, setCarregando] = useState(true);
   const [salvandoId, setSalvandoId] = useState<number | null>(null);
+  const [colunas, setColunas] = useState<string[] | null>(() => lerColunasSalvas(contexto.usuario.id));
+  const [painelColunas, setPainelColunas] = useState(false);
 
   const parametros = useMemo(() => {
     const query = new URLSearchParams();
@@ -66,10 +104,24 @@ export function Colaboradores({ apenasMinhas = false }: { apenasMinhas?: boolean
     return () => window.clearTimeout(atraso);
   }, [carregar]);
 
-  const colunasExtras = contexto.campos.filter(
-    (campo) => campo.ativo && campo.visivel_lista && campo.origem === 'base'
-      && !['chapa', 'nome', 'diretoria', 'divisao'].includes(campo.chave),
+  // Todas as colunas da base que a pessoa pode ver (o servidor já tirou as sensíveis
+  // de quem não é RH) — é a partir daqui que ela escolhe o que aparece na lista.
+  const colunasDisponiveis = contexto.campos.filter(
+    (campo) => campo.ativo && campo.origem === 'base' && !COLUNAS_FIXAS.includes(campo.chave),
   );
+  const colunasExtras = colunas === null
+    ? colunasDisponiveis.filter((campo) => campo.visivel_lista)
+    : colunasDisponiveis.filter((campo) => colunas.includes(campo.chave));
+
+  function aplicarColunas(proximas: string[] | null) {
+    setColunas(proximas);
+    salvarColunas(contexto.usuario.id, proximas);
+  }
+
+  function alternarColuna(chave: string) {
+    const atuais = colunasExtras.map((campo) => campo.chave);
+    aplicarColunas(atuais.includes(chave) ? atuais.filter((c) => c !== chave) : [...atuais, chave]);
+  }
 
   /** O gestor perde a edição depois da homologação; Diretoria e RH continuam podendo ajustar. */
   function podeEditar(item: Colaborador): boolean {
@@ -183,12 +235,64 @@ export function Colaboradores({ apenasMinhas = false }: { apenasMinhas?: boolean
             Só com alerta
           </label>
           <span className="espaco" />
+          <button className="btn" type="button" aria-expanded={painelColunas}
+                  onClick={() => setPainelColunas((aberto) => !aberto)}>
+            Colunas ({colunasExtras.length}/{colunasDisponiveis.length})
+          </button>
           <button className="btn" type="button"
                   onClick={() => void exportarPlanilha(String(parametros)).catch((erro) => avisar((erro as Error).message, 'erro'))}>
             Exportar Excel
           </button>
         </div>
       </Cartao>
+
+      {painelColunas && (
+        <Cartao>
+          <div className="linha-filtros" style={{ alignItems: 'center' }}>
+            <h2 style={{ margin: 0 }}>
+              Colunas da lista{' '}
+              <span className="dica">— {colunasExtras.length} de {colunasDisponiveis.length} visíveis</span>
+            </h2>
+            <span className="espaco" />
+            <button className="btn btn-pequeno" type="button" onClick={() => aplicarColunas(null)}>
+              Voltar ao padrão
+            </button>
+            <button className="btn btn-pequeno" type="button"
+                    onClick={() => aplicarColunas(colunasDisponiveis.map((campo) => campo.chave))}>
+              Marcar todas
+            </button>
+            <button className="btn btn-pequeno" type="button" onClick={() => aplicarColunas([])}>
+              Desmarcar todas
+            </button>
+            <button className="btn btn-pequeno btn-primario" type="button" onClick={() => setPainelColunas(false)}>
+              Pronto
+            </button>
+          </div>
+          <p className="pequeno texto-3" style={{ marginTop: 0 }}>
+            A escolha é sua e fica salva neste navegador. Ela muda o que você vê na tela —
+            a exportação continua trazendo todas as colunas da base.
+          </p>
+          <div className="grade-colunas">
+            {ordenarGrupos([...new Set(colunasDisponiveis.map((campo) => campo.grupo ?? 'Outros'))]).map((grupo) => (
+              <div key={grupo}>
+                <h3 style={{ marginBottom: 4 }}>{grupo}</h3>
+                {colunasDisponiveis
+                  .filter((campo) => (campo.grupo ?? 'Outros') === grupo)
+                  .map((campo) => (
+                    <label key={campo.chave} className="escolha-coluna" title={campo.ajuda ?? undefined}>
+                      <input
+                        type="checkbox"
+                        checked={colunasExtras.some((visivel) => visivel.chave === campo.chave)}
+                        onChange={() => alternarColuna(campo.chave)}
+                      />
+                      {campo.rotulo}
+                    </label>
+                  ))}
+              </div>
+            ))}
+          </div>
+        </Cartao>
+      )}
 
       {selecao.size > 0 && (
         <div className="barra-selecao">
@@ -619,12 +723,7 @@ function ModalAvaliacao({ colaboradorId, aoFechar, aoSalvar }: {
   const configurada = contexto.acoes.find((opcao) => opcao.valor === acao);
   const bloqueadoParaGestor = contexto.usuario.perfil === 'gestor' && item.avaliacao.status === 'homologada';
   const camposFicha = contexto.campos.filter((campo) => campo.ativo && campo.origem === 'base');
-  const ORDEM_GRUPOS = ['Identificação', 'Organização', 'Cargo', 'Situação', 'Desempenho', 'Estabilidade', 'Remuneração', 'Personalizados', 'Controle'];
-  const grupos = [...new Set(camposFicha.map((campo) => campo.grupo ?? 'Outros'))].sort((a, b) => {
-    const posicaoA = ORDEM_GRUPOS.indexOf(a);
-    const posicaoB = ORDEM_GRUPOS.indexOf(b);
-    return (posicaoA < 0 ? 50 : posicaoA) - (posicaoB < 0 ? 50 : posicaoB);
-  });
+  const grupos = ordenarGrupos([...new Set(camposFicha.map((campo) => campo.grupo ?? 'Outros'))]);
 
   async function salvar() {
     setSalvando(true);

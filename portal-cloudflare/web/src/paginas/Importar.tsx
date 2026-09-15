@@ -74,6 +74,22 @@ export function Importar() {
     return sugestao;
   }
 
+  /**
+   * Qual aba abrir primeiro. A planilha-modelo tem uma aba de instruções antes da
+   * base, e abrir a primeira do arquivo levava o RH a conferir a aba errada.
+   * A aba com o cabeçalho mais largo é a que tem os dados.
+   */
+  function melhorAba(lista: AbaLida[]): AbaLida {
+    let escolhida = lista[0];
+    let largura = -1;
+    for (const item of lista) {
+      const cabecalho = item.linhas[acharCabecalho(item.linhas)] ?? [];
+      const colunas = cabecalho.filter((celula) => String(celula ?? '').trim()).length;
+      if (colunas > largura) { largura = colunas; escolhida = item; }
+    }
+    return escolhida;
+  }
+
   function trocarAba(lista: AbaLida[], nome: string) {
     const escolhida = lista.find((item) => item.nome === nome) ?? lista[0];
     const cabecalho = acharCabecalho(escolhida.linhas) + 1;
@@ -92,7 +108,7 @@ export function Importar() {
       const lidas = await lerPlanilha(selecionado);
       setArquivo(selecionado);
       setAbas(lidas);
-      trocarAba(lidas, lidas[0].nome);
+      trocarAba(lidas, melhorAba(lidas).nome);
     } catch (erro) {
       avisar((erro as Error).message, 'erro');
       setArquivo(null);

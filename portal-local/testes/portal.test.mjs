@@ -90,8 +90,17 @@ test('primeira execução cria o acesso do RH sem senha e mostra o link', async 
 
 test('o catálogo já vem com os campos, ações e regras do processo', async () => {
   const { corpo } = await chamar('/api/auth/eu', { cookie: estado.rh });
-  assert.ok(corpo.campos.length >= 35);
+  // As 49 colunas do modelo-base.xlsx: 46 da planilha + as 3 da decisão.
+  assert.equal(corpo.campos.length, 49);
+  assert.equal(corpo.campos.filter((c) => c.origem === 'base').length, 46);
+  assert.deepEqual(corpo.campos.filter((c) => c.origem === 'avaliacao').map((c) => c.chave),
+    ['acao', 'destino', 'justificativa']);
   assert.ok(corpo.campos.some((c) => c.chave === 'gestor_imediato'));
+  // A ordem do catálogo é a da planilha: importação e exportação ficam alinhadas.
+  const ordens = corpo.campos.map((c) => c.ordem);
+  assert.deepEqual(ordens, [...ordens].sort((x, y) => x - y));
+  assert.equal(corpo.campos[0].chave, 'chapa');
+  assert.equal(corpo.campos.at(-1).chave, 'justificativa');
   assert.deepEqual(corpo.acoes.map((a) => a.valor).sort(),
     ['ATIVO', 'DESLIGAMENTO', 'ESTABILIDADE', 'TRANSFERÊNCIA DE ÁREA']);
   assert.equal(corpo.permissoes.administrar, true);
@@ -295,6 +304,18 @@ test('a trilha de auditoria não pode ser alterada nem apagada', async () => {
   assert.throws(() => bd.exec("UPDATE auditoria SET tipo = 'x'"), /não pode ser alterada/);
   assert.throws(() => bd.exec('DELETE FROM auditoria'), /não pode ser alterada/);
   bd.close();
+});
+
+test('campo sensível (CPF) não chega a quem não é RH', async () => {
+  const rh = await chamar('/api/auth/eu', { cookie: estado.rh });
+  const gestor = await chamar('/api/auth/eu', { cookie: estado.gestor });
+  assert.ok(rh.corpo.campos.some((c) => c.chave === 'cpf'), 'o RH enxerga o CPF');
+  assert.ok(!gestor.corpo.campos.some((c) => c.chave === 'cpf'), 'o gestor não enxerga o CPF');
+
+  const lista = await chamar('/api/colaboradores?pagina=1&por_pagina=50', { cookie: estado.gestor });
+  for (const item of lista.corpo.itens) {
+    assert.ok(!('cpf' in item.dados), `o CPF de ${item.chapa} não pode sair na lista do gestor`);
+  }
 });
 
 test('login errado várias vezes bloqueia por alguns minutos', async () => {
