@@ -90,6 +90,9 @@ function buscarLinha(ctx, usuario, id, processoId) {
   return linha;
 }
 
+/** Teto por gravação, para uma colada gigante não virar uma transação eterna. */
+const LIMITE_PLANILHA = 500;
+
 function salvarAvaliacao(ctx, id, entrada) {
   const usuario = ctx.usuario;
   const contexto = carregarContexto(ctx.acesso);
@@ -238,6 +241,43 @@ export const rotasDados = [
       }
     }
     return { ok: true, atualizados: atualizados.length, itens: atualizados, erros };
+  }],
+
+  /**
+   * Gravação da tela Planilha: várias linhas, vários campos, de uma vez.
+   *
+   * Cada linha passa pela MESMA validação de sempre (salvarAvaliacao), então a
+   * grade não é um atalho para escrever onde o perfil não pode. Uma linha com
+   * erro não derruba as outras: volta na lista de erros para a célula acender.
+   */
+  ['POST', '/api/colaboradores/planilha', async (ctx) => {
+    const corpo = await ctx.corpo();
+    const alteracoes = Array.isArray(corpo.alteracoes) ? corpo.alteracoes : [];
+    if (!alteracoes.length) throw new ErroApi(422, 'Nada para salvar.');
+    if (alteracoes.length > LIMITE_PLANILHA) {
+      throw new ErroApi(422, `São ${alteracoes.length} linhas de uma vez. Salve em blocos de até ${LIMITE_PLANILHA}.`);
+    }
+
+    const itens = [];
+    const erros = [];
+    for (const alteracao of alteracoes) {
+      const id = Number(alteracao?.id);
+      if (!Number.isInteger(id) || id <= 0) {
+        erros.push({ id: alteracao?.id ?? null, erro: 'Linha sem identificador.' });
+        continue;
+      }
+      try {
+        itens.push(salvarAvaliacao(ctx, id, {
+          ...(alteracao.dados && typeof alteracao.dados === 'object' ? { dados: alteracao.dados } : {}),
+          ...('acao' in alteracao ? { acao: alteracao.acao } : {}),
+          ...('justificativa' in alteracao ? { justificativa: alteracao.justificativa } : {}),
+          ...('destino' in alteracao ? { destino: alteracao.destino } : {}),
+        }));
+      } catch (erro) {
+        erros.push({ id, erro: erro.message });
+      }
+    }
+    return { ok: erros.length === 0, salvos: itens.length, itens, erros };
   }],
 
   ['POST', '/api/colaboradores/homologar', async (ctx) => {

@@ -79,6 +79,29 @@ Certificação Raiz Confiáveis*.
 6. Você acompanha tudo em **Dashboard** e **Gestores**, sem pedir arquivo de
    volta. No fim, **Exportar Excel**.
 
+### Editar como no Excel — a tela Planilha
+
+A tela **Planilha** é a base inteira numa grade, do jeito que você mexe no Excel:
+
+- **setas** para andar, **Enter** ou **F2** para editar, **Esc** desfaz a célula;
+- **começar a digitar** substitui o conteúdo;
+- **Ctrl+V** cola um bloco vindo do Excel — várias linhas e colunas de uma vez;
+- célula **cinza** é bloqueada para o seu perfil.
+
+O que muda em relação ao Excel — e é de propósito:
+
+| | Excel | Planilha do portal |
+|---|---|---|
+| Quem pode mexer em quê | quem abre o arquivo muda tudo | o gestor só mexe na decisão; colunas da base são do RH |
+| Erro de digitação | fica lá | recusado na hora ("HRS_TEOR_MES deve ser numérico") e a grade leva você até a célula |
+| Desligamento sem motivo | passa | recusado: a justificativa é obrigatória |
+| Quem mudou o quê | ninguém sabe | cada célula alterada vai para a auditoria, com valor anterior e novo |
+
+**Nada vai para o banco antes de você clicar em Salvar.** O botão mostra quantas
+alterações estão pendentes. Se alguma linha for recusada, as outras são salvas
+assim mesmo e a recusada fica marcada, com o motivo no rodapé e um botão que
+leva até ela.
+
 ### Ver a lista do seu jeito
 
 A lista abre com as colunas principais. O botão **Colunas** abre o seletor: marque
@@ -181,10 +204,11 @@ Tem o mesmo portal pronto para Cloudflare + Supabase, na pasta
 - `servidor/campos-padrao.mjs` — o catálogo das 51 colunas. **Não edite à mão**:
   é gerado de `modelo/colunas.json` por `node modelo/gerar.mjs`, para o portal
   local e o da nuvem nunca divergirem da planilha.
-- `testes/portal.test.mjs` — 17 testes que sobem o portal de verdade e conferem
+- `testes/portal.test.mjs` — 18 testes que sobem o portal de verdade e conferem
   login, escopo por perfil, importação, distribuição pelos três níveis, decisão,
-  homologação, exportação, campo sensível fora do alcance de quem não é RH e a
-  auditoria imutável. Rode com `node --test testes/portal.test.mjs`.
+  homologação, gravação em lote da tela Planilha, exportação, campo sensível fora
+  do alcance de quem não é RH e a auditoria imutável.
+  Rode com `node --test testes/portal.test.mjs`.
 - `modelo-base.xlsx` — a planilha-modelo com as 50 colunas do processo.
 
 ### Mexer na interface

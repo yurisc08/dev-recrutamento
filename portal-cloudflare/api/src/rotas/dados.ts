@@ -301,6 +301,43 @@ rotasDados.post('/colaboradores/avaliar-lote', async (ctx) => {
   return ctx.json({ aplicados, erros });
 });
 
+/**
+ * Gravação da tela Planilha: várias linhas, vários campos, de uma vez.
+ *
+ * Cada linha passa pela MESMA validação de sempre (salvarAvaliacao), então a
+ * grade não é um atalho para escrever onde o perfil não pode. Uma linha com
+ * erro não derruba as outras: volta na lista de erros para a célula acender.
+ */
+rotasDados.post('/colaboradores/planilha', async (ctx) => {
+  const corpo = await ctx.req.json().catch(() => ({}));
+  const alteracoes: any[] = Array.isArray(corpo.alteracoes) ? corpo.alteracoes : [];
+  if (!alteracoes.length) throw new ErroApi(400, 'Nada para salvar.');
+  if (alteracoes.length > 500) {
+    throw new ErroApi(400, `São ${alteracoes.length} linhas de uma vez. Salve em blocos de até 500.`);
+  }
+
+  const itens: unknown[] = [];
+  const erros: Array<{ id: number | null; erro: string }> = [];
+  for (const alteracao of alteracoes) {
+    const id = Number(alteracao?.id);
+    if (!Number.isInteger(id) || id <= 0) {
+      erros.push({ id: alteracao?.id ?? null, erro: 'Linha sem identificador.' });
+      continue;
+    }
+    const entrada: Record<string, unknown> = {};
+    if (alteracao.dados && typeof alteracao.dados === 'object') entrada.dados = alteracao.dados;
+    for (const campo of ['acao', 'justificativa', 'destino'] as const) {
+      if (campo in alteracao) entrada[campo] = alteracao[campo];
+    }
+    try {
+      itens.push(await salvarAvaliacao(ctx, id, entrada));
+    } catch (erro) {
+      erros.push({ id, erro: (erro as Error).message });
+    }
+  }
+  return ctx.json({ ok: erros.length === 0, salvos: itens.length, itens, erros });
+});
+
 rotasDados.post('/colaboradores/homologar', async (ctx) => {
   const sql = ctx.get('sql');
   const usuario = exigirPerfil(ctx.get('usuario'), 'admin', 'diretor');

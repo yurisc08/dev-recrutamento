@@ -6,6 +6,7 @@ import { Ativar } from './paginas/Ativar';
 import { Gestores } from './paginas/Gestores';
 import { Dashboard } from './paginas/Dashboard';
 import { Colaboradores } from './paginas/Colaboradores';
+import { Planilha } from './paginas/Planilha';
 import { Importar } from './paginas/Importar';
 import { Configuracoes } from './paginas/Configuracoes';
 import { Auditoria } from './paginas/Auditoria';
@@ -58,8 +59,9 @@ function Estrutura() {
   const titulos: Record<string, string> = {
     '/': 'Dashboard',
     '/colaboradores': 'Colaboradores',
+    '/planilha': 'Planilha',
     '/minhas-avaliacoes': 'Minhas avaliações',
-    '/gestores': 'Gestores imediatos',
+    '/gestores': 'Distribuir a base',
     '/importar': 'Importar Excel',
     '/configuracoes': 'Configurações',
     '/auditoria': 'Auditoria',
@@ -71,6 +73,7 @@ function Estrutura() {
         <div className="titulo"><span className="marca-ponto" /> Portal de Decisões</div>
         <NavLink to="/" end className={({ isActive }) => `menu-item${isActive ? ' ativo' : ''}`}>Dashboard</NavLink>
         <NavLink to="/colaboradores" className={({ isActive }) => `menu-item${isActive ? ' ativo' : ''}`}>Colaboradores</NavLink>
+        <NavLink to="/planilha" className={({ isActive }) => `menu-item${isActive ? ' ativo' : ''}`}>Planilha</NavLink>
         <NavLink to="/minhas-avaliacoes" className={({ isActive }) => `menu-item${isActive ? ' ativo' : ''}`}>Minhas avaliações</NavLink>
         <button className="menu-item" type="button" onClick={() => void exportar()}>Exportar Excel</button>
         {permissoes.gerir_gestores && (
@@ -118,6 +121,7 @@ function Estrutura() {
           <Routes>
             <Route path="/" element={<Dashboard />} />
             <Route path="/colaboradores" element={<Colaboradores />} />
+            <Route path="/planilha" element={<Planilha />} />
             <Route path="/minhas-avaliacoes" element={<Colaboradores apenasMinhas />} />
             {permissoes.gerir_gestores && <Route path="/gestores" element={<Gestores />} />}
             {permissoes.importar && <Route path="/importar" element={<Importar />} />}

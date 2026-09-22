@@ -239,6 +239,49 @@ td.limite { max-width: 240px; overflow: hidden; text-overflow: ellipsis; }
 .grade-colunas h3 { font-size: 11px; text-transform: uppercase; letter-spacing: .4px; color: var(--texto-3); margin: 0 0 4px; }
 .escolha-coluna { display: flex; align-items: flex-start; gap: 7px; font-size: 12px; line-height: 1.35; padding: 2px 0; cursor: pointer; }
 .escolha-coluna input { width: auto; margin-top: 2px; flex: none; }
+
+/* ----------------------------- Tela Planilha ----------------------------- */
+.grade-caixa { overflow: auto; max-height: calc(100vh - 340px); min-height: 320px; outline: none; }
+.grade-caixa:focus-visible { box-shadow: inset 0 0 0 2px var(--acento); }
+
+.grade-planilha { border-collapse: separate; border-spacing: 0; font-size: 12px; table-layout: fixed; }
+.grade-planilha th, .grade-planilha td {
+  height: 34px; box-sizing: border-box; padding: 0 8px; white-space: nowrap; overflow: hidden;
+  border-right: 1px solid var(--borda); border-bottom: 1px solid var(--borda); background: var(--superficie);
+}
+.grade-planilha th {
+  position: sticky; top: 0; z-index: 3; font-size: 10.5px; letter-spacing: .3px; text-transform: uppercase;
+  color: var(--texto-2); background: var(--superficie-2); text-align: left; font-weight: 600;
+}
+.grade-planilha th.col-decisao { color: var(--acento); }
+.grade-planilha th.fixa { z-index: 5; }
+.grade-planilha .fixa { position: sticky; background: var(--superficie-2); }
+.grade-planilha .fixa-1 { left: 0; z-index: 2; }
+.grade-planilha .fixa-2 { left: 96px; z-index: 2; }
+
+.grade-planilha td.cel { cursor: cell; }
+.grade-planilha td.cel-bloqueada { background: var(--superficie-2); color: var(--texto-3); cursor: not-allowed; }
+.grade-planilha td.cel-alterada { background: var(--acento-suave); font-weight: 600; }
+.grade-planilha td.cel-ativa { box-shadow: inset 0 0 0 2px var(--acento); }
+.grade-planilha tr.linha-erro .fixa { background: var(--critico-fundo); }
+
+.cel-texto { display: block; overflow: hidden; text-overflow: ellipsis; }
+.cel-entrada {
+  width: 100%; height: 30px; padding: 0 4px; border: 0; outline: none; font: inherit;
+  background: var(--superficie); color: var(--texto);
+}
+
+/* Linha de controles acima de uma lista: filtros, seletores, botões. */
+.linha-filtros { display: flex; gap: 10px; flex-wrap: wrap; align-items: flex-end; }
+.linha-filtros .campo input#busca-planilha { min-width: 260px; }
+
+.barra-planilha {
+  display: flex; gap: 16px; align-items: center; flex-wrap: wrap;
+  padding: 8px 14px; margin-top: 10px; font-size: 12px;
+  border: 1px solid var(--borda); border-radius: var(--raio); background: var(--superficie);
+}
+.texto-erro { color: var(--desligamento); font-weight: 600; }
+.texto-atencao { color: var(--atencao); font-weight: 600; }
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { border: 1px solid var(--borda-forte); border-radius: 999px; padding: 3px 10px; font-size: 12px; background: var(--superficie-2); }
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: 12px; }

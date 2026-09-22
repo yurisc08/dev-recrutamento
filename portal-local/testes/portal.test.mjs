@@ -387,6 +387,72 @@ test('a distribuição pode ser feita por gestor imediato, gerente ou diretor', 
   }
 });
 
+test('a grade da planilha grava em lote e obedece às mesmas regras', async () => {
+  const lista = await chamar('/api/colaboradores', { cookie: estado.rh });
+  const alice = lista.corpo.itens.find((i) => i.chapa === '1001');
+  const bruno = lista.corpo.itens.find((i) => i.chapa === '1002');
+
+  // RH edita célula da base e célula de decisão na mesma gravação.
+  const gravar = await chamar('/api/colaboradores/planilha', {
+    metodo: 'POST', cookie: estado.rh,
+    corpo: {
+      alteracoes: [
+        { id: alice.id, acao: 'DESLIGAMENTO', justificativa: 'Revisão da estrutura da divisão.' },
+        { id: bruno.id, dados: { des_cargo: 'OPERADOR II' } },
+      ],
+    },
+  });
+  assert.equal(gravar.status, 200, JSON.stringify(gravar.corpo));
+  assert.equal(gravar.corpo.salvos, 2);
+  assert.deepEqual(gravar.corpo.erros, []);
+
+  const depois = await chamar('/api/colaboradores', { cookie: estado.rh });
+  assert.equal(depois.corpo.itens.find((i) => i.chapa === '1001').avaliacao.acao, 'DESLIGAMENTO');
+  assert.equal(depois.corpo.itens.find((i) => i.chapa === '1002').dados.des_cargo, 'OPERADOR II');
+
+  // Cada célula alterada fica na auditoria, com valor anterior e novo.
+  const trilha = await chamar('/api/auditoria', { cookie: estado.rh });
+  const cargo = trilha.corpo.itens.find((i) => i.campo === 'des_cargo' && i.chapa === '1002');
+  assert.ok(cargo, 'a alteração da célula da base foi auditada');
+  assert.equal(cargo.valor_novo, 'OPERADOR II');
+
+  // Uma linha ruim não derruba as boas: volta como erro, a outra é salva.
+  const misto = await chamar('/api/colaboradores/planilha', {
+    metodo: 'POST', cookie: estado.rh,
+    corpo: {
+      alteracoes: [
+        { id: alice.id, dados: { tempo_casa: 'doze anos' } },
+        { id: bruno.id, justificativa: 'Confirmado com a diretoria.' },
+      ],
+    },
+  });
+  assert.equal(misto.status, 200, JSON.stringify(misto.corpo));
+  assert.equal(misto.corpo.salvos, 1, 'a linha boa foi salva');
+  assert.equal(misto.corpo.erros.length, 1);
+  assert.match(misto.corpo.erros[0].erro, /num[eé]rico/i);
+
+  // A grade não é atalho: o gestor não escreve em coluna da base.
+  const doGestor = await chamar('/api/colaboradores', { cookie: estado.gestor });
+  // Uma linha que ainda não foi homologada por outro teste — senão a recusa
+  // que volta é a da homologação, não a que eu quero provar aqui.
+  const dele = doGestor.corpo.itens.find((i) => i.avaliacao.status !== 'homologada');
+  assert.ok(dele, 'o gestor tem alguma linha aberta');
+  const tentativa = await chamar('/api/colaboradores/planilha', {
+    metodo: 'POST', cookie: estado.gestor,
+    corpo: { alteracoes: [{ id: dele.id, dados: { salario_anual: 1 } }] },
+  });
+  assert.equal(tentativa.corpo.salvos, 0);
+  assert.equal(tentativa.corpo.erros.length, 1);
+
+  // E desligamento sem justificativa continua recusado, venha de onde vier.
+  const semJustificativa = await chamar('/api/colaboradores/planilha', {
+    metodo: 'POST', cookie: estado.gestor,
+    corpo: { alteracoes: [{ id: dele.id, acao: 'DESLIGAMENTO', justificativa: '' }] },
+  });
+  assert.equal(semJustificativa.corpo.salvos, 0);
+  assert.match(semJustificativa.corpo.erros[0].erro, /justificativa/i);
+});
+
 test('login errado várias vezes bloqueia por alguns minutos', async () => {
   for (let i = 0; i < 5; i += 1) {
     await chamar('/api/auth/login', { metodo: 'POST', corpo: { usuario: 'marcos.vilela', senha: 'errada123' } });
