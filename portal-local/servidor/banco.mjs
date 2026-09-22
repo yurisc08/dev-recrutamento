@@ -6,6 +6,8 @@
  * mesmas regras, a mesma trilha de auditoria que ninguém consegue apagar.
  */
 import { DatabaseSync } from 'node:sqlite';
+
+import { CAMPOS_PADRAO, ACOES_PADRAO } from './campos-padrao.mjs';
 import { mkdirSync } from 'node:fs';
 import { dirname } from 'node:path';
 
@@ -166,6 +168,8 @@ CREATE TABLE IF NOT EXISTS colaboradores (
   divisao_id     INTEGER REFERENCES divisoes(id),
   situacao       TEXT,
   gestor_nome    TEXT,
+  gerente_nome   TEXT,
+  diretor_nome   TEXT,
   responsavel_id INTEGER REFERENCES usuarios(id) ON DELETE SET NULL,
   dados          TEXT    NOT NULL DEFAULT '{}',
   ativo          INTEGER NOT NULL DEFAULT 1,
@@ -177,6 +181,9 @@ CREATE TABLE IF NOT EXISTS colaboradores (
 CREATE INDEX IF NOT EXISTS idx_colab_divisao ON colaboradores (processo_id, divisao_id);
 CREATE INDEX IF NOT EXISTS idx_colab_diretoria ON colaboradores (processo_id, diretoria_id);
 CREATE INDEX IF NOT EXISTS idx_colab_responsavel ON colaboradores (processo_id, responsavel_id);
+CREATE INDEX IF NOT EXISTS idx_colab_gestor ON colaboradores (processo_id, gestor_nome);
+CREATE INDEX IF NOT EXISTS idx_colab_gerente ON colaboradores (processo_id, gerente_nome);
+CREATE INDEX IF NOT EXISTS idx_colab_diretor ON colaboradores (processo_id, diretor_nome);
 
 CREATE TABLE IF NOT EXISTS avaliacoes (
   id                INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -218,68 +225,6 @@ CREATE TRIGGER IF NOT EXISTS auditoria_sem_delete BEFORE DELETE ON auditoria
 BEGIN SELECT RAISE(ABORT, 'A trilha de auditoria não pode ser alterada nem apagada.'); END;
 `;
 
-/** Catálogo inicial: as colunas da planilha do processo. */
-const CAMPOS_PADRAO = [
-  // Ordem igual à do modelo-base.xlsx: importação e exportação ficam alinhadas.
-  // [chave, rótulo, tipo, grupo, origem, lista, agrupar, somar, sensível, editável_por, ordem]
-  ['chapa', 'CHAPA', 'texto', 'Identificação', 'base', 1, 0, 0, 0, 'admin', 10],
-  ['nome', 'NOME', 'texto', 'Identificação', 'base', 1, 0, 0, 0, 'admin', 20],
-  ['concatenar', 'CONCATENAR', 'texto', 'Controle', 'base', 0, 0, 0, 0, 'admin', 30],
-  ['competencia', 'COMPETENCIA', 'texto', 'Controle', 'base', 0, 0, 0, 0, 'admin', 40],
-  ['area_ajustada', 'ÁREA AJUSTADA', 'texto', 'Organização', 'base', 0, 1, 0, 0, 'admin', 50],
-  ['filial', 'FILIAL', 'texto', 'Organização', 'base', 0, 1, 0, 0, 'admin', 60],
-  ['emp_cod', 'EMP_COD', 'texto', 'Controle', 'base', 0, 0, 0, 0, 'admin', 70],
-  ['fil_cod', 'FIL_COD', 'texto', 'Controle', 'base', 0, 0, 0, 0, 'admin', 80],
-  ['diretoria', 'DIRETORIA', 'texto', 'Organização', 'base', 1, 1, 0, 0, 'admin', 90],
-  ['divisao', 'DIVISAO', 'texto', 'Organização', 'base', 1, 1, 0, 0, 'admin', 100],
-  ['gestor_imediato', 'GESTOR IMEDIATO', 'texto', 'Organização', 'base', 1, 1, 0, 0, 'admin', 110],
-  ['departamento', 'DEPARTAMENTO', 'texto', 'Organização', 'base', 0, 1, 0, 0, 'admin', 120],
-  ['uorg_cod', 'UORG_COD', 'texto', 'Controle', 'base', 0, 0, 0, 0, 'admin', 130],
-  ['des_uo', 'DES_UO', 'texto', 'Organização', 'base', 0, 0, 0, 0, 'admin', 140],
-  ['pessoa_fisica', 'PESSOA_FISICA', 'texto', 'Identificação', 'base', 0, 0, 0, 0, 'admin', 150],
-  ['cpf', 'CPF', 'texto', 'Identificação', 'base', 0, 0, 0, 1, 'admin', 160],
-  ['cjca_cod', 'CJCA_COD', 'texto', 'Cargo', 'base', 0, 0, 0, 0, 'admin', 170],
-  ['des_conjunto_cargo', 'DES_CONJUNTO_CARGO', 'texto', 'Cargo', 'base', 0, 0, 0, 0, 'admin', 180],
-  ['car_cod', 'CAR_COD', 'texto', 'Cargo', 'base', 0, 0, 0, 0, 'admin', 190],
-  ['des_cargo', 'DES_CARGO', 'texto', 'Cargo', 'base', 1, 0, 0, 0, 'admin', 200],
-  ['segmento', 'SEGMENTO', 'texto', 'Organização', 'base', 0, 1, 0, 0, 'admin', 210],
-  ['tur_cod', 'TUR_COD', 'texto', 'Cargo', 'base', 0, 0, 0, 0, 'admin', 220],
-  ['mo', 'MO', 'texto', 'Cargo', 'base', 0, 1, 0, 0, 'admin', 230],
-  ['natureza', 'NATUREZA', 'texto', 'Cargo', 'base', 0, 1, 0, 0, 'admin', 240],
-  ['situacao', 'SITUACAO', 'texto', 'Situação', 'base', 1, 1, 0, 0, 'admin', 250],
-  ['dt_admissao', 'DT_ADMISSAO', 'data', 'Situação', 'base', 0, 0, 0, 0, 'admin', 260],
-  ['tempo_casa', 'TEMPO_CASA', 'numero', 'Situação', 'base', 0, 0, 0, 0, 'admin', 270],
-  ['idade', 'IDADE', 'numero', 'Situação', 'base', 0, 0, 0, 0, 'admin', 280],
-  ['dt_nasc', 'DT_NASC', 'data', 'Situação', 'base', 0, 0, 0, 1, 'admin', 290],
-  ['dt_aposentadoria', 'DT_APOSENTADORIA', 'data', 'Situação', 'base', 0, 0, 0, 0, 'admin', 300],
-  ['tipo_invalidez', 'TIPO_INVALIDEZ', 'texto', 'Situação', 'base', 0, 0, 0, 1, 'admin', 310],
-  ['horario', 'HORARIO', 'texto', 'Cargo', 'base', 0, 0, 0, 0, 'admin', 320],
-  ['hrs_teor_mes', 'HRS_TEOR_MES', 'numero', 'Cargo', 'base', 0, 0, 0, 0, 'admin', 330],
-  ['tsal_cod', 'TSAL_COD', 'texto', 'Remuneração', 'base', 0, 0, 0, 0, 'admin', 340],
-  ['fxsl_cod', 'FXSL_COD', 'texto', 'Remuneração', 'base', 0, 0, 0, 0, 'admin', 350],
-  ['salario', 'SALARIO', 'moeda', 'Remuneração', 'base', 0, 0, 0, 0, 'admin', 360],
-  ['evento_grat', 'EVENTO_GRAT', 'moeda', 'Remuneração', 'base', 0, 0, 0, 0, 'admin', 370],
-  ['perc_grat', 'PERC_GRAT', 'numero', 'Remuneração', 'base', 0, 0, 0, 0, 'admin', 380],
-  ['salario_total', 'SALARIO_TOTAL', 'moeda', 'Remuneração', 'base', 1, 0, 0, 0, 'admin', 390],
-  ['vlr_mediana', 'VLR_MEDIANA', 'moeda', 'Remuneração', 'base', 0, 0, 0, 0, 'admin', 400],
-  ['prm', 'PRM', 'moeda', 'Remuneração', 'base', 0, 0, 0, 0, 'admin', 410],
-  ['avaliacao_performar', 'DATA E NOTA ÚLTIMA AVALIAÇÃO PERFORMAR REGISTRADA', 'texto', 'Desempenho', 'base', 1, 0, 0, 0, 'admin', 420],
-  ['centro_custo_sap', 'CENTRO DE CUSTO_SAP', 'texto', 'Remuneração', 'base', 0, 0, 0, 0, 'admin', 430],
-  ['estabilidade', 'ESTABILIDADE', 'texto', 'Estabilidade', 'base', 1, 0, 0, 0, 'admin', 440],
-  ['data_fim_estabilidade', 'DATA FIM ESTABILIDADE', 'data', 'Estabilidade', 'base', 1, 0, 0, 0, 'admin', 450],
-  ['salario_anual', 'SALÁRIO ANUAL', 'moeda', 'Remuneração', 'base', 0, 0, 1, 0, 'admin', 460],
-  ['acao', 'AÇÃO INDICADA', 'lista', 'Decisão', 'avaliacao', 1, 0, 0, 0, 'gestor', 470],
-  ['destino', 'EM CASO DE TRANSFERÊNCIA, INDICAR PARA ONDE (SETOR/ÁREA/Nº PROCESSO)', 'texto', 'Decisão', 'avaliacao', 0, 0, 0, 0, 'gestor', 480],
-  ['justificativa', 'JUSTIFICATIVA', 'texto', 'Decisão', 'avaliacao', 1, 0, 0, 0, 'gestor', 490],
-];
-
-const ACOES_PADRAO = [
-  ['ATIVO', 'manter', 0, 0, 0, 10],
-  ['DESLIGAMENTO', 'desligamento', 1, 0, 1, 20],
-  ['TRANSFERÊNCIA DE ÁREA', 'transferencia', 1, 1, 0, 30],
-  ['ESTABILIDADE', 'atencao', 1, 0, 0, 40],
-];
-
 const REGRAS_PADRAO = [
   ['Desligado na posição-base', 'situacao', 'igual', 'DESLIGADO',
     'Colaborador já desligado na posição-base. Confirme com o RH antes de registrar nova decisão.', 'info', null, 0, 10],
@@ -295,11 +240,27 @@ const REGRAS_PADRAO = [
     'Existe data de aposentadoria informada. Considere no planejamento da decisão.', 'info', null, 0, 50],
 ];
 
+/**
+ * Colunas acrescentadas depois da primeira versão. CREATE TABLE IF NOT EXISTS não
+ * mexe em tabela que já existe, então quem já rodou o portal precisa disto.
+ */
+function migrarColunas(bd) {
+  const acrescentar = [
+    ['colaboradores', 'gerente_nome', 'TEXT'],
+    ['colaboradores', 'diretor_nome', 'TEXT'],
+  ];
+  for (const [tabela, coluna, tipo] of acrescentar) {
+    const existe = bd.prepare(`SELECT 1 FROM pragma_table_info(?) WHERE name = ?`).all(tabela, coluna);
+    if (!existe.length) bd.exec(`ALTER TABLE ${tabela} ADD COLUMN ${coluna} ${tipo}`);
+  }
+}
+
 /** Abre (criando se preciso) o banco e garante estrutura e carga inicial. */
 export function abrirBanco(caminho) {
   mkdirSync(dirname(caminho), { recursive: true });
   const bd = new DatabaseSync(caminho);
   bd.exec(ESQUEMA);
+  migrarColunas(bd);
 
   const [processo] = bd.prepare('SELECT id FROM processos WHERE ativo = 1 ORDER BY id LIMIT 1').all();
   if (!processo) {
@@ -318,12 +279,12 @@ export function abrirBanco(caminho) {
 
     const inserirCampo = bd.prepare(`
       INSERT INTO campos (processo_id, chave, rotulo, tipo, grupo, origem, visivel_lista, agrupar, somar,
-                          sensivel, editavel_por, somente_leitura, ordem)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+                          sensivel, editavel_por, somente_leitura, ordem, ajuda)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
     for (const c of CAMPOS_PADRAO) {
-      const [chave, rotulo, tipo, grupo, origem, lista, agrupar, somar, sensivel, editavel, ordem] = c;
-      inserirCampo.run(processoId, chave, rotulo, tipo, grupo, origem, lista, agrupar, somar, sensivel,
-        editavel, origem === 'base' ? 1 : 0, ordem);
+      inserirCampo.run(processoId, c.chave, c.rotulo, c.tipo, c.grupo, c.origem,
+        c.visivel_lista ? 1 : 0, c.agrupar ? 1 : 0, c.somar ? 1 : 0, c.sensivel ? 1 : 0,
+        c.editavel_por, c.origem === 'base' ? 1 : 0, c.ordem, c.ajuda);
     }
     const inserirAcao = bd.prepare(`
       INSERT INTO acoes (processo_id, valor, cor, exige_justificativa, exige_destino, considera_desligamento, ordem)

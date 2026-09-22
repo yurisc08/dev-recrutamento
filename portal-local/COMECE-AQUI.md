@@ -61,14 +61,19 @@ Certificação Raiz Confiáveis*.
    A planilha é lida **no seu computador**; só as colunas que você mapeou entram
    no portal.
 
-   > O arquivo **`modelo-base.xlsx`**, aqui nesta pasta, tem exatamente as **49
-   > colunas** que o portal já entende, com a lista suspensa na AÇÃO INDICADA e
-   > uma aba explicando cada coluna. Cole a sua base nele (ou renomeie as colunas
-   > da sua planilha para estes nomes) e a importação reconhece tudo sozinha.
-   > Coluna que não estiver no modelo você mapeia na mão, ou deixa de fora.
-4. **Gestores** — para cada gestor, **Criar acesso**. O portal devolve um **link
-   de primeiro acesso**: mande para ele pelo canal interno (Teams, e-mail
-   corporativo, o que a empresa usa).
+   > O arquivo **`modelo-base.xlsx`**, aqui nesta pasta, tem exatamente as **50
+   > colunas da planilha do processo**, na mesma ordem, mais a JUSTIFICATIVA que
+   > o portal exige. Traz a lista suspensa na AÇÃO INDICADA e uma aba explicando
+   > cada coluna. Cole a sua base nele (ou renomeie as colunas da sua planilha
+   > para estes nomes) e a importação reconhece tudo sozinha. Coluna que não
+   > estiver no modelo você mapeia na mão, ou deixa de fora.
+4. **Gestores** — escolha em **Distribuir por** se a base vai ser repartida por
+   **Gestor imediato**, **Gerente** ou **Diretor** (são as três colunas de
+   hierarquia da planilha). Base grande costuma ir por gerente ou diretor, e
+   cada um reparte para baixo; base pequena vai direto por gestor imediato.
+   Para cada nome da lista, **Criar acesso**. O portal devolve um **link de
+   primeiro acesso**: mande pelo canal interno (Teams, e-mail corporativo, o que
+   a empresa usa).
 5. O gestor abre o link, **define a senha dele** e passa a ver **só a equipe
    dele**, marcando as decisões direto na linha.
 6. Você acompanha tudo em **Dashboard** e **Gestores**, sem pedir arquivo de
@@ -173,11 +178,14 @@ Tem o mesmo portal pronto para Cloudflare + Supabase, na pasta
 - `servidor/` — tudo em JavaScript puro, sem nenhuma biblioteca externa: banco
   (SQLite embutido no Node), certificado, regras, rotas.
 - `publico/` — a interface já compilada.
-- `testes/portal.test.mjs` — 16 testes que sobem o portal de verdade e conferem
-  login, escopo por perfil, importação, decisão, homologação, exportação, campo
-  sensível fora do alcance de quem não é RH e a auditoria imutável. Rode com
-  `node --test testes/portal.test.mjs`.
-- `modelo-base.xlsx` — a planilha-modelo com as 49 colunas do processo.
+- `servidor/campos-padrao.mjs` — o catálogo das 51 colunas. **Não edite à mão**:
+  é gerado de `modelo/colunas.json` por `node modelo/gerar.mjs`, para o portal
+  local e o da nuvem nunca divergirem da planilha.
+- `testes/portal.test.mjs` — 17 testes que sobem o portal de verdade e conferem
+  login, escopo por perfil, importação, distribuição pelos três níveis, decisão,
+  homologação, exportação, campo sensível fora do alcance de quem não é RH e a
+  auditoria imutável. Rode com `node --test testes/portal.test.mjs`.
+- `modelo-base.xlsx` — a planilha-modelo com as 50 colunas do processo.
 
 ### Mexer na interface
 

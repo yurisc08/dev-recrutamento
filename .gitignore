@@ -1,2 +1,5 @@
 # Pacotes gerados para entrega — refaça com o passo do COMECE-AQUI.md
 *.zip
+
+# Saída intermediária do gerador do catálogo
+modelo/gerado/

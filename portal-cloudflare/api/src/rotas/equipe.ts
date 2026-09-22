@@ -25,16 +25,42 @@ function escopoDoSolicitante(sql: Variaveis['sql'], usuario: NonNullable<Variave
     : sql`false`;
 }
 
+/**
+ * Os três níveis que a planilha traz. O admin escolhe por qual deles distribuir:
+ * uma base grande costuma ir por GERENTE, uma pequena por GESTOR IMEDIATO.
+ */
+const NIVEIS = {
+  gestor_imediato: { coluna: 'gestor_nome', rotulo: 'Gestor imediato' },
+  gerente: { coluna: 'gerente_nome', rotulo: 'Gerente' },
+  diretor: { coluna: 'diretor_nome', rotulo: 'Diretor' },
+} as const;
+
+type ChaveNivel = keyof typeof NIVEIS;
+
+function colunaDoNivel(valor: unknown): { chave: ChaveNivel; coluna: string; rotulo: string } {
+  const chave = (String(valor ?? 'gestor_imediato').trim() || 'gestor_imediato') as ChaveNivel;
+  const nivel = NIVEIS[chave];
+  if (!nivel) throw new ErroApi(400, `Nível inválido. Use: ${Object.keys(NIVEIS).join(', ')}.`);
+  return { chave, ...nivel };
+}
+
+/**
+ * O nome da coluna vem de NIVEIS, nunca do pedido — por isso pode entrar no SQL
+ * como identificador. Qualquer outro valor já foi recusado por colunaDoNivel.
+ */
+const colunaSql = (sql: Variaveis['sql'], coluna: string) => sql(`c.${coluna}`);
+
 async function exigirGestorNoEscopo(
   sql: Variaveis['sql'],
   usuario: NonNullable<Variaveis['usuario']>,
   processoId: number,
   gestorNome: string,
+  coluna = 'gestor_nome',
 ) {
   const [linha] = await sql<{ total: string }[]>`
     SELECT COUNT(*)::text AS total FROM portal.colaboradores c
      WHERE c.processo_id = ${processoId} AND c.ativo
-       AND lower(coalesce(c.gestor_nome, '')) = ${gestorNome.toLowerCase()}
+       AND lower(coalesce(${colunaSql(sql, coluna)}, '')) = ${gestorNome.toLowerCase()}
        AND ${escopoDoSolicitante(sql, usuario)}`;
   if (!Number(linha?.total ?? 0)) {
     throw new ErroApi(403, 'Este gestor não tem colaboradores dentro da sua área de responsabilidade.');
@@ -47,9 +73,11 @@ rotasEquipe.get('/equipe/gestores', async (ctx) => {
   const sql = ctx.get('sql');
   const usuario = exigirPerfil(ctx.get('usuario'), 'admin', 'diretor');
   const { processo } = await carregarContexto(sql);
+  const nivel = colunaDoNivel(ctx.req.query('nivel'));
+  const semNome = `(sem ${nivel.rotulo.toLowerCase()} informado)`;
 
   const itens = await sql`
-    SELECT coalesce(nullif(c.gestor_nome, ''), '(sem gestor informado)') AS gestor_nome,
+    SELECT coalesce(nullif(${colunaSql(sql, nivel.coluna)}, ''), ${semNome}) AS gestor_nome,
            max(u.id)                        AS usuario_id,
            max(u.usuario)                   AS usuario,
            max(u.nome)                      AS usuario_nome,
@@ -71,6 +99,8 @@ rotasEquipe.get('/equipe/gestores', async (ctx) => {
 
   const agora = Date.now();
   return ctx.json({
+    nivel: nivel.chave,
+    niveis: Object.entries(NIVEIS).map(([chave, n]) => ({ chave, rotulo: n.rotulo })),
     itens: itens.map((item) => {
       const expira = item.convite_expira_em ? new Date(item.convite_expira_em as string).getTime() : null;
       const acesso = !item.usuario_id ? 'sem_acesso'
@@ -78,7 +108,8 @@ rotasEquipe.get('/equipe/gestores', async (ctx) => {
         : item.senha_definida ? 'ativo'
         : expira && expira > agora ? 'convite_pendente'
         : 'convite_expirado';
-      return { ...item, acesso, total: Number(item.total), avaliados: Number(item.avaliados),
+      return { ...item, acesso, sem_responsavel: item.gestor_nome === semNome,
+        total: Number(item.total), avaliados: Number(item.avaliados),
         pendentes: Number(item.pendentes), homologadas: Number(item.homologadas) };
     }),
   });
@@ -121,9 +152,10 @@ rotasEquipe.post('/equipe/gestores/acesso', async (ctx) => {
   const { processo } = await carregarContexto(sql);
   const corpo = await ctx.req.json().catch(() => ({}));
 
+  const nivel = colunaDoNivel(corpo.nivel);
   const gestorNome = String(corpo.gestor_nome ?? '').trim();
-  if (!gestorNome) throw new ErroApi(422, 'Informe o gestor imediato.');
-  await exigirGestorNoEscopo(sql, usuario, processo.id, gestorNome);
+  if (!gestorNome) throw new ErroApi(422, `Informe o ${nivel.rotulo.toLowerCase()}.`);
+  await exigirGestorNoEscopo(sql, usuario, processo.id, gestorNome, nivel.coluna);
 
   const nome = String(corpo.nome ?? gestorNome).trim();
   const login = String(corpo.usuario ?? sugerirLogin(nome)).trim().toLowerCase();
@@ -143,7 +175,7 @@ rotasEquipe.post('/equipe/gestores/acesso', async (ctx) => {
   const vinculados = await sql<{ id: number }[]>`
     UPDATE portal.colaboradores c SET responsavel_id = ${criado.id}, atualizado_em = now()
      WHERE c.processo_id = ${processo.id} AND c.ativo
-       AND lower(coalesce(c.gestor_nome, '')) = ${gestorNome.toLowerCase()}
+       AND lower(coalesce(${colunaSql(sql, nivel.coluna)}, '')) = ${gestorNome.toLowerCase()}
        AND ${escopoDoSolicitante(sql, usuario)}
     RETURNING c.id`;
 
@@ -151,7 +183,8 @@ rotasEquipe.post('/equipe/gestores/acesso', async (ctx) => {
 
   await auditar(sql, {
     usuario, tipo: 'usuario', entidade: 'usuario', entidadeId: criado.id,
-    valorNovo: { login, perfil: 'gestor', gestor_nome: gestorNome, colaboradores: vinculados.length },
+    valorNovo: { login, perfil: 'gestor', nivel: nivel.chave, gestor_nome: gestorNome,
+      colaboradores: vinculados.length },
     detalhes: { acao: 'acesso de gestor criado, aguardando primeiro acesso' }, ip: ctx.get('ip'),
   });
 
@@ -168,10 +201,11 @@ rotasEquipe.post('/equipe/gestores/vincular', async (ctx) => {
   const { processo } = await carregarContexto(sql);
   const corpo = await ctx.req.json().catch(() => ({}));
 
+  const nivel = colunaDoNivel(corpo.nivel);
   const gestorNome = String(corpo.gestor_nome ?? '').trim();
   const alvoId = corpo.usuario_id === null ? null : Number(corpo.usuario_id);
-  if (!gestorNome) throw new ErroApi(422, 'Informe o gestor imediato.');
-  await exigirGestorNoEscopo(sql, usuario, processo.id, gestorNome);
+  if (!gestorNome) throw new ErroApi(422, `Informe o ${nivel.rotulo.toLowerCase()}.`);
+  await exigirGestorNoEscopo(sql, usuario, processo.id, gestorNome, nivel.coluna);
 
   if (alvoId !== null) {
     const [alvo] = await sql<{ perfil: string }[]>`SELECT perfil FROM portal.usuarios WHERE id = ${alvoId} AND ativo`;
@@ -182,13 +216,14 @@ rotasEquipe.post('/equipe/gestores/vincular', async (ctx) => {
   const alterados = await sql<{ id: number }[]>`
     UPDATE portal.colaboradores c SET responsavel_id = ${alvoId}, atualizado_em = now()
      WHERE c.processo_id = ${processo.id} AND c.ativo
-       AND lower(coalesce(c.gestor_nome, '')) = ${gestorNome.toLowerCase()}
+       AND lower(coalesce(${colunaSql(sql, nivel.coluna)}, '')) = ${gestorNome.toLowerCase()}
        AND ${escopoDoSolicitante(sql, usuario)}
     RETURNING c.id`;
 
   await auditar(sql, {
     usuario, tipo: 'permissao', entidade: 'usuario', entidadeId: alvoId ?? undefined,
-    valorNovo: { gestor_nome: gestorNome, usuario_id: alvoId, colaboradores: alterados.length },
+    valorNovo: { nivel: nivel.chave, gestor_nome: gestorNome, usuario_id: alvoId,
+      colaboradores: alterados.length },
     detalhes: { acao: alvoId ? 'colaboradores atribuídos ao gestor' : 'vínculo removido' }, ip: ctx.get('ip'),
   });
 

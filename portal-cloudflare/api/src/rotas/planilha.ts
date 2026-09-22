@@ -215,6 +215,8 @@ rotasPlanilha.post('/importacao/confirmar', async (ctx) => {
     const nome = (dados.nome as string) ?? existente?.nome ?? null;
     const situacao = (dados.situacao as string) ?? null;
     const gestorNome = String(dados.gestor_imediato ?? '').trim() || null;
+    const gerenteNome = String(dados.gerente ?? '').trim() || null;
+    const diretorNome = String(dados.diretor ?? '').trim() || null;
     const responsavelId = gestorNome ? await acharResponsavel(gestorNome) : null;
 
     let colaboradorId: number;
@@ -225,6 +227,8 @@ rotasPlanilha.post('/importacao/confirmar', async (ctx) => {
                diretoria_id = coalesce(${diretoriaId}, diretoria_id),
                divisao_id = coalesce(${divisaoId}, divisao_id),
                gestor_nome = coalesce(${gestorNome}, gestor_nome),
+               gerente_nome = coalesce(${gerenteNome}, gerente_nome),
+               diretor_nome = coalesce(${diretorNome}, diretor_nome),
                responsavel_id = coalesce(${responsavelId}, responsavel_id),
                ativo = true, importacao_id = ${importacao.id}, atualizado_em = now()
          WHERE id = ${existente.id}`;
@@ -232,9 +236,10 @@ rotasPlanilha.post('/importacao/confirmar', async (ctx) => {
     } else {
       const [criado] = await sql<{ id: number }[]>`
         INSERT INTO portal.colaboradores (processo_id, chapa, nome, situacao, dados, diretoria_id, divisao_id,
-                                          gestor_nome, responsavel_id, importacao_id)
+                                          gestor_nome, gerente_nome, diretor_nome, responsavel_id, importacao_id)
         VALUES (${contexto.processo.id}, ${linha.chapa}, ${nome}, ${situacao}, ${sql.json(dados as never)},
-                ${diretoriaId}, ${divisaoId}, ${gestorNome}, ${responsavelId}, ${importacao.id})
+                ${diretoriaId}, ${divisaoId}, ${gestorNome}, ${gerenteNome}, ${diretorNome},
+                ${responsavelId}, ${importacao.id})
         RETURNING id`;
       colaboradorId = criado.id;
     }

@@ -22,11 +22,28 @@ function escopoDoSolicitante(usuario) {
   };
 }
 
-function exigirGestorNoEscopo(ctx, usuario, processoId, gestorNome) {
+/**
+ * Os três níveis que a planilha traz. O admin escolhe por qual deles distribuir:
+ * uma base grande costuma ir por GERENTE, uma pequena por GESTOR IMEDIATO.
+ */
+const NIVEIS = {
+  gestor_imediato: { coluna: 'gestor_nome', rotulo: 'Gestor imediato' },
+  gerente: { coluna: 'gerente_nome', rotulo: 'Gerente' },
+  diretor: { coluna: 'diretor_nome', rotulo: 'Diretor' },
+};
+
+function colunaDoNivel(valor) {
+  const chave = String(valor ?? 'gestor_imediato').trim() || 'gestor_imediato';
+  const nivel = NIVEIS[chave];
+  if (!nivel) throw new ErroApi(400, `Nível inválido. Use: ${Object.keys(NIVEIS).join(', ')}.`);
+  return { chave, ...nivel };
+}
+
+function exigirGestorNoEscopo(ctx, usuario, processoId, gestorNome, coluna = 'gestor_nome') {
   const escopo = escopoDoSolicitante(usuario);
   const total = Number(ctx.acesso.primeiro(`
     SELECT COUNT(*) AS total FROM colaboradores c
-     WHERE c.processo_id = ? AND c.ativo = 1 AND lower(coalesce(c.gestor_nome, '')) = ? AND ${escopo.sql}`,
+     WHERE c.processo_id = ? AND c.ativo = 1 AND lower(coalesce(c.${coluna}, '')) = ? AND ${escopo.sql}`,
     processoId, gestorNome.toLowerCase(), ...escopo.params)?.total ?? 0);
   if (!total) throw new ErroApi(403, 'Este gestor não tem colaboradores dentro da sua área de responsabilidade.');
   return total;
@@ -50,9 +67,11 @@ export const rotasEquipe = [
     const usuario = exigirPerfil(ctx.usuario, 'admin', 'diretor');
     const { processo } = carregarContexto(ctx.acesso);
     const escopo = escopoDoSolicitante(usuario);
+    const nivel = colunaDoNivel(ctx.query?.nivel);
+    const semNome = `(sem ${nivel.rotulo.toLowerCase()} informado)`;
 
     const itens = ctx.acesso.consultar(`
-      SELECT coalesce(nullif(c.gestor_nome, ''), '(sem gestor informado)') AS gestor_nome,
+      SELECT coalesce(nullif(c.${nivel.coluna}, ''), ?) AS gestor_nome,
              max(u.id)                 AS usuario_id,
              max(u.usuario)            AS usuario,
              max(u.nome)               AS usuario_nome,
@@ -69,11 +88,14 @@ export const rotasEquipe = [
         LEFT JOIN avaliacoes a ON a.colaborador_id = c.id
         LEFT JOIN usuarios u ON u.id = c.responsavel_id
        WHERE c.processo_id = ? AND c.ativo = 1 AND ${escopo.sql}
-       GROUP BY 1 ORDER BY 1`, processo.id, ...escopo.params);
+       GROUP BY 1 ORDER BY 1`, semNome, processo.id, ...escopo.params);
 
     const momento = agora();
     return {
+      nivel: nivel.chave,
+      niveis: Object.entries(NIVEIS).map(([chave, n]) => ({ chave, rotulo: n.rotulo })),
       itens: itens.map((item) => {
+        const semResponsavel = item.gestor_nome === semNome;
         const acesso = !item.usuario_id ? 'sem_acesso'
           : !item.ativo ? 'desativado'
             : item.senha_definida ? 'ativo'
@@ -84,6 +106,7 @@ export const rotasEquipe = [
           ativo: item.usuario_id ? Boolean(item.ativo) : null,
           senha_definida: Boolean(item.senha_definida),
           acesso,
+          sem_responsavel: semResponsavel,
           total: Number(item.total),
           avaliados: Number(item.avaliados),
           pendentes: Number(item.pendentes),
@@ -108,9 +131,10 @@ export const rotasEquipe = [
     const { processo } = carregarContexto(ctx.acesso);
     const corpo = await ctx.corpo();
 
+    const nivel = colunaDoNivel(corpo.nivel);
     const gestorNome = String(corpo.gestor_nome ?? '').trim();
-    if (!gestorNome) throw new ErroApi(422, 'Informe o gestor imediato.');
-    exigirGestorNoEscopo(ctx, usuario, processo.id, gestorNome);
+    if (!gestorNome) throw new ErroApi(422, `Informe o ${nivel.rotulo.toLowerCase()}.`);
+    exigirGestorNoEscopo(ctx, usuario, processo.id, gestorNome, nivel.coluna);
 
     const nome = String(corpo.nome ?? gestorNome).trim();
     const login = String(corpo.usuario ?? sugerirLogin(nome)).trim().toLowerCase();
@@ -130,14 +154,15 @@ export const rotasEquipe = [
     const escopo = escopoDoSolicitante(usuario);
     const vinculados = ctx.acesso.executar(`
       UPDATE colaboradores SET responsavel_id = ?, atualizado_em = ?
-       WHERE processo_id = ? AND ativo = 1 AND lower(coalesce(gestor_nome, '')) = ?
+       WHERE processo_id = ? AND ativo = 1 AND lower(coalesce(${nivel.coluna}, '')) = ?
          AND id IN (SELECT c.id FROM colaboradores c WHERE ${escopo.sql})`,
       usuarioId, agora(), processo.id, gestorNome.toLowerCase(), ...escopo.params);
 
     const { convite, expira } = gerarConvite(ctx, usuarioId);
     auditar(ctx.acesso, {
       usuario, tipo: 'usuario', entidade: 'usuario', entidadeId: usuarioId,
-      valorNovo: { login, perfil: 'gestor', gestor_nome: gestorNome, colaboradores: Number(vinculados.changes) },
+      valorNovo: { login, perfil: 'gestor', nivel: nivel.chave, gestor_nome: gestorNome,
+        colaboradores: Number(vinculados.changes) },
       detalhes: { acao: 'acesso de gestor criado, aguardando primeiro acesso' }, ip: ctx.ip,
     });
 
@@ -155,10 +180,11 @@ export const rotasEquipe = [
     const { processo } = carregarContexto(ctx.acesso);
     const corpo = await ctx.corpo();
 
+    const nivel = colunaDoNivel(corpo.nivel);
     const gestorNome = String(corpo.gestor_nome ?? '').trim();
     const alvoId = corpo.usuario_id === null || corpo.usuario_id === undefined ? null : Number(corpo.usuario_id);
-    if (!gestorNome) throw new ErroApi(422, 'Informe o gestor imediato.');
-    exigirGestorNoEscopo(ctx, usuario, processo.id, gestorNome);
+    if (!gestorNome) throw new ErroApi(422, `Informe o ${nivel.rotulo.toLowerCase()}.`);
+    exigirGestorNoEscopo(ctx, usuario, processo.id, gestorNome, nivel.coluna);
 
     if (alvoId !== null) {
       const alvo = ctx.acesso.primeiro('SELECT perfil FROM usuarios WHERE id = ? AND ativo = 1', alvoId);
@@ -169,13 +195,14 @@ export const rotasEquipe = [
     const escopo = escopoDoSolicitante(usuario);
     const alterados = ctx.acesso.executar(`
       UPDATE colaboradores SET responsavel_id = ?, atualizado_em = ?
-       WHERE processo_id = ? AND ativo = 1 AND lower(coalesce(gestor_nome, '')) = ?
+       WHERE processo_id = ? AND ativo = 1 AND lower(coalesce(${nivel.coluna}, '')) = ?
          AND id IN (SELECT c.id FROM colaboradores c WHERE ${escopo.sql})`,
       alvoId, agora(), processo.id, gestorNome.toLowerCase(), ...escopo.params);
 
     auditar(ctx.acesso, {
       usuario, tipo: 'permissao', entidade: 'usuario', entidadeId: alvoId ?? undefined,
-      valorNovo: { gestor_nome: gestorNome, usuario_id: alvoId, colaboradores: Number(alterados.changes) },
+      valorNovo: { nivel: nivel.chave, gestor_nome: gestorNome, usuario_id: alvoId,
+        colaboradores: Number(alterados.changes) },
       detalhes: { acao: alvoId ? 'colaboradores atribuídos ao gestor' : 'vínculo removido' }, ip: ctx.ip,
     });
     return { ok: true, colaboradores: Number(alterados.changes) };

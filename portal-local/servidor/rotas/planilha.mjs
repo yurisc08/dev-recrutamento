@@ -181,6 +181,8 @@ export const rotasPlanilha = [
       const nome = dados.nome ?? existente?.nome ?? null;
       const situacao = dados.situacao ?? null;
       const gestorNome = String(dados.gestor_imediato ?? '').trim() || null;
+      const gerenteNome = String(dados.gerente ?? '').trim() || null;
+      const diretorNome = String(dados.diretor ?? '').trim() || null;
       const responsavelId = gestorNome ? acharResponsavel(gestorNome) : null;
 
       let colaboradorId;
@@ -189,19 +191,22 @@ export const rotasPlanilha = [
           UPDATE colaboradores
              SET nome = ?, situacao = ?, dados = ?,
                  diretoria_id = coalesce(?, diretoria_id), divisao_id = coalesce(?, divisao_id),
-                 gestor_nome = coalesce(?, gestor_nome), responsavel_id = coalesce(?, responsavel_id),
+                 gestor_nome = coalesce(?, gestor_nome), gerente_nome = coalesce(?, gerente_nome),
+                 diretor_nome = coalesce(?, diretor_nome), responsavel_id = coalesce(?, responsavel_id),
                  ativo = 1, importacao_id = ?, atualizado_em = ?
            WHERE id = ?`,
-          nome, situacao, JSON.stringify(dados), diretoriaId, divisaoId, gestorNome, responsavelId,
+          nome, situacao, JSON.stringify(dados), diretoriaId, divisaoId,
+          gestorNome, gerenteNome, diretorNome, responsavelId,
           importacaoId, agora(), existente.id);
         colaboradorId = existente.id;
       } else {
         const criado = ctx.acesso.executar(`
           INSERT INTO colaboradores (processo_id, chapa, nome, situacao, dados, diretoria_id, divisao_id,
-                                     gestor_nome, responsavel_id, importacao_id, criado_em, atualizado_em)
-          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+                                     gestor_nome, gerente_nome, diretor_nome, responsavel_id,
+                                     importacao_id, criado_em, atualizado_em)
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
           contexto.processo.id, linha.chapa, nome, situacao, JSON.stringify(dados), diretoriaId, divisaoId,
-          gestorNome, responsavelId, importacaoId, agora(), agora());
+          gestorNome, gerenteNome, diretorNome, responsavelId, importacaoId, agora(), agora());
         colaboradorId = Number(criado.lastInsertRowid);
       }
 

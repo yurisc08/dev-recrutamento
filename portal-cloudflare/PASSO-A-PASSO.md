@@ -17,6 +17,60 @@ primeira vez. Tudo o que é gratuito está marcado.
 
 ---
 
+## Parte 0 — Conferir tudo na sua máquina, antes de criar conta em lugar nenhum
+
+Dá para rodar o portal inteiro — banco, API e tela — **sem Supabase, sem
+Cloudflare e sem dado real**. É o jeito de validar sem risco: se não gostar,
+você apaga a pasta e não criou conta em serviço nenhum.
+
+Precisa de: Node 20+ e um PostgreSQL local (qualquer um serve).
+
+```bash
+# 1. um banco vazio
+createdb portal_local
+
+# 2. o MESMO arquivo que vai para o Supabase
+psql -d portal_local -f supabase/portal-supabase.sql
+
+# 3. a API, apontando para esse banco
+cd api && npm install
+DATABASE_URL="postgres://localhost/portal_local" npm run local
+```
+
+Em outro terminal, a tela:
+
+```bash
+cd web && npm install && npm run dev
+```
+
+Abra <http://127.0.0.1:5173>. Crie o seu acesso com `npm run admin`, dentro de
+`api/`, e importe o `modelo/modelo-base.xlsx` (dados fictícios).
+
+**Conferindo a segurança no seu próprio banco**, antes de confiar nela:
+
+```bash
+# a trilha de auditoria não se altera nem se apaga
+psql -d portal_local -c "UPDATE portal.auditoria SET tipo = 'x';"
+# ERRO:  A trilha de auditoria não pode ser alterada nem apagada.
+
+# o papel da aplicação não faz DDL
+psql -d portal_local -U portal_app -c "CREATE TABLE portal.invadiu (id int);"
+# ERRO:  permission denied for schema portal
+```
+
+E os testes, que sobem a API de verdade contra esse banco:
+
+```bash
+cd api && DATABASE_URL="postgres://localhost/portal_local" npm test
+# 40 testes: escopo por perfil, distribuição pelos três níveis, campo sensível,
+# importação, homologação, exportação, trava de IP e auditoria.
+```
+
+Só depois disso vale criar as contas das partes 1 a 5. O arquivo SQL é o mesmo,
+o código é o mesmo — muda só onde roda.
+
+---
+
 ## Parte 1 — O banco (Supabase) · ~15 min
 
 1. Entre em <https://supabase.com> → **Start your project** → crie a conta.
@@ -26,17 +80,17 @@ primeira vez. Tudo o que é gratuito está marcado.
    - *Region*: **South America (São Paulo)** — deixa os dados no Brasil.
    - Plano *Free*.
 3. Espere o projeto subir (~2 min).
-4. No menu lateral, abra **SQL Editor** → **New query**. Abra o arquivo
-   `supabase/01-esquema.sql` num editor de texto, copie tudo, cole e clique
-   **Run**. Repita, na ordem, para:
-   - `supabase/02-seguranca.sql`
-   - `supabase/03-carga-inicial.sql`
-   - `supabase/04-gestores.sql`
-5. Ainda no SQL Editor, troque a senha do usuário que a aplicação usa:
-   ```sql
-   ALTER ROLE portal_app WITH PASSWORD 'cole-aqui-uma-senha-longa-e-aleatoria';
-   ```
-   Guarde essa senha também.
+4. Abra **`supabase/portal-supabase.sql`** num editor de texto. **Antes de
+   colar**, troque `TROQUE_ESTA_SENHA` (aparece uma vez só) por uma senha longa
+   e aleatória — é a senha que o Worker vai usar. Guarde-a num cofre.
+5. No menu lateral, **SQL Editor** → **New query** → cole o arquivo inteiro →
+   **Run**. É um arquivo só, e pode rodar de novo quando quiser: nada é
+   duplicado e nada é apagado.
+
+   > O arquivo é gerado a partir das quatro partes numeradas (`01-esquema`,
+   > `02-seguranca`, `03-carga-inicial`, `04-gestores`), que continuam ali para
+   > quem quiser ler por pedaço. Para gerar de novo:
+   > `node supabase/montar.mjs`.
 6. Confira que a auditoria está trancada (isto **tem** que dar erro):
    ```sql
    UPDATE portal.auditoria SET tipo = 'x';

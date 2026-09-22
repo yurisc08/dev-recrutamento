@@ -24,10 +24,14 @@ sensível (CPF, nascimento) que nem sai da API para quem não é RH.
 1. Crie um projeto em <https://supabase.com> (região **South America (São Paulo)**
    deixa o banco no Brasil).
 2. No painel, abra **SQL Editor** e rode os arquivos, nesta ordem:
+   - **`supabase/portal-supabase.sql`** — tudo num arquivo só; é o que se cola
+     no SQL Editor. Gerado das quatro partes abaixo por `supabase/montar.mjs`.
    - `supabase/01-esquema.sql` — tabelas (schema `portal`).
    - `supabase/02-seguranca.sql` — papel `portal_app`, auditoria imutável,
      fechamento das APIs automáticas do Supabase.
-   - `supabase/03-carga-inicial.sql` — processo, 35 campos, 4 ações e 5 regras.
+   - `supabase/03-carga-inicial.sql` — processo, as 51 colunas do catálogo
+     (50 da planilha + JUSTIFICATIVA), 4 ações e 5 regras. Gerado de
+     `modelo/colunas.json` por `modelo/gerar.mjs`.
    - `supabase/04-gestores.sql` — gestor imediato e primeiro acesso com senha
      própria (em banco novo é inofensivo; em banco já em uso, é a migração).
 3. **Troque a senha do papel do portal** (o arquivo vem com um valor de exemplo):

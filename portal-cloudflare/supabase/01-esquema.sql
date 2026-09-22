@@ -170,6 +170,8 @@ CREATE TABLE IF NOT EXISTS portal.colaboradores (
   -- gestor imediato: o nome como veio da planilha e, quando ele tem acesso ao
   -- portal, o vínculo com o usuário que responde por essas pessoas
   gestor_nome    text,
+  gerente_nome   text,
+  diretor_nome   text,
   responsavel_id integer REFERENCES portal.usuarios(id) ON DELETE SET NULL,
   dados         jsonb   NOT NULL DEFAULT '{}'::jsonb,
   ativo         boolean NOT NULL DEFAULT true,
@@ -182,6 +184,8 @@ CREATE INDEX IF NOT EXISTS idx_colab_divisao ON portal.colaboradores (processo_i
 CREATE INDEX IF NOT EXISTS idx_colab_diretoria ON portal.colaboradores (processo_id, diretoria_id);
 CREATE INDEX IF NOT EXISTS idx_colab_responsavel ON portal.colaboradores (processo_id, responsavel_id);
 CREATE INDEX IF NOT EXISTS idx_colab_gestor_nome ON portal.colaboradores (processo_id, lower(gestor_nome));
+CREATE INDEX IF NOT EXISTS idx_colab_gerente_nome ON portal.colaboradores (processo_id, lower(gerente_nome));
+CREATE INDEX IF NOT EXISTS idx_colab_diretor_nome ON portal.colaboradores (processo_id, lower(diretor_nome));
 
 CREATE TABLE IF NOT EXISTS portal.avaliacoes (
   id                serial PRIMARY KEY,

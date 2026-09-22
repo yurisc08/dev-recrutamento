@@ -272,3 +272,69 @@ test('cada mudança de responsável fica na auditoria', async () => {
   assert.ok(tipos.includes('usuario:'), 'criação do acesso registrada');
   assert.ok(tipos.includes('permissao:responsavel'), 'atribuição registrada');
 });
+
+test('a distribuição pode ser feita por gestor imediato, gerente ou diretor', async () => {
+  await prepararBase();
+  const cookieRh = await entrar('rh');
+
+  // A planilha traz os três níveis; carrego uma base pequena com os três preenchidos.
+  const linha = (chapa: string, gestor: string, gerente: string, diretor: string) => ({
+    CHAPA: chapa, NOME: `Pessoa ${chapa}`, DIRETORIA: 'DIRETORIA INDUSTRIAL', DIVISAO: 'DIVISAO PRODUCAO',
+    'GESTOR IMEDIATO': gestor, GERENTE: gerente, DIRETOR: diretor,
+  });
+  const carga = await chamar('/api/importacao/confirmar', {
+    metodo: 'POST', cookie: cookieRh,
+    corpo: {
+      arquivo: 'niveis.xlsx', aba: 'Base',
+      mapeamento: {
+        chapa: 'CHAPA', nome: 'NOME', diretoria: 'DIRETORIA', divisao: 'DIVISAO',
+        gestor_imediato: 'GESTOR IMEDIATO', gerente: 'GERENTE', diretor: 'DIRETOR',
+      },
+      linhas: [
+        linha('9001', 'Ana Lima', 'Helena Braga', 'Paulo Ferrari'),
+        linha('9002', 'Ana Lima', 'Helena Braga', 'Paulo Ferrari'),
+        linha('9003', 'Caio Ruiz', 'Helena Braga', 'Paulo Ferrari'),
+      ],
+    },
+  });
+  assert.equal(carga.status, 200, JSON.stringify(carga.corpo));
+
+  const grupo = async (nivel: string, nome: string) => {
+    const r = await chamar(`/api/equipe/gestores?nivel=${nivel}`, { cookie: cookieRh });
+    assert.equal(r.status, 200, JSON.stringify(r.corpo));
+    assert.equal(r.corpo.nivel, nivel);
+    return r.corpo.itens.find((i: any) => i.gestor_nome === nome);
+  };
+
+  // Por gestor imediato a base se parte em dois; por gerente e por diretor, em um só.
+  assert.equal((await grupo('gestor_imediato', 'Ana Lima')).total, 2);
+  assert.equal((await grupo('gestor_imediato', 'Caio Ruiz')).total, 1);
+  assert.equal((await grupo('gerente', 'Helena Braga')).total, 3);
+  assert.equal((await grupo('diretor', 'Paulo Ferrari')).total, 3);
+
+  // Distribuir pelo nível de gerente entrega as três pessoas a um acesso só.
+  const acesso = await chamar('/api/equipe/gestores/acesso', {
+    metodo: 'POST', cookie: cookieRh,
+    corpo: { nivel: 'gerente', gestor_nome: 'Helena Braga', usuario: 'helena.braga' },
+  });
+  assert.equal(acesso.status, 201, JSON.stringify(acesso.corpo));
+  assert.equal(acesso.corpo.colaboradores, 3, 'as três pessoas do gerente foram atribuídas');
+
+  const ativacao = await chamar(`/api/auth/ativacao/${acesso.corpo.convite}`, {
+    metodo: 'POST', corpo: { senha: 'SenhaDaGerente26', confirmacao: 'SenhaDaGerente26' },
+  });
+  assert.equal(ativacao.status, 200, JSON.stringify(ativacao.corpo));
+  const dela = await chamar('/api/colaboradores', { cookie: ativacao.cookie });
+  assert.deepEqual(dela.corpo.itens.map((i: any) => i.chapa).sort(), ['9001', '9002', '9003']);
+
+  // Nível inventado é recusado, não vira consulta.
+  const ruim = await chamar('/api/equipe/gestores?nivel=chefe', { cookie: cookieRh });
+  assert.equal(ruim.status, 400);
+
+  // O grupo "sem responsável" vem marcado, para a tela não adivinhar pelo texto.
+  const porDiretor = await chamar('/api/equipe/gestores?nivel=diretor', { cookie: cookieRh });
+  for (const item of porDiretor.corpo.itens) {
+    assert.equal(typeof item.sem_responsavel, 'boolean');
+    assert.equal(item.sem_responsavel, /^\(sem .+ informado\)$/.test(item.gestor_nome));
+  }
+});

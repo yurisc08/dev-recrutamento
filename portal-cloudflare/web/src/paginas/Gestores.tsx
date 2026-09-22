@@ -13,6 +13,7 @@ import { dataHoraBR, numeroBR } from '../formato';
  */
 interface GestorLinha {
   gestor_nome: string;
+  sem_responsavel?: boolean;
   usuario_id: number | null;
   usuario: string | null;
   usuario_nome: string | null;
@@ -27,6 +28,19 @@ interface GestorLinha {
 }
 
 interface AcessoGestor { id: number; usuario: string; nome: string; ativo: boolean; senha_definida: boolean }
+
+interface Nivel { chave: string; rotulo: string }
+
+/** Os três níveis da planilha. A distribuição pode ser feita por qualquer um deles. */
+const NIVEIS_PADRAO: Nivel[] = [
+  { chave: 'gestor_imediato', rotulo: 'Gestor imediato' },
+  { chave: 'gerente', rotulo: 'Gerente' },
+  { chave: 'diretor', rotulo: 'Diretor' },
+];
+
+const COLUNA_DO_NIVEL: Record<string, string> = {
+  gestor_imediato: 'GESTOR IMEDIATO', gerente: 'GERENTE', diretor: 'DIRETOR',
+};
 
 const ROTULO_ACESSO: Record<GestorLinha['acesso'], string> = {
   sem_acesso: 'Sem acesso',
@@ -44,7 +58,9 @@ const CLASSE_ACESSO: Record<GestorLinha['acesso'], string> = {
   desativado: 'selo-neutra',
 };
 
-const SEM_GESTOR = '(sem gestor informado)';
+/** O backend marca a linha das pessoas sem responsável informado na planilha. */
+const semResponsavel = (item: GestorLinha) =>
+  item.sem_responsavel ?? /^\(sem .+ informado\)$/.test(item.gestor_nome);
 
 const semAcento = (texto: string) => texto.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
 
@@ -61,17 +77,23 @@ export function Gestores() {
   const [criando, setCriando] = useState<GestorLinha | null>(null);
   const [vinculando, setVinculando] = useState<GestorLinha | null>(null);
   const [link, setLink] = useState<{ nome: string; usuario: string; url: string; expira_em: string } | null>(null);
+  const [nivel, setNivel] = useState('gestor_imediato');
+  const [niveis, setNiveis] = useState<Nivel[]>(NIVEIS_PADRAO);
 
   const carregar = useCallback(() => {
     setCarregando(true);
     Promise.all([
-      api.get<{ itens: GestorLinha[] }>('/api/equipe/gestores'),
+      api.get<{ itens: GestorLinha[]; nivel?: string; niveis?: Nivel[] }>(`/api/equipe/gestores?nivel=${nivel}`),
       api.get<{ itens: AcessoGestor[] }>('/api/equipe/usuarios'),
     ])
-      .then(([lista, usuarios]) => { setItens(lista.itens); setAcessos(usuarios.itens); })
+      .then(([lista, usuarios]) => {
+        setItens(lista.itens);
+        setAcessos(usuarios.itens);
+        if (lista.niveis?.length) setNiveis(lista.niveis);
+      })
       .catch((erro) => avisar((erro as Error).message, 'erro'))
       .finally(() => setCarregando(false));
-  }, [avisar]);
+  }, [avisar, nivel]);
 
   useEffect(carregar, [carregar]);
 
@@ -79,7 +101,7 @@ export function Gestores() {
 
   async function criarAcesso(dados: { gestor_nome: string; nome: string; usuario: string; email: string }) {
     try {
-      const resposta = await api.post<any>('/api/equipe/gestores/acesso', dados);
+      const resposta = await api.post<any>('/api/equipe/gestores/acesso', { ...dados, nivel });
       setCriando(null);
       setLink({ nome: resposta.nome, usuario: resposta.usuario, url: montarLink(resposta.convite), expira_em: resposta.expira_em });
       avisar(`Acesso criado e ${numeroBR(resposta.colaboradores)} colaborador(es) atribuído(s).`);
@@ -92,7 +114,7 @@ export function Gestores() {
   async function vincular(gestor: GestorLinha, usuarioId: number | null) {
     try {
       const resposta = await api.post<any>('/api/equipe/gestores/vincular', {
-        gestor_nome: gestor.gestor_nome, usuario_id: usuarioId,
+        gestor_nome: gestor.gestor_nome, usuario_id: usuarioId, nivel,
       });
       setVinculando(null);
       avisar(usuarioId
@@ -116,19 +138,34 @@ export function Gestores() {
     }
   }
 
-  const semAcesso = itens.filter((item) => item.acesso === 'sem_acesso' && item.gestor_nome !== SEM_GESTOR).length;
+  const semAcesso = itens.filter((item) => item.acesso === 'sem_acesso' && !semResponsavel(item)).length;
   const totalPendentes = itens.reduce((soma, item) => soma + item.pendentes, 0);
 
   return (
     <>
-      <Cartao titulo="Gestores imediatos" dica="a lista é uma só; cada gestor enxerga apenas a equipe dele">
+      <Cartao titulo="Distribuir a base" dica="a lista é uma só; cada pessoa enxerga apenas a equipe dela">
         <p className="texto-2 pequeno">
-          O agrupamento vem da coluna <strong>GESTOR IMEDIATO</strong> da planilha. Dê acesso ao gestor e mande o
-          link de primeiro acesso — ele define a própria senha e marca as decisões da equipe dele aqui mesmo,
-          na mesma base. Nada de recortar arquivo por e-mail.
+          O agrupamento vem da coluna <strong>{COLUNA_DO_NIVEL[nivel] ?? 'GESTOR IMEDIATO'}</strong> da planilha.
+          Dê acesso e mande o link de primeiro acesso — a pessoa define a própria senha e marca as decisões da
+          equipe dela aqui mesmo, na mesma base. Nada de recortar arquivo por e-mail.
         </p>
+        <div className="linha-filtros" style={{ alignItems: 'flex-end' }}>
+          <div className="campo">
+            <label htmlFor="nivel-distribuicao">Distribuir por</label>
+            <select id="nivel-distribuicao" value={nivel} onChange={(evento) => setNivel(evento.target.value)}>
+              {niveis.map((item) => <option key={item.chave} value={item.chave}>{item.rotulo}</option>)}
+            </select>
+          </div>
+          <p className="texto-2 pequeno" style={{ margin: 0, maxWidth: 520 }}>
+            Base grande costuma ir por <strong>Gerente</strong> ou <strong>Diretor</strong>, e cada um reparte
+            para os gestores dele. Base pequena vai direto por <strong>Gestor imediato</strong>.
+          </p>
+        </div>
         <div className="kpis" style={{ marginTop: 12 }}>
-          <div className="kpi"><div className="rotulo">Gestores na base</div><div className="valor">{numeroBR(itens.length)}</div></div>
+          <div className="kpi">
+            <div className="rotulo">{(niveis.find((n) => n.chave === nivel)?.rotulo ?? 'Gestor')}(es) na base</div>
+            <div className="valor">{numeroBR(itens.length)}</div>
+          </div>
           <div className={`kpi${semAcesso ? ' destaque' : ''}`}>
             <div className="rotulo">Ainda sem acesso</div><div className="valor">{numeroBR(semAcesso)}</div>
             <div className="nota">precisam receber o link</div>
@@ -158,7 +195,7 @@ export function Gestores() {
                     {item.usuario && <div className="pequeno texto-3">usuário: {item.usuario}</div>}
                   </td>
                   <td>
-                    {item.gestor_nome === SEM_GESTOR ? (
+                    {semResponsavel(item) ? (
                       <span className="pequeno texto-3">Linhas sem a coluna preenchida — ficam com o RH/Diretoria</span>
                     ) : (
                       <span className={`selo ${CLASSE_ACESSO[item.acesso]}`}>{ROTULO_ACESSO[item.acesso]}</span>
@@ -179,7 +216,7 @@ export function Gestores() {
                     </div>
                   </td>
                   <td className="linha" style={{ gap: 6, justifyContent: 'flex-end' }}>
-                    {item.gestor_nome !== SEM_GESTOR && item.acesso === 'sem_acesso' && (
+                    {!semResponsavel(item) && item.acesso === 'sem_acesso' && (
                       <button className="btn btn-pequeno btn-primario" type="button" onClick={() => setCriando(item)}>
                         Criar acesso
                       </button>
@@ -189,7 +226,7 @@ export function Gestores() {
                         Novo link
                       </button>
                     )}
-                    {item.gestor_nome !== SEM_GESTOR && (
+                    {!semResponsavel(item) && (
                       <button className="btn btn-pequeno" type="button" onClick={() => setVinculando(item)}>
                         Vincular
                       </button>

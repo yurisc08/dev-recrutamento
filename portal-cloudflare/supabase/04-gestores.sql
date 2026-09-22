@@ -34,10 +34,14 @@ CREATE INDEX IF NOT EXISTS idx_usuarios_ativacao ON portal.usuarios (ativacao_ha
 -- 2. gestor imediato na base ----------------------------------------------
 ALTER TABLE portal.colaboradores
   ADD COLUMN IF NOT EXISTS gestor_nome    text,
+  ADD COLUMN IF NOT EXISTS gerente_nome   text,
+  ADD COLUMN IF NOT EXISTS diretor_nome   text,
   ADD COLUMN IF NOT EXISTS responsavel_id integer REFERENCES portal.usuarios(id) ON DELETE SET NULL;
 
 CREATE INDEX IF NOT EXISTS idx_colab_responsavel ON portal.colaboradores (processo_id, responsavel_id);
 CREATE INDEX IF NOT EXISTS idx_colab_gestor_nome ON portal.colaboradores (processo_id, lower(gestor_nome));
+CREATE INDEX IF NOT EXISTS idx_colab_gerente_nome ON portal.colaboradores (processo_id, lower(gerente_nome));
+CREATE INDEX IF NOT EXISTS idx_colab_diretor_nome ON portal.colaboradores (processo_id, lower(diretor_nome));
 
 -- 3. o campo aparece no catálogo, como veio da planilha --------------------
 WITH p AS (SELECT id FROM portal.processos WHERE ativo ORDER BY id LIMIT 1)

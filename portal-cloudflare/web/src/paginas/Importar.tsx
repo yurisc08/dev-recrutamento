@@ -186,7 +186,11 @@ export function Importar() {
     }
   }
 
-  const totalLinhas = aba ? Math.max(aba.linhas.length - linhaCabecalho, 0) : 0;
+  // Só as linhas com conteúdo: a planilha-modelo traz milhares de linhas vazias
+  // com a lista suspensa, e contá-las assustava ("1999 linhas de dados").
+  const totalLinhas = aba
+    ? aba.linhas.slice(linhaCabecalho).filter((l) => l.some((c) => String(c ?? '').trim())).length
+    : 0;
   const mapeados = Object.values(destinos).filter(Boolean).length;
 
   return (
